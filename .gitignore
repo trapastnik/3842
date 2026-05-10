@@ -5,3 +5,10 @@ Thumbs.db
 *.swp
 *.swo
 
+# Generated previews
+*.png
+*.jpg
+*.jpeg
+
+# Manual snapshots are local only; git history is the versioning layer.
+versions/
