@@ -15,8 +15,12 @@
       <h1>Лениниана на карте</h1>
       <div class="subtitle">19 памятников. От первого бюста 1919 — до колосса на Волго-Доне 1973.</div>
     </header>
-    <aside class="card" id="card" hidden>
+    <aside class="card layout-stacked" id="card" hidden>
       <button class="card-close" id="card-close" aria-label="Закрыть">×</button>
+      <div class="card-layout-switch" id="card-layout-switch">
+        <button type="button" class="card-layout-tab active" data-layout="stacked">Под фото</button>
+        <button type="button" class="card-layout-tab" data-layout="overlay">На фото</button>
+      </div>
       <div class="card-photo" id="card-photo"></div>
       <div class="card-body">
         <div class="card-year" id="card-year"></div>

@@ -519,6 +519,25 @@
 
   cardClose.addEventListener("click", hideCard);
 
+  // --- Card layout toggle (stacked vs overlay) -----------------------------
+
+  const LAYOUT_KEY = "mtk41-map-card-layout";
+  function applyCardLayout(layout) {
+    const valid = layout === "overlay" ? "overlay" : "stacked";
+    cardEl.classList.toggle("layout-overlay", valid === "overlay");
+    cardEl.classList.toggle("layout-stacked", valid === "stacked");
+    document.querySelectorAll(".card-layout-tab").forEach(b => {
+      b.classList.toggle("active", b.dataset.layout === valid);
+    });
+    try { sessionStorage.setItem(LAYOUT_KEY, valid); } catch (e) {}
+  }
+  try { applyCardLayout(sessionStorage.getItem(LAYOUT_KEY) || "stacked"); } catch (e) {}
+  document.addEventListener("click", event => {
+    const tab = event.target.closest(".card-layout-tab");
+    if (!tab) return;
+    applyCardLayout(tab.dataset.layout);
+  });
+
   // --- Pointer interactions ------------------------------------------------
 
   canvas.addEventListener("pointerdown", event => {
