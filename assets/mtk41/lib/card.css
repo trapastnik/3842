@@ -311,8 +311,12 @@
 .card.layout-overlay {
   background: var(--graphite);
   width: clamp(320px, 36vw, 560px);
-  max-height: calc(100% - clamp(48px, 8vh, 128px));
-  height: clamp(560px, 78vh, 980px);
+  /* Take almost full viewport height so neither photo nor 3D viewer
+     get clipped. Top/bottom offsets are small. */
+  top: clamp(16px, 2vh, 40px);
+  bottom: clamp(16px, 2vh, 40px);
+  max-height: none;
+  height: auto;
 }
 
 .card.layout-overlay .card-photo {
