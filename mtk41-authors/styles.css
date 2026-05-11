@@ -1,0 +1,324 @@
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+:root {
+  --paper:    #F7F9EF;
+  --brass:    #D2B773;
+  --red:      #A02128;
+  --graphite: #435059;
+  --window:   #9DA3A6;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--graphite);
+  color: var(--paper);
+  font-family: "Nolde", Georgia, serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  background:
+    linear-gradient(165deg, transparent 0, transparent 92%, var(--red) 92%, var(--red) 98%, transparent 98.2%),
+    radial-gradient(ellipse 130% 95% at 60% 50%, rgba(67, 80, 89, 0.5), rgba(12, 16, 18, 0.96)),
+    var(--graphite);
+  overflow: hidden;
+  padding: clamp(24px, 4vh, 64px);
+  padding-top: clamp(160px, 18vh, 280px);
+  display: flex;
+  flex-direction: column;
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(247, 249, 239, 0.03) 0, rgba(247, 249, 239, 0.03) 1px, transparent 1px, transparent 5px);
+  mix-blend-mode: soft-light;
+}
+
+.title-block {
+  position: absolute;
+  z-index: 2;
+  top: clamp(24px, 4vh, 64px);
+  left: clamp(24px, 3vw, 56px);
+  max-width: min(70%, 900px);
+  pointer-events: none;
+}
+
+.title-block .kicker {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(12px, 1.2vh, 22px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  opacity: 0.9;
+  margin-bottom: 0.6em;
+}
+
+.title-block h1 {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(36px, 6.4vh, 120px);
+  line-height: 0.96;
+  margin: 0 0 0.4em 0;
+  color: var(--paper);
+  text-shadow: 0 4px 18px rgba(12, 16, 18, 0.55);
+}
+
+.title-block .subtitle {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(14px, 1.5vh, 24px);
+  line-height: 1.5;
+  color: var(--paper);
+  opacity: 0.78;
+  max-width: 38em;
+}
+
+.authors-grid {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(260px, 18vw, 380px), 1fr));
+  gap: clamp(12px, 1.6vh, 28px);
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 4px;
+  padding-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(210, 183, 115, 0.4) transparent;
+}
+
+.author {
+  background: rgba(20, 24, 27, 0.7);
+  border: 1px solid rgba(210, 183, 115, 0.18);
+  border-radius: 4px;
+  padding: clamp(16px, 1.8vh, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: 0.6em;
+  min-height: 0;
+  transition: border-color 160ms ease, transform 160ms ease;
+}
+
+.author.featured {
+  border-color: rgba(210, 183, 115, 0.55);
+  background: rgba(20, 24, 27, 0.86);
+}
+
+.author-name {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(20px, 2.4vh, 32px);
+  line-height: 1.1;
+  color: var(--paper);
+  margin: 0;
+}
+
+.author-years {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.2vh, 15px);
+  color: var(--brass);
+  letter-spacing: 0.06em;
+}
+
+.author-bio {
+  font-family: "Nolde", Georgia, serif;
+  font-size: clamp(13px, 1.5vh, 18px);
+  line-height: 1.35;
+  color: var(--paper);
+  opacity: 0.78;
+  margin: 0;
+}
+
+.author-bio:empty { display: none; }
+
+.author-count {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(10px, 1.1vh, 13px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--window);
+  border-top: 1px solid rgba(210, 183, 115, 0.15);
+  padding-top: 0.6em;
+  margin-top: 0.2em;
+}
+
+.author-works {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3em;
+  margin: 0.2em 0 0 0;
+}
+
+.work {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(12px, 1.35vh, 17px);
+  color: var(--paper);
+  background: rgba(247, 249, 239, 0.06);
+  border-left: 3px solid var(--red);
+  padding: 6px 10px;
+  cursor: pointer;
+  border-radius: 0 2px 2px 0;
+  touch-action: manipulation;
+  transition: background 120ms ease;
+}
+.work[data-status="demolished"] { border-left-color: var(--graphite); }
+.work[data-status="unknown"]    { border-left-color: var(--window); opacity: 0.78; }
+.work[data-status="relocated"]  { border-left-color: var(--brass); }
+
+.work:active {
+  background: rgba(210, 183, 115, 0.2);
+}
+
+.work-year {
+  display: inline-block;
+  width: 4em;
+  color: var(--brass);
+  font-weight: 600;
+}
+
+.work-title {
+  color: var(--paper);
+  opacity: 0.92;
+}
+
+/* Anonymous bucket */
+.author.anon {
+  border-style: dashed;
+  border-color: rgba(157, 163, 166, 0.35);
+}
+.author.anon .author-name { color: var(--window); font-style: italic; }
+
+/* --- Card overlay (same look as map / timeline) ----------------------- */
+
+.card {
+  position: absolute;
+  z-index: 4;
+  right: clamp(24px, 3vw, 56px);
+  top: clamp(24px, 4vh, 64px);
+  width: clamp(320px, 36vw, 560px);
+  max-height: calc(100% - clamp(48px, 8vh, 128px));
+  background: rgba(20, 24, 27, 0.94);
+  border: 1px solid rgba(210, 183, 115, 0.4);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.55);
+  overflow: hidden;
+  animation: cardIn 220ms ease-out;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.card[hidden] { display: none; }
+
+.card-close {
+  position: absolute;
+  top: 8px; right: 8px; z-index: 5;
+  width: 44px; height: 44px; border: 0;
+  background: rgba(20, 24, 27, 0.55);
+  color: var(--paper);
+  font-family: "Nolde", serif; font-size: 28px; line-height: 1;
+  border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 120ms ease;
+  touch-action: manipulation;
+}
+.card-close:active { background: var(--red); }
+
+.card-photo {
+  width: 100%; aspect-ratio: 4 / 3;
+  background: var(--graphite);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(210, 183, 115, 0.18);
+}
+.card-photo.empty {
+  display: grid; place-items: center;
+  color: rgba(247, 249, 239, 0.35);
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.2vh, 16px);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+
+.card-body { padding: clamp(18px, 2.2vh, 28px); overflow-y: auto; }
+
+.card-year {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(13px, 1.4vh, 20px);
+  color: var(--brass);
+  letter-spacing: 0.18em;
+  margin-bottom: 0.4em;
+}
+.card-title {
+  font-family: "Nolde", Georgia, serif; font-weight: 400;
+  font-size: clamp(22px, 3.2vh, 44px); line-height: 1.05;
+  margin: 0 0 0.6em 0; color: var(--paper);
+}
+.card-place {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(13px, 1.4vh, 18px);
+  color: var(--paper); opacity: 0.75;
+  margin-bottom: 0.3em;
+}
+.card-author {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(12px, 1.3vh, 16px);
+  color: var(--window); margin-bottom: 1em;
+}
+.card-author:empty { display: none; }
+.card-text {
+  font-family: "Nolde", Georgia, serif;
+  font-size: clamp(15px, 1.6vh, 22px);
+  line-height: 1.4; margin: 0 0 1em 0;
+  color: var(--paper); opacity: 0.92;
+}
+.card-status {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.1vh, 14px);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 6px 10px; border-radius: 2px;
+  display: inline-block;
+  background: rgba(160, 33, 40, 0.18);
+  color: var(--paper);
+  border: 1px solid rgba(160, 33, 40, 0.45);
+}
+.card-status[data-status="demolished"] {
+  background: rgba(67, 80, 89, 0.4);
+  border-color: rgba(157, 163, 166, 0.5);
+}
+.card-status[data-status="unknown"] {
+  background: rgba(157, 163, 166, 0.18);
+  border-color: rgba(157, 163, 166, 0.4);
+  color: var(--window);
+}

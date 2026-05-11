@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Хронология</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — хронология">
+    <canvas id="timeline" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>Хронология Ленинианы</h1>
+      <div class="subtitle">1919 — первый бюст. 1925 — пять памятников за год. 1973 — 57-метровый колосс на Волго-Доне.</div>
+    </header>
+    <aside class="card" id="card" hidden>
+      <button class="card-close" id="card-close" aria-label="Закрыть">×</button>
+      <div class="card-photo" id="card-photo"></div>
+      <div class="card-body">
+        <div class="card-year" id="card-year"></div>
+        <h2 class="card-title" id="card-title"></h2>
+        <div class="card-place" id="card-place"></div>
+        <div class="card-author" id="card-author"></div>
+        <p class="card-text" id="card-text"></p>
+        <div class="card-status" id="card-status"></div>
+      </div>
+    </aside>
+  </main>
+  <script src="./timeline.js"></script>
+</body>
+</html>
