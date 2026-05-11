@@ -17,7 +17,7 @@ const DEFAULT_ROTATE = [-55, -50, 0];
 const DEFAULT_SCALE = 1.18;
 
 const MIN_SCALE = 0.28;
-const MAX_SCALE = 2.8;
+const MAX_SCALE = 8.5;
 
 const CATEGORY_LABELS = {
   university: "Университеты",
@@ -111,6 +111,7 @@ let lastFrame = 0;
 let lastInteraction = performance.now();
 let modeTween = null;
 let introT0 = 0;
+let labelHits = [];
 const pointDelays = new Map();
 
 function generateStars() {
@@ -272,6 +273,7 @@ function filterPasses(item) {
 function render(now) {
   if (!countries) return;
   ctx.clearRect(0, 0, width, height);
+  labelHits = [];
 
   renderStars(now);
   renderAtmosphere();
@@ -424,6 +426,17 @@ function drawLabels(candidates) {
       : (c.tier === 0 ? "rgba(247, 249, 239, 0.92)" : "rgba(247, 249, 239, 0.78)");
     ctx.fillText(text, chosen.lx, chosen.ly);
     drawn.push(chosen.rect);
+
+    // expanded hit area for touch input
+    labelHits.push({
+      item: c.item,
+      rect: {
+        x: chosen.rect.x - 6,
+        y: chosen.rect.y - 8,
+        w: chosen.rect.w + 12,
+        h: chosen.rect.h + 16,
+      },
+    });
   }
 }
 
@@ -483,6 +496,15 @@ function tick(now) {
 }
 
 function pickPoint(x, y) {
+  // labels first — selected (top of stack) > key > others, in render order
+  for (let i = labelHits.length - 1; i >= 0; i--) {
+    const h = labelHits[i];
+    const r = h.rect;
+    if (x >= r.x && x <= r.x + r.w && y >= r.y && y <= r.y + r.h) {
+      return h.item;
+    }
+  }
+  // then points by proximity
   let best = null;
   let bestD = 28 * 28;
   for (const item of items) {
