@@ -41,6 +41,10 @@
   let placed = [];                     // { i, x, baseY, w, statueH, pedestalH, totalH }
   let selectedIndex = -1;
 
+  // Curated silhouette images, loaded once and keyed by monument id.
+  const silhouetteImages = {};        // id → HTMLImageElement (may be null if no silhouette)
+  let silhouettesReady = false;
+
   // --- Card delegation ----------------------------------------------------
   // All card UI lives in assets/mtk41/lib/card.{css,js}. Delegate to it.
 
@@ -211,70 +215,84 @@
     ctx.restore();
   }
 
+  function drawProceduralMonument(pm) {
+    const m = pm.m;
+    const isSelected = pm.i === selectedIndex;
+    const x = pm.x;
+    const bottomOfStatue = pm.baseY - pm.pedestalH;
+
+    ctx.fillStyle = isSelected ? cssColor(palette.brass, 0.5) : cssColor(palette.graphite, 0.92);
+    ctx.fillRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
+    ctx.strokeStyle = isSelected ? palette.brass : cssColor(palette.window, 0.5);
+    ctx.lineWidth = isSelected ? 2 : 1;
+    ctx.strokeRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
+
+    const sBottom = bottomOfStatue;
+    const sTop = sBottom - pm.statueH;
+    const statueFill = isSelected ? palette.brass : statusColor(m.status);
+    const statueOpacity = m.status === "unknown" ? 0.55 : 0.92;
+
+    ctx.save();
+    ctx.fillStyle = statueFill;
+    ctx.globalAlpha = statueOpacity;
+    const bodyW = pm.w * 0.55;
+    const headR = Math.min(pm.statueH * 0.18, pm.w * 0.32);
+    const bodyTop = sTop + headR * 1.4;
+    ctx.beginPath();
+    ctx.moveTo(x - bodyW * 0.5, sBottom);
+    ctx.lineTo(x + bodyW * 0.5, sBottom);
+    ctx.lineTo(x + bodyW * 0.35, bodyTop);
+    ctx.lineTo(x - bodyW * 0.35, bodyTop);
+    ctx.closePath();
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function drawSilhouette(pm) {
+    const m = pm.m;
+    const img = silhouetteImages[m.id];
+    if (!img || !img.complete || !img.naturalWidth) return false;
+    const isSelected = pm.i === selectedIndex;
+
+    // Real-world height of the monument in pixels
+    const targetH = pm.totalH;
+    const aspect = img.naturalWidth / img.naturalHeight;
+    const targetW = targetH * aspect;
+    const x = pm.x - targetW / 2;
+    const y = pm.baseY - targetH;
+
+    // Status-coloured glow underneath the silhouette
+    if (isSelected) {
+      ctx.save();
+      ctx.shadowColor = palette.brass;
+      ctx.shadowBlur = 22;
+      ctx.fillStyle = cssColor(palette.brass, 0.001);
+      ctx.fillRect(x, y, targetW, targetH);
+      ctx.restore();
+    } else if (m.status === "extant") {
+      ctx.save();
+      ctx.shadowColor = cssColor(palette.red, 0.5);
+      ctx.shadowBlur = 14;
+      ctx.fillStyle = cssColor(palette.red, 0.001);
+      ctx.fillRect(x, y, targetW, targetH);
+      ctx.restore();
+    }
+
+    ctx.save();
+    if (m.status === "unknown") ctx.globalAlpha = 0.6;
+    if (m.status === "demolished") ctx.globalAlpha = 0.55;
+    ctx.drawImage(img, x, y, targetW, targetH);
+    ctx.restore();
+    return true;
+  }
+
   function drawMonuments() {
     for (const pm of placed) {
-      const m = pm.m;
-      const isSelected = pm.i === selectedIndex;
-      const x = pm.x;
-      const bottomOfStatue = pm.baseY - pm.pedestalH;
-
-      // Pedestal: graphite rectangle
-      ctx.fillStyle = isSelected
-        ? cssColor(palette.brass, 0.5)
-        : cssColor(palette.graphite, 0.92);
-      ctx.fillRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
-
-      // Pedestal outline
-      ctx.strokeStyle = isSelected
-        ? palette.brass
-        : cssColor(palette.window, 0.5);
-      ctx.lineWidth = isSelected ? 2 : 1;
-      ctx.strokeRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
-
-      // Statue: silhouette (stylised: rectangle topped with rounded head)
-      const sBottom = bottomOfStatue;
-      const sTop = sBottom - pm.statueH;
-      const statueFill = isSelected
-        ? palette.brass
-        : statusColor(m.status);
-      const statueOpacity = m.status === "unknown" ? 0.55 : 0.92;
-
-      ctx.save();
-      ctx.fillStyle = statueFill;
-      ctx.globalAlpha = statueOpacity;
-      // Body: trapezoid
-      const bodyW = pm.w * 0.55;
-      const headR = Math.min(pm.statueH * 0.18, pm.w * 0.32);
-      const bodyTop = sTop + headR * 1.4;
-      ctx.beginPath();
-      ctx.moveTo(x - bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.35, bodyTop);
-      ctx.lineTo(x - bodyW * 0.35, bodyTop);
-      ctx.closePath();
-      ctx.fill();
-
-      // Head
-      ctx.beginPath();
-      ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.restore();
-
-      // Statue outline
-      ctx.save();
-      ctx.strokeStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.5);
-      ctx.lineWidth = isSelected ? 2 : 0.8;
-      ctx.beginPath();
-      ctx.moveTo(x - bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.35, bodyTop);
-      ctx.lineTo(x - bodyW * 0.35, bodyTop);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-      ctx.stroke();
-      ctx.restore();
+      // Try real silhouette first; fall back to procedural shape
+      if (!drawSilhouette(pm)) drawProceduralMonument(pm);
     }
 
     // Labels (city + year) below pedestal
@@ -356,8 +374,24 @@
 
   window.addEventListener("resize", resize);
 
+  function loadSilhouettes() {
+    return fetch("../assets/mtk41/silhouettes.json")
+      .then(r => r.json())
+      .then(m => {
+        for (const [id, rel] of Object.entries(m)) {
+          if (id.startsWith("_") || !rel) continue;
+          const img = new Image();
+          img.src = `../assets/mtk41/${id}/${encodeURI(rel)}`;
+          silhouetteImages[id] = img;
+        }
+        silhouettesReady = true;
+      })
+      .catch(() => {});
+  }
+
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
+    loadSilhouettes(),
   ]).then(([mtk]) => {
     monuments = mtk.items || [];
     resize();
