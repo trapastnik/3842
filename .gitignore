@@ -11,5 +11,8 @@ Thumbs.db
 *.jpg
 *.jpeg
 
+# МТК content images live in repo (museum installation needs offline data)
+!data/images/**
+
 # Manual snapshots are local only; git history is the versioning layer.
 versions/
