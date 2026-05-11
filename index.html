@@ -219,8 +219,8 @@
     <b>Координация · 2026-05-11</b><br>
     Один общий HTTP-сервер на <code>http://127.0.0.1:8092</code> работает из корня <code>main</code>.
     Координатор — сессия <code>magical-allen-0c3d5f</code>: ведёт эту страницу и <a href="./COORDINATION.md" style="color:var(--brass);">COORDINATION.md</a>.
-    Соседние сессии: <code>bold-booth</code> (МТК 39 ✓), <code>flamboyant-cartwright</code> (МТК 40 ⏳), <code>reverent-chandrasekhar</code> (МТК 41 ⏳), <code>xenodochial-goodall</code> (МТК 42 ⏳), <code>funny-kapitsa</code> (не назначен).
-    Прототипы соседних сессий появятся ниже после merge в main.
+    Соседние сессии: <code>mtk38-worker</code> (МТК 38), <code>bold-booth</code> (МТК 39 ✓), <code>flamboyant-cartwright</code> (МТК 40 ✓), <code>reverent-chandrasekhar</code> (МТК 41 ⏳), <code>xenodochial-goodall</code> (МТК 42 ✓), <code>funny-kapitsa</code> (резерв).
+    Контент-политика — бинарные ассеты в <code>assets/mtkXX/</code> (см. COORDINATION.md).
   </div>
 
   <div class="section-head">
@@ -320,21 +320,77 @@
 
   <div class="section-head">
     <h2>МТК 40 · Библиотека Ленина</h2>
-    <span class="note">сессия flamboyant-cartwright · в работе</span>
+    <span class="note">99 единиц · 4 прототипа</span>
   </div>
-  <div class="placeholder wip">⏳ Сессия <strong>flamboyant-cartwright-839223</strong> готовит прототипы: <strong>mtk40-shelf</strong>, <strong>mtk40-mirror</strong>. Появятся здесь после merge в main.</div>
+
+  <main class="grid">
+    <a class="card" href="./mtk40-shelf/">
+      <div>
+        <div class="card-tag">01 · Shelf</div>
+        <h2>Полка</h2>
+        <p>Книжная полка как навигация по 99 единицам: by-Lenin, about-Lenin, in-library.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk40-mirror/">
+      <div>
+        <div class="card-tag">02 · Mirror</div>
+        <h2>Зеркало</h2>
+        <p>Зеркальное отображение: что Ленин читал и что писали о нём. Связи read→wrote.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk40-stack/">
+      <div>
+        <div class="card-tag">03 · Stack</div>
+        <h2>Стопки</h2>
+        <p>Книги стопками по тематическим осям. Тап — стопка раскрывается в список.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk40-timeline/">
+      <div>
+        <div class="card-tag">04 · Timeline</div>
+        <h2>Таймлайн</h2>
+        <p>Хронологическая ось публикаций, чтения и отклика. Свайп — навигация по годам.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+  </main>
 
   <div class="section-head">
     <h2>МТК 41 · Скульптуры</h2>
-    <span class="note">сессия reverent-chandrasekhar · сбор ассетов</span>
+    <span class="note">сессия reverent-chandrasekhar · готовит ассеты</span>
   </div>
-  <div class="placeholder wip">⏳ Сессия <strong>reverent-chandrasekhar-3484a8</strong> собирает ассеты (<strong>mtk41-assets/</strong>). Прототип в проектировании. Данные уже в main: <code>data/mtk41.json</code>.</div>
+  <div class="placeholder wip">⏳ Сессия <strong>reverent-chandrasekhar-3484a8</strong> закоммитила библиотеку ассетов (46 фото, 13 3D-моделей), готовит к merge в main. Данные в <code>data/mtk41.json</code>, ассеты после merge будут в <code>assets/mtk41/</code>. Прототип — следующий шаг.</div>
 
   <div class="section-head">
     <h2>МТК 42 · Осмысление наследия</h2>
-    <span class="note">сессия xenodochial-goodall · в работе</span>
+    <span class="note">2 прототипа · 20 портретов</span>
   </div>
-  <div class="placeholder wip">⏳ Сессия <strong>xenodochial-goodall-8fcd6a</strong> готовит прототипы: <strong>mtk42-archive</strong>, <strong>mtk42-pendulum</strong>. Появятся здесь после merge в main.</div>
+
+  <main class="grid">
+    <a class="card" href="./mtk42-archive/">
+      <div>
+        <div class="card-tag">01 · Archive</div>
+        <h2>Картотека</h2>
+        <p>Картотека исследователей наследия Ленина — 20 портретов, цитаты, перекрёстные ссылки.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk42-pendulum/">
+      <div>
+        <div class="card-tag">02 · Pendulum</div>
+        <h2>Маятник</h2>
+        <p>Маятник от деленинизации к ренессансу: позиции исследователей качаются между полюсами.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+  </main>
 
   <footer>
     <a href="./PLAN.md">PLAN</a>   ·   <a href="./COORDINATION.md">COORDINATION</a>   ·   <a href="./SETUP.md">SETUP (новой сессии)</a>   ·   <a href="./CLAUDE.md">CLAUDE.md</a>
