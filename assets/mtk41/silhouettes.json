@@ -1,0 +1,20 @@
+{
+  "_comment": "Curated transparent-background silhouette per monument. Each value is a path relative to assets/mtk41/<id>/. Picked by visual inspection from rembg output of all photos.",
+  "alekseev-1919-bust": null,
+  "chelyabinsk-aloe-pole-1925": "silhouettes/01_Бюст В. И. Ленина (Челябинск).png",
+  "gorki-pinchuk-taurit": "silhouettes/02_110704P1050614.png",
+  "kaluga-1920s": null,
+  "kazan-1954-young-volodya": "silhouettes/01_Казань. Памятник студенту Володе Ульянову (Ленину) перед главным зданием университета (1).png",
+  "kostroma-1928": "silhouettes/01_Памятник Ленину в Костроме.png",
+  "leningrad-1920s": "silhouettes/03_Lenin v Krasnogvardejskom pereulke.png",
+  "merkurov-1958-funeral": "silhouettes/01_Меркуров. Смерть вождя.png",
+  "moscow-canal-1937-merkurov": "silhouettes/01_Moscow Canal. Monuments of Vladimir Lenin P5223418 2200.png",
+  "moscow-oktyabrskaya-1925": null,
+  "nizhny-tagil-1925": "silhouettes/01_Tagil Lenin-monument-1.png",
+  "rybinsk-1957-askar-saryja": "silhouettes/02_Памятник Ленину у СПК Рыбинский.png",
+  "ufa-1924-larionov": "silhouettes/01_Памятник Ленину в сквере им. Ленина 01.png",
+  "ulan-ude-1970-zilberman": "silhouettes/01_Lenin's head 02.png",
+  "vladivostok-1920s": "silhouettes/02_Памятник Ленину улица Верхнепортовая, 24, Владивосток.png",
+  "volgograd-1973-vuchetich": "silhouettes/01_Monument to Lenin at the entrance of the Volga-Don canal P5150728 2200.png",
+  "yaroslavl-1920s": "silhouettes/01_Памятник Ленину на Красной площади в Ярославле.png"
+}
