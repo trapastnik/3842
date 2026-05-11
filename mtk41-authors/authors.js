@@ -104,14 +104,30 @@
         const w = document.createElement("div");
         w.className = "work";
         w.setAttribute("data-status", m.status || "unknown");
+
+        const thumb = document.createElement("div");
+        thumb.className = "work-thumb";
+        const photos = photoManifest[m.id];
+        if (photos && photos.length) {
+          thumb.style.backgroundImage = `url("${encodeURI("../assets/mtk41/" + m.id + "/" + photos[0])}")`;
+        } else {
+          thumb.classList.add("empty");
+          thumb.textContent = "Л";
+        }
+        w.appendChild(thumb);
+
+        const textCol = document.createElement("div");
+        textCol.className = "work-text";
         const y = document.createElement("span");
         y.className = "work-year";
         y.textContent = m.year ? String(m.year) : "—";
         const t = document.createElement("span");
         t.className = "work-title";
         t.textContent = (m.city ? m.city + " · " : "") + (m.title || "").replace(/^Памятник Ленину /, "");
-        w.appendChild(y);
-        w.appendChild(t);
+        textCol.appendChild(y);
+        textCol.appendChild(t);
+        w.appendChild(textCol);
+
         w.addEventListener("click", () => showCard(idx));
         works.appendChild(w);
       }

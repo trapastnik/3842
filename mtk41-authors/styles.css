@@ -188,11 +188,15 @@ html, body {
   color: var(--paper);
   background: rgba(247, 249, 239, 0.06);
   border-left: 3px solid var(--red);
-  padding: 6px 10px;
+  padding: 6px 8px 6px 8px;
   cursor: pointer;
   border-radius: 0 2px 2px 0;
   touch-action: manipulation;
   transition: background 120ms ease;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: clamp(54px, 6.5vh, 84px);
 }
 .work[data-status="demolished"] { border-left-color: var(--graphite); }
 .work[data-status="unknown"]    { border-left-color: var(--window); opacity: 0.78; }
@@ -202,24 +206,66 @@ html, body {
   background: rgba(210, 183, 115, 0.2);
 }
 
+.work-thumb {
+  flex: 0 0 auto;
+  width: clamp(48px, 6vh, 72px);
+  height: clamp(48px, 6vh, 72px);
+  background: var(--graphite);
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  border-radius: 2px;
+  border: 1px solid rgba(247, 249, 239, 0.08);
+}
+.work-thumb.empty {
+  display: grid;
+  place-items: center;
+  font-family: "Nolde", Georgia, serif;
+  font-size: clamp(20px, 2.4vh, 30px);
+  color: rgba(247, 249, 239, 0.18);
+  background: rgba(67, 80, 89, 0.55);
+}
+
+.work-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
 .work-year {
-  display: inline-block;
-  width: 4em;
   color: var(--brass);
   font-weight: 600;
+  font-size: clamp(12px, 1.3vh, 16px);
+  letter-spacing: 0.06em;
 }
 
 .work-title {
   color: var(--paper);
   opacity: 0.92;
+  font-size: clamp(12px, 1.35vh, 16px);
+  line-height: 1.25;
 }
 
-/* Anonymous bucket */
+/* Anonymous bucket: spans 2 columns and lays works in 2 sub-columns */
 .author.anon {
   border-style: dashed;
   border-color: rgba(157, 163, 166, 0.35);
+  grid-column: span 2;
 }
 .author.anon .author-name { color: var(--window); font-style: italic; }
+.author.anon .author-works {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.3em 0.6em;
+}
+
+/* On narrower screens (e.g. landscape) collapse to single column */
+@media (max-width: 900px) {
+  .author.anon { grid-column: span 1; }
+  .author.anon .author-works { grid-template-columns: 1fr; }
+}
 
 /* --- Card overlay (same look as map / timeline) ----------------------- */
 

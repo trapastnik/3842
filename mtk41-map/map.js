@@ -504,7 +504,7 @@
       fetch("../data/mtk41.json").then(r => r.json()),
       fetch("../assets/mtk41/manifest.json").then(r => r.json()).catch(() => ({})),
       fetch("../assets/mtk41/models.json").then(r => r.json()).catch(() => ({})),
-    ]).then(([geo, mtk, manifest]) => {
+    ]).then(([geo, mtk, manifest, models]) => {
       if (geo) {
         map.geojson = geo;
         if (map.worldW) buildWorldCache();
