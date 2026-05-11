@@ -185,10 +185,10 @@ html, body {
 .card {
   position: relative;
   display: grid;
-  grid-template-rows: auto auto auto;
+  grid-template-rows: 200px auto auto;
   gap: 10px;
-  padding: 14px 16px 16px;
-  min-height: 260px;
+  padding: 28px 16px 16px;
+  min-height: 320px;
   border: 1px solid var(--brass-soft);
   border-radius: 6px;
   background: linear-gradient(180deg, rgba(247, 249, 239, 0.04), rgba(0, 0, 0, 0.34) 90%), rgba(12, 16, 18, 0.5);
@@ -220,17 +220,20 @@ html, body {
 .card__tag {
   position: absolute;
   top: 10px;
+  left: 28px;
   right: 12px;
   font-family: var(--font-mono);
   font-size: 9px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.58);
+  color: rgba(247, 249, 239, 0.65);
+  text-align: right;
+  pointer-events: none;
 }
 .card__portrait {
   width: 100%;
-  aspect-ratio: 4 / 5;
-  margin-top: 6px;
+  height: 100%;
+  margin-top: 0;
   border-radius: 4px;
   overflow: hidden;
   background: var(--graphite-deep);
@@ -532,9 +535,9 @@ html, body {
   .title { padding: 20px 22px 10px; }
   .filters { margin: 0 22px; gap: 12px; }
   .grid { padding: 18px 22px 32px; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
-  .card { min-height: 220px; }
+  .card { min-height: 260px; grid-template-rows: 150px auto auto; padding: 24px 14px 14px; }
   .card__name { font-size: 15px; }
-  .card__initials { font-size: 48px; }
+  .card__initials { font-size: 42px; }
   .detail { padding: 18px; }
   .detail__panel { padding: 22px 22px 20px; }
   .detail__close { top: 10px; right: 10px; }
