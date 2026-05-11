@@ -26,18 +26,19 @@ function adjustHex(hex, delta) {
 function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
 
 function thicknessOf(item) {
-  // 4 → 4px, 80 → 9px, 480 → 13px, 30000 → 24px
+  // 8 → 9px, 80 → 18px, 480 → 27px, 30000 → 44px
   const p = Math.max(8, item.pages_approx || 80);
-  return 2 + Math.log2(p) * 1.6;
+  return 3 + Math.log2(p) * 3;
 }
 function coverWidth(item) {
   const h = item.height_cm || 22;
-  return 90 * (h / 22);
+  return 170 * (h / 22);
 }
 function coverDepth(item) {
   const h = item.height_cm || 22;
-  return 60 * (h / 22);
+  return 115 * (h / 22);
 }
+const TOWER_SPACING_X = 340;
 
 class StackApp {
   constructor() {
@@ -84,8 +85,8 @@ class StackApp {
     // Три башни в линию по оси X (мира). Сортировка внутри по году ↓ (старые сверху, чтобы новые были ближе к зрителю и видимее).
     // Чтобы стопки не вырастали слишком высокими, разбиваем каждую на 2 столбика.
     const buckets = ["by-lenin", "about-lenin", "in-library"];
-    const towerSpacingX = 180 * this.dpr;
-    const colSpacingZ = 80 * this.dpr;
+    const towerSpacingX = TOWER_SPACING_X * this.dpr;
+    const colSpacingZ = 145 * this.dpr;
     const baseY = 0;
     this.books = [];
 
@@ -120,9 +121,9 @@ class StackApp {
       // запомним высоту для рендера подписи
     }
 
-    // Сцена: где (0,0,0)? — около низа экрана, центра по горизонтали
+    // Сцена: где (0,0,0)? — около центра-низа экрана, центра по горизонтали
     this.cx = this.W / 2;
-    this.cy = this.H * 0.78;
+    this.cy = this.H * 0.72;
   }
 
   project(x, y, z) {
@@ -236,14 +237,14 @@ class StackApp {
     // labels per tower (project to base of each tower) — отрисую перед книгами, они снизу
     const towers = ["by-lenin", "about-lenin", "in-library"];
     for (let bi = 0; bi < towers.length; bi++) {
-      const towerX = (bi - 1) * 180 * this.dpr;
+      const towerX = (bi - 1) * TOWER_SPACING_X * this.dpr;
       const meta = BUCKET_META[towers[bi]];
-      const baseProj = this.project(towerX, 0, 70 * this.dpr);
+      const baseProj = this.project(towerX, 0, 130 * this.dpr);
       ctx.save();
       ctx.fillStyle = meta.accent;
-      ctx.font = `600 ${13 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.font = `600 ${18 * this.dpr}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
-      ctx.fillText(meta.label, baseProj.sx, baseProj.sy + 16 * this.dpr);
+      ctx.fillText(meta.label, baseProj.sx, baseProj.sy + 22 * this.dpr);
       ctx.restore();
     }
 
@@ -256,12 +257,12 @@ class StackApp {
     const ctx = this.ctx;
     // тень-эллипс под каждой башней
     for (let bi = 0; bi < 3; bi++) {
-      const towerX = (bi - 1) * 180 * this.dpr;
+      const towerX = (bi - 1) * TOWER_SPACING_X * this.dpr;
       const center = this.project(towerX, 0, 0);
       ctx.save();
-      ctx.fillStyle = "rgba(0,0,0,0.45)";
+      ctx.fillStyle = "rgba(0,0,0,0.5)";
       ctx.beginPath();
-      ctx.ellipse(center.sx, center.sy + 4 * this.dpr, 110 * this.dpr, 30 * this.dpr, 0, 0, Math.PI * 2);
+      ctx.ellipse(center.sx, center.sy + 6 * this.dpr, 210 * this.dpr, 56 * this.dpr, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -317,7 +318,7 @@ class StackApp {
       // тонкие горизонтальные линии — листы
       ctx.strokeStyle = "rgba(120,110,90,0.3)";
       ctx.lineWidth = 0.5 * this.dpr;
-      const layers = 4;
+      const layers = Math.max(3, Math.min(12, Math.round(book.t / (3 * this.dpr))));
       for (let i = 1; i < layers; i++) {
         const yMid = yBot + (book.t * i) / layers;
         const a = this.project(x2, yMid, z1);
@@ -346,9 +347,9 @@ class StackApp {
 
       // тиснёная рамка
       ctx.strokeStyle = adjustHex(c, isOther ? -10 : 32);
-      ctx.lineWidth = 1 * this.dpr;
+      ctx.lineWidth = 1.2 * this.dpr;
       ctx.beginPath();
-      const inset = 5 * this.dpr;
+      const inset = 9 * this.dpr;
       const i1 = this.project(x1 + inset, yTop, z1 + inset);
       const i2 = this.project(x2 - inset, yTop, z1 + inset);
       const i3 = this.project(x2 - inset, yTop, z2 - inset);
@@ -365,23 +366,23 @@ class StackApp {
         const cp = this.project(book.x, yTop + 0.1, book.z);
         ctx.fillStyle = COLORS.brass;
         ctx.beginPath();
-        ctx.arc(cp.sx, cp.sy, (book.item.significance === 5 ? 3.5 : 2.2) * this.dpr, 0, Math.PI * 2);
+        ctx.arc(cp.sx, cp.sy, (book.item.significance === 5 ? 5.5 : 3.5) * this.dpr, 0, Math.PI * 2);
         ctx.fill();
       }
 
-      // подпись по центру обложки (только для верхних / приподнятых книг — иначе нечитаемо)
-      if (lift > 4 * this.dpr || (book.item.significance === 5 && book.t * this.dpr > 0)) {
+      // подпись по центру обложки (на топовых книгах стопки и значимых)
+      if (lift > 4 * this.dpr || book.item.significance === 5) {
         const cp = this.project(book.x, yTop + 0.1, book.z);
         ctx.save();
         // лёгкий поворот по изометрической оси
         ctx.translate(cp.sx, cp.sy);
         ctx.rotate(Math.atan2(ISO_SIN, ISO_COS) - Math.PI);
-        ctx.fillStyle = adjustHex(c, 95);
-        ctx.font = `400 ${10 * this.dpr}px Nolde, Georgia, serif`;
+        ctx.fillStyle = adjustHex(c, 100);
+        ctx.font = `400 ${15 * this.dpr}px Nolde, Georgia, serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         let title = book.item.title;
-        const maxChars = Math.max(8, Math.floor(book.w / (this.dpr * 6)));
+        const maxChars = Math.max(10, Math.floor(book.w / (this.dpr * 8)));
         if (title.length > maxChars) title = title.slice(0, maxChars - 1) + "…";
         ctx.fillText(title, 0, 0);
         ctx.restore();
