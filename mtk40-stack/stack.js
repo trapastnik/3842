@@ -178,17 +178,38 @@ class StackApp {
   };
 
   hitTest(px, py) {
-    // тестируем книги в обратном порядке отрисовки (сверху-вниз, ближе к зрителю)
-    const sorted = [...this.books].sort((a, b) => this.depthOf(b) - this.depthOf(a));
+    // Front-to-back, then top-to-bottom внутри стопки — иначе верхние книги «прозрачны» для клика
+    const sorted = [...this.books].sort((a, b) => {
+      const dd = this.depthOf(b) - this.depthOf(a);
+      if (dd !== 0) return dd;
+      return b.y - a.y;
+    });
     for (const book of sorted) {
       const lift = (this.lift.get(book.item.id)?.current) || 0;
-      const top = book.y + book.t + lift;
-      // top face quad: 4 vertices
-      const p1 = this.project(book.x - book.w / 2, top, book.z - book.d / 2);
-      const p2 = this.project(book.x + book.w / 2, top, book.z - book.d / 2);
-      const p3 = this.project(book.x + book.w / 2, top, book.z + book.d / 2);
-      const p4 = this.project(book.x - book.w / 2, top, book.z + book.d / 2);
-      if (pointInQuad(px, py, p1, p2, p3, p4)) return book;
+      const yBot = book.y + lift;
+      const yTop = book.y + book.t + lift;
+      const x1 = book.x - book.w / 2;
+      const x2 = book.x + book.w / 2;
+      const z1 = book.z - book.d / 2;
+      const z2 = book.z + book.d / 2;
+      // top face (обложка)
+      const t1 = this.project(x1, yTop, z1);
+      const t2 = this.project(x2, yTop, z1);
+      const t3 = this.project(x2, yTop, z2);
+      const t4 = this.project(x1, yTop, z2);
+      if (pointInQuad(px, py, t1, t2, t3, t4)) return book;
+      // front face (корешок-фронт, z=z2)
+      const f1 = this.project(x1, yBot, z2);
+      const f2 = this.project(x2, yBot, z2);
+      const f3 = this.project(x2, yTop, z2);
+      const f4 = this.project(x1, yTop, z2);
+      if (pointInQuad(px, py, f1, f2, f3, f4)) return book;
+      // right face (обрез страниц, x=x2)
+      const r1 = this.project(x2, yBot, z1);
+      const r2 = this.project(x2, yBot, z2);
+      const r3 = this.project(x2, yTop, z2);
+      const r4 = this.project(x2, yTop, z1);
+      if (pointInQuad(px, py, r1, r2, r3, r4)) return book;
     }
     return null;
   }
