@@ -3,10 +3,41 @@
 
 const YEAR_MIN = 1920;
 const YEAR_MAX = 2026;
-const PX_PER_YEAR = 38;       // chart density
+const PX_PER_YEAR = 42;       // chart density (base)
 const SIDE_PAD = 64;          // px reserved on each side of plot area
 const TOP_PAD = 36;
 const BOTTOM_PAD = 36;
+
+// Year-axis compression: "Канон" 1934–1985 is empty in the data and would
+// otherwise take ~2000 px of dead space. Compress it so the eye flies over it.
+const COMPRESSED_RANGES = [
+  { from: 1934, to: 1985, scale: 0.18 },
+];
+
+function compressionAtYear(y) {
+  for (const r of COMPRESSED_RANGES) {
+    if (y >= r.from && y < r.to) return r.scale;
+  }
+  return 1;
+}
+
+// Piecewise integral of compressionAtYear from YEAR_MIN to YEAR_MAX.
+function buildSegments() {
+  const breakpoints = new Set([YEAR_MIN, YEAR_MAX]);
+  for (const r of COMPRESSED_RANGES) {
+    breakpoints.add(r.from);
+    breakpoints.add(r.to);
+  }
+  const sorted = [...breakpoints].filter((y) => y >= YEAR_MIN && y <= YEAR_MAX).sort((a, b) => a - b);
+  const segs = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const from = sorted[i];
+    const to = sorted[i + 1];
+    segs.push({ from, to, scale: compressionAtYear(from) });
+  }
+  return segs;
+}
+const SEGMENTS = buildSegments();
 
 const $ = (sel, root = document) => root.querySelector(sel);
 
@@ -22,7 +53,7 @@ const $ = (sel, root = document) => root.querySelector(sel);
 
 function buildChart(content, portraits) {
   const inner = $("#chart-inner");
-  const chartHeight = (YEAR_MAX - YEAR_MIN) * PX_PER_YEAR + TOP_PAD + BOTTOM_PAD;
+  const chartHeight = yearToY(YEAR_MAX) + BOTTOM_PAD;
   inner.style.height = chartHeight + "px";
 
   drawEpochs(inner, content.epochs);
@@ -36,7 +67,19 @@ function buildChart(content, portraits) {
 
 // ─── Coordinate helpers ──────────────────────────────────────
 function yearToY(year) {
-  return TOP_PAD + (year - YEAR_MIN) * PX_PER_YEAR;
+  const y = Math.max(YEAR_MIN, Math.min(YEAR_MAX, year));
+  let acc = TOP_PAD;
+  for (const s of SEGMENTS) {
+    if (y >= s.to) {
+      acc += (s.to - s.from) * PX_PER_YEAR * s.scale;
+    } else if (y > s.from) {
+      acc += (y - s.from) * PX_PER_YEAR * s.scale;
+      break;
+    } else {
+      break;
+    }
+  }
+  return acc;
 }
 
 function toneToXPercent(tone) {
@@ -56,17 +99,22 @@ function drawEpochs(root, epochs) {
     const a = Math.max(YEAR_MIN, y1);
     const b = Math.min(YEAR_MAX, y2);
     const top = yearToY(a);
-    const height = (b - a) * PX_PER_YEAR;
+    const height = yearToY(b) - top;
+    const compressed = COMPRESSED_RANGES.some((r) => r.from <= a && b <= r.to);
     const band = document.createElement("div");
-    band.className = `epoch-band epoch-band--${ep.id}`;
+    band.className = `epoch-band epoch-band--${ep.id}${compressed ? " epoch-band--compressed" : ""}`;
     band.style.top = top + "px";
     band.style.height = height + "px";
     root.appendChild(band);
 
     const label = document.createElement("div");
-    label.className = "epoch-label";
-    label.style.top = (top + 18) + "px";
-    label.innerHTML = `${ep.label}<span class="epoch-label__years">${y1}–${y2}</span>`;
+    label.className = "epoch-label" + (compressed ? " epoch-label--compressed" : "");
+    // For compressed bands the label sits on top of the band centred vertically;
+    // for normal bands keep it near the top edge as before.
+    label.style.top = compressed
+      ? (top + height / 2) + "px"
+      : (top + 18) + "px";
+    label.innerHTML = `${ep.label}<span class="epoch-label__years">${y1}–${y2}${compressed ? " · сжато" : ""}</span>`;
     root.appendChild(label);
   }
 }
@@ -76,6 +124,9 @@ function drawYearRuler(root) {
   const ruler = document.createElement("div");
   ruler.className = "year-ruler";
   for (let y = YEAR_MIN; y <= YEAR_MAX; y += 10) {
+    // In compressed ranges keep only the boundary years to avoid cramming.
+    const inCompressed = COMPRESSED_RANGES.find((r) => y > r.from && y < r.to);
+    if (inCompressed) continue;
     const tick = document.createElement("div");
     tick.className = "year-tick";
     tick.textContent = String(y);
@@ -205,22 +256,21 @@ function drawDots(root, items) {
   // Simple collision avoidance: sort by year, then iterate and bump x if too close
   const placed = [];
   const sorted = [...items].sort((a, b) => a.year - b.year || a.tone - b.tone);
-  const MIN_DIST = 36; // px (in horizontal)
+  const MIN_DIST = 92;          // px horizontal (dots are 112 px wide)
+  const VERT_THRESHOLD = 100;   // px — collision matters only within this Y window
   const containerW = root.clientWidth;
   for (const it of sorted) {
     let xPct = toneToXPercent(it.tone);
     const yPx = yearToY(it.year);
-    // detect collisions with already placed items within ±28px vertically
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
       let collided = false;
       for (const p of placed) {
-        if (Math.abs(p.yPx - yPx) > 38) continue;
+        if (Math.abs(p.yPx - yPx) > VERT_THRESHOLD) continue;
         const xPx = (xPct / 100) * containerW;
         const pxPx = (p.xPct / 100) * containerW;
         if (Math.abs(xPx - pxPx) < MIN_DIST) {
-          // shift outward from tone-zero
           const direction = it.tone >= 0 ? +1 : -1;
-          xPct += direction * 2.4;
+          xPct += direction * 2.0;
           collided = true;
         }
       }
