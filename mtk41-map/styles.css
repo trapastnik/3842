@@ -184,6 +184,100 @@ html, body {
 
 .card[hidden] { display: none; }
 
+/* ---------- Layout switch (stacked vs overlay) ---------- */
+
+.card-layout-switch {
+  position: absolute;
+  z-index: 5;
+  top: 8px;
+  left: 8px;
+  display: flex;
+  gap: 4px;
+  background: rgba(20, 24, 27, 0.78);
+  padding: 3px;
+  border-radius: 4px;
+  border: 1px solid rgba(210, 183, 115, 0.25);
+  backdrop-filter: blur(4px);
+}
+.card-layout-tab {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(10px, 1.1vh, 13px);
+  letter-spacing: 0.05em;
+  padding: 5px 10px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.7);
+  border: 0;
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 120ms ease, color 120ms ease;
+}
+.card-layout-tab.active {
+  background: var(--brass);
+  color: var(--graphite);
+  font-weight: 600;
+}
+
+/* ---------- Variant: overlay (text on photo) ---------- */
+
+.card.layout-overlay { background: var(--graphite); }
+
+.card.layout-overlay .card-photo {
+  aspect-ratio: auto;
+  height: 100%;
+  background-size: cover;
+  background-position: center 25%;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+.card.layout-overlay .card-photo.empty {
+  position: absolute;
+  inset: 0;
+  height: 100%;
+}
+
+.card.layout-overlay .card-body {
+  position: relative;
+  z-index: 2;
+  margin-top: auto;
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    rgba(14, 18, 20, 0.45) 25%,
+    rgba(14, 18, 20, 0.88) 60%,
+    rgba(14, 18, 20, 0.96) 100%
+  );
+  color: var(--paper);
+  max-height: 75%;
+  padding-top: clamp(60px, 8vh, 120px);
+}
+
+.card.layout-overlay .card-year,
+.card.layout-overlay .card-title,
+.card.layout-overlay .card-place,
+.card.layout-overlay .card-author,
+.card.layout-overlay .card-text {
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.85), 0 0 12px rgba(0, 0, 0, 0.4);
+}
+
+.card.layout-overlay .card-title { color: var(--paper); }
+.card.layout-overlay .card-place { color: rgba(247, 249, 239, 0.92); opacity: 1; }
+.card.layout-overlay .card-author { color: rgba(247, 249, 239, 0.82); }
+.card.layout-overlay .card-text { color: var(--paper); opacity: 1; }
+
+/* In overlay mode, fixed card dimensions (taller, portrait-ish) */
+.card.layout-overlay {
+  width: clamp(320px, 36vw, 560px);
+  max-height: calc(100% - clamp(48px, 8vh, 128px));
+  height: clamp(480px, 70vh, 820px);
+}
+
+/* Photo placeholder text needs to be readable in overlay mode too */
+.card.layout-overlay .card-photo.empty {
+  background: var(--graphite);
+}
+
 .card-close {
   position: absolute;
   top: 8px;
