@@ -275,10 +275,11 @@ function show(monument) {
 
   populateModels(monument.id);
 
-  // Init native viewer (always, since native is default mode)
-  if (state.mode === "native") openNative(monument);
-
+  // Reveal the card BEFORE initialising the WebGL viewer — otherwise the
+  // hidden container measures 0×0 and the renderer is stuck at that size.
   host.hidden = false;
+
+  if (state.mode === "native") openNative(monument);
 }
 
 function hide() {
