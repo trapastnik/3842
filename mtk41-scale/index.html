@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Масштаб</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — масштаб">
+    <canvas id="scale" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>В одном масштабе</h1>
+      <div class="subtitle">От 60-сантиметрового бюста 1919-го — до 57-метрового колосса Вучетича 1973-го. Слева — человек ростом 1.75 м для сравнения.</div>
+    </header>
+    <aside class="card" id="card" hidden>
+      <button class="card-close" id="card-close" aria-label="Закрыть">×</button>
+      <div class="card-photo" id="card-photo"></div>
+      <div class="card-body">
+        <div class="card-year" id="card-year"></div>
+        <h2 class="card-title" id="card-title"></h2>
+        <div class="card-place" id="card-place"></div>
+        <div class="card-author" id="card-author"></div>
+        <p class="card-text" id="card-text"></p>
+        <div class="card-height" id="card-height"></div>
+        <div class="card-status" id="card-status"></div>
+      </div>
+    </aside>
+  </main>
+  <script src="./scale.js"></script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+:root {
+  --paper:    #F7F9EF;
+  --brass:    #D2B773;
+  --red:      #A02128;
+  --graphite: #435059;
+  --window:   #9DA3A6;
+  --ink:      #0E1214;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Nolde", Georgia, serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  gap: clamp(12px, 1.6vh, 24px);
+  padding: clamp(24px, 3.5vh, 56px);
+  background:
+    radial-gradient(circle at 80% 110%, var(--red) 0%, transparent 35%),
+    radial-gradient(circle at 10% -10%, rgba(210, 183, 115, 0.35) 0%, transparent 35%),
+    linear-gradient(180deg, #0E1214 0%, #181D20 100%);
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(247, 249, 239, 0.03) 0, rgba(247, 249, 239, 0.03) 1px, transparent 1px, transparent 5px),
+    linear-gradient(165deg, transparent 60%, rgba(160, 33, 40, 0.06) 100%);
+  mix-blend-mode: overlay;
+}
+
+.title-block {
+  position: relative;
+  z-index: 2;
+  max-width: 100%;
+  pointer-events: none;
+  padding-left: clamp(0px, 1vw, 12px);
+}
+
+.title-block .kicker {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(12px, 1.2vh, 22px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  opacity: 0.9;
+  margin-bottom: 0.4em;
+}
+
+.title-block h1 {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(48px, 9vh, 180px);
+  line-height: 0.88;
+  letter-spacing: -0.01em;
+  color: var(--paper);
+  margin: 0 0 0.2em 0;
+  text-shadow: 0 4px 30px rgba(0, 0, 0, 0.65);
+}
+
+.title-block h1 .accent {
+  color: var(--brass);
+  font-style: italic;
+}
+
+.title-block .subtitle {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(14px, 1.4vh, 22px);
+  line-height: 1.45;
+  color: var(--paper);
+  opacity: 0.75;
+  max-width: 36em;
+}
+
+/* --- Iconostas grid -------------------------------------------------- */
+
+.canon {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  grid-auto-rows: clamp(80px, 11vh, 180px);
+  grid-auto-flow: dense;
+  gap: clamp(4px, 0.6vh, 10px);
+  overflow: hidden;
+}
+
+.tile {
+  position: relative;
+  background: var(--graphite);
+  background-size: cover;
+  background-position: center 30%;
+  background-repeat: no-repeat;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform 200ms ease, filter 200ms ease;
+  border: 1px solid rgba(247, 249, 239, 0.06);
+  touch-action: manipulation;
+}
+
+.tile::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.85) 100%);
+  pointer-events: none;
+}
+
+.tile:active {
+  transform: scale(0.985);
+  filter: brightness(1.1);
+}
+
+.tile-cap {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: clamp(8px, 1.2vh, 18px);
+  color: var(--paper);
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tile-city {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(13px, 1.6vh, 26px);
+  line-height: 1.1;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.85);
+}
+
+.tile-year {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(11px, 1.2vh, 16px);
+  color: var(--brass);
+  letter-spacing: 0.15em;
+}
+
+.tile.no-photo {
+  background-image: none !important;
+  background-color: #1A2024;
+  display: grid;
+  place-items: center;
+  text-align: center;
+}
+
+.tile.no-photo::after { display: none; }
+
+.tile.no-photo .silhouette {
+  position: relative;
+  z-index: 2;
+  font-family: "Nolde", Georgia, serif;
+  color: rgba(247, 249, 239, 0.18);
+  font-size: clamp(40px, 6vh, 90px);
+  line-height: 1;
+  display: grid;
+  place-items: center;
+  width: 60%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+  background: rgba(67, 80, 89, 0.45);
+  border: 1px dashed rgba(157, 163, 166, 0.35);
+}
+
+.tile.no-photo .tile-cap {
+  background: linear-gradient(180deg, transparent 50%, rgba(0, 0, 0, 0.85) 100%);
+}
+
+/* Status indicator pip (top-right) */
+.tile-status {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px rgba(14, 18, 20, 0.5);
+}
+.tile-status[data-status="demolished"] {
+  background: var(--graphite);
+  box-shadow: 0 0 0 2px var(--window), 0 0 0 3px rgba(14, 18, 20, 0.5);
+}
+.tile-status[data-status="unknown"] {
+  background: var(--window);
+  opacity: 0.6;
+}
+.tile-status[data-status="relocated"] { background: var(--brass); }
+
+/* --- Card overlay (same as other prototypes) -------------------------- */
+
+.card {
+  position: absolute;
+  z-index: 4;
+  right: clamp(24px, 3vw, 56px);
+  top: clamp(24px, 4vh, 64px);
+  width: clamp(320px, 36vw, 560px);
+  max-height: calc(100% - clamp(48px, 8vh, 128px));
+  background: rgba(20, 24, 27, 0.96);
+  border: 1px solid rgba(210, 183, 115, 0.5);
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.65);
+  overflow: hidden;
+  animation: cardIn 220ms ease-out;
+}
+@keyframes cardIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.card[hidden] { display: none; }
+
+.card-close {
+  position: absolute;
+  top: 8px; right: 8px; z-index: 5;
+  width: 44px; height: 44px; border: 0;
+  background: rgba(20, 24, 27, 0.55);
+  color: var(--paper);
+  font-family: "Nolde", serif; font-size: 28px; line-height: 1;
+  border-radius: 50%; cursor: pointer;
+  display: grid; place-items: center;
+  transition: background 120ms ease;
+  touch-action: manipulation;
+}
+.card-close:active { background: var(--red); }
+
+.card-photo {
+  width: 100%; aspect-ratio: 4 / 3;
+  background: var(--graphite);
+  background-size: cover; background-position: center; background-repeat: no-repeat;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(210, 183, 115, 0.18);
+}
+.card-photo.empty {
+  display: grid; place-items: center;
+  color: rgba(247, 249, 239, 0.35);
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.2vh, 16px);
+  letter-spacing: 0.08em; text-transform: uppercase;
+}
+.card-body { padding: clamp(18px, 2.2vh, 28px); overflow-y: auto; }
+.card-year {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(13px, 1.4vh, 20px);
+  color: var(--brass); letter-spacing: 0.18em; margin-bottom: 0.4em;
+}
+.card-title {
+  font-family: "Nolde", Georgia, serif; font-weight: 400;
+  font-size: clamp(22px, 3.2vh, 44px); line-height: 1.05;
+  margin: 0 0 0.6em 0; color: var(--paper);
+}
+.card-place {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(13px, 1.4vh, 18px);
+  color: var(--paper); opacity: 0.75; margin-bottom: 0.3em;
+}
+.card-author {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(12px, 1.3vh, 16px);
+  color: var(--window); margin-bottom: 1em;
+}
+.card-author:empty { display: none; }
+.card-text {
+  font-family: "Nolde", Georgia, serif;
+  font-size: clamp(15px, 1.6vh, 22px);
+  line-height: 1.4; margin: 0 0 1em 0;
+  color: var(--paper); opacity: 0.92;
+}
+.card-status {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.1vh, 14px);
+  letter-spacing: 0.12em; text-transform: uppercase;
+  padding: 6px 10px; border-radius: 2px;
+  display: inline-block;
+  background: rgba(160, 33, 40, 0.18);
+  color: var(--paper);
+  border: 1px solid rgba(160, 33, 40, 0.45);
+}
+.card-status[data-status="demolished"] { background: rgba(67, 80, 89, 0.4); border-color: rgba(157, 163, 166, 0.5); }
+.card-status[data-status="unknown"] { background: rgba(157, 163, 166, 0.18); border-color: rgba(157, 163, 166, 0.4); color: var(--window); }
