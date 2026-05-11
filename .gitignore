@@ -26,5 +26,9 @@ __pycache__/
 # МТК content images live in repo (museum installation needs offline data)
 !data/images/**
 
+# Re-block OS / editor junk that leaks through the asset exceptions above
+**/.DS_Store
+**/Thumbs.db
+
 # Manual snapshots are local only; git history is the versioning layer.
 versions/
