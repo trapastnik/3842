@@ -36,6 +36,7 @@
 
   let monuments = [];
   let photoManifest = {};
+  let modelsManifest = {};
 
   function statusLabel(s) {
     return ({ extant: "Сохранился", demolished: "Снесён", relocated: "Перенесён", unknown: "Судьба неизвестна" }[s]) || "Статус не указан";
@@ -107,6 +108,33 @@
     }
   }
 
+  function populateCardModels(monumentId) {
+    const cont = document.getElementById("card-models");
+    if (!cont) return;
+    const list = modelsManifest[monumentId] || [];
+    // remove old entries (keep the heading)
+    cont.querySelectorAll(".card-model").forEach(el => el.remove());
+    if (!list.length) { cont.hidden = true; return; }
+    for (const m of list) {
+      const a = document.createElement("a");
+      a.className = "card-model" + (m.exact_match ? " exact" : "");
+      a.href = m.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = m.name;
+      const meta = document.createElement("span");
+      meta.className = "card-model-meta";
+      const parts = [];
+      if (m.license) parts.push("лицензия: " + m.license);
+      if (m.author) parts.push("автор: " + m.author);
+      if (m.downloadable) parts.push("скачивается: " + m.downloadable);
+      meta.textContent = parts.join(" · ");
+      a.appendChild(meta);
+      cont.appendChild(a);
+    }
+    cont.hidden = false;
+  }
+
   function showCard(index) {
     const m = monuments[index];
     if (!m) return;
@@ -133,6 +161,7 @@
       cardPhoto.classList.add("empty");
       cardPhoto.textContent = "фото не найдено";
     }
+    populateCardModels(m.id);
     cardEl.hidden = false;
   }
 
@@ -150,9 +179,11 @@
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
     fetch("../assets/mtk41/manifest.json").then(r => r.json()).catch(() => ({})),
-  ]).then(([mtk, manifest]) => {
+      fetch("../assets/mtk41/models.json").then(r => r.json()).catch(() => ({})),
+  ]).then(([mtk, manifest, models]) => {
     monuments = mtk.items || [];
     photoManifest = manifest || {};
+      modelsManifest = models || {};
     render();
   }).catch(err => {
     // eslint-disable-next-line no-console
