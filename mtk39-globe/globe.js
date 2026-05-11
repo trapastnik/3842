@@ -13,10 +13,8 @@ const USSR_ISO = new Set([
   "GEO", "ARM", "AZE", "KAZ", "UZB", "TKM", "TJK", "KGZ",
 ]);
 
-const MODES = {
-  world: { rotate: [-50, -38, 0], scale: 0.62 },
-  ussr:  { rotate: [-55, -50, 0], scale: 1.18 },
-};
+const DEFAULT_ROTATE = [-55, -50, 0];
+const DEFAULT_SCALE = 1.18;
 
 const MIN_SCALE = 0.28;
 const MAX_SCALE = 2.8;
@@ -106,9 +104,8 @@ let height = 0;
 let countries = null;
 let items = [];
 let selected = null;
-let mode = "world";
-let rotation = MODES.world.rotate.slice();
-let scaleFactor = MODES.world.scale;
+let rotation = DEFAULT_ROTATE.slice();
+let scaleFactor = DEFAULT_SCALE;
 let stars = [];
 let lastFrame = 0;
 let lastInteraction = performance.now();
@@ -155,11 +152,9 @@ function isVisible(lon, lat) {
 
 function fillColorFor(feature) {
   const iso = feature.properties.ISO_A3 || feature.properties.ADM0_A3;
-  const isSov = USSR_ISO.has(iso);
-  if (mode === "ussr") {
-    return isSov ? "rgba(210, 183, 115, 0.32)" : "rgba(67, 80, 89, 0.45)";
-  }
-  return isSov ? "rgba(160, 33, 40, 0.20)" : "rgba(67, 80, 89, 0.55)";
+  return USSR_ISO.has(iso)
+    ? "rgba(210, 183, 115, 0.32)"
+    : "rgba(67, 80, 89, 0.45)";
 }
 
 function renderStars(now) {
@@ -336,7 +331,7 @@ function render(now) {
     const isSel = selected && selected.id === item.id;
     const flyIn = pointFlyInScale(item.id, now);
     const pulse = passes ? pulsate(now) : 1;
-    const baseR = mode === "ussr" ? 6 : 5;
+    const baseR = 6;
     const r = (isSel ? baseR + 3 : baseR) * flyIn * pulse;
     if (r <= 0.3) continue;
 
@@ -452,13 +447,8 @@ function startTween(targetRotate, targetScale, duration = 1100) {
   };
 }
 
-function setMode(m) {
-  if (!MODES[m] || mode === m) return;
-  mode = m;
-  document.querySelectorAll(".mode-button").forEach((btn) => {
-    btn.classList.toggle("is-active", btn.dataset.mode === m);
-  });
-  startTween(MODES[m].rotate.slice(), MODES[m].scale);
+function resetView() {
+  startTween(DEFAULT_ROTATE.slice(), DEFAULT_SCALE);
   lastInteraction = performance.now();
 }
 
@@ -534,9 +524,6 @@ function showCard(item) {
 }
 
 document.querySelector(".card__close").addEventListener("click", () => showCard(null));
-document.querySelectorAll(".mode-button").forEach((btn) => {
-  btn.addEventListener("click", () => setMode(btn.dataset.mode));
-});
 
 let dragStart = null;
 let dragMoved = false;
@@ -727,12 +714,12 @@ function populateFilter() {
 
   resize();
 
-  // intro: if flyIn, start globe further out and zoomed-out, fly into world view
+  // intro: start zoomed-out from a different angle, fly into default view
   if (settings.flyIn) {
     rotation = [120, -10, 0];
     scaleFactor = 0.34;
     applyProjection();
-    startTween(MODES.world.rotate.slice(), MODES.world.scale, 1700);
+    startTween(DEFAULT_ROTATE.slice(), DEFAULT_SCALE, 1700);
   }
 
   populateFilter();
