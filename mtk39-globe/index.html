@@ -13,6 +13,14 @@
         <h1 class="title__h">Имени Ленина</h1>
       </header>
 
+      <aside id="offmap" class="offmap" hidden>
+        <header class="offmap__h">
+          Не на карте · <span data-bind="count">0</span>
+        </header>
+        <p class="offmap__note">Требуют решения: что показывать в карточке и как монтировать в общую логику.</p>
+        <ul class="offmap__list" data-list></ul>
+      </aside>
+
       <canvas id="globe"></canvas>
 
       <aside id="card" class="card" hidden>
@@ -99,6 +107,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./globe.js?v=7"></script>
+    <script type="module" src="./globe.js?v=8"></script>
   </body>
 </html>

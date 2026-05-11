@@ -512,6 +512,7 @@ function showCard(item) {
   if (!item) {
     cardEl.hidden = true;
     selected = null;
+    syncOffmapHighlight();
     return;
   }
   selected = item;
@@ -521,6 +522,35 @@ function showCard(item) {
   const where = [item.city, item.country].filter(Boolean).join(" · ");
   cardWhere.textContent = where || (item.geolocated === false ? "Не локализовано на карте" : "");
   cardShort.textContent = item.short_text || "";
+  syncOffmapHighlight();
+}
+
+function syncOffmapHighlight() {
+  document.querySelectorAll(".offmap__item").forEach((el) => {
+    el.classList.toggle("is-active", !!selected && el.dataset.id === selected.id);
+  });
+}
+
+function populateOffmap() {
+  const panel = document.getElementById("offmap");
+  const list = panel.querySelector("[data-list]");
+  const countEl = panel.querySelector('[data-bind="count"]');
+  const offItems = items.filter((it) => it.geolocated === false);
+  if (offItems.length === 0) {
+    panel.hidden = true;
+    return;
+  }
+  countEl.textContent = offItems.length;
+  list.innerHTML = "";
+  for (const item of offItems) {
+    const li = document.createElement("li");
+    li.className = "offmap__item";
+    li.dataset.id = item.id;
+    li.textContent = item.name_short || item.title || item.name;
+    li.addEventListener("click", () => showCard(item));
+    list.appendChild(li);
+  }
+  panel.hidden = false;
 }
 
 document.querySelector(".card__close").addEventListener("click", () => showCard(null));
@@ -723,6 +753,7 @@ function populateFilter() {
   }
 
   populateFilter();
+  populateOffmap();
   introT0 = performance.now() + 600;
   lastFrame = performance.now();
   lastInteraction = performance.now() + 2200;
