@@ -474,10 +474,11 @@
       cardPhoto.textContent = "фото не найдено";
     }
     populateCardModels(m.id);
+    if (window.MtkMonumentViewer) window.MtkMonumentViewer.open(m);
     cardEl.hidden = false;
   }
 
-  function hideCard() { cardEl.hidden = true; selectedIndex = -1; clearCardModelViewer(); }
+  function hideCard() { cardEl.hidden = true; selectedIndex = -1; clearCardModelViewer(); if (window.MtkMonumentViewer) window.MtkMonumentViewer.close(); }
   cardClose.addEventListener("click", hideCard);
 
   // --- Pointer interactions ------------------------------------------------

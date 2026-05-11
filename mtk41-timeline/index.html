@@ -25,7 +25,12 @@
         <div class="card-author" id="card-author"></div>
         <p class="card-text" id="card-text"></p>
         <section class="card-models" id="card-models" hidden>
-          <div class="card-models-heading">3D-модели на Sketchfab</div>
+          <div class="card-models-heading">3D-модель</div>
+          <div class="card-mode-switch" id="card-mode-switch">
+            <button type="button" class="card-mode-tab active" data-mode="native">Свой плеер</button>
+            <button type="button" class="card-mode-tab" data-mode="iframe">Sketchfab · онлайн</button>
+          </div>
+          <div class="card-model-native" id="card-model-native"></div>
           <div class="card-model-viewer" id="card-model-viewer" hidden></div>
           <div class="card-model-controls" id="card-model-controls" hidden></div>
         </section>
@@ -33,6 +38,70 @@
       </div>
     </aside>
   </main>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../assets/mtk41/lib/three/three.module.min.js",
+      "three/addons/": "../assets/mtk41/lib/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { MonumentViewer, inferMonumentType } from "../assets/mtk41/lib/monument-viewer.js";
+
+    let heightsData = {};
+    let current = null;
+    let lastMonument = null;
+    let mode = "native";
+
+    fetch("../assets/mtk41/heights.json").then(r => r.json()).then(d => { heightsData = d || {}; });
+
+    function openNative(monument) {
+      const c = document.getElementById("card-model-native");
+      if (!c) return;
+      if (current) { current.dispose(); current = null; }
+      current = new MonumentViewer(c, {
+        heights: heightsData[monument.id] || { statue: 5, pedestal: 2 },
+        status: monument.status,
+        type: inferMonumentType(monument.id),
+      });
+    }
+
+    function applyMode() {
+      const tabs = document.querySelectorAll(".card-mode-tab");
+      tabs.forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
+      const nativeC = document.getElementById("card-model-native");
+      const iframeC = document.getElementById("card-model-viewer");
+      if (mode === "native") {
+        if (nativeC) nativeC.hidden = false;
+        if (iframeC) iframeC.hidden = true;
+        if (lastMonument) openNative(lastMonument);
+      } else {
+        if (current) { current.dispose(); current = null; }
+        if (nativeC) nativeC.hidden = true;
+        if (iframeC) iframeC.hidden = false;
+      }
+    }
+
+    window.MtkMonumentViewer = {
+      open(monument) {
+        if (!monument) return;
+        lastMonument = monument;
+        if (mode === "native") openNative(monument);
+      },
+      close() {
+        if (current) { current.dispose(); current = null; }
+        lastMonument = null;
+      },
+    };
+
+    document.addEventListener("click", e => {
+      const t = e.target.closest(".card-mode-tab");
+      if (!t) return;
+      const m = t.dataset.mode;
+      if (m && m !== mode) { mode = m; applyMode(); }
+    });
+  </script>
   <script src="./timeline.js"></script>
 </body>
 </html>
