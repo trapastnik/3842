@@ -175,7 +175,7 @@
     );
 
     cont.hidden = false;
-    viewer.hidden = false;
+    // iframe visibility controlled by mode tabs; only build content here
     viewer.classList.toggle("test", isTest);
 
     // Clear old extra entries / tabs / links
@@ -200,7 +200,8 @@
       }
     }
 
-    setViewerModel(sorted, 0);
+    // Defer iframe creation to mode tab — store choice for the module script
+    window.__mtkActiveSketchfab = { sorted, index: 0 };
 
     // Source-link entry for the active model (gives access to license + author)
     const active = sorted[0];

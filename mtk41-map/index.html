@@ -80,12 +80,36 @@
       const iframeC = document.getElementById("card-model-viewer");
       if (mode === "native") {
         if (nativeC) nativeC.hidden = false;
-        if (iframeC) iframeC.hidden = true;
+        if (iframeC) {
+          iframeC.hidden = true;
+          iframeC.innerHTML = "";
+          delete iframeC.dataset.uid;
+        }
         if (lastMonument) openNative(lastMonument);
       } else {
         if (current) { current.dispose(); current = null; }
         if (nativeC) nativeC.hidden = true;
-        if (iframeC) iframeC.hidden = false;
+        if (iframeC) {
+          iframeC.hidden = false;
+          // Build iframe for the active Sketchfab model only on demand
+          const sf = window.__mtkActiveSketchfab;
+          if (sf && sf.sorted && sf.sorted[sf.index]) {
+            const m = sf.sorted[sf.index];
+            const um = (m.url || "").match(/([a-f0-9]{32})/i);
+            const uid = um ? um[1] : null;
+            if (uid && !iframeC.dataset.uid) {
+              iframeC.dataset.uid = uid;
+              const params = "autostart=0&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=1&dnt=1";
+              const iframe = document.createElement("iframe");
+              iframe.src = `https://sketchfab.com/models/${uid}/embed?${params}`;
+              iframe.setAttribute("frameborder", "0");
+              iframe.setAttribute("allow", "autoplay; fullscreen; xr-spatial-tracking");
+              iframe.setAttribute("allowfullscreen", "");
+              iframeC.innerHTML = "";
+              iframeC.appendChild(iframe);
+            }
+          }
+        }
       }
     }
 
