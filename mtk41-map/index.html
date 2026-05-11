@@ -6,6 +6,7 @@
   <title>МТК 41 · Карта</title>
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
 </head>
 <body>
   <main class="stage" aria-label="МТК 41 Скульптуры Ленина — карта">
@@ -15,32 +16,7 @@
       <h1>Лениниана на карте</h1>
       <div class="subtitle">19 памятников. От первого бюста 1919 — до колосса на Волго-Доне 1973.</div>
     </header>
-    <aside class="card layout-stacked" id="card" hidden>
-      <button class="card-close" id="card-close" aria-label="Закрыть">×</button>
-      <div class="card-layout-switch" id="card-layout-switch">
-        <button type="button" class="card-layout-tab active" data-layout="stacked">Под фото</button>
-        <button type="button" class="card-layout-tab" data-layout="overlay">На фото</button>
-      </div>
-      <div class="card-photo" id="card-photo"></div>
-      <div class="card-body">
-        <div class="card-year" id="card-year"></div>
-        <h2 class="card-title" id="card-title"></h2>
-        <div class="card-place" id="card-place"></div>
-        <div class="card-author" id="card-author"></div>
-        <p class="card-text" id="card-text"></p>
-        <section class="card-models" id="card-models" hidden>
-          <div class="card-models-heading">3D-модель</div>
-          <div class="card-mode-switch" id="card-mode-switch">
-            <button type="button" class="card-mode-tab active" data-mode="native">Свой плеер</button>
-            <button type="button" class="card-mode-tab" data-mode="iframe">Sketchfab · онлайн</button>
-          </div>
-          <div class="card-model-native" id="card-model-native"></div>
-          <div class="card-model-viewer" id="card-model-viewer" hidden></div>
-          <div class="card-model-controls" id="card-model-controls" hidden></div>
-        </section>
-        <div class="card-status" id="card-status"></div>
-      </div>
-    </aside>
+    <aside id="card" class="card" data-mtk-card hidden></aside>
     <div class="legend" aria-hidden="true">
       <div class="legend-row"><span class="dot dot-extant"></span><span>сохранился</span></div>
       <div class="legend-row"><span class="dot dot-demolished"></span><span>снесён</span></div>
@@ -57,84 +33,8 @@
   }
   </script>
   <script type="module">
-    import { MonumentViewer, inferMonumentType } from "../assets/mtk41/lib/monument-viewer.js";
-
-    let heightsData = {};
-    let current = null;
-    let lastMonument = null;
-    let mode = "native";
-
-    fetch("../assets/mtk41/heights.json").then(r => r.json()).then(d => { heightsData = d || {}; });
-
-    function openNative(monument) {
-      const c = document.getElementById("card-model-native");
-      if (!c) return;
-      if (current) { current.dispose(); current = null; }
-      current = new MonumentViewer(c, {
-        heights: heightsData[monument.id] || { statue: 5, pedestal: 2 },
-        status: monument.status,
-        type: inferMonumentType(monument.id),
-      });
-    }
-
-    function applyMode() {
-      const tabs = document.querySelectorAll(".card-mode-tab");
-      tabs.forEach(b => b.classList.toggle("active", b.dataset.mode === mode));
-      const nativeC = document.getElementById("card-model-native");
-      const iframeC = document.getElementById("card-model-viewer");
-      if (mode === "native") {
-        if (nativeC) nativeC.hidden = false;
-        if (iframeC) {
-          iframeC.hidden = true;
-          iframeC.innerHTML = "";
-          delete iframeC.dataset.uid;
-        }
-        if (lastMonument) openNative(lastMonument);
-      } else {
-        if (current) { current.dispose(); current = null; }
-        if (nativeC) nativeC.hidden = true;
-        if (iframeC) {
-          iframeC.hidden = false;
-          // Build iframe for the active Sketchfab model only on demand
-          const sf = window.__mtkActiveSketchfab;
-          if (sf && sf.sorted && sf.sorted[sf.index]) {
-            const m = sf.sorted[sf.index];
-            const um = (m.url || "").match(/([a-f0-9]{32})/i);
-            const uid = um ? um[1] : null;
-            if (uid && !iframeC.dataset.uid) {
-              iframeC.dataset.uid = uid;
-              const params = "autostart=0&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=1&dnt=1";
-              const iframe = document.createElement("iframe");
-              iframe.src = `https://sketchfab.com/models/${uid}/embed?${params}`;
-              iframe.setAttribute("frameborder", "0");
-              iframe.setAttribute("allow", "autoplay; fullscreen; xr-spatial-tracking");
-              iframe.setAttribute("allowfullscreen", "");
-              iframeC.innerHTML = "";
-              iframeC.appendChild(iframe);
-            }
-          }
-        }
-      }
-    }
-
-    window.MtkMonumentViewer = {
-      open(monument) {
-        if (!monument) return;
-        lastMonument = monument;
-        if (mode === "native") openNative(monument);
-      },
-      close() {
-        if (current) { current.dispose(); current = null; }
-        lastMonument = null;
-      },
-    };
-
-    document.addEventListener("click", e => {
-      const t = e.target.closest(".card-mode-tab");
-      if (!t) return;
-      const m = t.dataset.mode;
-      if (m && m !== mode) { mode = m; applyMode(); }
-    });
+    import { initMtkCard } from "../assets/mtk41/lib/card.js";
+    initMtkCard();
   </script>
   <script src="./map.js"></script>
 </body>

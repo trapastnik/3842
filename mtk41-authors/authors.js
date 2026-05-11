@@ -1,14 +1,5 @@
 (function () {
   const grid = document.getElementById("grid");
-  const cardEl = document.getElementById("card");
-  const cardClose = document.getElementById("card-close");
-  const cardPhoto = document.getElementById("card-photo");
-  const cardYear = document.getElementById("card-year");
-  const cardTitle = document.getElementById("card-title");
-  const cardPlace = document.getElementById("card-place");
-  const cardAuthor = document.getElementById("card-author");
-  const cardText = document.getElementById("card-text");
-  const cardStatus = document.getElementById("card-status");
 
   // Brief biographic context — only what's commonly known.
   const SCULPTOR_BIO = {
@@ -30,7 +21,6 @@
 
   let monuments = [];
   let photoManifest = {};
-  let modelsManifest = {};
 
   function statusLabel(s) {
     return ({ extant: "Сохранился", demolished: "Снесён", relocated: "Перенесён", unknown: "Судьба неизвестна" }[s]) || "Статус не указан";
@@ -66,6 +56,21 @@
     }
     return buckets;
   }
+
+  let selectedIndex = -1;
+
+  // --- Card delegation ----------------------------------------------------
+  // All card UI lives in assets/mtk41/lib/card.{css,js}. Delegate to it.
+
+  function showMonument(index) {
+    selectedIndex = index;
+    if (window.MtkCard) window.MtkCard.show(monuments[index]);
+  }
+  function hideMonument() {
+    if (window.MtkCard) window.MtkCard.hide();
+  }
+  document.addEventListener("mtk-card-hidden", () => { selectedIndex = -1; });
+
 
   function render() {
     grid.innerHTML = "";
@@ -128,7 +133,7 @@
         textCol.appendChild(t);
         w.appendChild(textCol);
 
-        w.addEventListener("click", () => showCard(idx));
+        w.addEventListener("click", () => showMonument(idx));
         works.appendChild(w);
       }
       card.appendChild(works);
@@ -144,172 +149,22 @@
     }
   }
 
-  // Test/fallback model for monuments that don't have their own 3D scan.
-  // Uses the Dubna (Merkurov 1937) photogrammetry which is one of the better
-  // public Sketchfab scans of a Soviet Lenin monument.
-  const FALLBACK_MODEL = {
-    name: "Памятник Ленину в Дубне (фотограмметрия)",
-    url: "https://sketchfab.com/3d-models/none-a14d4ca0163b44829123780f3cfa121b",
-    license: "—",
-    author: "Alex",
-    exact_match: false,
-  };
-
-  function extractModelUid(url) {
-    const m = (url || "").match(/([a-f0-9]{32})/i);
-    return m ? m[1] : null;
-  }
-
-  function buildEmbedUrl(uid) {
-    const params = "autostart=0&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=1&dnt=1&preload=0";
-    return `https://sketchfab.com/models/${uid}/embed?${params}`;
-  }
-
-  function setViewerModel(sortedModels, idx) {
-    const viewer = document.getElementById("card-model-viewer");
-    const controls = document.getElementById("card-model-controls");
-    if (!viewer || !sortedModels[idx]) return;
-    const uid = extractModelUid(sortedModels[idx].url);
-    if (!uid) { viewer.innerHTML = ""; return; }
-    const src = buildEmbedUrl(uid);
-    const iframe = document.createElement("iframe");
-    iframe.src = src;
-    iframe.setAttribute("frameborder", "0");
-    iframe.setAttribute("allow", "autoplay; fullscreen; xr-spatial-tracking");
-    iframe.setAttribute("allowfullscreen", "");
-    iframe.setAttribute("mozallowfullscreen", "true");
-    iframe.setAttribute("webkitallowfullscreen", "true");
-    iframe.loading = "lazy";
-    viewer.innerHTML = "";
-    viewer.appendChild(iframe);
-    if (controls) {
-      controls.querySelectorAll(".card-model-tab").forEach((el, i) => {
-        el.classList.toggle("active", i === idx);
-      });
-    }
-  }
-
-  function clearCardModelViewer() {
-    const viewer = document.getElementById("card-model-viewer");
-    if (viewer) viewer.innerHTML = "";
-  }
-
-  function populateCardModels(monumentId) {
-    const cont = document.getElementById("card-models");
-    const viewer = document.getElementById("card-model-viewer");
-    const controls = document.getElementById("card-model-controls");
-    if (!cont || !viewer) return;
-
-    const own = modelsManifest[monumentId] || [];
-    let list = own;
-    let isTest = false;
-    if (!list.length) { list = [FALLBACK_MODEL]; isTest = true; }
-
-    // Sort: exact matches first
-    const sorted = list.slice().sort(
-      (a, b) => (b.exact_match ? 1 : 0) - (a.exact_match ? 1 : 0)
-    );
-
-    cont.hidden = false;
-    // iframe visibility controlled by mode tabs; only build content here
-    viewer.classList.toggle("test", isTest);
-
-    // Clear old extra entries / tabs / links
-    cont.querySelectorAll(".card-model").forEach(el => el.remove());
-
-    // Tabs (only if multiple)
-    if (controls) {
-      controls.innerHTML = "";
-      if (sorted.length > 1) {
-        controls.hidden = false;
-        sorted.forEach((m, i) => {
-          const tab = document.createElement("button");
-          tab.type = "button";
-          tab.className = "card-model-tab" + (i === 0 ? " active" : "") + (m.exact_match ? " exact" : "");
-          tab.textContent = m.name || "модель";
-          tab.title = m.name || "";
-          tab.addEventListener("click", () => setViewerModel(sorted, i));
-          controls.appendChild(tab);
-        });
-      } else {
-        controls.hidden = true;
-      }
-    }
-
-    // Defer iframe creation to mode tab — store choice for the module script
-    window.__mtkActiveSketchfab = { sorted, index: 0 };
-
-    // Source-link entry for the active model (gives access to license + author)
-    const active = sorted[0];
-    if (active && active.url) {
-      const a = document.createElement("a");
-      a.className = "card-model" + (active.exact_match ? " exact" : "");
-      a.href = active.url;
-      a.target = "_blank";
-      a.rel = "noopener";
-      a.textContent = isTest ? "Источник тестовой модели — Sketchfab" : "Открыть на Sketchfab: " + (active.name || "");
-      const meta = document.createElement("span");
-      meta.className = "card-model-meta";
-      const parts = [];
-      if (active.license) parts.push("лицензия: " + active.license);
-      if (active.author) parts.push("автор: " + active.author);
-      meta.textContent = parts.join(" · ");
-      a.appendChild(meta);
-      cont.appendChild(a);
-    }
-  }
-
-
-  function showCard(index) {
-    const m = monuments[index];
-    if (!m) return;
-
-    cardYear.textContent = m.year ? String(m.year) : "год не установлен";
-    cardTitle.textContent = m.title || "";
-    cardPlace.textContent = [m.city, m.country].filter(Boolean).join(" · ");
-    const a = [];
-    if (m.sculptors && m.sculptors.length) a.push("Скульптор: " + m.sculptors.join(", "));
-    if (m.architects && m.architects.length) a.push("Архитектор: " + m.architects.join(", "));
-    cardAuthor.textContent = a.join(" · ");
-    cardText.textContent = m.short_text || "";
-    cardStatus.textContent = statusLabel(m.status);
-    cardStatus.setAttribute("data-status", m.status || "unknown");
-
-    cardPhoto.style.backgroundImage = "";
-    cardPhoto.classList.remove("empty");
-    cardPhoto.textContent = "";
-    const photos = photoManifest[m.id];
-    if (photos && photos.length) {
-      const src = `../assets/mtk41/${m.id}/${photos[0]}`;
-      cardPhoto.style.backgroundImage = `url("${encodeURI(src)}")`;
-    } else {
-      cardPhoto.classList.add("empty");
-      cardPhoto.textContent = "фото не найдено";
-    }
-    populateCardModels(m.id);
-    if (window.MtkMonumentViewer) window.MtkMonumentViewer.open(m);
-    cardEl.hidden = false;
-  }
-
-  function hideCard() { cardEl.hidden = true; clearCardModelViewer(); if (window.MtkMonumentViewer) window.MtkMonumentViewer.close(); }
-  cardClose.addEventListener("click", hideCard);
 
   // Tap outside the card closes it
   document.addEventListener("pointerdown", event => {
-    if (cardEl.hidden) return;
+    const cardEl = document.getElementById("card");
+    if (!cardEl || cardEl.hidden) return;
     if (cardEl.contains(event.target)) return;
     if (event.target.closest(".work")) return;
-    hideCard();
+    hideMonument();
   });
 
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
     fetch("../assets/mtk41/manifest.json").then(r => r.json()).catch(() => ({})),
-      fetch("../assets/mtk41/models.json").then(r => r.json()).catch(() => ({})),
-  ]).then(([mtk, manifest, models]) => {
+  ]).then(([mtk, manifest]) => {
     monuments = mtk.items || [];
     photoManifest = manifest || {};
-      modelsManifest = models || {};
     render();
   }).catch(err => {
     // eslint-disable-next-line no-console
