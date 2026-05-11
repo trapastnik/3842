@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>МТК 38 · Варианты визуализации</title>
+  <title>МТК 38–42 · Прототипы</title>
   <link rel="icon" href="data:,">
   <style>
     @font-face {
@@ -46,9 +46,9 @@
     }
     body {
       display: grid;
-      grid-template-rows: auto 1fr auto;
-      gap: 28px;
-      padding: 44px 52px;
+      grid-template-rows: auto auto 1fr auto auto;
+      gap: 22px;
+      padding: 40px 52px;
       background:
         linear-gradient(105deg, transparent 0, transparent 78%, var(--red) 78%, var(--red) 92%, transparent 92.2%),
         linear-gradient(105deg, transparent 0, transparent 60%, var(--brass) 60%, var(--brass) 60.18%, transparent 60.36%),
@@ -63,6 +63,28 @@
       font-size: clamp(40px, 6.5vw, 88px);
       line-height: 0.95;
       letter-spacing: -0.01em;
+    }
+    .section-head {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      margin-top: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid rgba(210, 183, 115, 0.25);
+    }
+    .section-head h2 {
+      margin: 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: 28px;
+      letter-spacing: -0.005em;
+    }
+    .section-head .note {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(210, 183, 115, 0.7);
     }
     .subtitle {
       font-family: "20 Kopeek", "Courier New", monospace;
@@ -146,9 +168,14 @@
 </head>
 <body>
   <header>
-    <div class="subtitle">МТК 38 · Ленин на языках мира · 42 языка · 10 вариантов</div>
-    <h1>Варианты визуализации</h1>
+    <div class="subtitle">Музей В.И. Ленина · прототипы арт-объектов МТК 38–42</div>
+    <h1>Прототипы</h1>
   </header>
+
+  <div class="section-head">
+    <h2>МТК 38 · Ленин на языках мира</h2>
+    <span class="note">42 языка · 10 вариантов</span>
+  </div>
 
   <main class="grid">
     <a class="card" href="./mtk38-globe/">
@@ -237,6 +264,22 @@
         <div class="card-tag">10 · Map</div>
         <h2>Карта</h2>
         <p>Контуры мира, слова в координатах столиц/регионов. Drag — pan; ближе к центру — крупнее.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+  </main>
+
+  <div class="section-head">
+    <h2>МТК 39 · Имени Ленина</h2>
+    <span class="note">объекты им. В.И. Ленина · 1 прототип</span>
+  </div>
+
+  <main class="grid">
+    <a class="card" href="./mtk39-globe/">
+      <div>
+        <div class="card-tag">01 · Globe</div>
+        <h2>Глобус</h2>
+        <p>Ortho-глобус (d3-geo), drag-to-rotate, точки объектов. Режимы «МИР» и «СССР», карточка при тапе.</p>
       </div>
       <span class="card-cta">Открыть →</span>
     </a>
