@@ -222,20 +222,7 @@ html, body {
 
 .card.layout-overlay { background: var(--graphite); }
 
-.card.layout-overlay .card-photo {
-  aspect-ratio: auto;
-  height: 100%;
-  background-size: cover;
-  background-position: center 25%;
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-}
-.card.layout-overlay .card-photo.empty {
-  position: absolute;
-  inset: 0;
-  height: 100%;
-}
+/* (Photo positioning is set further down to support flexible body height) */
 
 .card.layout-overlay .card-body {
   position: relative;
@@ -249,8 +236,21 @@ html, body {
     rgba(14, 18, 20, 0.96) 100%
   );
   color: var(--paper);
-  max-height: 75%;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
   padding-top: clamp(60px, 8vh, 120px);
+}
+
+/* Photo strip stays visible above the scrollable body in overlay mode */
+.card.layout-overlay .card-photo {
+  flex: 0 0 38%;
+  aspect-ratio: auto;
+  height: auto;
+  background-size: cover;
+  background-position: center 25%;
+  position: relative;
+  inset: auto;
 }
 
 .card.layout-overlay .card-year,
@@ -270,12 +270,20 @@ html, body {
 .card.layout-overlay {
   width: clamp(320px, 36vw, 560px);
   max-height: calc(100% - clamp(48px, 8vh, 128px));
-  height: clamp(480px, 70vh, 820px);
+  height: clamp(560px, 78vh, 980px);
 }
 
 /* Photo placeholder text needs to be readable in overlay mode too */
 .card.layout-overlay .card-photo.empty {
   background: var(--graphite);
+}
+
+/* Cap 3D viewer height so it never dominates the card */
+.card.layout-overlay .card-model-native,
+.card.layout-overlay .card-model-viewer {
+  max-height: clamp(220px, 32vh, 360px);
+  aspect-ratio: auto;
+  height: clamp(220px, 28vh, 320px);
 }
 
 .card-close {
