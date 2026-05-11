@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Карта</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — карта">
+    <canvas id="map" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>Лениниана на карте</h1>
+      <div class="subtitle">19 памятников. От первого бюста 1919 — до колосса на Волго-Доне 1973.</div>
+    </header>
+    <aside class="card" id="card" hidden>
+      <button class="card-close" id="card-close" aria-label="Закрыть">×</button>
+      <div class="card-photo" id="card-photo"></div>
+      <div class="card-body">
+        <div class="card-year" id="card-year"></div>
+        <h2 class="card-title" id="card-title"></h2>
+        <div class="card-place" id="card-place"></div>
+        <div class="card-author" id="card-author"></div>
+        <p class="card-text" id="card-text"></p>
+        <div class="card-status" id="card-status"></div>
+      </div>
+    </aside>
+    <div class="legend" aria-hidden="true">
+      <div class="legend-row"><span class="dot dot-extant"></span><span>сохранился</span></div>
+      <div class="legend-row"><span class="dot dot-demolished"></span><span>снесён</span></div>
+      <div class="legend-row"><span class="dot dot-unknown"></span><span>судьба неизвестна</span></div>
+      <div class="legend-row legend-size"><span class="dot dot-small"></span>→<span class="dot dot-big"></span> размер ~ год</div>
+    </div>
+  </main>
+  <script src="./map.js"></script>
+</body>
+</html>
