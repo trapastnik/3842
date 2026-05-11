@@ -32,35 +32,38 @@
       <section id="grid" class="grid" aria-label="Карточки"></section>
 
       <aside id="detail" class="detail" hidden>
-        <button class="detail__close" type="button" aria-label="Закрыть">✕</button>
-        <div class="detail__head">
-          <div class="detail__portrait" data-bind="portrait"></div>
-          <div class="detail__heading">
-            <div class="detail__kind" data-bind="kind"></div>
-            <h2 class="detail__name" data-bind="name"></h2>
-            <p class="detail__meta" data-bind="meta"></p>
-            <div class="detail__epoch-row">
-              <span class="detail__epoch" data-bind="epoch"></span>
-              <span class="detail__tone" data-bind="tone-label"></span>
+        <div class="detail__panel">
+          <button class="detail__close" type="button" aria-label="Закрыть">✕</button>
+
+          <div class="detail__head">
+            <div class="detail__portrait" data-bind="portrait"></div>
+            <div class="detail__heading">
+              <div class="detail__kind" data-bind="kind"></div>
+              <h2 class="detail__name" data-bind="name"></h2>
+              <p class="detail__meta" data-bind="meta"></p>
+              <div class="detail__epoch-row">
+                <span class="detail__epoch" data-bind="epoch"></span>
+                <span class="detail__tone" data-bind="tone-label"></span>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div class="detail__body">
-          <div class="detail__work" data-bind="work-section">
-            <div class="detail__work-title">Ключевая работа</div>
-            <p class="detail__work-text" data-bind="work"></p>
+          <div class="detail__body">
+            <div class="detail__work" data-bind="work-section">
+              <div class="detail__work-title">Ключевая работа</div>
+              <p class="detail__work-text" data-bind="work"></p>
+            </div>
+            <p class="detail__text" data-bind="text"></p>
+            <p class="detail__source" data-bind="source"></p>
           </div>
-          <p class="detail__text" data-bind="text"></p>
-          <p class="detail__source" data-bind="source"></p>
-        </div>
 
-        <div class="detail__tone-bar">
-          <span class="detail__tone-label">Оценка:</span>
-          <span class="detail__tone-track" aria-hidden="true">
-            <span class="detail__tone-marker" data-bind="tone-marker"></span>
-          </span>
-          <span class="detail__tone-value" data-bind="tone-value"></span>
+          <div class="detail__tone-bar">
+            <span class="detail__tone-label">Оценка:</span>
+            <span class="detail__tone-track" aria-hidden="true">
+              <span class="detail__tone-marker" data-bind="tone-marker"></span>
+            </span>
+            <span class="detail__tone-value" data-bind="tone-value"></span>
+          </div>
         </div>
       </aside>
 
