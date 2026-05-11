@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Имени Ленина</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="title">
+        <span class="title__num">МТК · 39</span>
+        <h1 class="title__h">Имени Ленина</h1>
+      </header>
+
+      <canvas id="globe"></canvas>
+
+      <aside id="card" class="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__cat" data-bind="category"></div>
+        <h2 class="card__name" data-bind="name"></h2>
+        <p class="card__where" data-bind="where"></p>
+        <p class="card__text" data-bind="short"></p>
+      </aside>
+
+      <nav class="mode-switch" role="tablist">
+        <button class="mode-button is-active" type="button" data-mode="world">МИР</button>
+        <button class="mode-button" type="button" data-mode="ussr">СССР</button>
+      </nav>
+
+      <nav class="zoom-controls">
+        <button class="zoom-button zoom-in" type="button" aria-label="Приблизить">+</button>
+        <button class="zoom-button zoom-out" type="button" aria-label="Отдалить">−</button>
+      </nav>
+
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+
+      <aside id="settings" class="settings">
+        <header class="settings__head">
+          <span>Настройки</span>
+          <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+
+        <section class="settings__group">
+          <div class="settings__title">Анимация</div>
+
+          <label class="settings__row">
+            <input type="checkbox" data-setting="autoRotate" />
+            <span>Авто-вращение</span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Скорость, °/с</span>
+            <input type="range" min="0" max="20" step="1" data-setting-num="autoRotateSpeed" />
+            <span class="settings__num" data-bind-num="autoRotateSpeed"></span>
+          </label>
+
+          <label class="settings__row">
+            <input type="checkbox" data-setting="pulsation" />
+            <span>Пульсация точек</span>
+          </label>
+
+          <label class="settings__row">
+            <input type="checkbox" data-setting="flyIn" />
+            <span>Прилёт точек при загрузке</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Стиль</div>
+
+          <label class="settings__row">
+            <input type="checkbox" data-setting="atmosphere" />
+            <span>Атмосфера</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="lighting" />
+            <span>Псевдо-3D освещение</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="stars" />
+            <span>Звёздный фон</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Содержание</div>
+
+          <label class="settings__row">
+            <input type="checkbox" data-setting="labels" />
+            <span>Подписи ключевых точек</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="arcs" />
+            <span>Дуги от Ульяновска</span>
+          </label>
+
+          <label class="settings__row settings__row--column">
+            <span>Категория</span>
+            <select id="filter-select" class="settings__select"></select>
+          </label>
+        </section>
+
+        <button class="settings__reset" type="button">Сбросить настройки</button>
+      </aside>
+    </main>
+
+    <script type="module" src="./globe.js?v=4"></script>
+  </body>
+</html>
