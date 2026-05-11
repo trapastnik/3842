@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 42 · Маятник</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="title">
+        <span class="title__num">МТК · 42</span>
+        <h1 class="title__h">Маятник оценки</h1>
+        <p class="title__sub">Осмысление наследия В.И. Ленина · от&nbsp;современников до&nbsp;сегодня</p>
+      </header>
+
+      <div class="axis-top" aria-hidden="true">
+        <span class="axis-top__label axis-top__label--neg">Отрицание</span>
+        <span class="axis-top__label axis-top__label--neu">Академически</span>
+        <span class="axis-top__label axis-top__label--pos">Почитание</span>
+        <div class="axis-top__ticks">
+          <span class="axis-top__tick" style="left: 0%"></span>
+          <span class="axis-top__tick" style="left: 25%"></span>
+          <span class="axis-top__tick axis-top__tick--zero" style="left: 50%"></span>
+          <span class="axis-top__tick" style="left: 75%"></span>
+          <span class="axis-top__tick" style="left: 100%"></span>
+        </div>
+      </div>
+
+      <section id="chart" class="chart" aria-label="Маятник оценок">
+        <div id="chart-inner" class="chart__inner">
+          <!-- Epoch bands, year ruler, pendulum line, item dots are injected by JS -->
+        </div>
+      </section>
+
+      <aside id="card" class="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__head">
+          <div class="card__portrait" data-bind="portrait"></div>
+          <div class="card__heading">
+            <div class="card__kind" data-bind="kind"></div>
+            <h2 class="card__name" data-bind="name"></h2>
+            <p class="card__meta" data-bind="meta"></p>
+          </div>
+        </div>
+        <p class="card__text" data-bind="text"></p>
+        <p class="card__source" data-bind="source"></p>
+        <div class="card__tone">
+          <span class="card__tone-label">Координата оценки:</span>
+          <span class="card__tone-track" aria-hidden="true">
+            <span class="card__tone-marker" data-bind="tone-marker"></span>
+          </span>
+          <span class="card__tone-value" data-bind="tone-value"></span>
+        </div>
+      </aside>
+
+      <button id="legend-toggle" class="legend-toggle" type="button" aria-label="Легенда">i</button>
+      <aside id="legend" class="legend" hidden>
+        <header class="legend__head">
+          <span>Как читать</span>
+          <button class="legend__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+        <p class="legend__row">Каждая точка — голос об образе Ленина. Положение по&nbsp;горизонтали — тон от&nbsp;резкой критики (слева) до&nbsp;почитания (справа). По&nbsp;вертикали — год высказывания или ключевой работы.</p>
+        <ul class="legend__list">
+          <li><span class="legend__dot legend__dot--quote"></span>Цитата современника или политика</li>
+          <li><span class="legend__dot legend__dot--res"></span>Исследователь, ключевая работа</li>
+          <li><span class="legend__line"></span>Маятник — скользящее среднее по&nbsp;десятилетию</li>
+        </ul>
+        <p class="legend__hint">Тап на&nbsp;точке — открыть карточку.</p>
+      </aside>
+    </main>
+
+    <script type="module" src="./pendulum.js?v=1"></script>
+  </body>
+</html>

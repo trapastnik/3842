@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 42 · Картотека</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="title">
+        <span class="title__num">МТК · 42</span>
+        <h1 class="title__h">Картотека</h1>
+        <p class="title__sub">Исследователи, политики и&nbsp;современники о&nbsp;Ленине</p>
+      </header>
+
+      <nav class="filters" aria-label="Фильтры">
+        <div class="filters__group" role="tablist" aria-label="Эпоха">
+          <button class="filter is-active" type="button" data-epoch="all">Все&nbsp;эпохи</button>
+          <button class="filter" type="button" data-epoch="1920s">1920-е</button>
+          <button class="filter" type="button" data-epoch="delen">Деленинизация</button>
+          <button class="filter" type="button" data-epoch="renais">Ренессанс</button>
+          <button class="filter" type="button" data-epoch="now">Сегодня</button>
+        </div>
+        <div class="filters__group filters__group--kind" role="tablist" aria-label="Тип">
+          <button class="filter is-active" type="button" data-kind="all">Все</button>
+          <button class="filter" type="button" data-kind="research">Исследователи</button>
+          <button class="filter" type="button" data-kind="quote">Цитаты</button>
+        </div>
+      </nav>
+
+      <section id="grid" class="grid" aria-label="Карточки"></section>
+
+      <aside id="detail" class="detail" hidden>
+        <button class="detail__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="detail__head">
+          <div class="detail__portrait" data-bind="portrait"></div>
+          <div class="detail__heading">
+            <div class="detail__kind" data-bind="kind"></div>
+            <h2 class="detail__name" data-bind="name"></h2>
+            <p class="detail__meta" data-bind="meta"></p>
+            <div class="detail__epoch-row">
+              <span class="detail__epoch" data-bind="epoch"></span>
+              <span class="detail__tone" data-bind="tone-label"></span>
+            </div>
+          </div>
+        </div>
+
+        <div class="detail__body">
+          <div class="detail__work" data-bind="work-section">
+            <div class="detail__work-title">Ключевая работа</div>
+            <p class="detail__work-text" data-bind="work"></p>
+          </div>
+          <p class="detail__text" data-bind="text"></p>
+          <p class="detail__source" data-bind="source"></p>
+        </div>
+
+        <div class="detail__tone-bar">
+          <span class="detail__tone-label">Оценка:</span>
+          <span class="detail__tone-track" aria-hidden="true">
+            <span class="detail__tone-marker" data-bind="tone-marker"></span>
+          </span>
+          <span class="detail__tone-value" data-bind="tone-value"></span>
+        </div>
+      </aside>
+
+      <footer class="counter">
+        <span class="counter__shown" data-bind="counter-shown">0</span><span class="counter__sep"> / </span><span class="counter__total" data-bind="counter-total">0</span>
+        <span class="counter__label">карточек</span>
+      </footer>
+    </main>
+
+    <script type="module" src="./archive.js?v=1"></script>
+  </body>
+</html>
