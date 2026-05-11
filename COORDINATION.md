@@ -15,7 +15,7 @@
 - `mtk38-globe/` — sphere-only вариант (Слои-режим удалён)
 - `mtk38-poster/` — типографический постер (pretext + drift)
 - `mtk38-cloud/` — 3D-облако
-- `mtk38-mandala/`, `mtk38-vinyl/`, `mtk38-rain/`, `mtk38-ticker/`, `mtk38-catalog/`, `mtk38-manifest/`, `mtk38-map/` — новые варианты для МТК 38
+- `mtk38-mandala/`, `mtk38-rain/`, `mtk38-ticker/`, `mtk38-catalog/`, `mtk38-map/` — варианты для МТК 38
 - `index.html` (root picker), `PLAN.md`, этот `COORDINATION.md`
 - Секция «МТК 38» в `README.md`
 
