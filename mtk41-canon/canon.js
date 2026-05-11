@@ -250,10 +250,11 @@
       cardPhoto.textContent = "фото не найдено";
     }
     populateCardModels(m.id);
+    if (window.MtkMonumentViewer) window.MtkMonumentViewer.open(m);
     cardEl.hidden = false;
   }
 
-  function hideCard() { cardEl.hidden = true; clearCardModelViewer(); }
+  function hideCard() { cardEl.hidden = true; clearCardModelViewer(); if (window.MtkMonumentViewer) window.MtkMonumentViewer.close(); }
   cardClose.addEventListener("click", hideCard);
 
   // Tap outside card closes it
