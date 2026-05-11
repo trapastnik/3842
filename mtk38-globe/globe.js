@@ -1,7 +1,6 @@
 (function () {
   const canvas = document.getElementById("globe");
   const ctx = canvas.getContext("2d", { alpha: true });
-  const modeButtons = Array.from(document.querySelectorAll(".mode-button"));
 
   const palette = {
     paper: "#F7F9EF",
@@ -57,7 +56,6 @@
     { lang: "Burmese", text: "လီနင်", script: "myanmar" }
   ];
 
-  const BASE_TILT = 0.56;
   const ringLats = [-74, -66, -58, -50, -42, -34, -26, -18, -10, -2, 6, 14, 22, 30, 38, 46, 54, 62, 70];
   const rings = ringLats.map((lat, index) => {
     const equatorWeight = Math.cos(Math.abs(lat) * Math.PI / 180);
@@ -66,10 +64,7 @@
       lat,
       speed: direction * (0.09 + equatorWeight * 0.16),
       offset: index * 0.69,
-      size: 0.46 + equatorWeight * 0.4,
-      targetCount: Math.round(12 + equatorWeight * 36),
-      userOffset: 0,
-      userVelocity: 0
+      size: 0.46 + equatorWeight * 0.4
     };
   });
 
@@ -77,19 +72,30 @@
   let height = 0;
   let dpr = 1;
   let start = performance.now();
-  let mode = "rings";
-  let activeRing = null;
   let sphereDrag = false;
   const sphere = {
     yaw: -0.18,
     pitch: -0.18,
     yawVelocity: 0.035,
-    pitchVelocity: 0
+    pitchVelocity: 0,
+    cosYaw: 1,
+    sinYaw: 0,
+    cosPitch: 1,
+    sinPitch: 0
   };
   let lastPointerX = 0;
   let lastPointerY = 0;
   let lastPointerTime = 0;
   const textWidthCache = new Map();
+
+  const grain = {
+    canvas: document.createElement("canvas"),
+    ctx: null,
+    width: 0,
+    height: 0,
+    lastBuiltSeed: -1
+  };
+  grain.ctx = grain.canvas.getContext("2d");
 
   function cssColor(hex, alpha) {
     const value = hex.replace("#", "");
@@ -97,6 +103,10 @@
     const g = parseInt(value.slice(2, 4), 16);
     const b = parseInt(value.slice(4, 6), 16);
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
+  function clamp(value, min, max) {
+    return Math.max(min, Math.min(max, value));
   }
 
   function resize() {
@@ -107,6 +117,11 @@
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    grain.canvas.width = width;
+    grain.canvas.height = height;
+    grain.width = width;
+    grain.height = height;
+    grain.lastBuiltSeed = -1;
   }
 
   function fontStack(script, size, weight) {
@@ -133,10 +148,6 @@
     const widthValue = ctx.measureText(item.text).width;
     textWidthCache.set(key, widthValue);
     return widthValue;
-  }
-
-  function clamp(value, min, max) {
-    return Math.max(min, Math.min(max, value));
   }
 
   function ringLabelSlots(ring, ringIndex, r, phase) {
@@ -167,31 +178,20 @@
     return slots;
   }
 
-  function project(lat, theta, radius, tilt) {
-    const phi = lat * Math.PI / 180;
-    const cosPhi = Math.cos(phi);
-    const x = cosPhi * Math.cos(theta);
-    const y0 = Math.sin(phi);
-    const z0 = cosPhi * Math.sin(theta);
-    const y = y0 * Math.cos(tilt) - z0 * Math.sin(tilt);
-    const z = y0 * Math.sin(tilt) + z0 * Math.cos(tilt);
-    return { x: x * radius, y: y * radius, z };
+  function updateSphereTrig() {
+    sphere.cosYaw = Math.cos(sphere.yaw);
+    sphere.sinYaw = Math.sin(sphere.yaw);
+    sphere.cosPitch = Math.cos(sphere.pitch);
+    sphere.sinPitch = Math.sin(sphere.pitch);
   }
 
   function rotateSpherePoint(x, y, z) {
-    const cosYaw = Math.cos(sphere.yaw);
-    const sinYaw = Math.sin(sphere.yaw);
-    const cosPitch = Math.cos(sphere.pitch);
-    const sinPitch = Math.sin(sphere.pitch);
-
-    const x1 = x * cosYaw + z * sinYaw;
-    const z1 = -x * sinYaw + z * cosYaw;
-    const y1 = y;
-
+    const x1 = x * sphere.cosYaw + z * sphere.sinYaw;
+    const z1 = -x * sphere.sinYaw + z * sphere.cosYaw;
     return {
       x: x1,
-      y: y1 * cosPitch - z1 * sinPitch,
-      z: y1 * sinPitch + z1 * cosPitch
+      y: y * sphere.cosPitch - z1 * sphere.sinPitch,
+      z: y * sphere.sinPitch + z1 * sphere.cosPitch
     };
   }
 
@@ -207,8 +207,7 @@
     return {
       x: cx + rotated.x * radius,
       y: cy - rotated.y * radius,
-      z: rotated.z,
-      unit: rotated
+      z: rotated.z
     };
   }
 
@@ -220,40 +219,27 @@
     return angle;
   }
 
-  function tangentAngle(lat, theta, tilt) {
-    const phi = lat * Math.PI / 180;
-    const cosPhi = Math.cos(phi);
-    const dx = -cosPhi * Math.sin(theta);
-    const dz = cosPhi * Math.cos(theta);
-    const dy = -dz * Math.sin(tilt);
-    let angle = Math.atan2(dy, dx);
-    if (Math.cos(angle) < 0) angle += Math.PI;
-    return angle;
-  }
-
-  function ringGeometry(ring, cx, cy, r, tilt) {
-    const phi = ring.lat * Math.PI / 180;
-    const cosPhi = Math.cos(phi);
-    const centerY = cy + Math.sin(phi) * r * Math.cos(tilt);
-    const rx = Math.max(6, cosPhi * r);
-    const ry = Math.max(4, cosPhi * r * Math.abs(Math.sin(tilt)));
-    return { centerY, rx, ry };
-  }
-
-  function drawBackgroundGrain() {
-    ctx.save();
-    ctx.globalAlpha = 0.18;
-    ctx.fillStyle = palette.paper;
+  function buildGrain() {
+    const seedNow = Math.floor((performance.now() - start) / 180);
+    if (seedNow === grain.lastBuiltSeed) return;
+    grain.lastBuiltSeed = seedNow;
+    const g = grain.ctx;
+    g.clearRect(0, 0, grain.width, grain.height);
+    g.globalAlpha = 0.18;
+    g.fillStyle = palette.paper;
     const step = 19;
-    const seed = Math.floor((performance.now() - start) / 180);
-    for (let y = (seed % step) - step; y < height; y += step) {
-      for (let x = ((seed + y) % step) - step; x < width; x += step) {
-        if ((x * 13 + y * 7 + seed) % 11 === 0) {
-          ctx.fillRect(x, y, 1, 1);
+    for (let y = (seedNow % step) - step; y < grain.height; y += step) {
+      for (let x = ((seedNow + y) % step) - step; x < grain.width; x += step) {
+        if ((x * 13 + y * 7 + seedNow) % 11 === 0) {
+          g.fillRect(x, y, 1, 1);
         }
       }
     }
-    ctx.restore();
+  }
+
+  function drawBackgroundGrain() {
+    buildGrain();
+    ctx.drawImage(grain.canvas, 0, 0);
   }
 
   function drawSphereBase(cx, cy, r) {
@@ -282,36 +268,6 @@
     ctx.restore();
   }
 
-  function drawGuideLines(cx, cy, r, tilt, time) {
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r, 0, Math.PI * 2);
-    ctx.clip();
-
-    rings.forEach((ring, ringIndex) => {
-      const { centerY, rx, ry } = ringGeometry(ring, cx, cy, r, tilt);
-      const active = activeRing === ring;
-      ctx.beginPath();
-      ctx.ellipse(cx, centerY, rx, ry, 0, 0, Math.PI * 2);
-      ctx.strokeStyle = cssColor(active ? palette.brass : palette.window, active ? 0.55 : 0.12);
-      ctx.lineWidth = active ? 2.4 : 0.8;
-      ctx.setLineDash([3 + (ringIndex % 4), 16]);
-      ctx.lineDashOffset = -(time * ring.speed + ring.userOffset) * 42;
-      ctx.stroke();
-    });
-
-    ctx.setLineDash([]);
-    for (let i = 0; i < 10; i += 1) {
-      const angle = time * 0.08 + i * Math.PI / 10;
-      ctx.beginPath();
-      ctx.ellipse(cx, cy, r * Math.abs(Math.cos(angle)), r, 0, -Math.PI / 2, Math.PI / 2);
-      ctx.strokeStyle = cssColor(palette.window, 0.08);
-      ctx.lineWidth = 1;
-      ctx.stroke();
-    }
-    ctx.restore();
-  }
-
   function drawSphereGuides(cx, cy, r, time) {
     ctx.save();
     ctx.beginPath();
@@ -320,11 +276,10 @@
     ctx.setLineDash([3, 18]);
 
     rings.forEach((ring, ringIndex) => {
-      const active = false;
       ctx.beginPath();
       let started = false;
       for (let i = 0; i <= 96; i += 1) {
-        const theta = (i / 96) * Math.PI * 2 + ring.userOffset + time * ring.speed + ring.offset;
+        const theta = (i / 96) * Math.PI * 2;
         const point = projectSpherePoint(ring.lat, theta, r, cx, cy);
         if (point.z < -0.62) {
           started = false;
@@ -337,9 +292,9 @@
           ctx.lineTo(point.x, point.y);
         }
       }
-      ctx.strokeStyle = cssColor(active ? palette.brass : palette.window, active ? 0.55 : 0.1);
-      ctx.lineWidth = active ? 2 : 0.8;
-      ctx.lineDashOffset = -(time * ring.speed + ring.userOffset) * 38 + ringIndex * 3;
+      ctx.strokeStyle = cssColor(palette.window, 0.1);
+      ctx.lineWidth = 0.8;
+      ctx.lineDashOffset = -(time * ring.speed) * 38 + ringIndex * 3;
       ctx.stroke();
     });
 
@@ -404,49 +359,11 @@
     ctx.restore();
   }
 
-  function drawWords(cx, cy, r, tilt, time) {
-    const jobs = [];
-
-    rings.forEach((ring, ringIndex) => {
-      const phase = ring.offset + ring.userOffset + time * ring.speed;
-      const slots = ringLabelSlots(ring, ringIndex, r, phase);
-      const isActiveRing = activeRing === ring;
-      slots.forEach(slot => {
-        const item = slot.item;
-        const theta = slot.theta;
-        const point = project(ring.lat, theta, r, tilt);
-        const angle = tangentAngle(ring.lat, theta, tilt);
-        const x = cx + point.x;
-        const y = cy + point.y;
-        const accentSeed = (slot.index + ringIndex * 3) % 19;
-        jobs.push({
-          item,
-          x,
-          y,
-          z: point.z,
-          angle,
-          ringScale: ring.size,
-          activeGlow: isActiveRing ? 0.65 : 0,
-          tone: item.primary && accentSeed === 0 ? "red" : accentSeed === 5 ? "brass" : "paper"
-        });
-      });
-    });
-
-    jobs.sort((a, b) => a.z - b.z);
-
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(cx, cy, r * 1.01, 0, Math.PI * 2);
-    ctx.clip();
-    jobs.forEach(job => drawWord(job.item, job.x, job.y, job.z, job.angle, job.ringScale, job.activeGlow, job.tone));
-    ctx.restore();
-  }
-
   function drawSphereWords(cx, cy, r, time) {
     const jobs = [];
 
     rings.forEach((ring, ringIndex) => {
-      const phase = ring.offset + ring.userOffset + time * ring.speed;
+      const phase = ring.offset + time * ring.speed;
       const slots = ringLabelSlots(ring, ringIndex, r, phase);
       slots.forEach(slot => {
         const point = projectSpherePoint(ring.lat, slot.theta, r, cx, cy);
@@ -495,18 +412,8 @@
     ctx.restore();
   }
 
-  function applyRingInertia(deltaSeconds) {
-    rings.forEach(ring => {
-      ring.userOffset += ring.userVelocity * deltaSeconds;
-      ring.userVelocity *= Math.pow(0.92, deltaSeconds * 60);
-      if (Math.abs(ring.userVelocity) < 0.0005) {
-        ring.userVelocity = 0;
-      }
-    });
-  }
-
   function applySphereInertia(deltaSeconds) {
-    if (mode !== "sphere" || sphereDrag) return;
+    if (sphereDrag) return;
 
     sphere.yaw += sphere.yawVelocity * deltaSeconds;
     sphere.pitch = clamp(sphere.pitch + sphere.pitchVelocity * deltaSeconds, -0.95, 0.95);
@@ -524,8 +431,8 @@
     const previousTime = render.previousTime || time;
     const deltaSeconds = Math.min(0.05, Math.max(0.001, time - previousTime));
     render.previousTime = time;
-    applyRingInertia(deltaSeconds);
     applySphereInertia(deltaSeconds);
+    updateSphereTrig();
 
     ctx.clearRect(0, 0, width, height);
     drawBackgroundGrain();
@@ -534,16 +441,10 @@
     const r = Math.min(shortSide * 0.48, height * 0.36);
     const cx = width * 0.5;
     const cy = height * 0.5;
-    const tilt = BASE_TILT;
 
     drawSphereBase(cx, cy, r);
-    if (mode === "sphere") {
-      drawSphereGuides(cx, cy, r, time);
-      drawSphereWords(cx, cy, r, time);
-    } else {
-      drawGuideLines(cx, cy, r, tilt, time);
-      drawWords(cx, cy, r, tilt, time);
-    }
+    drawSphereGuides(cx, cy, r, time);
+    drawSphereWords(cx, cy, r, time);
     drawAtmosphere(cx, cy, r, time);
 
     requestAnimationFrame(render);
@@ -552,102 +453,54 @@
   function getGlobeMetrics() {
     const shortSide = Math.min(width, height);
     const r = Math.min(shortSide * 0.48, height * 0.36);
-    return {
-      r,
-      cx: width * 0.5,
-      cy: height * 0.5,
-      tilt: BASE_TILT
-    };
+    return { r, cx: width * 0.5, cy: height * 0.5 };
   }
-
-  function nearestRing(x, y) {
-    const { r, cx, cy, tilt } = getGlobeMetrics();
-    let best = null;
-    let bestDistance = Infinity;
-    rings.forEach(ring => {
-      const { centerY, rx } = ringGeometry(ring, cx, cy, r, tilt);
-      const inBand = Math.abs(x - cx) < rx * 1.08;
-      const distance = Math.abs(y - centerY) + (inBand ? 0 : r * 0.18);
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = ring;
-      }
-    });
-    return bestDistance < r * 0.16 ? best : null;
-  }
-
-  function setMode(nextMode) {
-    mode = nextMode === "sphere" ? "sphere" : "rings";
-    activeRing = null;
-    sphereDrag = false;
-    modeButtons.forEach(button => {
-      button.classList.toggle("is-active", button.dataset.mode === mode);
-    });
-  }
-
-  modeButtons.forEach(button => {
-    button.addEventListener("click", () => {
-      setMode(button.dataset.mode);
-    });
-  });
 
   window.addEventListener("resize", resize);
+
   canvas.addEventListener("pointermove", event => {
+    if (!sphereDrag) return;
     const now = performance.now();
     const dt = Math.max(16, now - lastPointerTime);
     const dx = event.clientX - lastPointerX;
     const dy = event.clientY - lastPointerY;
     const { r } = getGlobeMetrics();
-
-    if (mode === "sphere") {
-      if (!sphereDrag) return;
-      const yawDelta = dx / Math.max(1, r * 0.72);
-      const pitchDelta = dy / Math.max(1, r * 0.88);
-      sphere.yaw += yawDelta;
-      sphere.pitch = clamp(sphere.pitch + pitchDelta, -0.95, 0.95);
-      sphere.yawVelocity = yawDelta / (dt / 1000);
-      sphere.pitchVelocity = pitchDelta / (dt / 1000);
-    } else {
-      if (!activeRing) return;
-      const delta = dx / Math.max(1, r * 0.72);
-      activeRing.userOffset += delta;
-      activeRing.userVelocity = delta / (dt / 1000);
-    }
-
+    const yawDelta = dx / Math.max(1, r * 0.72);
+    const pitchDelta = dy / Math.max(1, r * 0.88);
+    sphere.yaw += yawDelta;
+    sphere.pitch = clamp(sphere.pitch + pitchDelta, -0.95, 0.95);
+    sphere.yawVelocity = yawDelta / (dt / 1000);
+    sphere.pitchVelocity = pitchDelta / (dt / 1000);
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
     lastPointerTime = now;
   }, { passive: true });
+
   canvas.addEventListener("pointerdown", event => {
-    if (mode === "sphere") {
-      sphereDrag = true;
-    } else {
-      activeRing = nearestRing(event.clientX, event.clientY);
-    }
+    sphereDrag = true;
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
     lastPointerTime = performance.now();
-    if ((activeRing || sphereDrag) && canvas.setPointerCapture) {
+    if (canvas.setPointerCapture) {
       canvas.setPointerCapture(event.pointerId);
     }
   });
+
   canvas.addEventListener("pointerup", event => {
     if (canvas.releasePointerCapture) {
       try {
         canvas.releasePointerCapture(event.pointerId);
       } catch (error) {
-        // Pointer capture may already be released by the browser.
+        // pointer capture may already be released by the browser
       }
     }
-    activeRing = null;
-    sphereDrag = false;
-  });
-  canvas.addEventListener("pointercancel", () => {
-    activeRing = null;
     sphereDrag = false;
   });
 
-  setMode(new URLSearchParams(window.location.search).get("mode"));
+  canvas.addEventListener("pointercancel", () => {
+    sphereDrag = false;
+  });
+
   resize();
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => requestAnimationFrame(render));

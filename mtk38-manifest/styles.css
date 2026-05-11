@@ -1,0 +1,75 @@
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+:root {
+  --paper: #F7F9EF;
+  --brass: #D2B773;
+  --red: #A02128;
+  --graphite: #435059;
+  --window: #9DA3A6;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--graphite);
+  color: var(--paper);
+  font-family: "Nolde", Georgia, serif;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  background:
+    linear-gradient(105deg, transparent 0, transparent 82%, var(--red) 82%, var(--red) 94%, transparent 94.2%),
+    linear-gradient(105deg, transparent 0, transparent 60%, var(--brass) 60%, var(--brass) 60.18%, transparent 60.36%),
+    radial-gradient(ellipse 130% 95% at 50% 35%, rgba(67, 80, 89, 0.42), rgba(12, 16, 18, 0.95)),
+    var(--graphite);
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(247, 249, 239, 0.04) 0, rgba(247, 249, 239, 0.04) 1px, transparent 1px, transparent 5px);
+  mix-blend-mode: soft-light;
+}
+
+#manifest {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}

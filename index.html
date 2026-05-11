@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 38 · Варианты визуализации</title>
+  <link rel="icon" href="data:,">
+  <style>
+    @font-face {
+      font-family: "Nolde";
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      src: url("./mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+    }
+    @font-face {
+      font-family: "20 Kopeek";
+      font-weight: 600;
+      font-style: normal;
+      font-display: swap;
+      src: url("./mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+    }
+    @font-face {
+      font-family: "21 Cent";
+      font-weight: 400;
+      font-style: normal;
+      font-display: swap;
+      src: url("./mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+    }
+    :root {
+      --paper: #F7F9EF;
+      --brass: #D2B773;
+      --red: #A02128;
+      --graphite: #435059;
+      --window: #9DA3A6;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      min-height: 100%;
+      margin: 0;
+      background: var(--graphite);
+      color: var(--paper);
+      font-family: "21 Cent", Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+    }
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 28px;
+      padding: 44px 52px;
+      background:
+        linear-gradient(105deg, transparent 0, transparent 78%, var(--red) 78%, var(--red) 92%, transparent 92.2%),
+        linear-gradient(105deg, transparent 0, transparent 60%, var(--brass) 60%, var(--brass) 60.18%, transparent 60.36%),
+        radial-gradient(ellipse 130% 90% at 50% 35%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.95)),
+        var(--graphite);
+    }
+    header { display: grid; gap: 10px; }
+    h1 {
+      margin: 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(40px, 6.5vw, 88px);
+      line-height: 0.95;
+      letter-spacing: -0.01em;
+    }
+    .subtitle {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 13px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      position: relative;
+      display: grid;
+      grid-template-rows: 1fr auto;
+      gap: 14px;
+      padding: 22px 24px;
+      min-height: 220px;
+      border: 1px solid rgba(210, 183, 115, 0.42);
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.32);
+      color: var(--paper);
+      text-decoration: none;
+      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      isolation: isolate;
+      overflow: hidden;
+    }
+    .card:hover, .card:focus-visible {
+      transform: translateY(-2px);
+      border-color: var(--brass);
+      background: rgba(0, 0, 0, 0.46);
+    }
+    .card-tag {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    .card h2 {
+      margin: 4px 0 0 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: 28px;
+      line-height: 1.0;
+    }
+    .card p {
+      margin: 8px 0 0 0;
+      font-size: 13.5px;
+      line-height: 1.5;
+      color: rgba(247, 249, 239, 0.74);
+    }
+    .card-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      align-self: end;
+      padding: 9px 14px;
+      border: 1px solid rgba(210, 183, 115, 0.55);
+      border-radius: 999px;
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    footer {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 12px;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(247, 249, 239, 0.5);
+    }
+    footer a {
+      color: var(--brass);
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="subtitle">МТК 38 · Ленин на языках мира · 42 языка · 10 вариантов</div>
+    <h1>Варианты визуализации</h1>
+  </header>
+
+  <main class="grid">
+    <a class="card" href="./mtk38-globe/">
+      <div>
+        <div class="card-tag">01 · Globe</div>
+        <h2>Сфера</h2>
+        <p>3D-шар, свайп вращает по двум осям, мягкая инерция и автономное вращение.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-poster/">
+      <div>
+        <div class="card-tag">02 · Poster</div>
+        <h2>Постер</h2>
+        <p>Плотная типографическая композиция, дрейф камеры, текст обтекает пружинный курсор.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-cloud/">
+      <div>
+        <div class="card-tag">03 · Cloud</div>
+        <h2>Облако</h2>
+        <p>3D-облако в объёме, камера орбитирует, слова дрейфуют. Ближние крупнее.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-mandala/">
+      <div>
+        <div class="card-tag">04 · Mandala</div>
+        <h2>Мандала</h2>
+        <p>Радиальные кольца на плоскости. Центральный медальон. Свайп крутит ближайшее кольцо.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-vinyl/">
+      <div>
+        <div class="card-tag">05 · Vinyl</div>
+        <h2>Винил</h2>
+        <p>Грампластинка с бороздками, латунная этикетка, два кольца текста по краю. Touch = scratch.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-rain/">
+      <div>
+        <div class="card-tag">06 · Rain</div>
+        <h2>Дождь</h2>
+        <p>Слова падают сверху с разной скоростью. Палец — репульсивное поле, отталкивает.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-ticker/">
+      <div>
+        <div class="card-tag">07 · Ticker</div>
+        <h2>Лента</h2>
+        <p>Горизонтальные строки бегут в разные стороны с разной скоростью. Жест тормозит / разворачивает.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-catalog/">
+      <div>
+        <div class="card-tag">08 · Catalog</div>
+        <h2>Каталог</h2>
+        <p>Сетка 6×7 — все 42 языка карточками. Тап — карточка раскрывается, регион виден.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-manifest/">
+      <div>
+        <div class="card-tag">09 · Manifest</div>
+        <h2>Манифест</h2>
+        <p>Связный текст-манифесто, слово «Ленин» на 42 языках вплетено в тело. Тач — пауза / язык.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+
+    <a class="card" href="./mtk38-map/">
+      <div>
+        <div class="card-tag">10 · Map</div>
+        <h2>Карта</h2>
+        <p>Контуры мира, слова в координатах столиц/регионов. Drag — pan; ближе к центру — крупнее.</p>
+      </div>
+      <span class="card-cta">Открыть →</span>
+    </a>
+  </main>
+
+  <footer>
+    План · <a href="./PLAN.md">PLAN.md</a>   ·   Координация двух сессий · <a href="./COORDINATION.md">COORDINATION.md</a>
+  </footer>
+</body>
+</html>

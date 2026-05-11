@@ -3,7 +3,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("./fonts/nolde/nolde.otf") format("opentype");
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
 }
 
 @font-face {
@@ -11,7 +11,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("./fonts/kopeek/20-kopeek-book.otf") format("opentype");
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
 }
 
 @font-face {
@@ -19,7 +19,7 @@
   font-weight: 600;
   font-style: normal;
   font-display: swap;
-  src: url("./fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
 }
 
 @font-face {
@@ -27,7 +27,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("./fonts/cent/21Cent.woff") format("woff");
+  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
 }
 
 @font-face {
@@ -35,7 +35,7 @@
   font-weight: 700;
   font-style: normal;
   font-display: swap;
-  src: url("./fonts/cent/21Cent-Bold.woff") format("woff");
+  src: url("../mtk38-globe/fonts/cent/21Cent-Bold.woff") format("woff");
 }
 
 :root {
@@ -51,7 +51,6 @@
   --font-display: "Nolde", Georgia, serif;
   --font-body: "21 Cent", Georgia, serif;
   --font-mono: "20 Kopeek", "Courier New", monospace;
-  --brand-skew: -15deg;
 }
 
 *,
@@ -66,9 +65,7 @@ body {
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background:
-    radial-gradient(ellipse 120% 85% at 50% 38%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.95)),
-    var(--graphite);
+  background: var(--graphite);
   color: var(--paper-white);
   font-family: var(--font-body);
 }
@@ -81,17 +78,12 @@ body {
 .stage {
   position: fixed;
   inset: 0;
-  width: auto;
-  height: auto;
-  min-width: 320px;
-  min-height: 560px;
   overflow: hidden;
   isolation: isolate;
   background:
     linear-gradient(105deg, transparent 0, transparent 72%, var(--signal-red) 72%, var(--signal-red) 86%, transparent 86.2%),
     linear-gradient(105deg, transparent 0, transparent 2%, rgba(157, 163, 166, 0.18) 2%, rgba(157, 163, 166, 0.18) 14%, transparent 14.2%),
     linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%),
-    linear-gradient(105deg, transparent 0, transparent 89%, rgba(210, 183, 115, 0.55) 89%, rgba(210, 183, 115, 0.55) 89.15%, transparent 89.35%),
     radial-gradient(ellipse 120% 85% at 50% 38%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.95)),
     var(--graphite);
 }
@@ -108,11 +100,7 @@ body {
   mix-blend-mode: soft-light;
 }
 
-.stage::after {
-  content: none;
-}
-
-#globe {
+#cloud {
   position: absolute;
   inset: 0;
   z-index: 1;
