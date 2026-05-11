@@ -164,6 +164,38 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
+    .placeholder.wip {
+      border-color: rgba(160, 33, 40, 0.6);
+      color: rgba(247, 249, 239, 0.72);
+    }
+    .placeholder.wip strong {
+      color: var(--brass);
+      font-weight: 400;
+    }
+    .coord {
+      padding: 14px 18px;
+      border: 1px solid rgba(210, 183, 115, 0.32);
+      border-left: 3px solid var(--red);
+      border-radius: 10px;
+      background: rgba(0, 0, 0, 0.32);
+      color: rgba(247, 249, 239, 0.78);
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 11.5px;
+      line-height: 1.55;
+      letter-spacing: 0.06em;
+    }
+    .coord b {
+      color: var(--brass);
+      font-weight: 400;
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+    }
+    .coord code {
+      color: var(--paper);
+      background: rgba(247, 249, 239, 0.08);
+      padding: 1px 6px;
+      border-radius: 4px;
+    }
     footer {
       font-family: "20 Kopeek", "Courier New", monospace;
       font-size: 12px;
@@ -182,6 +214,14 @@
     <div class="subtitle">Музей В.И. Ленина · прототипы арт-объектов МТК 38–42</div>
     <h1>Прототипы</h1>
   </header>
+
+  <div class="coord">
+    <b>Координация · 2026-05-11</b><br>
+    Один общий HTTP-сервер на <code>http://127.0.0.1:8092</code> работает из корня <code>main</code>.
+    Координатор — сессия <code>magical-allen-0c3d5f</code>: ведёт эту страницу и <a href="./COORDINATION.md" style="color:var(--brass);">COORDINATION.md</a>.
+    Соседние сессии: <code>bold-booth</code> (МТК 39 ✓), <code>flamboyant-cartwright</code> (МТК 40 ⏳), <code>reverent-chandrasekhar</code> (МТК 41 ⏳), <code>xenodochial-goodall</code> (МТК 42 ⏳), <code>funny-kapitsa</code> (не назначен).
+    Прототипы соседних сессий появятся ниже после merge в main.
+  </div>
 
   <div class="section-head">
     <h2>МТК 38 · Ленин на языках мира</h2>
@@ -280,21 +320,21 @@
 
   <div class="section-head">
     <h2>МТК 40 · Библиотека Ленина</h2>
-    <span class="note">литература о Ленине · в работе</span>
+    <span class="note">сессия flamboyant-cartwright · в работе</span>
   </div>
-  <div class="placeholder">Прототипы появятся здесь. Откройте отдельную Claude-сессию для этого МТК — инструкции в SETUP.md.</div>
+  <div class="placeholder wip">⏳ Сессия <strong>flamboyant-cartwright-839223</strong> готовит прототипы: <strong>mtk40-shelf</strong>, <strong>mtk40-mirror</strong>. Появятся здесь после merge в main.</div>
 
   <div class="section-head">
     <h2>МТК 41 · Скульптуры</h2>
-    <span class="note">памятники В.И. Ленину · data есть, прототипа нет</span>
+    <span class="note">сессия reverent-chandrasekhar · сбор ассетов</span>
   </div>
-  <div class="placeholder">Прототипы появятся здесь. Откройте отдельную Claude-сессию для этого МТК — инструкции в SETUP.md.</div>
+  <div class="placeholder wip">⏳ Сессия <strong>reverent-chandrasekhar-3484a8</strong> собирает ассеты (<strong>mtk41-assets/</strong>). Прототип в проектировании. Данные уже в main: <code>data/mtk41.json</code>.</div>
 
   <div class="section-head">
     <h2>МТК 42 · Осмысление наследия</h2>
-    <span class="note">современный взгляд · в работе</span>
+    <span class="note">сессия xenodochial-goodall · в работе</span>
   </div>
-  <div class="placeholder">Прототипы появятся здесь. Откройте отдельную Claude-сессию для этого МТК — инструкции в SETUP.md.</div>
+  <div class="placeholder wip">⏳ Сессия <strong>xenodochial-goodall-8fcd6a</strong> готовит прототипы: <strong>mtk42-archive</strong>, <strong>mtk42-pendulum</strong>. Появятся здесь после merge в main.</div>
 
   <footer>
     <a href="./PLAN.md">PLAN</a>   ·   <a href="./COORDINATION.md">COORDINATION</a>   ·   <a href="./SETUP.md">SETUP (новой сессии)</a>   ·   <a href="./CLAUDE.md">CLAUDE.md</a>
