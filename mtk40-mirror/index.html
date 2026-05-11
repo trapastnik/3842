@@ -27,8 +27,100 @@
       </aside>
 
       <a class="back" href="../">← все МТК</a>
+
+      <button id="info-toggle" class="info-toggle" type="button" aria-label="О концепции">?</button>
+
+      <div id="info-modal" class="info-modal" hidden>
+        <div class="info-modal__backdrop"></div>
+        <article class="info-modal__panel" role="dialog" aria-labelledby="info-title">
+          <button class="info-modal__close" type="button" aria-label="Закрыть">✕</button>
+
+          <div class="info-modal__cat">МТК 40 · вариант 02</div>
+          <h2 id="info-title" class="info-modal__title">Зеркало</h2>
+
+          <section class="info-modal__section">
+            <h3>Почему «зеркало»</h3>
+            <p>
+              Экран разделён по горизонтали на три полосы: сверху —
+              <b>что писал сам Ленин</b>, посередине —
+              <b>что он читал из чужого</b>, снизу — <b>что писали о нём</b>.
+              Композиция симметрична по вертикали: верхняя половина
+              «отражается» в нижней через линзу личной библиотеки.
+            </p>
+            <p>
+              При тапе на любую книгу подсвечиваются её источники, мишени
+              и отголоски. «Государство и революция» сверху зажигает Маркса
+              и Энгельса в середине; «Что делать?» Ленина — «Что делать?»
+              Чернышевского. Каждый текст в верхней половине имеет своё
+              отражение в нижних — это и есть зеркало интеллектуальной
+              генеалогии.
+            </p>
+          </section>
+
+          <section class="info-modal__section">
+            <h3>Как работают связи</h3>
+            <p>
+              В данных 15 проверенных связок «прочитал → написал». При тапе
+              они рисуются bezier-кривыми через центр экрана. На середине
+              кривой — латунная плашка с типом связи. Цвет и стиль линии
+              кодируют характер влияния:
+            </p>
+            <ul class="info-modal__legend">
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#D2B773" stroke-width="3" />
+                </svg>
+                <span><b>заглавие</b> — заимствование названия (Чернышевский «Что делать?» → Ленин «Что делать?»)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#A02128" stroke-width="2" stroke-dasharray="10,6" />
+                </svg>
+                <span><b>против</b> — написано как опровержение (Богданов «Эмпириомонизм» → Ленин «Материализм и эмпириокритицизм»)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#F7F9EF" stroke-width="2" />
+                </svg>
+                <span><b>источник</b> — фактический и теоретический (Маркс «Гражданская война во Франции» → «Государство и революция»)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#7BA3C0" stroke-width="2" />
+                </svg>
+                <span><b>рамка</b> — методологическая (Каутский «Аграрный вопрос» → «Развитие капитализма в России»)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#D2B773" stroke-width="2.5" stroke-dasharray="2,4" />
+                </svg>
+                <span><b>конспект</b> — построчная запись чтения (Гегель «Наука логики» → «Философские тетради»)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#7BA3C0" stroke-width="2" stroke-dasharray="10,6" />
+                </svg>
+                <span><b>статья о</b> — Ленин писал об авторе отдельно (Толстой «Воскресение» → цикл статей 1908–11)</span>
+              </li>
+              <li>
+                <svg viewBox="0 0 60 12" class="info-legend__line">
+                  <line x1="2" y1="6" x2="58" y2="6" stroke="#9DA3A6" stroke-width="2" stroke-dasharray="3,3" />
+                </svg>
+                <span><b>параллель</b> — одновременная разработка темы (Бухарин «Мировое хозяйство…» ↔ «Империализм»)</span>
+              </li>
+            </ul>
+          </section>
+
+          <section class="info-modal__section info-modal__section--meta">
+            <p>
+              Связи хранятся в <code>data/mtk40.json</code> в массиве <code>connections</code>.
+              Это рабочий минимум — список расширяется по мере наполнения контента.
+            </p>
+          </section>
+        </article>
+      </div>
     </main>
 
-    <script type="module" src="./mirror.js?v=1"></script>
+    <script type="module" src="./mirror.js?v=2"></script>
   </body>
 </html>

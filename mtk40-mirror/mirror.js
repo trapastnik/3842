@@ -46,6 +46,13 @@ class MirrorApp {
     this.cardEl = document.getElementById("card");
     this.cardConnsEl = document.getElementById("card-conns");
     this.cardEl.querySelector(".card__close").addEventListener("click", () => this.deselect());
+    this.infoToggle = document.getElementById("info-toggle");
+    this.infoModal = document.getElementById("info-modal");
+    if (this.infoToggle && this.infoModal) {
+      this.infoToggle.addEventListener("click", () => { this.infoModal.hidden = false; });
+      this.infoModal.querySelector(".info-modal__close").addEventListener("click", () => { this.infoModal.hidden = true; });
+      this.infoModal.querySelector(".info-modal__backdrop").addEventListener("click", () => { this.infoModal.hidden = true; });
+    }
     this.W = 0; this.H = 0;
     this.layout = null;
   }
