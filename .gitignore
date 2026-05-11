@@ -6,10 +6,22 @@ Thumbs.db
 *.swp
 *.swo
 
-# Generated previews
+# Python tooling artefacts (например, в assets/mtkXX/tools/)
+__pycache__/
+*.pyc
+
+# Скриншоты / превью / временные изображения — заблокированы по умолчанию,
+# чтобы случайные снимки рабочей среды не попадали в репо.
+# Контентные ассеты живут в assets/mtkXX/ — там разрешены через исключение ниже.
 *.png
 *.jpg
 *.jpeg
+*.gif
+*.webp
+
+# Контент: per-МТК ассеты (изображения, аудио, маленькое видео) разрешены.
+# Структура — см. COORDINATION.md → «Границы файлов» и «Контент-политика».
+!assets/**
 
 # Manual snapshots are local only; git history is the versioning layer.
 versions/
