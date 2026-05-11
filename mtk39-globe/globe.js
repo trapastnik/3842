@@ -47,19 +47,20 @@ const CATEGORY_LABELS = {
 // Birthplace of Lenin — Ульяновск (Симбирск). Origin point for arcs.
 const ORIGIN = [48.4031, 54.3142];
 
-// Always-on labels — distributed key points
-const KEY_LABEL_IDS = new Set([
+// Priority-ordered key labels (lower index — higher priority when crowded).
+const KEY_LABEL_ORDER = [
   "rgb-lenina",
   "leti",
   "lenin-peak",
+  "ulyanovsk-tank",
   "dneproges",
   "chaes",
   "mmk",
   "krasmash",
-  "ulyanovsk-tank",
   "bsu",
   "kazakh-polytechnic",
-]);
+];
+const KEY_LABEL_RANK = new Map(KEY_LABEL_ORDER.map((id, i) => [id, i]));
 
 const SETTINGS_KEY = "mtk39:settings:v1";
 const DEFAULTS = {
@@ -323,7 +324,8 @@ function render(now) {
   // arc (origin -> selected)
   renderArc();
 
-  // points
+  // points (no inline labels — labels handled in a second pass below)
+  const labelCandidates = [];
   for (const item of items) {
     if (item.lat == null || item.lng == null) continue;
     if (!isVisible(item.lng, item.lat)) continue;
@@ -359,22 +361,74 @@ function render(now) {
     ctx.lineWidth = 1;
     ctx.stroke();
 
-    // labels
-    if (
-      settings.labels &&
-      passes &&
-      (isSel || KEY_LABEL_IDS.has(item.id))
-    ) {
-      const label = item.name_short || item.title || "";
-      ctx.font = '600 11px "20 Kopeek", "Courier New", monospace';
-      const tw = ctx.measureText(label).width;
-      const lx = pt[0] + r + 8;
-      const ly = pt[1] + 4;
-      ctx.fillStyle = "rgba(12, 16, 18, 0.7)";
-      ctx.fillRect(lx - 3, ly - 11, tw + 6, 14);
-      ctx.fillStyle = isSel ? "#d2b773" : "rgba(247, 249, 239, 0.88)";
-      ctx.fillText(label, lx, ly);
+    if (passes && flyIn > 0.6) {
+      const inKey = KEY_LABEL_RANK.has(item.id);
+      const tier = isSel ? -1 : (inKey ? 0 : 1);
+      const sub = isSel
+        ? 0
+        : inKey
+          ? KEY_LABEL_RANK.get(item.id) / 100
+          : (pointDelays.get(item.id) ?? 0) / 1e6;
+      labelCandidates.push({ item, pt, r, isSel, tier, sub });
     }
+  }
+
+  drawLabels(labelCandidates);
+}
+
+function rectsOverlap(a, b) {
+  return !(a.x + a.w < b.x || b.x + b.w < a.x || a.y + a.h < b.y || b.y + b.h < a.y);
+}
+
+function drawLabels(candidates) {
+  if (candidates.length === 0) return;
+  candidates.sort((a, b) => (a.tier - b.tier) || (a.sub - b.sub));
+  const drawn = [];
+  ctx.font = '600 11px "20 Kopeek", "Courier New", monospace';
+
+  for (const c of candidates) {
+    if (!settings.labels && c.tier !== -1) continue;
+
+    const text = c.item.name_short || c.item.title || "";
+    const tw = ctx.measureText(text).width;
+    const r = c.r;
+    const px = c.pt[0];
+    const py = c.pt[1];
+
+    // try four anchors: right → left → above → below
+    const anchors = [
+      { lx: px + r + 8, ly: py + 4 },
+      { lx: px - r - 8 - tw, ly: py + 4 },
+      { lx: px - tw / 2, ly: py - r - 8 },
+      { lx: px - tw / 2, ly: py + r + 16 },
+    ];
+
+    let chosen = null;
+    for (const a of anchors) {
+      const rect = { x: a.lx - 3, y: a.ly - 11, w: tw + 6, h: 14 };
+      // viewport clip
+      if (rect.x < 4 || rect.x + rect.w > width - 4) continue;
+      if (rect.y < 4 || rect.y + rect.h > height - 4) continue;
+      if (drawn.some((d) => rectsOverlap(rect, d))) continue;
+      chosen = { ...a, rect };
+      break;
+    }
+
+    // selected always wins — force right anchor regardless of overlap
+    if (!chosen && c.tier === -1) {
+      const a = anchors[0];
+      chosen = { ...a, rect: { x: a.lx - 3, y: a.ly - 11, w: tw + 6, h: 14 } };
+    }
+
+    if (!chosen) continue;
+
+    ctx.fillStyle = c.isSel ? "rgba(160, 33, 40, 0.78)" : "rgba(12, 16, 18, 0.72)";
+    ctx.fillRect(chosen.rect.x, chosen.rect.y, chosen.rect.w, chosen.rect.h);
+    ctx.fillStyle = c.isSel
+      ? "#fff"
+      : (c.tier === 0 ? "rgba(247, 249, 239, 0.92)" : "rgba(247, 249, 239, 0.78)");
+    ctx.fillText(text, chosen.lx, chosen.ly);
+    drawn.push(chosen.rect);
   }
 }
 
