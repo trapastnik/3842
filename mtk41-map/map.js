@@ -38,7 +38,8 @@
   let width = 0, height = 0, dpr = 1;
   let geoLoaded = false;
   let monuments = [];                // raw items from data/mtk41.json
-  let photoManifest = {};            // id → [photo paths relative to assets/mtk41/<id>/]
+  let photoManifest = {};
+  let modelsManifest = {};            // id → [photo paths relative to assets/mtk41/<id>/]
   let placedMonuments = [];          // monuments with screen positions, computed each frame
 
   let selectedIndex = -1;
@@ -351,6 +352,33 @@
 
   // --- Card ----------------------------------------------------------------
 
+  function populateCardModels(monumentId) {
+    const cont = document.getElementById("card-models");
+    if (!cont) return;
+    const list = modelsManifest[monumentId] || [];
+    // remove old entries (keep the heading)
+    cont.querySelectorAll(".card-model").forEach(el => el.remove());
+    if (!list.length) { cont.hidden = true; return; }
+    for (const m of list) {
+      const a = document.createElement("a");
+      a.className = "card-model" + (m.exact_match ? " exact" : "");
+      a.href = m.url;
+      a.target = "_blank";
+      a.rel = "noopener";
+      a.textContent = m.name;
+      const meta = document.createElement("span");
+      meta.className = "card-model-meta";
+      const parts = [];
+      if (m.license) parts.push("лицензия: " + m.license);
+      if (m.author) parts.push("автор: " + m.author);
+      if (m.downloadable) parts.push("скачивается: " + m.downloadable);
+      meta.textContent = parts.join(" · ");
+      a.appendChild(meta);
+      cont.appendChild(a);
+    }
+    cont.hidden = false;
+  }
+
   function showCard(index) {
     const m = monuments[index];
     if (!m) return;
@@ -391,6 +419,7 @@
       cardPhoto.textContent = "фото не найдено";
     }
 
+    populateCardModels(m.id);
     cardEl.hidden = false;
   }
 
@@ -474,6 +503,7 @@
       fetch("../data/ne_110m_countries.geojson").then(r => r.json()).catch(() => null),
       fetch("../data/mtk41.json").then(r => r.json()),
       fetch("../assets/mtk41/manifest.json").then(r => r.json()).catch(() => ({})),
+      fetch("../assets/mtk41/models.json").then(r => r.json()).catch(() => ({})),
     ]).then(([geo, mtk, manifest]) => {
       if (geo) {
         map.geojson = geo;
@@ -482,6 +512,7 @@
       }
       monuments = (mtk.items || []).filter(it => typeof it.lat === "number" && typeof it.lng === "number");
       photoManifest = manifest || {};
+      modelsManifest = models || {};
     });
   }
 
