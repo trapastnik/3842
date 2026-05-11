@@ -507,6 +507,9 @@ const cardCat = cardEl.querySelector('[data-bind="category"]');
 const cardName = cardEl.querySelector('[data-bind="name"]');
 const cardWhere = cardEl.querySelector('[data-bind="where"]');
 const cardShort = cardEl.querySelector('[data-bind="short"]');
+const cardFigure = cardEl.querySelector("[data-figure]");
+const cardImg = cardEl.querySelector('[data-bind="image"]');
+const cardCredit = cardEl.querySelector('[data-bind="credit"]');
 
 function showCard(item) {
   if (!item) {
@@ -517,6 +520,16 @@ function showCard(item) {
   }
   selected = item;
   cardEl.hidden = false;
+  if (item.image && item.image.file) {
+    cardImg.src = `../data/images/mtk39/${item.image.file}`;
+    cardImg.alt = item.name_short || item.title || "";
+    cardCredit.textContent = item.image.credit || "";
+    cardFigure.hidden = false;
+  } else {
+    cardFigure.hidden = true;
+    cardImg.removeAttribute("src");
+    cardCredit.textContent = "";
+  }
   cardCat.textContent = CATEGORY_LABELS[item.category] || item.category || "";
   cardName.textContent = item.name || item.title || "";
   const where = [item.city, item.country].filter(Boolean).join(" · ");

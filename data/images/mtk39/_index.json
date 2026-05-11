@@ -1,0 +1,370 @@
+[
+  {
+    "id": "leti",
+    "file": "leti.jpg"
+  },
+  {
+    "id": "asteroid-vladilena",
+    "file": "asteroid-vladilena.png"
+  },
+  {
+    "id": "asteroid-ulyanov",
+    "file": "asteroid-ulyanov.png"
+  },
+  {
+    "id": "lenin-peak",
+    "file": "lenin-peak.jpg"
+  },
+  {
+    "id": "kazan-university",
+    "file": "kazan-university.jpg"
+  },
+  {
+    "id": "dagestan-university",
+    "file": "dagestan-university.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9b/%D0%9C%D1%83%D1%85%D0%86%D1%83_%D0%93%D0%86%D0%B0%D0%BB%D0%B8%D0%B5%D0%B2.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%90%D0%BB%D0%B8%D0%B5%D0%B2,_%D0%9C%D1%83%D1%85%D1%83_%D0%93%D0%B8%D0%BC%D0%B1%D0%B0%D1%82%D0%BE%D0%B2%D0%B8%D1%87",
+    "wiki_title": "Алиев, Муху Гимбатович",
+    "found_via": "wiki_fulltext: ДГУ им. Ленина",
+    "bytes": 243128
+  },
+  {
+    "id": "sredneaziatskij-gu",
+    "file": "sredneaziatskij-gu.svg"
+  },
+  {
+    "id": "tajik-gu",
+    "file": "tajik-gu.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/2c/%D0%93%D0%BB%D0%B0%D0%B2%D0%BD%D1%8B%D0%B9_%D0%BA%D0%BE%D1%80%D0%BF%D1%83%D1%81_%D0%A2%D0%93%D0%A3.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A2%D0%BE%D0%BC%D1%81%D0%BA%D0%B8%D0%B9_%D0%B3%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%82%D0%B5%D1%82",
+    "wiki_title": "Томский государственный университет",
+    "found_via": "wiki_fulltext: ТГУ им. Ленина",
+    "bytes": 257193
+  },
+  {
+    "id": "tashkent-gu",
+    "file": "tashkent-gu.png"
+  },
+  {
+    "id": "khorezm-pedagogical",
+    "file": "khorezm-pedagogical.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a6/Idioma_chuvasio.png",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A7%D1%83%D0%B2%D0%B0%D1%88%D1%81%D0%BA%D0%B8%D0%B9_%D1%8F%D0%B7%D1%8B%D0%BA",
+    "wiki_title": "Чувашский язык",
+    "found_via": "wiki_fulltext: Хорезмский пединститут",
+    "bytes": 407388
+  },
+  {
+    "id": "tbilisi-railway",
+    "file": "tbilisi-railway.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Freight_and_passenger_diesel_locomotive_TE1-20-135_%282%29_no_background.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A2%D0%AD1",
+    "wiki_title": "ТЭ1",
+    "found_via": "wiki_fulltext: ТИИЖТ",
+    "bytes": 223282
+  },
+  {
+    "id": "vpa-lenina",
+    "file": "vpa-lenina.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cd/RossiStreet.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%90%D0%BA%D0%B0%D0%B4%D0%B5%D0%BC%D0%B8%D1%8F_%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%BE%D0%B3%D0%BE_%D0%B1%D0%B0%D0%BB%D0%B5%D1%82%D0%B0_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%90._%D0%AF._%D0%92%D0%B0%D0%B3%D0%B0%D0%BD%D0%BE%D0%B2%D0%BE%D0%B9",
+    "wiki_title": "Академия русского балета имени А. Я. Вагановой",
+    "found_via": "wiki_fulltext: ВПА им. Ленина",
+    "bytes": 201173
+  },
+  {
+    "id": "tashkent-vovku",
+    "file": "tashkent-vovku.jpg"
+  },
+  {
+    "id": "lenvvmiu",
+    "file": "lenvvmiu.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/19/Admiralty1.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%92%D1%8B%D1%81%D1%88%D0%B5%D0%B5_%D0%B2%D0%BE%D0%B5%D0%BD%D0%BD%D0%BE-%D0%BC%D0%BE%D1%80%D1%81%D0%BA%D0%BE%D0%B5_%D0%B8%D0%BD%D0%B6%D0%B5%D0%BD%D0%B5%D1%80%D0%BD%D0%BE%D0%B5_%D1%83%D1%87%D0%B8%D0%BB%D0%B8%D1%89%D0%B5_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%A4._%D0%AD._%D0%94%D0%B7%D0%B5%D1%80%D0%B6%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%B3%D0%BE",
+    "wiki_title": "Высшее военно-морское инженерное училище имени Ф. Э. Дзержинского",
+    "found_via": "wiki_fulltext: ЛВВМИУ",
+    "bytes": 180199
+  },
+  {
+    "id": "ulyanovsk-tank",
+    "file": "ulyanovsk-tank.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1d/USSR_Tank_Emblem_a.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A7%D0%B5%D0%BB%D1%8F%D0%B1%D0%B8%D0%BD%D1%81%D0%BA%D0%BE%D0%B5_%D0%B2%D1%8B%D1%81%D1%88%D0%B5%D0%B5_%D1%82%D0%B0%D0%BD%D0%BA%D0%BE%D0%B2%D0%BE%D0%B5_%D0%BA%D0%BE%D0%BC%D0%B0%D0%BD%D0%B4%D0%BD%D0%BE%D0%B5_%D1%83%D1%87%D0%B8%D0%BB%D0%B8%D1%89%D0%B5",
+    "wiki_title": "Челябинское высшее танковое командное училище",
+    "found_via": "wiki_fulltext: Ульяновское ВТКУ",
+    "bytes": 197665
+  },
+  {
+    "id": "ulyanovsk-library",
+    "file": "ulyanovsk-library.jpg"
+  },
+  {
+    "id": "rgb-lenina",
+    "file": "rgb-lenina.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d8/State_Library_named_after_Lenin_%28left_wing_of_the_building%29.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%B0%D1%8F_%D0%B3%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D0%B0%D1%8F_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0",
+    "wiki_title": "Российская государственная библиотека",
+    "found_via": "wiki_fulltext: Библиотека им. Ленина (РГБ)",
+    "bytes": 1037387
+  },
+  {
+    "id": "pravda-printing",
+    "file": "pravda-printing.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b4/Pravdy_Street%2C_Moscow.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%B0%D0%B2%D0%B4%D0%B0_(%D0%B8%D0%B7%D0%B4%D0%B0%D1%82%D0%B5%D0%BB%D1%8C%D1%81%D1%82%D0%B2%D0%BE)",
+    "wiki_title": "Правда (издательство)",
+    "found_via": "wiki_fulltext: Типография «Правды»",
+    "bytes": 295165
+  },
+  {
+    "id": "soviet-childrens-fund",
+    "file": "soviet-childrens-fund.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/Rdfbuildingmos.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A0%D0%BE%D1%81%D1%81%D0%B8%D0%B9%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D0%B5%D1%82%D1%81%D0%BA%D0%B8%D0%B9_%D1%84%D0%BE%D0%BD%D0%B4",
+    "wiki_title": "Российский детский фонд",
+    "found_via": "wiki_fulltext: Советский детский фонд",
+    "bytes": 214548
+  },
+  {
+    "id": "nizhny-radio-lab",
+    "file": "nizhny-radio-lab.jpg"
+  },
+  {
+    "id": "volkhov-ges",
+    "file": "volkhov-ges.jpg"
+  },
+  {
+    "id": "dneproges",
+    "file": "dneproges.jpg"
+  },
+  {
+    "id": "starobeshevskaya-gres",
+    "file": "starobeshevskaya-gres.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/95/Donetsk_Starobeshevskaya_GRES.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A1%D1%82%D0%B0%D1%80%D0%BE%D0%B1%D0%B5%D1%88%D0%B5%D0%B2%D1%81%D0%BA%D0%B0%D1%8F_%D0%A2%D0%AD%D0%A1",
+    "wiki_title": "Старобешевская ТЭС",
+    "found_via": "wiki_fulltext: Старобешевская ГРЭС",
+    "bytes": 217801
+  },
+  {
+    "id": "shaturskaya-gres",
+    "file": "shaturskaya-gres.jpg"
+  },
+  {
+    "id": "zages",
+    "file": "zages.jpg"
+  },
+  {
+    "id": "chaes",
+    "file": "chaes.jpg"
+  },
+  {
+    "id": "karakum-canal",
+    "file": "karakum-canal.jpg"
+  },
+  {
+    "id": "volga-don-canal",
+    "file": "volga-don-canal.jpg"
+  },
+  {
+    "id": "volga-baltic",
+    "file": "volga-baltic.png"
+  },
+  {
+    "id": "yerevan-silk",
+    "file": "yerevan-silk.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c6/Znakpocheta_2.png",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9E%D1%80%D0%B4%D0%B5%D0%BD_%C2%AB%D0%97%D0%BD%D0%B0%D0%BA_%D0%9F%D0%BE%D1%87%D1%91%D1%82%D0%B0%C2%BB",
+    "wiki_title": "Орден «Знак Почёта»",
+    "found_via": "wiki_fulltext: Ереванский шёлковый комбинат имени В.И. Ленина",
+    "bytes": 1086587
+  },
+  {
+    "id": "mpgu",
+    "file": "mpgu.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fb/%D0%9C%D0%9F%D0%93%D0%A3_01.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9C%D0%BE%D1%81%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_%D0%BF%D0%B5%D0%B4%D0%B0%D0%B3%D0%BE%D0%B3%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B3%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%82%D0%B5%D1%82",
+    "wiki_title": "Московский педагогический государственный университет",
+    "found_via": "wiki_fulltext: МГПИ им. Ленина (МПГУ)",
+    "bytes": 296016
+  },
+  {
+    "id": "azerbaijan-pedagogical",
+    "file": "azerbaijan-pedagogical.png"
+  },
+  {
+    "id": "turkmen-pedagogical",
+    "file": "turkmen-pedagogical.jpg"
+  },
+  {
+    "id": "azerbaijan-agro-museum",
+    "file": "azerbaijan-agro-museum.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/6b/Robert_Falk_-_Self_Portrait_Against_a_Window_%281916%29.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A4%D0%B0%D0%BB%D1%8C%D0%BA,_%D0%A0%D0%BE%D0%B1%D0%B5%D1%80%D1%82_%D0%A0%D0%B0%D1%84%D0%B0%D0%B8%D0%BB%D0%BE%D0%B2%D0%B8%D1%87",
+    "wiki_title": "Фальк, Роберт Рафаилович",
+    "found_via": "wiki_fulltext: АзГСХМ",
+    "bytes": 400530
+  },
+  {
+    "id": "bsu",
+    "file": "bsu.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b5/Belarus-Minsk-BSU-Rector%27s_Office-2.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%91%D0%B5%D0%BB%D0%BE%D1%80%D1%83%D1%81%D1%81%D0%BA%D0%B8%D0%B9_%D0%B3%D0%BE%D1%81%D1%83%D0%B4%D0%B0%D1%80%D1%81%D1%82%D0%B2%D0%B5%D0%BD%D0%BD%D1%8B%D0%B9_%D1%83%D0%BD%D0%B8%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%82%D0%B5%D1%82",
+    "wiki_title": "Белорусский государственный университет",
+    "found_via": "wiki_fulltext: БГУ им. Ленина",
+    "bytes": 281322
+  },
+  {
+    "id": "bssr-library",
+    "file": "bssr-library.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/23/CSL_BY.png",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A6%D0%B5%D0%BD%D1%82%D1%80%D0%B0%D0%BB%D1%8C%D0%BD%D0%B0%D1%8F_%D0%BD%D0%B0%D1%83%D1%87%D0%BD%D0%B0%D1%8F_%D0%B1%D0%B8%D0%B1%D0%BB%D0%B8%D0%BE%D1%82%D0%B5%D0%BA%D0%B0_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%AF%D0%BA%D1%83%D0%B1%D0%B0_%D0%9A%D0%BE%D0%BB%D0%B0%D1%81%D0%B0_%D0%9D%D0%90%D0%9D_%D0%91%D0%B5%D0%BB%D0%B0%D1%80%D1%83%D1%81%D0%B8",
+    "wiki_title": "Центральная научная библиотека имени Якуба Коласа НАН Беларуси",
+    "found_via": "wiki_fulltext: Гос. библиотека БССР",
+    "bytes": 1370963
+  },
+  {
+    "id": "artemugol-mine",
+    "file": "artemugol-mine.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/1937._Mine_6_%28Tarnyagin%29.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%90%D1%80%D1%82%D1%91%D0%BC%D1%83%D0%B3%D0%BE%D0%BB%D1%8C",
+    "wiki_title": "Артёмуголь",
+    "found_via": "wiki_fulltext: Шахта им. Ленина (Артёмуголь)",
+    "bytes": 237015
+  },
+  {
+    "id": "shakhtinsk-mine",
+    "file": "shakhtinsk-mine.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/2f/%D0%90%D0%B2%D1%82%D0%BE%D0%B4%D0%BE%D1%80%D0%BE%D0%B6%D0%BD%D1%8B%D0%B9_%D0%B8%D0%BD%D1%81%D1%82%D0%B8%D1%82%D1%83%D1%82_%28%D0%A8%D0%B0%D1%85%D1%82%D1%8B%29.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A8%D0%B0%D1%85%D1%82%D1%8B",
+    "wiki_title": "Шахты",
+    "found_via": "wiki_fulltext: Шахта им. Ленина (Шахтинск)",
+    "bytes": 305270
+  },
+  {
+    "id": "luzhniki",
+    "file": "luzhniki.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ac/LuzhnikiStadium.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9B%D1%83%D0%B6%D0%BD%D0%B8%D0%BA%D0%B8_(%D1%81%D1%82%D0%B0%D0%B4%D0%B8%D0%BE%D0%BD)",
+    "wiki_title": "Лужники (стадион)",
+    "found_via": "wiki_fulltext: Стадион им. Ленина (Лужники)",
+    "bytes": 334009
+  },
+  {
+    "id": "georgian-polytechnic",
+    "file": "georgian-polytechnic.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c2/%D0%9E%D0%B1%D0%BB%D0%BE%D0%B6%D0%BA%D0%B0_%D0%93%D0%B0%D1%80%D1%80%D0%B8_%D0%9F%D0%BE%D1%82%D1%82%D0%B5%D1%80%D0%B0_%D0%B8_%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D0%BE%D0%B2_%D1%80%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B3%D0%BE_%D0%BC%D1%8B%D1%88%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F.png",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%93%D0%B0%D1%80%D1%80%D0%B8_%D0%9F%D0%BE%D1%82%D1%82%D0%B5%D1%80_%D0%B8_%D0%BC%D0%B5%D1%82%D0%BE%D0%B4%D1%8B_%D1%80%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D0%BE%D0%B3%D0%BE_%D0%BC%D1%8B%D1%88%D0%BB%D0%B5%D0%BD%D0%B8%D1%8F",
+    "wiki_title": "Гарри Поттер и методы рационального мышления",
+    "found_via": "wiki_fulltext: ГПИ",
+    "bytes": 1404791
+  },
+  {
+    "id": "kharkov-polytechnic",
+    "file": "kharkov-polytechnic.jpg"
+  },
+  {
+    "id": "kazakh-polytechnic",
+    "file": "kazakh-polytechnic.jpg"
+  },
+  {
+    "id": "ilich-depot",
+    "file": "ilich-depot.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/%D0%9B%D0%BE%D0%BA%D0%BE%D0%BC%D0%BE%D1%82%D0%B8%D0%B2%D0%BD%D0%BE%D0%B5_%D0%B4%D0%B5%D0%BF%D0%BE_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%98%D0%BB%D1%8C%D0%B8%D1%87%D0%B0_%2817988907219%29.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%98%D0%BC%D0%B5%D0%BD%D0%B8_%D0%98%D0%BB%D1%8C%D0%B8%D1%87%D0%B0_(%D0%BB%D0%BE%D0%BA%D0%BE%D0%BC%D0%BE%D1%82%D0%B8%D0%B2%D0%BD%D0%BE%D0%B5_%D0%B4%D0%B5%D0%BF%D0%BE)",
+    "wiki_title": "Имени Ильича (локомотивное депо)",
+    "found_via": "wiki_fulltext: Депо им. Ильича",
+    "bytes": 168988
+  },
+  {
+    "id": "nevsky-zavod",
+    "file": "nevsky-zavod.jpg"
+  },
+  {
+    "id": "novokramatorsk",
+    "file": "novokramatorsk.jpg"
+  },
+  {
+    "id": "gorky-tv-zavod",
+    "file": "gorky-tv-zavod.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/%D0%97%D0%B0%D0%B2%D0%BE%D0%BB%D0%B6%D1%8C%D0%B5_%282012.01.21%29_-_panoramio.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%97%D0%B0%D0%B2%D0%BE%D0%BB%D0%B6%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%BE%D1%82%D0%BE%D1%80%D0%BD%D1%8B%D0%B9_%D0%B7%D0%B0%D0%B2%D0%BE%D0%B4",
+    "wiki_title": "Заволжский моторный завод",
+    "found_via": "wiki_fulltext: Горьковский ТВ-завод",
+    "bytes": 261846
+  },
+  {
+    "id": "uzbek-metallurg",
+    "file": "uzbek-metallurg.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Bahodir_Tojimirzayevich.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%90%D0%B1%D0%B4%D1%83%D0%BB%D0%BB%D0%B0%D0%B5%D0%B2,_%D0%91%D0%B0%D1%85%D0%BE%D0%B4%D0%B8%D1%80_%D0%A2%D0%BE%D0%B6%D0%B8%D0%BC%D0%B8%D1%80%D0%B7%D0%B0%D0%B5%D0%B2%D0%B8%D1%87",
+    "wiki_title": "Абдуллаев, Баходир Тожимирзаевич",
+    "found_via": "wiki_fulltext: Узметкомбинат",
+    "bytes": 202244
+  },
+  {
+    "id": "zhdanov-ilich",
+    "file": "zhdanov-ilich.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b0/Mmk_logo_bw30310.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D1%80%D0%B8%D1%83%D0%BF%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%BC%D0%B5%D1%82%D0%B0%D0%BB%D0%BB%D1%83%D1%80%D0%B3%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%BA%D0%BE%D0%BC%D0%B1%D0%B8%D0%BD%D0%B0%D1%82_%D0%B8%D0%BC%D0%B5%D0%BD%D0%B8_%D0%98%D0%BB%D1%8C%D0%B8%D1%87%D0%B0",
+    "wiki_title": "Мариупольский металлургический комбинат имени Ильича",
+    "found_via": "wiki_fulltext: ММК им. Ильича",
+    "bytes": 96000
+  },
+  {
+    "id": "baranovka-porcelain",
+    "file": "baranovka-porcelain.jpg"
+  },
+  {
+    "id": "ilmen-reserve",
+    "file": "ilmen-reserve.jpg"
+  },
+  {
+    "id": "arsenal-kiev",
+    "file": "arsenal-kiev.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f0/Kyiv_Arsenal_Plant_logo.png",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%90%D1%80%D1%81%D0%B5%D0%BD%D0%B0%D0%BB_(%D0%B7%D0%B0%D0%B2%D0%BE%D0%B4,_%D0%9A%D0%B8%D0%B5%D0%B2)",
+    "wiki_title": "Арсенал (завод, Киев)",
+    "found_via": "wiki_fulltext: Завод «Арсенал»",
+    "bytes": 342558
+  },
+  {
+    "id": "kmk",
+    "file": "kmk.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/03/Roman_Ungern_1916_or_1917.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%A3%D0%BD%D0%B3%D0%B5%D1%80%D0%BD-%D0%A8%D1%82%D0%B5%D1%80%D0%BD%D0%B1%D0%B5%D1%80%D0%B3,_%D0%A0%D0%BE%D0%BC%D0%B0%D0%BD_%D0%A4%D1%91%D0%B4%D0%BE%D1%80%D0%BE%D0%B2%D0%B8%D1%87_%D1%84%D0%BE%D0%BD",
+    "wiki_title": "Унгерн-Штернберг, Роман Фёдорович фон",
+    "found_via": "wiki_fulltext: КМК",
+    "bytes": 300973
+  },
+  {
+    "id": "bryansk-machine",
+    "file": "bryansk-machine.jpg"
+  },
+  {
+    "id": "mmk",
+    "file": "mmk.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/34/Magnitogorsk_-_%D0%9F%D1%80%D0%B0%D0%B2%D0%BE%D0%B1%D0%B5%D1%80%D0%B5%D0%B6%D0%BD%D1%8B%D0%B9_%D1%80%D0%B0%D0%B9%D0%BE%D0%BD.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9C%D0%B0%D0%B3%D0%BD%D0%B8%D1%82%D0%BE%D0%B3%D0%BE%D1%80%D1%81%D0%BA",
+    "wiki_title": "Магнитогорск",
+    "found_via": "wiki_fulltext: ММК",
+    "bytes": 359262
+  },
+  {
+    "id": "krasmash",
+    "file": "krasmash.jpg"
+  },
+  {
+    "id": "ntmk",
+    "file": "ntmk.jpg"
+  },
+  {
+    "id": "michurinsk-zavod",
+    "file": "michurinsk-zavod.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/88/Michurin_1936.jpg",
+    "page_url": "https://ru.wikipedia.org/wiki/%D0%9C%D0%B8%D1%87%D1%83%D1%80%D0%B8%D0%BD,_%D0%98%D0%B2%D0%B0%D0%BD_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D0%BE%D0%B2%D0%B8%D1%87",
+    "wiki_title": "Мичурин, Иван Владимирович",
+    "found_via": "wiki_fulltext: Мичуринский завод им. Ленина",
+    "bytes": 199506
+  }
+]

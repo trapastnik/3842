@@ -25,6 +25,10 @@
 
       <aside id="card" class="card" hidden>
         <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <figure class="card__figure" data-figure hidden>
+          <img class="card__img" data-bind="image" alt="" />
+          <figcaption class="card__credit" data-bind="credit"></figcaption>
+        </figure>
         <div class="card__cat" data-bind="category"></div>
         <h2 class="card__name" data-bind="name"></h2>
         <p class="card__where" data-bind="where"></p>
@@ -107,6 +111,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./globe.js?v=8"></script>
+    <script type="module" src="./globe.js?v=9"></script>
   </body>
 </html>
