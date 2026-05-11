@@ -196,6 +196,19 @@ html, body {
 .epoch-band--renais { background: var(--epoch-renais); }
 .epoch-band--now { background: var(--epoch-now); }
 
+/* Compressed band — diagonal hatching to signal "scale is squeezed here" */
+.epoch-band--compressed {
+  background:
+    repeating-linear-gradient(
+      135deg,
+      rgba(67, 80, 89, 0.30) 0 6px,
+      rgba(67, 80, 89, 0.10) 6px 14px
+    ),
+    rgba(67, 80, 89, 0.25);
+  border-top: 1px dashed rgba(210, 183, 115, 0.30);
+  border-bottom: 1px dashed rgba(210, 183, 115, 0.30);
+}
+
 .epoch-label {
   position: absolute;
   left: 44px;
@@ -214,6 +227,17 @@ html, body {
   font-size: 11px;
   letter-spacing: 0.32em;
   color: rgba(210, 183, 115, 0.35);
+}
+
+/* Compressed-band label: centred vertically inside the band, brighter so the
+   "сжато" tag is readable inside the dim hatching. */
+.epoch-label--compressed {
+  transform: translateY(-50%);
+  color: rgba(247, 249, 239, 0.55);
+  font-size: clamp(16px, 1.8vw, 22px);
+}
+.epoch-label--compressed .epoch-label__years {
+  color: rgba(210, 183, 115, 0.7);
 }
 
 /* Year ruler on right edge */
@@ -278,10 +302,10 @@ html, body {
 .dot {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 56px;
-  height: 56px;
+  width: 112px;
+  height: 112px;
   padding: 0;
-  border: 2px solid var(--brass);
+  border: 3px solid var(--brass);
   border-radius: 999px;
   background: rgba(12, 16, 18, 0.85);
   color: var(--paper);
@@ -290,12 +314,12 @@ html, body {
   display: grid;
   place-items: center;
   font-family: var(--font-display);
-  font-size: 18px;
+  font-size: 36px;
   line-height: 1;
   overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
   z-index: 5;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
 }
 .dot:active {
   transform: translate(-50%, -50%) scale(1.18);
@@ -316,20 +340,20 @@ html, body {
 }
 .dot__initials {
   font-family: var(--font-display);
-  font-size: 19px;
+  font-size: 38px;
   letter-spacing: 0.02em;
 }
 .dot__tag {
   position: absolute;
-  top: -8px;
-  right: -10px;
+  top: -10px;
+  right: -12px;
   background: var(--red);
   color: var(--paper);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  padding: 2px 6px;
+  padding: 3px 8px;
   border-radius: 999px;
   pointer-events: none;
 }
@@ -576,5 +600,6 @@ html, body {
   .card { top: 116px; right: 18px; width: calc(100% - 36px); }
   .legend-toggle { right: 18px; bottom: 18px; }
   .legend { right: 18px; bottom: 76px; width: calc(100% - 36px); }
-  .dot { width: 48px; height: 48px; }
+  .dot { width: 96px; height: 96px; font-size: 30px; }
+  .dot__initials { font-size: 32px; }
 }
