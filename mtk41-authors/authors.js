@@ -144,32 +144,120 @@
     }
   }
 
+  // Test/fallback model for monuments that don't have their own 3D scan.
+  // Uses the Dubna (Merkurov 1937) photogrammetry which is one of the better
+  // public Sketchfab scans of a Soviet Lenin monument.
+  const FALLBACK_MODEL = {
+    name: "Памятник Ленину в Дубне (фотограмметрия)",
+    url: "https://sketchfab.com/3d-models/none-a14d4ca0163b44829123780f3cfa121b",
+    license: "—",
+    author: "Alex",
+    exact_match: false,
+  };
+
+  function extractModelUid(url) {
+    const m = (url || "").match(/([a-f0-9]{32})/i);
+    return m ? m[1] : null;
+  }
+
+  function buildEmbedUrl(uid) {
+    const params = "autostart=0&ui_infos=0&ui_inspector=0&ui_stop=0&ui_watermark=1&dnt=1&preload=0";
+    return `https://sketchfab.com/models/${uid}/embed?${params}`;
+  }
+
+  function setViewerModel(sortedModels, idx) {
+    const viewer = document.getElementById("card-model-viewer");
+    const controls = document.getElementById("card-model-controls");
+    if (!viewer || !sortedModels[idx]) return;
+    const uid = extractModelUid(sortedModels[idx].url);
+    if (!uid) { viewer.innerHTML = ""; return; }
+    const src = buildEmbedUrl(uid);
+    const iframe = document.createElement("iframe");
+    iframe.src = src;
+    iframe.setAttribute("frameborder", "0");
+    iframe.setAttribute("allow", "autoplay; fullscreen; xr-spatial-tracking");
+    iframe.setAttribute("allowfullscreen", "");
+    iframe.setAttribute("mozallowfullscreen", "true");
+    iframe.setAttribute("webkitallowfullscreen", "true");
+    iframe.loading = "lazy";
+    viewer.innerHTML = "";
+    viewer.appendChild(iframe);
+    if (controls) {
+      controls.querySelectorAll(".card-model-tab").forEach((el, i) => {
+        el.classList.toggle("active", i === idx);
+      });
+    }
+  }
+
+  function clearCardModelViewer() {
+    const viewer = document.getElementById("card-model-viewer");
+    if (viewer) viewer.innerHTML = "";
+  }
+
   function populateCardModels(monumentId) {
     const cont = document.getElementById("card-models");
-    if (!cont) return;
-    const list = modelsManifest[monumentId] || [];
-    // remove old entries (keep the heading)
+    const viewer = document.getElementById("card-model-viewer");
+    const controls = document.getElementById("card-model-controls");
+    if (!cont || !viewer) return;
+
+    const own = modelsManifest[monumentId] || [];
+    let list = own;
+    let isTest = false;
+    if (!list.length) { list = [FALLBACK_MODEL]; isTest = true; }
+
+    // Sort: exact matches first
+    const sorted = list.slice().sort(
+      (a, b) => (b.exact_match ? 1 : 0) - (a.exact_match ? 1 : 0)
+    );
+
+    cont.hidden = false;
+    viewer.hidden = false;
+    viewer.classList.toggle("test", isTest);
+
+    // Clear old extra entries / tabs / links
     cont.querySelectorAll(".card-model").forEach(el => el.remove());
-    if (!list.length) { cont.hidden = true; return; }
-    for (const m of list) {
+
+    // Tabs (only if multiple)
+    if (controls) {
+      controls.innerHTML = "";
+      if (sorted.length > 1) {
+        controls.hidden = false;
+        sorted.forEach((m, i) => {
+          const tab = document.createElement("button");
+          tab.type = "button";
+          tab.className = "card-model-tab" + (i === 0 ? " active" : "") + (m.exact_match ? " exact" : "");
+          tab.textContent = m.name || "модель";
+          tab.title = m.name || "";
+          tab.addEventListener("click", () => setViewerModel(sorted, i));
+          controls.appendChild(tab);
+        });
+      } else {
+        controls.hidden = true;
+      }
+    }
+
+    setViewerModel(sorted, 0);
+
+    // Source-link entry for the active model (gives access to license + author)
+    const active = sorted[0];
+    if (active && active.url) {
       const a = document.createElement("a");
-      a.className = "card-model" + (m.exact_match ? " exact" : "");
-      a.href = m.url;
+      a.className = "card-model" + (active.exact_match ? " exact" : "");
+      a.href = active.url;
       a.target = "_blank";
       a.rel = "noopener";
-      a.textContent = m.name;
+      a.textContent = isTest ? "Источник тестовой модели — Sketchfab" : "Открыть на Sketchfab: " + (active.name || "");
       const meta = document.createElement("span");
       meta.className = "card-model-meta";
       const parts = [];
-      if (m.license) parts.push("лицензия: " + m.license);
-      if (m.author) parts.push("автор: " + m.author);
-      if (m.downloadable) parts.push("скачивается: " + m.downloadable);
+      if (active.license) parts.push("лицензия: " + active.license);
+      if (active.author) parts.push("автор: " + active.author);
       meta.textContent = parts.join(" · ");
       a.appendChild(meta);
       cont.appendChild(a);
     }
-    cont.hidden = false;
   }
+
 
   function showCard(index) {
     const m = monuments[index];
@@ -201,7 +289,7 @@
     cardEl.hidden = false;
   }
 
-  function hideCard() { cardEl.hidden = true; }
+  function hideCard() { cardEl.hidden = true; clearCardModelViewer(); }
   cardClose.addEventListener("click", hideCard);
 
   // Tap outside the card closes it

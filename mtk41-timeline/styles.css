@@ -234,6 +234,66 @@ html, body {
   color: var(--brass);
   margin: 0 0 0.5em 0;
 }
+
+.card-model-viewer {
+  width: 100%;
+  aspect-ratio: 16 / 11;
+  background: #0E1214;
+  border-radius: 2px;
+  overflow: hidden;
+  margin: 0 0 0.6em 0;
+  border: 1px solid rgba(210, 183, 115, 0.22);
+  position: relative;
+}
+.card-model-viewer[hidden] { display: none; }
+.card-model-viewer iframe {
+  width: 100%;
+  height: 100%;
+  border: 0;
+  display: block;
+}
+.card-model-viewer.test::after {
+  content: "ТЕСТОВАЯ МОДЕЛЬ — авторская не доступна";
+  position: absolute;
+  top: 8px; left: 8px;
+  font-family: "20 Kopeek", monospace;
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  color: var(--brass);
+  background: rgba(14, 18, 20, 0.78);
+  padding: 4px 8px;
+  border-radius: 2px;
+  pointer-events: none;
+}
+.card-model-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin: 0 0 0.6em 0;
+}
+.card-model-controls[hidden] { display: none; }
+.card-model-tab {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(10px, 1.1vh, 13px);
+  padding: 4px 8px;
+  background: rgba(247, 249, 239, 0.05);
+  color: var(--paper);
+  border: 1px solid rgba(247, 249, 239, 0.10);
+  border-radius: 2px;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 120ms ease, border-color 120ms ease;
+  max-width: 14em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.card-model-tab.active {
+  background: rgba(210, 183, 115, 0.18);
+  border-color: var(--brass);
+  color: var(--brass);
+}
+.card-model-tab.exact::before { content: "★ "; color: var(--brass); }
 .card-model {
   display: block;
   padding: 8px 10px;
