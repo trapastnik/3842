@@ -1,0 +1,64 @@
+@font-face { font-family: "Nolde"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype"); }
+@font-face { font-family: "20 Kopeek"; font-weight: 400; font-style: normal; font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype"); }
+@font-face { font-family: "20 Kopeek"; font-weight: 600; font-style: normal; font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype"); }
+
+:root {
+  --paper:    #F7F9EF;
+  --brass:    #D2B773;
+  --red:      #A02128;
+  --graphite: #435059;
+  --window:   #9DA3A6;
+  --ink:      #0E1214;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html, body {
+  width: 100%; height: 100%; margin: 0;
+  overflow: hidden; background: var(--ink);
+  color: var(--paper); font-family: "Nolde", Georgia, serif;
+  -webkit-user-select: none; user-select: none;
+}
+
+.stage {
+  position: fixed; inset: 0; isolation: isolate;
+  background:
+    linear-gradient(255deg, transparent 0, transparent 91%, var(--red) 91%, var(--red) 96%, transparent 96.2%),
+    radial-gradient(ellipse 110% 100% at 50% 50%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.96)),
+    var(--ink);
+}
+.stage::before {
+  content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  background: repeating-linear-gradient(0deg, rgba(247, 249, 239, 0.03) 0, rgba(247, 249, 239, 0.03) 1px, transparent 1px, transparent 5px);
+  mix-blend-mode: soft-light;
+}
+
+#stacked {
+  position: absolute; inset: 0; z-index: 1;
+  width: 100%; height: 100%; display: block; touch-action: none;
+}
+
+.title-block {
+  position: absolute; z-index: 2;
+  top: clamp(20px, 3vh, 56px); left: clamp(24px, 3vw, 56px);
+  max-width: min(60%, 760px); pointer-events: none;
+}
+.title-block .kicker {
+  font-family: "20 Kopeek", monospace; font-size: clamp(11px, 1.1vh, 18px);
+  letter-spacing: 0.22em; text-transform: uppercase;
+  color: var(--brass); opacity: 0.9; margin-bottom: 0.6em;
+}
+.title-block h1 {
+  font-family: "Nolde", Georgia, serif; font-weight: 400;
+  font-size: clamp(32px, 5.4vh, 100px); line-height: 0.94;
+  margin: 0 0 0.4em 0; color: var(--paper);
+  text-shadow: 0 4px 18px rgba(12, 16, 18, 0.55);
+}
+.title-block .subtitle {
+  font-family: "20 Kopeek", monospace; font-size: clamp(12px, 1.3vh, 20px);
+  line-height: 1.5; color: var(--paper); opacity: 0.78; max-width: 38em;
+}
+
+/* Card styles → assets/mtk41/lib/card.css */

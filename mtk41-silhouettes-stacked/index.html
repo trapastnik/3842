@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Силуэты (3 шкалы)</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — три шкалы">
+    <canvas id="stacked" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры · v2</div>
+      <h1>Три шкалы<br>Ленинианы</h1>
+      <div class="subtitle">Малые (0–8 м), средние (8–20 м), колоссы (20–60 м) — каждая шкала со своим увеличением, чтобы видны были все 19 памятников.</div>
+    </header>
+    <aside id="card" class="card" data-mtk-card hidden></aside>
+  </main>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../assets/mtk41/lib/three/three.module.min.js",
+      "three/addons/": "../assets/mtk41/lib/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { initMtkCard } from "../assets/mtk41/lib/card.js";
+    initMtkCard();
+  </script>
+  <script src="./stacked.js"></script>
+</body>
+</html>
