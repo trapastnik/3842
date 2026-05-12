@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Силуэты</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — типология силуэтов">
+    <header class="title-block">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>Типология <span class="accent">силуэта</span></h1>
+      <div class="subtitle">Девятнадцать памятников приведены к одной высоте. Видны позы и архетипы: указующий, стоящий, сидящий, бюст, голова, группа. Силуэты вырезаны из фотографий (rembg / U²-Net).</div>
+    </header>
+    <section class="parade" id="parade" aria-label="Все 19 силуэтов в один рост"></section>
+    <aside id="card" class="card" data-mtk-card hidden></aside>
+  </main>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../assets/mtk41/lib/three/three.module.min.js",
+      "three/addons/": "../assets/mtk41/lib/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { initMtkCard } from "../assets/mtk41/lib/card.js";
+    initMtkCard();
+  </script>
+  <script src="./silhouettes.js"></script>
+</body>
+</html>

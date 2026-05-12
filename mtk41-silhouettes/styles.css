@@ -1,0 +1,234 @@
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+:root {
+  --paper:    #F7F9EF;
+  --brass:    #D2B773;
+  --red:      #A02128;
+  --graphite: #435059;
+  --window:   #9DA3A6;
+  --ink:      #0E1214;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--ink);
+  color: var(--paper);
+  font-family: "Nolde", Georgia, serif;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  gap: clamp(16px, 2.4vh, 36px);
+  padding: clamp(20px, 3.5vh, 56px);
+  background:
+    radial-gradient(ellipse 110% 70% at 50% 100%, rgba(160, 33, 40, 0.18), transparent),
+    radial-gradient(ellipse 80% 60% at 10% 0%, rgba(210, 183, 115, 0.10), transparent),
+    linear-gradient(180deg, #0E1214 0%, #181D20 100%);
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background:
+    repeating-linear-gradient(0deg, rgba(247, 249, 239, 0.025) 0, rgba(247, 249, 239, 0.025) 1px, transparent 1px, transparent 5px);
+  mix-blend-mode: soft-light;
+}
+
+.title-block {
+  position: relative;
+  z-index: 2;
+  max-width: min(90%, 900px);
+  pointer-events: none;
+  flex: 0 0 auto;
+}
+.title-block .kicker {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(12px, 1.2vh, 22px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  opacity: 0.9;
+  margin-bottom: 0.4em;
+}
+.title-block h1 {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(36px, 6.4vh, 120px);
+  line-height: 0.95;
+  margin: 0 0 0.4em 0;
+  color: var(--paper);
+  text-shadow: 0 4px 18px rgba(12, 16, 18, 0.55);
+}
+.title-block h1 .accent { color: var(--brass); font-style: italic; }
+.title-block .subtitle {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(13px, 1.3vh, 22px);
+  line-height: 1.45;
+  color: var(--paper);
+  opacity: 0.78;
+  max-width: 50em;
+}
+
+/* ---------- Parade: all silhouettes lined up at equal height ---------- */
+
+.parade {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(clamp(140px, 11vw, 220px), 1fr));
+  gap: clamp(12px, 1.4vh, 24px);
+  overflow-y: auto;
+  align-content: start;
+  padding-right: 4px;
+  padding-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(210, 183, 115, 0.4) transparent;
+}
+
+.fig {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  cursor: pointer;
+  background: rgba(20, 24, 27, 0.5);
+  border: 1px solid rgba(210, 183, 115, 0.15);
+  border-radius: 4px;
+  padding: clamp(12px, 1.4vh, 22px) clamp(8px, 1vh, 16px) clamp(14px, 1.6vh, 22px);
+  transition: border-color 160ms ease, transform 160ms ease, background 160ms ease;
+  touch-action: manipulation;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+.fig::before {
+  content: "";
+  position: absolute;
+  inset: auto -10% -30% -10%;
+  height: 60%;
+  z-index: 0;
+  background: radial-gradient(ellipse at center top, rgba(210, 183, 115, 0.07), transparent 60%);
+  pointer-events: none;
+}
+
+.fig:active { transform: scale(0.985); }
+.fig:hover { border-color: rgba(210, 183, 115, 0.4); }
+
+.fig-image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: clamp(220px, 32vh, 480px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.fig-image img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  display: block;
+  filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.6));
+}
+
+/* Status tint via colored shadow underneath the silhouette */
+.fig[data-status="extant"]     .fig-image img { filter: drop-shadow(0 6px 18px rgba(160, 33, 40, 0.55)) drop-shadow(0 0 0 transparent); }
+.fig[data-status="demolished"] .fig-image img { filter: grayscale(0.7) drop-shadow(0 6px 14px rgba(0, 0, 0, 0.7)); opacity: 0.78; }
+.fig[data-status="unknown"]    .fig-image img { filter: grayscale(0.4) drop-shadow(0 6px 14px rgba(157, 163, 166, 0.45)); opacity: 0.82; }
+.fig[data-status="relocated"]  .fig-image img { filter: drop-shadow(0 6px 16px rgba(210, 183, 115, 0.6)); }
+
+/* Placeholder for monuments without a silhouette */
+.fig-image.no-sil {
+  display: grid;
+  place-items: center;
+  color: rgba(247, 249, 239, 0.22);
+  font-family: "Nolde", Georgia, serif;
+  font-size: clamp(60px, 8vh, 140px);
+  line-height: 1;
+}
+
+.fig-cap {
+  position: relative;
+  z-index: 1;
+  margin-top: clamp(10px, 1.2vh, 18px);
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.fig-city {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(14px, 1.7vh, 22px);
+  line-height: 1.05;
+  color: var(--paper);
+}
+.fig-year {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(11px, 1.2vh, 15px);
+  color: var(--brass);
+  letter-spacing: 0.14em;
+}
+.fig-height {
+  font-family: "20 Kopeek", monospace;
+  font-size: clamp(10px, 1.05vh, 13px);
+  color: var(--window);
+  letter-spacing: 0.06em;
+  opacity: 0.75;
+  margin-top: 2px;
+}
+
+/* ---------- Status pill, top-right corner of each tile ---------- */
+.fig-pip {
+  position: absolute;
+  z-index: 2;
+  top: 8px;
+  right: 8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--red);
+  box-shadow: 0 0 0 2px rgba(14, 18, 20, 0.5);
+}
+.fig-pip[data-status="demolished"] { background: var(--graphite); box-shadow: 0 0 0 2px var(--window), 0 0 0 3px rgba(14, 18, 20, 0.5); }
+.fig-pip[data-status="unknown"]    { background: var(--window); opacity: 0.6; }
+.fig-pip[data-status="relocated"]  { background: var(--brass); }
+
+/* Card styles → assets/mtk41/lib/card.css */
