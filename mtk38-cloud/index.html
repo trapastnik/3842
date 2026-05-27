@@ -10,15 +10,16 @@
 <body>
   <main class="stage" aria-label="МТК 38 Ленин на языках мира — облако">
     <canvas id="cloud" aria-hidden="true"></canvas>
-
-    <div class="controls" role="group" aria-label="Параметры облака">
-      <label class="control" for="density">
-        <span class="control-label">Плотность × <span id="density-value">4</span></span>
-        <input id="density" type="range" min="1" max="20" step="1" value="4">
-        <span class="control-meta">всего: <span id="density-count">168</span> слов</span>
-      </label>
-    </div>
   </main>
+
+  <!-- Controls are a sibling of .stage so they escape its stacking context -->
+  <div class="controls" role="group" aria-label="Параметры облака">
+    <label class="control" for="density">
+      <span class="control-label">Плотность × <span id="density-value">4</span></span>
+      <input id="density" type="range" min="1" max="20" step="1" value="4">
+      <span class="control-meta">всего: <span id="density-count">168</span> слов</span>
+    </label>
+  </div>
 
   <script src="./cloud.js"></script>
 </body>

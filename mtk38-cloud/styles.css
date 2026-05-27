@@ -111,15 +111,15 @@ body {
 }
 
 .controls {
-  position: absolute;
-  inset: auto 20px 20px auto;
-  z-index: 5;
+  position: fixed;          /* fixed, not absolute — escape any stacking quirks */
+  right: 20px;
+  bottom: 20px;
+  z-index: 1000;            /* above canvas (z=1) and stage overlays */
+  pointer-events: auto;     /* explicit: always interactive */
   padding: 14px 18px;
   border: 1px solid rgba(210, 183, 115, 0.4);
   border-radius: 10px;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
+  background: rgba(0, 0, 0, 0.62);
   color: var(--paper);
   font-family: "20 Kopeek", "Courier New", monospace;
   font-size: 12px;
@@ -158,13 +158,18 @@ body {
 }
 
 .controls input[type="range"] {
+  display: block;
   width: 100%;
-  height: 24px;
+  height: 28px;
+  margin: 0;
   background: transparent;
   -webkit-appearance: none;
   appearance: none;
   cursor: pointer;
   touch-action: manipulation;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .controls input[type="range"]::-webkit-slider-runnable-track {
