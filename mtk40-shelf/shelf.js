@@ -25,9 +25,11 @@ function adjustHex(hex, delta) {
 }
 function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
 
-function spineWidth(item) {
+function spineWidth(item, portrait) {
   const p = Math.max(8, item.pages_approx || 80);
-  return Math.max(22, Math.min(110, 14 + Math.log2(p) * 7));
+  const base = 14 + Math.log2(p) * 7;
+  if (portrait) return Math.max(34, Math.min(160, base * 1.45));
+  return Math.max(22, Math.min(110, base));
 }
 
 class ShelfApp {
@@ -68,6 +70,10 @@ class ShelfApp {
     this.cardCloseEl.addEventListener("click", () => this.hideCard());
   }
 
+  isPortrait() {
+    return this.H > this.W;
+  }
+
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = rect.width;
@@ -79,18 +85,22 @@ class ShelfApp {
     for (const shelf of this.shelves) this.layoutShelf(shelf);
   }
 
+  titleAreaPx() {
+    return (this.isPortrait() ? 150 : 110) * this.dpr;
+  }
+
   shelfBaseHeight() {
-    const titleArea = 110 * this.dpr;
-    return (this.H - titleArea) / 3;
+    return (this.H - this.titleAreaPx()) / 3;
   }
 
   layoutShelf(shelf) {
+    const portrait = this.isPortrait();
     const baseH = this.shelfBaseHeight();
-    const maxSpineH = baseH * 0.78;
+    const maxSpineH = baseH * (portrait ? 0.82 : 0.78);
     let x = 0;
     shelf.spineRects = [];
     for (const item of shelf.items) {
-      const w = spineWidth(item) * this.dpr;
+      const w = spineWidth(item, portrait) * this.dpr;
       const hRatio = (item.height_cm || 22) / 22;
       const h = maxSpineH * Math.max(0.66, Math.min(1.18, hRatio));
       shelf.spineRects.push({ item, x, w, h });
@@ -151,7 +161,7 @@ class ShelfApp {
   };
 
   shelfIndexAtY(y) {
-    const titleArea = 110 * this.dpr;
+    const titleArea = this.titleAreaPx();
     if (y < titleArea) return -1;
     const baseH = this.shelfBaseHeight();
     const idx = Math.floor((y - titleArea) / baseH);
@@ -162,7 +172,7 @@ class ShelfApp {
     const idx = this.shelfIndexAtY(py);
     if (idx < 0) return null;
     const shelf = this.shelves[idx];
-    const titleArea = 110 * this.dpr;
+    const titleArea = this.titleAreaPx();
     const baseH = this.shelfBaseHeight();
     const top = titleArea + idx * baseH;
     const baseline = top + baseH - 36 * this.dpr;
@@ -216,7 +226,7 @@ class ShelfApp {
   render() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.W, this.H);
-    const titleArea = 110 * this.dpr;
+    const titleArea = this.titleAreaPx();
     const baseH = this.shelfBaseHeight();
     for (let i = 0; i < this.shelves.length; i++) {
       this.renderShelf(this.shelves[i], titleArea + i * baseH, baseH);
