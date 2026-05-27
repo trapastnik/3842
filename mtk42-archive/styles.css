@@ -546,3 +546,124 @@ html, body {
   .detail__portrait .initials { font-size: 48px; }
   .counter { padding: 8px 22px 12px; }
 }
+
+/* ─── Vertical (portrait) — 49" 4K kiosk preview ──────────────────
+ * Triggers in the hub's vertical mode (iframe pinned 9:16) and on any
+ * portrait screen. Bigger cards (5-col grid on 2160 wide), larger fonts
+ * for arm's-length reading, fatter filter chips for finger taps.
+ */
+@media (orientation: portrait) and (min-width: 760px) {
+  .title {
+    padding: 48px 56px 22px;
+  }
+  .title__num { font-size: 22px; letter-spacing: 0.34em; }
+  .title__h   { font-size: clamp(56px, 8vw, 112px); }
+  .title__sub { font-size: 22px; margin-top: 14px; letter-spacing: 0.22em; }
+
+  /* Filters — bigger pills, more spacing */
+  .filters {
+    margin: 0 56px;
+    padding: 22px 0 22px;
+    gap: 32px;
+  }
+  .filters__group { gap: 12px; }
+  .filter {
+    min-height: 64px;
+    padding: 0 26px;
+    font-size: 18px;
+    letter-spacing: 0.24em;
+    border-radius: 999px;
+  }
+
+  /* Grid — fewer, larger cards. On 2160 wide → 4 cols of ~480 px */
+  .grid {
+    padding: 36px 56px 64px;
+    gap: 28px;
+    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+  }
+
+  /* Cards — tall portraits, large name and meta */
+  .card {
+    grid-template-rows: 420px auto auto;
+    gap: 18px;
+    padding: 44px 26px 26px;
+    min-height: 640px;
+    border-radius: 10px;
+  }
+  .card::before {
+    top: 22px;
+    left: 22px;
+    width: 11px;
+    height: 11px;
+    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4);
+  }
+  .card__tag {
+    top: 22px;
+    left: 50px;
+    right: 24px;
+    font-size: 14px;
+    letter-spacing: 0.22em;
+  }
+  .card__portrait { border-radius: 6px; }
+  .card__initials { font-size: 120px; }
+  .card__name {
+    font-size: 30px;
+    line-height: 1.16;
+  }
+  .card__meta {
+    font-size: 16px;
+    letter-spacing: 0.14em;
+    line-height: 1.4;
+  }
+  .card__tone {
+    padding-top: 14px;
+  }
+  .card__tone-track { height: 5px; }
+  .card__tone-marker { width: 14px; height: 14px; }
+  .card__tone-value { font-size: 16px; min-width: 44px; }
+
+  /* Detail panel — wider for 4K vertical readability */
+  .detail { padding: 56px; }
+  .detail__panel {
+    width: min(1200px, 100%);
+    padding: 48px 56px 40px;
+    border-radius: 18px;
+    gap: 26px;
+  }
+  .detail__close {
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+    top: 18px;
+    right: 18px;
+  }
+  .detail__head {
+    grid-template-columns: 240px 1fr;
+    gap: 36px;
+  }
+  .detail__portrait { width: 240px; }
+  .detail__portrait .initials { font-size: 112px; }
+  .detail__kind { font-size: 20px; letter-spacing: 0.30em; margin-bottom: 12px; }
+  .detail__name { font-size: clamp(40px, 4vw, 52px); line-height: 1.1; margin-bottom: 14px; }
+  .detail__meta { font-size: 20px; letter-spacing: 0.14em; margin-bottom: 18px; }
+  .detail__epoch, .detail__tone {
+    font-size: 16px;
+    letter-spacing: 0.18em;
+    padding: 8px 16px;
+  }
+  .detail__work { padding: 20px 24px; }
+  .detail__work-title { font-size: 16px; letter-spacing: 0.30em; margin-bottom: 8px; }
+  .detail__work-text { font-size: 22px; line-height: 1.45; }
+  .detail__text { font-size: 26px; line-height: 1.55; }
+  .detail__source { font-size: 18px; }
+  .detail__tone-label { font-size: 18px; letter-spacing: 0.24em; }
+  .detail__tone-track { height: 10px; }
+  .detail__tone-marker { width: 22px; height: 22px; }
+  .detail__tone-value { font-size: 20px; min-width: 64px; }
+
+  .counter {
+    padding: 22px 56px 36px;
+    font-size: 18px;
+    letter-spacing: 0.24em;
+  }
+}
