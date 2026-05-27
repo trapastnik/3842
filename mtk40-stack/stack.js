@@ -86,10 +86,10 @@ class StackApp {
     // Чтобы стопки не вырастали слишком высокими, разбиваем каждую на 2 столбика.
     const portrait = this.H > this.W;
     this.portrait = portrait;
-    const scale = portrait ? 0.78 : 1;
+    const scale = portrait ? 0.55 : 1;
     const buckets = ["by-lenin", "about-lenin", "in-library"];
-    const towerSpacingX = (portrait ? 260 : TOWER_SPACING_X) * this.dpr;
-    const colSpacingZ = (portrait ? 115 : 145) * this.dpr;
+    const towerSpacingX = (portrait ? 200 : TOWER_SPACING_X) * this.dpr;
+    const colSpacingZ = (portrait ? 80 : 145) * this.dpr;
     const baseY = 0;
     this.books = [];
 
