@@ -575,52 +575,52 @@ html, body {
     border-radius: 999px;
   }
 
-  /* Grid — fewer, larger cards. On 2160 wide → 4 cols of ~480 px */
+  /* Grid — exactly 3 columns regardless of width */
   .grid {
-    padding: 36px 56px 64px;
-    gap: 28px;
-    grid-template-columns: repeat(auto-fill, minmax(440px, 1fr));
+    padding: 32px 44px 56px;
+    gap: 22px;
+    grid-template-columns: repeat(3, 1fr);
   }
 
-  /* Cards — tall portraits, large name and meta */
+  /* Cards — compact-but-readable; portrait dominates upper half */
   .card {
-    grid-template-rows: 420px auto auto;
-    gap: 18px;
-    padding: 44px 26px 26px;
-    min-height: 640px;
-    border-radius: 10px;
+    grid-template-rows: 280px auto auto;
+    gap: 14px;
+    padding: 34px 22px 22px;
+    min-height: 460px;
+    border-radius: 8px;
   }
   .card::before {
-    top: 22px;
-    left: 22px;
-    width: 11px;
-    height: 11px;
-    box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.4);
+    top: 18px;
+    left: 18px;
+    width: 9px;
+    height: 9px;
+    box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.4);
   }
   .card__tag {
-    top: 22px;
-    left: 50px;
-    right: 24px;
-    font-size: 14px;
-    letter-spacing: 0.22em;
+    top: 18px;
+    left: 40px;
+    right: 20px;
+    font-size: 12px;
+    letter-spacing: 0.20em;
   }
-  .card__portrait { border-radius: 6px; }
-  .card__initials { font-size: 120px; }
+  .card__portrait { border-radius: 5px; }
+  .card__initials { font-size: 84px; }
   .card__name {
-    font-size: 30px;
+    font-size: 22px;
     line-height: 1.16;
   }
   .card__meta {
-    font-size: 16px;
+    font-size: 13px;
     letter-spacing: 0.14em;
     line-height: 1.4;
   }
   .card__tone {
-    padding-top: 14px;
+    padding-top: 10px;
   }
-  .card__tone-track { height: 5px; }
-  .card__tone-marker { width: 14px; height: 14px; }
-  .card__tone-value { font-size: 16px; min-width: 44px; }
+  .card__tone-track { height: 4px; }
+  .card__tone-marker { width: 11px; height: 11px; }
+  .card__tone-value { font-size: 13px; min-width: 36px; }
 
   /* Detail panel — wider for 4K vertical readability */
   .detail { padding: 56px; }
