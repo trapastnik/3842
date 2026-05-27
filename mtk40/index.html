@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>МТК 40 · Библиотека Ленина</title>
+  <link rel="icon" href="data:," />
+  <link rel="stylesheet" href="../assets/shared/hub/hub.css" />
+</head>
+<body>
+  <div class="hub">
+    <header class="hub__bar">
+      <a class="hub__back" href="../">← Все МТК</a>
+      <div class="hub__title">
+        <span class="sub">МТК · 40</span>
+        <span class="name">Библиотека Ленина</span>
+      </div>
+      <div class="hub__nav">
+        <span class="hub__label" id="label"></span>
+        <button class="hub__arrow" id="prev" aria-label="Предыдущий вариант">‹</button>
+        <div class="hub__dots" id="dots" role="tablist"></div>
+        <button class="hub__arrow" id="next" aria-label="Следующий вариант">›</button>
+      </div>
+    </header>
+    <iframe class="hub__frame" id="frame" title="Прототип МТК 40" loading="eager"></iframe>
+  </div>
+
+  <script>
+    window.HUB_VARIANTS = [
+      { slug: "mtk40-shelf",    tag: "01 · Shelf",    name: "Полка" },
+      { slug: "mtk40-mirror",   tag: "02 · Mirror",   name: "Зеркало" },
+      { slug: "mtk40-stack",    tag: "03 · Stack",    name: "Стопки" },
+      { slug: "mtk40-timeline", tag: "04 · Timeline", name: "Таймлайн" },
+    ];
+  </script>
+  <script src="../assets/shared/hub/hub.js"></script>
+</body>
+</html>
