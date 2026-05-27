@@ -352,17 +352,24 @@
   }
 
   if (densityInput) {
-    // Stop pointer events on the slider from reaching the canvas drag handler.
-    ["pointerdown", "pointermove", "pointerup", "click"].forEach(t => {
-      densityInput.addEventListener(t, e => e.stopPropagation());
+    // Defensive: stop any pointer events on slider from bubbling anywhere
+    // and prevent native behaviour from being eaten by canvas listeners.
+    ["pointerdown", "pointermove", "pointerup", "pointercancel",
+     "mousedown", "mousemove", "mouseup", "touchstart", "touchmove",
+     "touchend", "click"].forEach(t => {
+      densityInput.addEventListener(t, e => e.stopPropagation(), { passive: true });
     });
-    densityInput.addEventListener("input", () => {
+
+    const applyDensity = () => {
       const next = clamp(parseInt(densityInput.value, 10) || 1, 1, 20);
       if (next === densityMultiplier) return;
       densityMultiplier = next;
       buildParticles();
       updateDensityUI();
-    });
+    };
+    densityInput.addEventListener("input", applyDensity);
+    densityInput.addEventListener("change", applyDensity);
+
     // Init from slider's default value
     densityMultiplier = clamp(parseInt(densityInput.value, 10) || 4, 1, 20);
   }
