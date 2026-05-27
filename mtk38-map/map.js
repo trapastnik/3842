@@ -177,14 +177,15 @@
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Map scale: fit world height to the canvas height with some headroom
-    // (so world width is 2× canvas height, can be panned horizontally).
-    map.worldH = height * 1.5;
-    map.worldW = map.worldH * 2;
-    // Initial camera centered on Eurasia (roughly lng 60°, lat 40°)
-    const center = project(40, 60);
-    map.camX = center.x - width * 0.5;
-    map.camY = center.y - height * 0.5;
+    // Map scale: fit the WHOLE world (2:1 equirect) into the canvas width.
+    // worldW = viewport width; worldH = worldW / 2.  In portrait this leaves
+    // empty vertical space above and below — map is centred vertically.
+    // In landscape map can still overflow vertically only if very wide.
+    map.worldW = width;
+    map.worldH = map.worldW / 2;
+    // Initial camera: world fully visible on x; centred on y.
+    map.camX = 0;
+    map.camY = (map.worldH - height) / 2;
 
     if (map.geojson) buildWorldCache();
   }
@@ -198,11 +199,18 @@
     if (Math.abs(map.camVX) < 0.5) map.camVX = 0;
     if (Math.abs(map.camVY) < 0.5) map.camVY = 0;
 
-    // Clamp vertical (don't go above pole/below pole much), wrap horizontal
-    const maxY = map.worldH - height + map.worldH * 0.04;
-    const minY = -map.worldH * 0.04;
-    if (map.camY > maxY) map.camY = maxY;
-    if (map.camY < minY) map.camY = minY;
+    // Vertical clamp: if the map is shorter than viewport, lock it centred.
+    // If taller (rare with current sizing), allow panning between poles.
+    if (map.worldH < height) {
+      map.camY = (map.worldH - height) / 2;
+      map.camVY = 0;
+    } else {
+      const maxY = map.worldH - height + map.worldH * 0.04;
+      const minY = -map.worldH * 0.04;
+      if (map.camY > maxY) map.camY = maxY;
+      if (map.camY < minY) map.camY = minY;
+    }
+    // Horizontal: wrap around the globe.
     if (map.camX < 0) map.camX += map.worldW;
     if (map.camX >= map.worldW) map.camX -= map.worldW;
   }
