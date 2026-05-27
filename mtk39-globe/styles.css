@@ -195,6 +195,7 @@ body {
   top: 32px;
   z-index: 4;
   width: min(420px, calc(100% - 64px));
+  max-height: calc(100vh - 64px);
   padding: 28px 28px 26px;
   border: 1px solid var(--brass-soft);
   border-radius: 14px;
@@ -203,6 +204,23 @@ body {
   box-shadow: 0 28px 64px rgba(0, 0, 0, 0.45);
   color: var(--paper-white);
   pointer-events: auto;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(210, 183, 115, 0.4) transparent;
+}
+
+.card::-webkit-scrollbar {
+  width: 6px;
+}
+
+.card::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.card::-webkit-scrollbar-thumb {
+  background: rgba(210, 183, 115, 0.4);
+  border-radius: 3px;
 }
 
 .card[hidden] {
@@ -213,15 +231,17 @@ body {
   position: absolute;
   top: 10px;
   right: 10px;
+  z-index: 2;
   width: 36px;
   height: 36px;
   border: none;
   border-radius: 999px;
-  background: transparent;
+  background: rgba(12, 16, 18, 0.72);
+  backdrop-filter: blur(4px);
   color: var(--paper-white);
   font-size: 16px;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.86;
 }
 
 .card__close:active {
@@ -631,6 +651,7 @@ body {
     right: 18px;
     top: 84px;
     width: calc(100% - 36px);
+    max-height: calc(100vh - 102px);
   }
   .offmap {
     top: auto;
