@@ -6,14 +6,26 @@
  *  - keyboard ← / →
  *  - horizontal touch swipe (60+ px)
  *  - URL hash (deep-linking to a specific variant)
+ *
+ * The bar auto-hides after 4s of no activity, giving the prototype the
+ * full viewport. Bring it back by moving cursor / touching top 12px,
+ * pressing any key, or focusing the hub document. (Pointer events
+ * inside the iframe don't reach the parent — that's why the top hotspot
+ * exists.)
  */
 
 const VARIANTS = window.HUB_VARIANTS || [];
 const frame  = document.getElementById("frame");
+const bar    = document.querySelector(".hub__bar");
 const label  = document.getElementById("label");
 const dotsEl = document.getElementById("dots");
 const prev   = document.getElementById("prev");
 const next   = document.getElementById("next");
+
+/* Inject top-edge hotspot once. */
+const edge = document.createElement("div");
+edge.className = "hub__edge";
+document.body.appendChild(edge);
 
 let i = 0;
 
@@ -69,3 +81,23 @@ if (VARIANTS.length <= 1) {
   next.style.display   = "none";
   dotsEl.style.display = "none";
 }
+
+/* Bar auto-hide. */
+const HIDE_AFTER_MS = 4000;
+let hideTimer = null;
+
+function showBar() {
+  bar.classList.remove("is-hidden");
+  if (hideTimer) clearTimeout(hideTimer);
+  hideTimer = setTimeout(() => bar.classList.add("is-hidden"), HIDE_AFTER_MS);
+}
+
+/* Trigger reveal on any of these. */
+edge.addEventListener("mouseenter", showBar);
+edge.addEventListener("touchstart", showBar, { passive: true });
+bar.addEventListener("mousemove",   showBar);
+bar.addEventListener("touchstart",  showBar, { passive: true });
+window.addEventListener("keydown",  showBar);
+
+/* Initial show — visitor sees the bar on first load, then it fades. */
+showBar();
