@@ -629,6 +629,78 @@ body {
   background: rgba(160, 33, 40, 0.18);
 }
 
+/* Kiosk portrait (49" stand 2160×3840 = 9:16) and tablet portrait.
+ * Excludes phones — they fall under `max-width: 640px` below. */
+@media (orientation: portrait) and (min-width: 720px) {
+  .title__num {
+    font-size: 15px;
+  }
+  .title__h {
+    font-size: clamp(44px, 5.5vw, 84px);
+  }
+
+  /* Heavy interaction controls move to mid-right — easier reach on a
+   * tall kiosk (bottom of a 49" vertical display is below most adults'
+   * waists). */
+  .zoom-controls {
+    top: 40%;
+    bottom: auto;
+    right: 32px;
+    gap: 12px;
+  }
+  .zoom-button {
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+  }
+  .settings-toggle {
+    top: calc(40% + 152px);
+    bottom: auto;
+    right: 32px;
+    width: 64px;
+    height: 64px;
+    font-size: 26px;
+  }
+
+  /* Card slightly wider in portrait, still clears the offmap column. */
+  .card {
+    width: min(480px, calc(100% - 80px));
+    max-height: calc(100vh - 80px);
+    padding: 30px 30px 28px;
+  }
+  .card__name {
+    font-size: 24px;
+  }
+  .card__text {
+    font-size: 16px;
+  }
+  .card__img {
+    height: 240px;
+  }
+
+  /* Offmap pill panel can take slightly more horizontal room. */
+  .offmap {
+    width: min(420px, calc(100% - 80px));
+  }
+  .offmap__item {
+    padding: 8px 14px;
+    font-size: 12px;
+    min-height: 32px;
+  }
+
+  /* Settings drawer: keep right-side, slightly wider for finger reach. */
+  .settings {
+    width: min(400px, 100%);
+  }
+  .settings__row {
+    min-height: 44px;
+  }
+  .settings__row input[type="checkbox"] {
+    width: 22px;
+    height: 22px;
+  }
+}
+
 @media (max-width: 640px) {
   .title {
     top: 22px;
