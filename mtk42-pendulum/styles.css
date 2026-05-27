@@ -612,7 +612,7 @@ html, body {
  * widens hit targets, repositions the detail card to the bottom so the
  * upper 2/3 of the screen (where touch is comfortable) shows the chart.
  */
-@media (orientation: portrait) and (min-width: 480px) {
+@media (orientation: portrait) and (min-width: 760px) {
   /* Title and axis — slightly bigger than landscape baseline, not huge */
   .title {
     padding: 32px 36px 16px;

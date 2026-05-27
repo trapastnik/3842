@@ -552,7 +552,7 @@ html, body {
  * portrait screen. Bigger cards (5-col grid on 2160 wide), larger fonts
  * for arm's-length reading, fatter filter chips for finger taps.
  */
-@media (orientation: portrait) and (min-width: 480px) {
+@media (orientation: portrait) and (min-width: 760px) {
   .title {
     padding: 48px 56px 22px;
   }
