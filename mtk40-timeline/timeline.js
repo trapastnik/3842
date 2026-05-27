@@ -91,11 +91,25 @@ class TimelineApp {
   }
 
   resize() {
+    const wasPortrait = this.portrait;
     const rect = this.canvas.getBoundingClientRect();
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
+    this.portrait = this.H > this.W;
     this.canvas.width = this.W;
     this.canvas.height = this.H;
+    // При первом размещении или переключении ориентации — задать начальный диапазон.
+    // В портрете уплотняем по дефолту до окрестности «революционного ядра», где плотность данных высока.
+    if (!this.initialZoomDone || wasPortrait !== this.portrait) {
+      if (this.portrait) {
+        this.viewYearStart = 1880;
+        this.viewYearEnd = 1970;
+      } else {
+        this.viewYearStart = YEAR_MIN;
+        this.viewYearEnd = YEAR_MAX;
+      }
+      this.initialZoomDone = true;
+    }
     this.computeLayout();
   }
 
@@ -224,10 +238,10 @@ class TimelineApp {
   };
 
   hitTest(px, py) {
+    const r = (this.portrait ? 14 : 7) * this.dpr;
     for (const p of this.placedItems) {
       const x = this.yearToX(p.year);
       const y = p.sec.baseline - (p.slotIdx + 1) * p.slotH + p.slotH / 2;
-      const r = 7 * this.dpr;
       if (Math.abs(px - x) <= r * 2 && Math.abs(py - y) <= p.slotH / 2) return p;
     }
     return null;
@@ -351,7 +365,8 @@ class TimelineApp {
       ctx.fillRect(x, axisY, 1 * this.dpr, big ? 8 * this.dpr : 4 * this.dpr);
       if (big) {
         ctx.fillStyle = "rgba(247,249,239,0.65)";
-        ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
+        const yearFs = (this.portrait ? 13 : 10) * this.dpr;
+        ctx.font = `400 ${yearFs}px "20 Kopeek", monospace`;
         ctx.textAlign = "center";
         ctx.fillText(String(y), x, axisY + 22 * this.dpr);
       }
@@ -359,13 +374,14 @@ class TimelineApp {
     ctx.textAlign = "left";
 
     // ленинские якоря
+    const anchorFs = (this.portrait ? 13 : 10) * this.dpr;
     for (const t of TIMELINE_TICKS) {
       const x = this.yearToX(t.year);
       if (x < 30 * this.dpr || x > this.W - 30 * this.dpr) continue;
       ctx.fillStyle = "rgba(160,33,40,0.7)";
       ctx.fillRect(x, 130 * this.dpr, 1 * this.dpr, axisY - 130 * this.dpr);
       ctx.fillStyle = COLORS.brass;
-      ctx.font = `600 ${10 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.font = `600 ${anchorFs}px "20 Kopeek", monospace`;
       ctx.textAlign = "left";
       ctx.save();
       ctx.translate(x + 4 * this.dpr, 124 * this.dpr);
@@ -379,7 +395,7 @@ class TimelineApp {
     const x = this.yearToX(p.year);
     if (x < 30 * this.dpr || x > this.W - 30 * this.dpr) return;
     const y = p.sec.baseline - (p.slotIdx + 1) * p.slotH + p.slotH / 2;
-    const w = 5 * this.dpr;
+    const w = (this.portrait ? 8 : 5) * this.dpr;
     const h = Math.max(14 * this.dpr, p.slotH * 0.86);
 
     ctx.globalAlpha = dim ? 0.16 : 1;

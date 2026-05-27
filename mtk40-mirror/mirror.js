@@ -119,13 +119,19 @@ class MirrorApp {
     const sideMargin = 50 * this.dpr;
     const usableW = this.W - 2 * sideMargin;
 
+    const portrait = this.H > this.W;
     for (const b of order) {
       const items = this.data.items
         .filter((i) => i.bucket === b)
         .sort((a, c) => (a.year_first || 0) - (c.year_first || 0));
       const sec = sections[b];
-      // rows: in-library wants 2, others wants 2
-      const rows = b === "in-library" ? Math.ceil(items.length / 18) : 2;
+      // rows: в портрете теснее по ширине → больше рядов; in-library — пропорционально
+      let rows;
+      if (b === "in-library") {
+        rows = portrait ? Math.ceil(items.length / 10) : Math.ceil(items.length / 18);
+      } else {
+        rows = portrait ? 3 : 2;
+      }
       const cols = Math.ceil(items.length / rows);
       const cellW = usableW / cols;
       const cellH = sec.height / rows;

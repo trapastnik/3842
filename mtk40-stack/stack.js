@@ -84,9 +84,12 @@ class StackApp {
   layout() {
     // Три башни в линию по оси X (мира). Сортировка внутри по году ↓ (старые сверху, чтобы новые были ближе к зрителю и видимее).
     // Чтобы стопки не вырастали слишком высокими, разбиваем каждую на 2 столбика.
+    const portrait = this.H > this.W;
+    this.portrait = portrait;
+    const scale = portrait ? 0.78 : 1;
     const buckets = ["by-lenin", "about-lenin", "in-library"];
-    const towerSpacingX = TOWER_SPACING_X * this.dpr;
-    const colSpacingZ = 145 * this.dpr;
+    const towerSpacingX = (portrait ? 260 : TOWER_SPACING_X) * this.dpr;
+    const colSpacingZ = (portrait ? 115 : 145) * this.dpr;
     const baseY = 0;
     this.books = [];
 
@@ -102,9 +105,9 @@ class StackApp {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const colIdx = i % cols;
-        const t = thicknessOf(item) * this.dpr;
-        const w = coverWidth(item) * this.dpr;
-        const d = coverDepth(item) * this.dpr;
+        const t = thicknessOf(item) * this.dpr * scale;
+        const w = coverWidth(item) * this.dpr * scale;
+        const d = coverDepth(item) * this.dpr * scale;
         const yBottom = colHeights[colIdx];
         const colZ = (cols === 1 ? 0 : (colIdx === 0 ? -colSpacingZ / 2 : colSpacingZ / 2));
         this.books.push({
@@ -121,9 +124,10 @@ class StackApp {
       // запомним высоту для рендера подписи
     }
 
-    // Сцена: где (0,0,0)? — около центра-низа экрана, центра по горизонтали
+    // Сцена: где (0,0,0)? — в портрете чуть выше, чтобы стопки уместились
     this.cx = this.W / 2;
-    this.cy = this.H * 0.72;
+    this.cy = this.H * (portrait ? 0.62 : 0.72);
+    this.towerSpacingX = towerSpacingX;
   }
 
   project(x, y, z) {
@@ -258,7 +262,7 @@ class StackApp {
     // labels per tower (project to base of each tower) — отрисую перед книгами, они снизу
     const towers = ["by-lenin", "about-lenin", "in-library"];
     for (let bi = 0; bi < towers.length; bi++) {
-      const towerX = (bi - 1) * TOWER_SPACING_X * this.dpr;
+      const towerX = (bi - 1) * this.towerSpacingX;
       const meta = BUCKET_META[towers[bi]];
       const baseProj = this.project(towerX, 0, 130 * this.dpr);
       ctx.save();
@@ -278,7 +282,7 @@ class StackApp {
     const ctx = this.ctx;
     // тень-эллипс под каждой башней
     for (let bi = 0; bi < 3; bi++) {
-      const towerX = (bi - 1) * TOWER_SPACING_X * this.dpr;
+      const towerX = (bi - 1) * this.towerSpacingX;
       const center = this.project(towerX, 0, 0);
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.5)";
