@@ -88,44 +88,64 @@
     };
   }
 
+  // Density multiplier — bound to the UI slider, can be 1..20.
+  // Total particles = words.length × densityMultiplier.
+  let densityMultiplier = 4;
+
   function buildParticles() {
     particles.length = 0;
     const rng = makeRng(0xC10D5EE7);
-    words.forEach((item, i) => {
-      // Distribute in an elongated volume (taller than wide for vertical 4K kiosk).
-      // Use cube-root of uniform random for more uniform volumetric density.
-      const u = rng();
-      const v = rng();
-      const w = rng();
-      const radius = Math.cbrt(rng()) * 0.95;
-      const theta = u * Math.PI * 2;
-      const cosPhi = 1 - 2 * v;            // -1..+1
-      const sinPhi = Math.sqrt(1 - cosPhi * cosPhi);
-      const x = radius * sinPhi * Math.cos(theta);
-      const y = radius * sinPhi * Math.sin(theta) * 1.45; // stretch vertical
-      const z = radius * cosPhi;
+    // Each of the 42 words is instantiated `densityMultiplier` times, scattered
+    // through the volume.  Hero accents (red «Ленин», brass primaries) only on
+    // copy 0 so the visual hierarchy isn't multiplied — extra copies are quiet fill.
+    const COPIES = densityMultiplier;
+    for (let copy = 0; copy < COPIES; copy += 1) {
+      // Subsequent copies a bit smaller — feel like echo.  At high densities
+      // (×10+) we taper even more so they don't choke the view.
+      const copyScale =
+        copy === 0 ? 1.0 :
+        COPIES <= 4 ? 0.82 :
+        COPIES <= 10 ? 0.72 :
+                       0.62;
+      words.forEach((item, i) => {
+        // Distribute in an elongated volume (taller than wide for vertical 4K kiosk).
+        // Use cube-root of uniform random for more uniform volumetric density.
+        const u = rng();
+        const v = rng();
+        const w = rng();
+        const radius = Math.cbrt(rng()) * 0.95;
+        const theta = u * Math.PI * 2;
+        const cosPhi = 1 - 2 * v;            // -1..+1
+        const sinPhi = Math.sqrt(1 - cosPhi * cosPhi);
+        const x = radius * sinPhi * Math.cos(theta);
+        const y = radius * sinPhi * Math.sin(theta) * 1.45; // stretch vertical
+        const z = radius * cosPhi;
 
-      // Slow per-word drift
-      const speed = 0.012 + rng() * 0.02;
-      const driftDir = w * Math.PI * 2;
+        // Slow per-word drift
+        const speed = 0.012 + rng() * 0.02;
+        const driftDir = w * Math.PI * 2;
 
-      particles.push({
-        item,
-        baseX: x,
-        baseY: y,
-        baseZ: z,
-        driftAmp: 0.04 + rng() * 0.05,
-        driftPhase: rng() * Math.PI * 2,
-        driftSpeed: speed,
-        driftDirX: Math.cos(driftDir),
-        driftDirY: Math.sin(driftDir) * 0.6,
-        driftDirZ: Math.cos(driftDir + 1.7),
-        scale: item.primary ? 1.0 + (i === 0 ? 0.5 : 0.15) : 0.7 + rng() * 0.25,
-        breathPhase: rng() * Math.PI * 2,
-        accent: i === 0 ? "red" : (item.primary && (i % 7 === 0)) ? "brass" : "paper",
-        rank: i
+        const isHero = (copy === 0 && i === 0);
+        const isBrass = (copy === 0 && item.primary && (i % 7 === 0));
+
+        particles.push({
+          item,
+          baseX: x,
+          baseY: y,
+          baseZ: z,
+          driftAmp: 0.04 + rng() * 0.05,
+          driftPhase: rng() * Math.PI * 2,
+          driftSpeed: speed,
+          driftDirX: Math.cos(driftDir),
+          driftDirY: Math.sin(driftDir) * 0.6,
+          driftDirZ: Math.cos(driftDir + 1.7),
+          scale: copyScale * (isHero ? 1.5 : (item.primary ? 1.15 : 0.7 + rng() * 0.25)),
+          breathPhase: rng() * Math.PI * 2,
+          accent: isHero ? "red" : isBrass ? "brass" : "paper",
+          rank: copy * words.length + i
+        });
       });
-    });
+    }
   }
 
   function fontStack(script, size, weight) {
@@ -321,7 +341,34 @@
     dragging = false;
   });
 
+  // Density slider — live update of particle count
+  const densityInput = document.getElementById("density");
+  const densityValueEl = document.getElementById("density-value");
+  const densityCountEl = document.getElementById("density-count");
+
+  function updateDensityUI() {
+    if (densityValueEl) densityValueEl.textContent = String(densityMultiplier);
+    if (densityCountEl) densityCountEl.textContent = String(densityMultiplier * words.length);
+  }
+
+  if (densityInput) {
+    // Stop pointer events on the slider from reaching the canvas drag handler.
+    ["pointerdown", "pointermove", "pointerup", "click"].forEach(t => {
+      densityInput.addEventListener(t, e => e.stopPropagation());
+    });
+    densityInput.addEventListener("input", () => {
+      const next = clamp(parseInt(densityInput.value, 10) || 1, 1, 20);
+      if (next === densityMultiplier) return;
+      densityMultiplier = next;
+      buildParticles();
+      updateDensityUI();
+    });
+    // Init from slider's default value
+    densityMultiplier = clamp(parseInt(densityInput.value, 10) || 4, 1, 20);
+  }
+
   buildParticles();
+  updateDensityUI();
   resize();
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => requestAnimationFrame(render));

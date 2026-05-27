@@ -109,3 +109,95 @@ body {
   display: block;
   touch-action: none;
 }
+
+.controls {
+  position: absolute;
+  inset: auto 20px 20px auto;
+  z-index: 5;
+  padding: 14px 18px;
+  border: 1px solid rgba(210, 183, 115, 0.4);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--paper);
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  user-select: none;
+}
+
+.control {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  min-width: 240px;
+}
+
+.control-label {
+  color: var(--brass);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.control-label > span {
+  color: var(--paper);
+  font-weight: 400;
+}
+
+.control-meta {
+  color: rgba(247, 249, 239, 0.6);
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+}
+
+.control-meta > span {
+  color: var(--brass);
+}
+
+.controls input[type="range"] {
+  width: 100%;
+  height: 24px;
+  background: transparent;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
+.controls input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  background: linear-gradient(to right, var(--brass), rgba(210, 183, 115, 0.18));
+  border-radius: 2px;
+}
+
+.controls input[type="range"]::-moz-range-track {
+  height: 3px;
+  background: linear-gradient(to right, var(--brass), rgba(210, 183, 115, 0.18));
+  border-radius: 2px;
+}
+
+.controls input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--brass);
+  margin-top: -8px;
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.controls input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--paper);
+  border: 2px solid var(--brass);
+  cursor: grab;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
