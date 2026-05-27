@@ -143,6 +143,7 @@
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
 
+    const isPortrait = height > width;
     for (let y = 1920; y <= 1975; y += 1) {
       const isDecade = y % 10 === 0;
       const isHalfDecade = y % 5 === 0;
@@ -157,9 +158,10 @@
       ctx.stroke();
       if (isDecade) {
         ctx.fillStyle = cssColor(palette.paper, 0.85);
-        ctx.font = `600 ${Math.max(14, height * 0.022)}px "20 Kopeek", "Courier New", monospace`;
+        ctx.font = `600 ${Math.max(14, height * 0.020)}px "20 Kopeek", "Courier New", monospace`;
         ctx.fillText(String(y), x, axisY + 22);
-      } else if (isHalfDecade) {
+      } else if (isHalfDecade && !isPortrait) {
+        // Skip half-decade labels in portrait — too cramped.
         ctx.fillStyle = cssColor(palette.paper, 0.4);
         ctx.font = `400 ${Math.max(10, height * 0.013)}px "20 Kopeek", "Courier New", monospace`;
         ctx.fillText(String(y), x, axisY + 14);

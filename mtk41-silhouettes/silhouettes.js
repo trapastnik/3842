@@ -293,24 +293,49 @@
       if (!drawSilhouette(pm)) drawProceduralFallback(pm);
     }
 
-    // Labels (city + year) below pedestal
-    ctx.textAlign = "center";
-    ctx.textBaseline = "top";
+    // Labels (city + year + height) below pedestal, rotated -60° in
+    // portrait or any narrow viewport so long names don't collide.
+    const isPortrait = height > width;
+    const slotW = placed.length > 1 ? (placed[1].x - placed[0].x) : 60;
+    const needRotate = isPortrait || slotW < 90;
+
     for (const pm of placed) {
       const m = pm.m;
       const isSelected = pm.i === selectedIndex;
-      const y = pm.baseY + 12;
-      const fontSize = Math.max(10, Math.min(pm.w * 0.32, height * 0.013));
+      const y = pm.baseY + 14;
+      const fontSize = isPortrait
+        ? Math.max(13, Math.min(slotW * 0.32, height * 0.014))
+        : Math.max(10, Math.min(pm.w * 0.32, height * 0.013));
+      ctx.save();
       ctx.font = `${isSelected ? 600 : 400} ${fontSize}px "20 Kopeek", "Courier New", monospace`;
-      ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-      const label = m.city || (m.country || "");
-      ctx.fillText(label, pm.x, y);
-      ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-      ctx.fillText(pm.year ? String(pm.year) : "—", pm.x, y + fontSize * 1.4);
-      // Total height in metres
-      const totalH = (pm.h_statue + pm.h_pedestal).toFixed(pm.h_statue + pm.h_pedestal < 10 ? 1 : 0);
-      ctx.fillStyle = cssColor(palette.paper, 0.55);
-      ctx.fillText(`${totalH} м`, pm.x, y + fontSize * 2.8);
+      const cityRaw = m.city || m.country || "";
+      const city = cityRaw.length > 18 ? cityRaw.slice(0, 16) + "…" : cityRaw;
+      const yearLabel = pm.year ? String(pm.year) : "—";
+      const heightLabel = ((pm.h_statue + pm.h_pedestal).toFixed(
+        pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
+
+      if (needRotate) {
+        ctx.translate(pm.x, y);
+        ctx.rotate(-Math.PI / 3);
+        ctx.textAlign = "right";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
+        ctx.fillText(city, 0, 0);
+        ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.95 : 0.6);
+        ctx.fillText(yearLabel, 0, fontSize * 1.25);
+        ctx.fillStyle = cssColor(palette.paper, 0.55);
+        ctx.fillText(heightLabel, 0, fontSize * 2.5);
+      } else {
+        ctx.textAlign = "center";
+        ctx.textBaseline = "top";
+        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
+        ctx.fillText(city, pm.x, y);
+        ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
+        ctx.fillText(yearLabel, pm.x, y + fontSize * 1.4);
+        ctx.fillStyle = cssColor(palette.paper, 0.55);
+        ctx.fillText(heightLabel, pm.x, y + fontSize * 2.8);
+      }
+      ctx.restore();
     }
   }
 
