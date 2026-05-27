@@ -158,10 +158,11 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Russia spans ~95° of latitude × ~170° of longitude. The "interesting"
-    // window is ~25..140°E, 40..72°N — about 115° × 32°. Fit roughly that
-    // into the viewport. World rectangle is sized so 1° lng equals ~ viewport
-    // width / 115.
-    const targetLngSpan = 110; // degrees
+    // window is ~25..140°E, 40..72°N — about 115° × 32°. Pick a target lng
+    // span that fills the viewport: wide on landscape, narrower on portrait
+    // (so Russia stays prominent instead of becoming a thin strip).
+    const isPortrait = height > width;
+    const targetLngSpan = isPortrait ? 75 : 110;
     map.worldW = (width / targetLngSpan) * 360;
     map.worldH = map.worldW / 2;
 

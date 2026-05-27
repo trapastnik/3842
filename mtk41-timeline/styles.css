@@ -113,6 +113,16 @@ html, body {
   max-width: 30em;
 }
 
-/* Card (right side, identical to mtk41-map) */
-
 /* Card styles → assets/mtk41/lib/card.css (linked from index.html) */
+
+/* ---------- Portrait (kiosk 2160×3840) ---------- */
+@media (orientation: portrait) {
+  .title-block {
+    max-width: 92%;
+    left: clamp(20px, 3vw, 48px);
+    top: clamp(20px, 3vh, 48px);
+  }
+  .title-block h1 { font-size: clamp(36px, 5vh, 84px); }
+  .title-block .subtitle { font-size: clamp(15px, 1.8vh, 26px); max-width: 36em; }
+  .title-block .kicker { font-size: clamp(13px, 1.4vh, 20px); }
+}
