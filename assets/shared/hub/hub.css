@@ -211,7 +211,65 @@ html, body {
   z-index: 1;
 }
 
+/* Vertical kiosk preview: iframe pinned to 9:16 portrait, centered,
+ * scaled to fit visitor's browser. Around it — darker «outside the
+ * stand» background so the kiosk frame is visually obvious. */
+.hub--vertical {
+  background:
+    radial-gradient(ellipse 120% 70% at 50% 50%, rgba(67, 80, 89, 0.5), rgba(8, 10, 12, 0.95)),
+    #0a0d10;
+}
+.hub--vertical .hub__frame {
+  inset: auto;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  /* min() picks whichever side is the binding constraint */
+  height: min(100vh, 100vw * 16 / 9);
+  width:  min(100vw, 100vh * 9 / 16);
+  border: 1px solid rgba(210, 183, 115, 0.25);
+  box-shadow:
+    0 0 80px rgba(0, 0, 0, 0.6),
+    0 0 0 1px rgba(210, 183, 115, 0.12) inset;
+}
+
+/* Orientation switch pill in the bar */
+.hub__orient {
+  display: inline-flex;
+  border: 1px solid rgba(210, 183, 115, 0.5);
+  border-radius: 999px;
+  overflow: hidden;
+  background: rgba(0, 0, 0, 0.3);
+}
+.hub__orient button {
+  background: transparent;
+  border: 0;
+  padding: 6px 11px;
+  color: var(--paper);
+  cursor: pointer;
+  touch-action: manipulation;
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1;
+  transition: background 120ms ease, color 120ms ease;
+}
+.hub__orient button + button {
+  border-left: 1px solid rgba(210, 183, 115, 0.3);
+}
+.hub__orient button.is-active {
+  background: var(--brass);
+  color: var(--graphite);
+}
+.hub__orient button:hover:not(.is-active) {
+  background: rgba(210, 183, 115, 0.12);
+}
+
 @media (max-width: 720px) {
   .hub__title .name { font-size: 18px; }
   .hub__label { display: none; }
+  .hub__orient button { padding: 6px 8px; }
 }
+
+/* (consolidated mobile rules above in the orient-switch block) */

@@ -15,8 +15,10 @@
  */
 
 const VARIANTS = window.HUB_VARIANTS || [];
+const hub    = document.querySelector(".hub");
 const frame  = document.getElementById("frame");
 const bar    = document.querySelector(".hub__bar");
+const nav    = document.querySelector(".hub__nav");
 const label  = document.getElementById("label");
 const dotsEl = document.getElementById("dots");
 const prev   = document.getElementById("prev");
@@ -26,6 +28,18 @@ const next   = document.getElementById("next");
 const edge = document.createElement("div");
 edge.className = "hub__edge";
 document.body.appendChild(edge);
+
+/* Inject orientation switch (Гор / Верт) into the bar. The hub renders
+ * the iframe full-viewport for horizontal mode, or pinned to 9:16
+ * portrait centered + scaled for vertical (kiosk) preview. */
+const orientEl = document.createElement("div");
+orientEl.className = "hub__orient";
+orientEl.setAttribute("role", "group");
+orientEl.setAttribute("aria-label", "Ориентация");
+orientEl.innerHTML =
+  '<button type="button" data-o="h" aria-label="Горизонтально">Гор</button>' +
+  '<button type="button" data-o="v" aria-label="Вертикально (киоск 2160×3840)">Верт</button>';
+nav.parentNode.insertBefore(orientEl, nav);
 
 let i = 0;
 
@@ -81,6 +95,30 @@ if (VARIANTS.length <= 1) {
   next.style.display   = "none";
   dotsEl.style.display = "none";
 }
+
+/* Orientation persistence: query ?o=v|h beats localStorage beats default 'h'. */
+const STORAGE_KEY = "bmk-hub-orient";
+function readOrient() {
+  const q = new URL(location.href).searchParams.get("o");
+  if (q === "v" || q === "h") return q;
+  const s = localStorage.getItem(STORAGE_KEY);
+  return s === "v" ? "v" : "h";
+}
+function setOrient(o) {
+  hub.classList.toggle("hub--vertical", o === "v");
+  orientEl.querySelectorAll("button").forEach(b => {
+    b.classList.toggle("is-active", b.dataset.o === o);
+    b.setAttribute("aria-pressed", b.dataset.o === o ? "true" : "false");
+  });
+  localStorage.setItem(STORAGE_KEY, o);
+  const u = new URL(location.href);
+  u.searchParams.set("o", o);
+  history.replaceState(null, "", u.toString());
+}
+orientEl.querySelectorAll("button").forEach(b => {
+  b.addEventListener("click", () => setOrient(b.dataset.o));
+});
+setOrient(readOrient());
 
 /* Bar auto-hide. */
 const HIDE_AFTER_MS = 4000;
