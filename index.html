@@ -46,418 +46,232 @@
     }
     body {
       display: grid;
-      grid-template-rows: auto auto 1fr auto auto;
-      gap: 22px;
-      padding: 40px 52px;
+      grid-template-rows: auto 1fr auto;
+      gap: 36px;
+      padding: 48px 56px 36px;
       background:
         linear-gradient(105deg, transparent 0, transparent 78%, var(--red) 78%, var(--red) 92%, transparent 92.2%),
         linear-gradient(105deg, transparent 0, transparent 60%, var(--brass) 60%, var(--brass) 60.18%, transparent 60.36%),
         radial-gradient(ellipse 130% 90% at 50% 35%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.95)),
         var(--graphite);
     }
-    header { display: grid; gap: 10px; }
+    header { display: grid; gap: 12px; max-width: 1400px; }
+    .subtitle {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 13px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
     h1 {
       margin: 0;
       font-family: "Nolde", Georgia, serif;
       font-weight: 400;
-      font-size: clamp(40px, 6.5vw, 88px);
+      font-size: clamp(48px, 7.5vw, 104px);
       line-height: 0.95;
       letter-spacing: -0.01em;
     }
-    .section-head {
-      display: flex;
-      align-items: baseline;
-      gap: 16px;
-      margin-top: 12px;
-      padding-bottom: 6px;
-      border-bottom: 1px solid rgba(210, 183, 115, 0.25);
+    .lead {
+      max-width: 720px;
+      font-size: 16px;
+      line-height: 1.55;
+      color: rgba(247, 249, 239, 0.74);
     }
-    .section-head h2 {
-      margin: 0;
-      font-family: "Nolde", Georgia, serif;
-      font-weight: 400;
-      font-size: 28px;
-      letter-spacing: -0.005em;
-    }
-    .section-head .note {
-      font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 11px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(210, 183, 115, 0.7);
-    }
-    .subtitle {
-      font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 13px;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--brass);
-    }
-    .grid {
+    main.grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-      gap: 16px;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 22px;
+      align-content: start;
     }
-    .card {
+    .mtk-card {
       position: relative;
       display: grid;
-      grid-template-rows: 1fr auto;
-      gap: 14px;
-      padding: 22px 24px;
-      min-height: 220px;
-      border: 1px solid rgba(210, 183, 115, 0.42);
-      border-radius: 16px;
-      background: rgba(0, 0, 0, 0.32);
+      grid-template-rows: auto 1fr auto;
+      gap: 18px;
+      padding: 32px 30px 28px;
+      min-height: 320px;
+      border: 1px solid rgba(210, 183, 115, 0.4);
+      border-radius: 18px;
+      background:
+        linear-gradient(135deg, rgba(160, 33, 40, 0.08) 0%, transparent 60%),
+        rgba(0, 0, 0, 0.36);
       color: var(--paper);
       text-decoration: none;
-      transition: transform 120ms ease, border-color 120ms ease, background 120ms ease;
+      transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
       isolation: isolate;
       overflow: hidden;
     }
-    .card:hover, .card:focus-visible {
-      transform: translateY(-2px);
-      border-color: var(--brass);
-      background: rgba(0, 0, 0, 0.46);
+    .mtk-card::before {
+      /* large faint МТК number watermark */
+      content: attr(data-num);
+      position: absolute;
+      right: -18px;
+      bottom: -28px;
+      font-family: "Nolde", Georgia, serif;
+      font-size: 200px;
+      line-height: 1;
+      color: rgba(210, 183, 115, 0.06);
+      pointer-events: none;
+      z-index: 0;
     }
-    .card-tag {
+    .mtk-card > * { position: relative; z-index: 1; }
+    .mtk-card:hover, .mtk-card:focus-visible {
+      transform: translateY(-3px);
+      border-color: var(--brass);
+      background:
+        linear-gradient(135deg, rgba(160, 33, 40, 0.18) 0%, transparent 60%),
+        rgba(0, 0, 0, 0.5);
+    }
+    .mtk-card .tag {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 12px;
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    .mtk-card h2 {
+      margin: 6px 0 0 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: 34px;
+      line-height: 1.02;
+      letter-spacing: -0.005em;
+    }
+    .mtk-card p {
+      margin: 0;
+      font-size: 14px;
+      line-height: 1.55;
+      color: rgba(247, 249, 239, 0.78);
+    }
+    .mtk-card .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      margin-top: 6px;
+      padding-top: 16px;
+      border-top: 1px solid rgba(210, 183, 115, 0.18);
+    }
+    .mtk-card .count {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 11px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: rgba(247, 249, 239, 0.6);
+    }
+    .mtk-card .cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      border: 1px solid rgba(210, 183, 115, 0.6);
+      border-radius: 999px;
       font-family: "20 Kopeek", "Courier New", monospace;
       font-size: 11px;
       letter-spacing: 0.22em;
       text-transform: uppercase;
       color: var(--brass);
     }
-    .card h2 {
-      margin: 4px 0 0 0;
-      font-family: "Nolde", Georgia, serif;
-      font-weight: 400;
-      font-size: 28px;
-      line-height: 1.0;
-    }
-    .card p {
-      margin: 8px 0 0 0;
-      font-size: 13.5px;
-      line-height: 1.5;
-      color: rgba(247, 249, 239, 0.74);
-    }
-    .card-cta {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      align-self: end;
-      padding: 9px 14px;
-      border: 1px solid rgba(210, 183, 115, 0.55);
-      border-radius: 999px;
-      font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 11px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color: var(--brass);
-    }
-    .placeholder {
-      padding: 18px 22px;
-      border: 1px dashed rgba(210, 183, 115, 0.32);
-      border-radius: 14px;
-      background: rgba(0, 0, 0, 0.18);
-      color: rgba(247, 249, 239, 0.56);
-      font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 12px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-    }
-    .placeholder.wip {
-      border-color: rgba(160, 33, 40, 0.6);
-      color: rgba(247, 249, 239, 0.72);
-    }
-    .placeholder.wip strong {
-      color: var(--brass);
-      font-weight: 400;
-    }
-    .coord {
-      padding: 14px 18px;
-      border: 1px solid rgba(210, 183, 115, 0.32);
-      border-left: 3px solid var(--red);
-      border-radius: 10px;
-      background: rgba(0, 0, 0, 0.32);
-      color: rgba(247, 249, 239, 0.78);
-      font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 11.5px;
-      line-height: 1.55;
-      letter-spacing: 0.06em;
-    }
-    .coord b {
-      color: var(--brass);
-      font-weight: 400;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-    }
-    .coord code {
-      color: var(--paper);
-      background: rgba(247, 249, 239, 0.08);
-      padding: 1px 6px;
-      border-radius: 4px;
-    }
     footer {
       font-family: "20 Kopeek", "Courier New", monospace;
-      font-size: 12px;
+      font-size: 11px;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      color: rgba(247, 249, 239, 0.5);
+      color: rgba(247, 249, 239, 0.42);
+      padding-top: 18px;
+      border-top: 1px solid rgba(210, 183, 115, 0.12);
+      display: flex;
+      gap: 22px;
+      flex-wrap: wrap;
     }
     footer a {
       color: var(--brass);
       text-decoration: none;
     }
+    footer .coord-tag {
+      color: rgba(247, 249, 239, 0.32);
+    }
   </style>
 </head>
 <body>
   <header>
-    <div class="subtitle">Музей В.И. Ленина · прототипы арт-объектов МТК 38–42</div>
-    <h1>Прототипы</h1>
+    <div class="subtitle">Музей В.И. Ленина · прототипы арт-объектов</div>
+    <h1>МТК 38—42</h1>
+    <p class="lead">
+      Пять мультимедийных арт-объектов музея. Каждый — отдельный экран с несколькими
+      вариантами визуализации. Выберите МТК — внутри стрелками или точками переключайте
+      решения.
+    </p>
   </header>
 
-  <div class="coord">
-    <b>Координация · 2026-05-11</b><br>
-    Один общий HTTP-сервер на <code>http://127.0.0.1:8092</code> работает из корня <code>main</code>.
-    Координатор — сессия <code>magical-allen-0c3d5f</code>: ведёт эту страницу и <a href="./COORDINATION.md" style="color:var(--brass);">COORDINATION.md</a>.
-    Соседние сессии: <code>mtk38-worker</code> (МТК 38), <code>bold-booth</code> (МТК 39 ✓), <code>flamboyant-cartwright</code> (МТК 40 ✓), <code>reverent-chandrasekhar</code> (МТК 41 ✓), <code>xenodochial-goodall</code> (МТК 42 ✓), <code>funny-kapitsa</code> (резерв).
-    Контент-политика — бинарные ассеты в <code>assets/mtkXX/</code> (см. COORDINATION.md).
-  </div>
-
-  <div class="section-head">
-    <h2>МТК 38 · Ленин на языках мира</h2>
-    <span class="note">42 языка · 8 вариантов</span>
-  </div>
-
   <main class="grid">
-    <a class="card" href="./mtk38-globe/">
+    <a class="mtk-card" href="./mtk38/" data-num="38">
       <div>
-        <div class="card-tag">01 · Globe</div>
-        <h2>Сфера</h2>
-        <p>3D-шар, свайп вращает по двум осям, мягкая инерция и автономное вращение.</p>
+        <div class="tag">МТК · 38</div>
+        <h2>Ленин на языках мира</h2>
       </div>
-      <span class="card-cta">Открыть →</span>
+      <p>Композиция из слова «Ленин» на 42 языках и письменностях. Восемь визуальных метафор — от 3D-сферы до карты, постера и каталога.</p>
+      <div class="meta">
+        <span class="count">42 языка · 8 вариантов</span>
+        <span class="cta">Открыть →</span>
+      </div>
     </a>
 
-    <a class="card" href="./mtk38-poster/">
+    <a class="mtk-card" href="./mtk39/" data-num="39">
       <div>
-        <div class="card-tag">02 · Poster</div>
-        <h2>Постер</h2>
-        <p>Плотная типографическая композиция, дрейф камеры, текст обтекает пружинный курсор.</p>
+        <div class="tag">МТК · 39</div>
+        <h2>Имени Ленина</h2>
       </div>
-      <span class="card-cta">Открыть →</span>
+      <p>Заводы, ГЭС, вузы, библиотеки и шахты, носящие имя В.И. Ленина. Орто-глобус с точками объектов и фотографиями из Wikimedia.</p>
+      <div class="meta">
+        <span class="count">57 объектов · 1 вариант</span>
+        <span class="cta">Открыть →</span>
+      </div>
     </a>
 
-    <a class="card" href="./mtk38-cloud/">
+    <a class="mtk-card" href="./mtk40/" data-num="40">
       <div>
-        <div class="card-tag">03 · Cloud</div>
-        <h2>Облако</h2>
-        <p>3D-облако в объёме, камера орбитирует, слова дрейфуют. Ближние крупнее.</p>
+        <div class="tag">МТК · 40</div>
+        <h2>Библиотека Ленина</h2>
       </div>
-      <span class="card-cta">Открыть →</span>
+      <p>Литература о Ленине и его собственные работы — 99 единиц по трём осям. Четыре варианта навигации: полка, зеркало, стопки, таймлайн.</p>
+      <div class="meta">
+        <span class="count">99 единиц · 4 варианта</span>
+        <span class="cta">Открыть →</span>
+      </div>
     </a>
 
-    <a class="card" href="./mtk38-mandala/">
+    <a class="mtk-card" href="./mtk41/" data-num="41">
       <div>
-        <div class="card-tag">04 · Mandala</div>
-        <h2>Мандала</h2>
-        <p>Радиальные кольца на плоскости. Центральный медальон. Свайп крутит ближайшее кольцо.</p>
+        <div class="tag">МТК · 41</div>
+        <h2>Скульптуры</h2>
       </div>
-      <span class="card-cta">Открыть →</span>
+      <p>21 памятник В.И. Ленину — фото и 3D-модели. Семь способов разложить корпус: карта, хронология, скульпторы, масштабы, силуэты, иконостас.</p>
+      <div class="meta">
+        <span class="count">21 памятник · 7 вариантов</span>
+        <span class="cta">Открыть →</span>
+      </div>
     </a>
 
-    <a class="card" href="./mtk38-rain/">
+    <a class="mtk-card" href="./mtk42/" data-num="42">
       <div>
-        <div class="card-tag">05 · Rain</div>
-        <h2>Дождь</h2>
-        <p>Слова падают сверху с разной скоростью. Палец — репульсивное поле, отталкивает.</p>
+        <div class="tag">МТК · 42</div>
+        <h2>Осмысление наследия</h2>
       </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk38-ticker/">
-      <div>
-        <div class="card-tag">06 · Ticker</div>
-        <h2>Лента</h2>
-        <p>Горизонтальные строки бегут в разные стороны с разной скоростью. Жест тормозит / разворачивает.</p>
+      <p>Современный взгляд на личность и идеи. 20 портретов исследователей с цитатами. Два варианта: картотека и маятник от деленинизации к ренессансу.</p>
+      <div class="meta">
+        <span class="count">20 портретов · 2 варианта</span>
+        <span class="cta">Открыть →</span>
       </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk38-catalog/">
-      <div>
-        <div class="card-tag">07 · Catalog</div>
-        <h2>Каталог</h2>
-        <p>Сетка 6×7 — все 42 языка карточками. Тап — карточка раскрывается, регион виден.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk38-map/">
-      <div>
-        <div class="card-tag">08 · Map</div>
-        <h2>Карта</h2>
-        <p>Контуры мира, слова в координатах столиц/регионов. Drag — pan; ближе к центру — крупнее.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-  </main>
-
-  <div class="section-head">
-    <h2>МТК 39 · Имени Ленина</h2>
-    <span class="note">объекты им. В.И. Ленина · 1 прототип</span>
-  </div>
-
-  <main class="grid">
-    <a class="card" href="./mtk39-globe/">
-      <div>
-        <div class="card-tag">01 · Globe</div>
-        <h2>Глобус</h2>
-        <p>Ortho-глобус (d3-geo), drag-to-rotate, точки объектов. Режимы «МИР» и «СССР», карточка при тапе.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-  </main>
-
-  <div class="section-head">
-    <h2>МТК 40 · Библиотека Ленина</h2>
-    <span class="note">99 единиц · 4 прототипа</span>
-  </div>
-
-  <main class="grid">
-    <a class="card" href="./mtk40-shelf/">
-      <div>
-        <div class="card-tag">01 · Shelf</div>
-        <h2>Полка</h2>
-        <p>Книжная полка как навигация по 99 единицам: by-Lenin, about-Lenin, in-library.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk40-mirror/">
-      <div>
-        <div class="card-tag">02 · Mirror</div>
-        <h2>Зеркало</h2>
-        <p>Зеркальное отображение: что Ленин читал и что писали о нём. Связи read→wrote.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk40-stack/">
-      <div>
-        <div class="card-tag">03 · Stack</div>
-        <h2>Стопки</h2>
-        <p>Книги стопками по тематическим осям. Тап — стопка раскрывается в список.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk40-timeline/">
-      <div>
-        <div class="card-tag">04 · Timeline</div>
-        <h2>Таймлайн</h2>
-        <p>Хронологическая ось публикаций, чтения и отклика. Свайп — навигация по годам.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-  </main>
-
-  <div class="section-head">
-    <h2>МТК 41 · Скульптуры</h2>
-    <span class="note">21 памятник · 46 фото · 13 3D-моделей · 7 прототипов</span>
-  </div>
-
-  <main class="grid">
-    <a class="card" href="./mtk41-map/">
-      <div>
-        <div class="card-tag">01 · Map</div>
-        <h2>Карта</h2>
-        <p>Лениниана на карте России — 21 памятник точками, тап раскрывает карточку с фото и ссылкой на 3D-модель.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-timeline/">
-      <div>
-        <div class="card-tag">02 · Timeline</div>
-        <h2>Хронология</h2>
-        <p>Горизонтальная ось 1919→1973, точки сгруппированы по годам установки памятников.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-authors/">
-      <div>
-        <div class="card-tag">03 · Authors</div>
-        <h2>Кто лепил Ленина</h2>
-        <p>Сетка скульпторов: Меркуров, Вучетич, Пинчук… — кто и где ставил.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-scale/">
-      <div>
-        <div class="card-tag">04 · Scale</div>
-        <h2>В одном масштабе</h2>
-        <p>Абстрактная типология: трапеция + сфера, все памятники в реальной высоте с человеческой фигурой.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-silhouettes/">
-      <div>
-        <div class="card-tag">05 · Silhouettes</div>
-        <h2>Силуэты</h2>
-        <p>Те же масштабы, но настоящие силуэты с фото (rembg). Без фото — пунктирный плейсхолдер.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-silhouettes-stacked/">
-      <div>
-        <div class="card-tag">06 · Stacked</div>
-        <h2>Три шкалы</h2>
-        <p>Силуэты, разложенные на три полосы по высоте. Плоский clean-cut, без человеческой фигуры.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk41-canon/">
-      <div>
-        <div class="card-tag">07 · Canon</div>
-        <h2>Иконостас</h2>
-        <p>Постерная сетка из плиток-фото с взвешенными пропорциями.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-  </main>
-
-  <div class="section-head">
-    <h2>МТК 42 · Осмысление наследия</h2>
-    <span class="note">2 прототипа · 20 портретов</span>
-  </div>
-
-  <main class="grid">
-    <a class="card" href="./mtk42-archive/">
-      <div>
-        <div class="card-tag">01 · Archive</div>
-        <h2>Картотека</h2>
-        <p>Картотека исследователей наследия Ленина — 20 портретов, цитаты, перекрёстные ссылки.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
-    </a>
-
-    <a class="card" href="./mtk42-pendulum/">
-      <div>
-        <div class="card-tag">02 · Pendulum</div>
-        <h2>Маятник</h2>
-        <p>Маятник от деленинизации к ренессансу: позиции исследователей качаются между полюсами.</p>
-      </div>
-      <span class="card-cta">Открыть →</span>
     </a>
   </main>
 
   <footer>
-    <a href="./PLAN.md">PLAN</a>   ·   <a href="./COORDINATION.md">COORDINATION</a>   ·   <a href="./SETUP.md">SETUP (новой сессии)</a>   ·   <a href="./CLAUDE.md">CLAUDE.md</a>
+    <a href="./PLAN.md">PLAN</a>
+    <a href="./COORDINATION.md">COORDINATION</a>
+    <a href="./README.md">README</a>
+    <a href="https://github.com/trapastnik/3842">GitHub</a>
+    <span class="coord-tag">coord: magical-allen-0c3d5f</span>
   </footer>
 </body>
 </html>
