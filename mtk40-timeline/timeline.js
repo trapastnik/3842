@@ -125,7 +125,35 @@ class TimelineApp {
     return this.viewYearStart + ((x - sideMargin) / usableW) * (this.viewYearEnd - this.viewYearStart);
   }
 
+  // Вертикальная ось времени для портрета — сверху старые, снизу новые.
+  yearToY(year) {
+    const top = 150 * this.dpr;
+    const bot = 60 * this.dpr;
+    const usable = this.H - top - bot;
+    const r = (year - this.viewYearStart) / (this.viewYearEnd - this.viewYearStart);
+    return top + r * usable;
+  }
+  yToYear(y) {
+    const top = 150 * this.dpr;
+    const bot = 60 * this.dpr;
+    const usable = this.H - top - bot;
+    return this.viewYearStart + ((y - top) / usable) * (this.viewYearEnd - this.viewYearStart);
+  }
+
+  // Позиция книги в портретном layout (центр маркера).
+  posPortrait(p) {
+    const baseX = p.col.cx;
+    const slotW = 14 * this.dpr;
+    const offset = ((p.slotIdx ?? 0) - ((p.slotCount ?? 1) - 1) / 2) * slotW;
+    return { x: baseX + offset, y: this.yearToY(p.year) };
+  }
+
   computeLayout() {
+    if (this.portrait) this.computeLayoutPortrait();
+    else this.computeLayoutLandscape();
+  }
+
+  computeLayoutLandscape() {
     // Три горизонтальные «ленты» — по вертикали:
     // by-lenin (top), about-lenin (middle), in-library (bottom)
     const titleArea = 130 * this.dpr;
@@ -141,9 +169,8 @@ class TimelineApp {
         baseline: titleArea + (i + 1) * sectionH - 18 * this.dpr,
       };
     }
-    this.layout = { sections, order };
+    this.layout = { sections, order, mode: "landscape" };
 
-    // resolve item positions (year_first → x). Для items без year_first ставим в начало.
     this.placedItems = [];
     for (const item of this.data.items) {
       const year = item.year_first || YEAR_MIN;
@@ -151,16 +178,14 @@ class TimelineApp {
       if (!sec) continue;
       this.placedItems.push({ item, year, sec });
     }
-    // jitter для перекрывающихся (одинаковый год + бакет)
     this.placedItems.sort((a, b) => a.year - b.year);
-    this.computeStackOffsets();
+    this.computeStackOffsetsLandscape();
   }
 
-  computeStackOffsets() {
-    // если несколько items в близком году → размещаем их вертикально друг над другом в пределах секции
+  computeStackOffsetsLandscape() {
     const grouped = new Map();
     for (const p of this.placedItems) {
-      const key = `${p.item.bucket}:${Math.round(p.year / 2)}`; // ~2-летние группы
+      const key = `${p.item.bucket}:${Math.round(p.year / 2)}`;
       if (!grouped.has(key)) grouped.set(key, []);
       grouped.get(key).push(p);
     }
@@ -170,6 +195,49 @@ class TimelineApp {
       for (let i = 0; i < arr.length; i++) {
         arr[i].slotIdx = i;
         arr[i].slotH = slotH;
+      }
+    }
+  }
+
+  computeLayoutPortrait() {
+    // Время по вертикали (сверху-вниз), три колонки по горизонтали
+    const sideMargin = 56 * this.dpr;     // место под ось лет слева
+    const rightPad = 12 * this.dpr;
+    const usableW = this.W - sideMargin - rightPad;
+    const colW = usableW / 3;
+    const order = ["by-lenin", "in-library", "about-lenin"];
+    const cols = {};
+    for (let i = 0; i < order.length; i++) {
+      cols[order[i]] = {
+        cx: sideMargin + (i + 0.5) * colW,
+        colW,
+      };
+    }
+    this.layout = { cols, order, sideMargin, mode: "portrait" };
+
+    this.placedItems = [];
+    for (const item of this.data.items) {
+      const year = item.year_first || YEAR_MIN;
+      const col = cols[item.bucket];
+      if (!col) continue;
+      this.placedItems.push({ item, year, col });
+    }
+    this.placedItems.sort((a, b) => a.year - b.year);
+    this.computeStackOffsetsPortrait();
+  }
+
+  computeStackOffsetsPortrait() {
+    // Несколько items в близком году → горизонтальные слоты внутри колонки.
+    const grouped = new Map();
+    for (const p of this.placedItems) {
+      const key = `${p.item.bucket}:${Math.round(p.year / 2)}`;
+      if (!grouped.has(key)) grouped.set(key, []);
+      grouped.get(key).push(p);
+    }
+    for (const arr of grouped.values()) {
+      for (let i = 0; i < arr.length; i++) {
+        arr[i].slotIdx = i;
+        arr[i].slotCount = arr.length;
       }
     }
   }
@@ -191,13 +259,17 @@ class TimelineApp {
   onPointerMove = (ev) => {
     if (!this.dragging) return;
     const x = ev.offsetX * this.dpr;
+    const y = ev.offsetY * this.dpr;
     const dx = x - this.dragging.startX;
-    if (Math.abs(dx) > 6 * this.dpr) this.dragging.moved = true;
+    const dy = y - this.dragging.startY;
+    if (Math.hypot(dx, dy) > 6 * this.dpr) this.dragging.moved = true;
     if (this.dragging.moved) {
-      // pan по времени
-      const usableW = this.W - 120 * this.dpr;
-      const yearsPerPx = (this.dragging.startViewEnd - this.dragging.startViewStart) / usableW;
-      const yearShift = -dx * yearsPerPx;
+      // pan по времени: в портрете по Y, в landscape по X
+      const usableMain = this.portrait
+        ? (this.H - 210 * this.dpr)
+        : (this.W - 120 * this.dpr);
+      const yearsPer = (this.dragging.startViewEnd - this.dragging.startViewStart) / usableMain;
+      const yearShift = -(this.portrait ? dy : dx) * yearsPer;
       let s = this.dragging.startViewStart + yearShift;
       let e = this.dragging.startViewEnd + yearShift;
       const span = e - s;
@@ -227,8 +299,8 @@ class TimelineApp {
   onWheel = (ev) => {
     ev.preventDefault();
     const factor = ev.deltaY > 0 ? 1.12 : 0.88;
-    const x = ev.offsetX * this.dpr;
-    const yearAtCursor = this.xToYear(x);
+    const coord = this.portrait ? ev.offsetY * this.dpr : ev.offsetX * this.dpr;
+    const yearAtCursor = this.portrait ? this.yToYear(coord) : this.xToYear(coord);
     const newStart = yearAtCursor - (yearAtCursor - this.viewYearStart) * factor;
     const newEnd = yearAtCursor + (this.viewYearEnd - yearAtCursor) * factor;
     if (newEnd - newStart > 8 && newEnd - newStart < 400) {
@@ -238,7 +310,15 @@ class TimelineApp {
   };
 
   hitTest(px, py) {
-    const r = (this.portrait ? 14 : 7) * this.dpr;
+    if (this.portrait) {
+      const r = 16 * this.dpr;
+      for (const p of this.placedItems) {
+        const { x, y } = this.posPortrait(p);
+        if (Math.abs(px - x) <= r && Math.abs(py - y) <= r) return p;
+      }
+      return null;
+    }
+    const r = 7 * this.dpr;
     for (const p of this.placedItems) {
       const x = this.yearToX(p.year);
       const y = p.sec.baseline - (p.slotIdx + 1) * p.slotH + p.slotH / 2;
@@ -285,9 +365,14 @@ class TimelineApp {
   };
 
   render() {
+    if (!this.layout) return;
+    if (this.portrait) { this.renderPortrait(); return; }
+    this.renderLandscape();
+  }
+
+  renderLandscape() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.W, this.H);
-    if (!this.layout) return;
 
     // section bands
     for (const b of this.layout.order) {
@@ -338,6 +423,192 @@ class TimelineApp {
         this.renderConnection(a, b, c);
       }
     }
+  }
+
+  renderPortrait() {
+    const ctx = this.ctx;
+    ctx.clearRect(0, 0, this.W, this.H);
+
+    // фоновые «лужи» колонок — слабая заливка
+    for (const b of this.layout.order) {
+      const col = this.layout.cols[b];
+      const meta = BUCKET_META[b];
+      ctx.fillStyle = `${meta.accent}0E`;
+      ctx.fillRect(col.cx - col.colW / 2, 140 * this.dpr, col.colW, this.H - 200 * this.dpr);
+    }
+
+    // подписи колонок-бакетов сверху
+    for (const b of this.layout.order) {
+      const col = this.layout.cols[b];
+      const meta = BUCKET_META[b];
+      ctx.fillStyle = meta.accent;
+      ctx.font = `600 ${15 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.textAlign = "center";
+      ctx.fillText(meta.label, col.cx, 100 * this.dpr);
+      ctx.fillStyle = "rgba(247,249,239,0.55)";
+      ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.fillText(meta.note.toUpperCase(), col.cx, 122 * this.dpr);
+    }
+
+    this.renderTimeAxisPortrait();
+
+    // dim non-related
+    const activeSlots = new Set();
+    if (this.activeId) {
+      const conns = this.connectionsByItemId.get(this.activeId) || [];
+      for (const c of conns) activeSlots.add(c.from === this.activeId ? c.to : c.from);
+      activeSlots.add(this.activeId);
+    }
+
+    for (const p of this.placedItems) {
+      const dim = this.activeId && !activeSlots.has(p.item.id);
+      this.renderItemPortrait(p, dim);
+    }
+
+    if (this.activeId) {
+      const conns = this.connectionsByItemId.get(this.activeId) || [];
+      for (const c of conns) {
+        const other = c.from === this.activeId ? c.to : c.from;
+        const a = this.findPlaced(this.activeId);
+        const b = this.findPlaced(other);
+        if (!a || !b) continue;
+        this.renderConnectionPortrait(a, b, c);
+      }
+    }
+  }
+
+  renderTimeAxisPortrait() {
+    const ctx = this.ctx;
+    const span = this.viewYearEnd - this.viewYearStart;
+    const stepBig = span > 120 ? 20 : span > 50 ? 10 : 5;
+    const stepSmall = stepBig / 2;
+    const xLeft = 48 * this.dpr;
+
+    // вертикальная ось
+    ctx.fillStyle = "rgba(210,183,115,0.5)";
+    ctx.fillRect(xLeft, 140 * this.dpr, 1 * this.dpr, this.H - 200 * this.dpr);
+
+    // деления и подписи лет
+    ctx.font = `400 ${12 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "middle";
+    for (let yr = Math.ceil(YEAR_MIN / stepSmall) * stepSmall; yr <= YEAR_MAX; yr += stepSmall) {
+      const y = this.yearToY(yr);
+      if (y < 140 * this.dpr || y > this.H - 60 * this.dpr) continue;
+      const big = yr % stepBig === 0;
+      ctx.fillStyle = big ? "rgba(247,249,239,0.55)" : "rgba(247,249,239,0.18)";
+      ctx.fillRect(xLeft - (big ? 6 : 3) * this.dpr, y - 0.5 * this.dpr, (big ? 8 : 4) * this.dpr, 1 * this.dpr);
+      if (big) {
+        ctx.fillStyle = "rgba(247,249,239,0.7)";
+        ctx.fillText(String(yr), xLeft - 10 * this.dpr, y);
+      }
+    }
+
+    // ленинские якоря — горизонтальные тонкие красные линии через весь экран + подпись справа
+    ctx.textAlign = "right";
+    ctx.font = `600 ${11 * this.dpr}px "20 Kopeek", monospace`;
+    for (const t of TIMELINE_TICKS) {
+      const y = this.yearToY(t.year);
+      if (y < 140 * this.dpr || y > this.H - 60 * this.dpr) continue;
+      ctx.fillStyle = "rgba(160,33,40,0.32)";
+      ctx.fillRect(xLeft + 6 * this.dpr, y, this.W - xLeft - 16 * this.dpr, 1 * this.dpr);
+      ctx.fillStyle = COLORS.brass;
+      ctx.fillText(`${t.year} · ${t.label}`, this.W - 16 * this.dpr, y - 8 * this.dpr);
+    }
+    ctx.textAlign = "left";
+    ctx.textBaseline = "alphabetic";
+  }
+
+  renderItemPortrait(p, dim) {
+    const ctx = this.ctx;
+    const { x, y } = this.posPortrait(p);
+    const isAct = this.activeId === p.item.id;
+    const sz = (isAct ? 14 : p.item.significance === 5 ? 12 : p.item.significance >= 4 ? 11 : 9) * this.dpr;
+
+    ctx.globalAlpha = dim ? 0.18 : 1;
+    // тень
+    ctx.fillStyle = "rgba(0,0,0,0.4)";
+    ctx.fillRect(x - sz / 2 + 1, y - sz / 2 + 2, sz, sz);
+    // плашка цвета обложки
+    ctx.fillStyle = p.item.cover_color;
+    ctx.fillRect(x - sz / 2, y - sz / 2, sz, sz);
+    ctx.fillStyle = adjustHex(p.item.cover_color, 30);
+    ctx.fillRect(x - sz / 2, y - sz / 2, 1.5 * this.dpr, sz);
+    ctx.fillStyle = adjustHex(p.item.cover_color, -25);
+    ctx.fillRect(x + sz / 2 - 1.5 * this.dpr, y - sz / 2, 1.5 * this.dpr, sz);
+
+    if (p.item.significance === 5) {
+      ctx.fillStyle = COLORS.brass;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.5 * this.dpr, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // подпись для активного или sig=5
+    if (isAct || p.item.significance === 5) {
+      ctx.fillStyle = isAct ? COLORS.brass : "rgba(247,249,239,0.78)";
+      ctx.font = `400 ${11 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.textBaseline = "middle";
+      // подпись либо справа от точки (если хватает места), либо слева
+      const labelMaxLeft = p.col.cx + p.col.colW / 2 - 6 * this.dpr;
+      let title = p.item.title;
+      if (title.length > 30) title = title.slice(0, 28) + "…";
+      if (x + sz / 2 + 6 * this.dpr + 11 * this.dpr * title.length * 0.55 < labelMaxLeft) {
+        ctx.textAlign = "left";
+        ctx.fillText(title, x + sz / 2 + 6 * this.dpr, y);
+      } else {
+        ctx.textAlign = "right";
+        ctx.fillText(title, x - sz / 2 - 6 * this.dpr, y);
+      }
+      ctx.textAlign = "left";
+      ctx.textBaseline = "alphabetic";
+    }
+
+    if (isAct) {
+      ctx.strokeStyle = COLORS.brass;
+      ctx.lineWidth = 1.5 * this.dpr;
+      ctx.strokeRect(x - sz / 2 - 3 * this.dpr, y - sz / 2 - 3 * this.dpr, sz + 6 * this.dpr, sz + 6 * this.dpr);
+    }
+    ctx.globalAlpha = 1;
+  }
+
+  renderConnectionPortrait(a, b, conn) {
+    const ctx = this.ctx;
+    const style = CONN_STYLE[conn.type] || CONN_STYLE.source;
+    const pa = this.posPortrait(a);
+    const pb = this.posPortrait(b);
+
+    // изгиб наружу — отклоняем control point к ближайшему краю экрана
+    const midX = (pa.x + pb.x) / 2;
+    const distX = Math.abs(pb.x - pa.x);
+    const dirOut = midX < this.W / 2 ? -1 : 1;
+    const arc = Math.max(40 * this.dpr, distX * 0.4);
+    const cpX = midX + dirOut * arc;
+
+    ctx.save();
+    ctx.strokeStyle = style.color;
+    ctx.lineWidth = style.width * this.dpr;
+    ctx.setLineDash(style.dash.map((d) => d * this.dpr));
+    ctx.shadowColor = style.color;
+    ctx.shadowBlur = 6 * this.dpr;
+    ctx.beginPath();
+    ctx.moveTo(pa.x, pa.y);
+    ctx.bezierCurveTo(cpX, pa.y, cpX, pb.y, pb.x, pb.y);
+    ctx.stroke();
+    ctx.restore();
+
+    // подпись типа возле пиковой точки
+    const peakX = cpX;
+    const peakY = (pa.y + pb.y) / 2;
+    ctx.save();
+    ctx.fillStyle = "rgba(12,16,18,0.85)";
+    ctx.fillRect(peakX - 36 * this.dpr, peakY - 9 * this.dpr, 72 * this.dpr, 18 * this.dpr);
+    ctx.fillStyle = style.color;
+    ctx.font = `600 ${10 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(style.label.toUpperCase(), peakX, peakY + 1 * this.dpr);
+    ctx.restore();
   }
 
   findPlaced(id) {

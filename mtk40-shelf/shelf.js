@@ -28,7 +28,7 @@ function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
 function spineWidth(item, portrait) {
   const p = Math.max(8, item.pages_approx || 80);
   const base = 14 + Math.log2(p) * 7;
-  if (portrait) return Math.max(34, Math.min(160, base * 1.45));
+  // в портрете оставляем landscape-ширину — высокие секции уже делают корешки вытянутее.
   return Math.max(22, Math.min(110, base));
 }
 
