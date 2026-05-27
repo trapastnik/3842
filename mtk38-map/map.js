@@ -177,15 +177,37 @@
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Map scale: fit the WHOLE world (2:1 equirect) into the canvas width.
-    // worldW = viewport width; worldH = worldW / 2.  In portrait this leaves
-    // empty vertical space above and below — map is centred vertically.
-    // In landscape map can still overflow vertically only if very wide.
-    map.worldW = width;
+    // Map scale: fit the bounding box of the actual points (with padding)
+    // into the canvas width.  We don't need the whole world — the 42 points
+    // sit roughly between lng -10° (Lisbon) and +140° (Tokyo), lat -7° to +56°.
+    const padLng = 10;   // extra degrees on each side
+    const padLat = 8;
+    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
+    for (let i = 0; i < points.length; i += 1) {
+      const p = points[i];
+      if (p.lat < minLat) minLat = p.lat;
+      if (p.lat > maxLat) maxLat = p.lat;
+      if (p.lng < minLng) minLng = p.lng;
+      if (p.lng > maxLng) maxLng = p.lng;
+    }
+    const bboxMinLat = minLat - padLat;
+    const bboxMaxLat = maxLat + padLat;
+    const bboxMinLng = minLng - padLng;
+    const bboxMaxLng = maxLng + padLng;
+    const lngSpan = bboxMaxLng - bboxMinLng;
+
+    // Scale world so the bbox's lng span fills the viewport width.
+    map.worldW = width * (360 / lngSpan);
     map.worldH = map.worldW / 2;
-    // Initial camera: world fully visible on x; centred on y.
-    map.camX = 0;
-    map.camY = (map.worldH - height) / 2;
+
+    // Centre camera on the bbox.
+    const topLeft = project(bboxMaxLat, bboxMinLng);
+    const bottomRight = project(bboxMinLat, bboxMaxLng);
+    const bboxCenterX = (topLeft.x + bottomRight.x) / 2;
+    const bboxCenterY = (topLeft.y + bottomRight.y) / 2;
+    map.camX = bboxCenterX - width / 2;
+    map.camY = bboxCenterY - height / 2;
+    map.camYAnchor = map.camY;       // remember for vertical lock
 
     if (map.geojson) buildWorldCache();
   }
@@ -199,10 +221,10 @@
     if (Math.abs(map.camVX) < 0.5) map.camVX = 0;
     if (Math.abs(map.camVY) < 0.5) map.camVY = 0;
 
-    // Vertical clamp: if the map is shorter than viewport, lock it centred.
-    // If taller (rare with current sizing), allow panning between poles.
+    // Vertical: lock to the camY set in resize() (centres the bbox of points).
+    // If user-dragged off too far, snap back so something is still visible.
     if (map.worldH < height) {
-      map.camY = (map.worldH - height) / 2;
+      map.camY = map.camYAnchor;
       map.camVY = 0;
     } else {
       const maxY = map.worldH - height + map.worldH * 0.04;
