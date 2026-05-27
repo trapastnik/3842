@@ -110,6 +110,8 @@ html, body {
   flex: 1;
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(clamp(260px, 18vw, 380px), 1fr));
+  grid-auto-rows: min-content;
+  align-items: start;
   gap: clamp(12px, 1.6vh, 28px);
   overflow-y: auto;
   align-content: start;
@@ -127,7 +129,6 @@ html, body {
   display: flex;
   flex-direction: column;
   gap: 0.6em;
-  min-height: 0;
   transition: border-color 160ms ease, transform 160ms ease;
 }
 
