@@ -127,6 +127,23 @@ body {
   user-select: none;
 }
 
+/* Portrait kiosk (49" vertical): bottom is out of reach, move to upper-right.
+   Also bump up size and hit-targets for touch. */
+@media (orientation: portrait) {
+  .controls {
+    right: 28px;
+    top: 28px;
+    bottom: auto;
+    padding: 22px 28px;
+    font-size: 18px;
+    border-radius: 14px;
+    border-width: 1.5px;
+  }
+  .control { min-width: 380px; gap: 14px; }
+  .control-label { font-size: 16px; letter-spacing: 0.20em; }
+  .control-meta { font-size: 14px; letter-spacing: 0.16em; }
+}
+
 .control {
   display: grid;
   grid-template-columns: 1fr;
@@ -187,22 +204,44 @@ body {
 .controls input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--paper);
   border: 2px solid var(--brass);
-  margin-top: -8px;
+  margin-top: -10px;
   cursor: grab;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
 }
 
 .controls input[type="range"]::-moz-range-thumb {
-  width: 18px;
-  height: 18px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
   background: var(--paper);
   border: 2px solid var(--brass);
   cursor: grab;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+/* Larger touch target for portrait kiosk */
+@media (orientation: portrait) {
+  .controls input[type="range"] {
+    height: 60px;
+  }
+  .controls input[type="range"]::-webkit-slider-runnable-track,
+  .controls input[type="range"]::-moz-range-track {
+    height: 6px;
+  }
+  .controls input[type="range"]::-webkit-slider-thumb {
+    width: 44px;
+    height: 44px;
+    margin-top: -19px;
+    border-width: 3px;
+  }
+  .controls input[type="range"]::-moz-range-thumb {
+    width: 44px;
+    height: 44px;
+    border-width: 3px;
+  }
 }
