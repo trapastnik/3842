@@ -90,10 +90,16 @@
     const totalWeight = presets.reduce((a, b) => a + b.heightWeight, 0);
     const rng = makeRng(0x71C7E2);
 
+    // In portrait (vertical kiosk), bands stretch tall but fonts are sized
+    // off shortSide=width and stay relatively small — bands look half-empty.
+    // Scale fonts up so bands fill properly.
+    const isPortrait = height > width * 1.2;
+    const fontScale = isPortrait ? 1.65 : 1.0;
+
     let yCursor = 0;
     presets.forEach((preset, idx) => {
       const bandHeight = (preset.heightWeight / totalWeight) * height;
-      const fontSize = shortSide * preset.sizeFrac;
+      const fontSize = shortSide * preset.sizeFrac * fontScale;
       // Build a long shuffled text stream for this band
       const stream = [];
       const reps = idx === 0 ? 5 : idx === 1 ? 8 : 14;
