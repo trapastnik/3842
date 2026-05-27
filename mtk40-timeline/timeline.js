@@ -428,9 +428,34 @@ class TimelineApp {
     }
   }
 
+  // Greedy раскладка подписей: для каждой колонки сверху вниз —
+  // labelY = max(itemY, prevLabelY + minGap). Если labelY уехал ниже itemY,
+  // в render-методе нарисуется тонкая линия от плашки к метке.
+  computeLabelLayoutPortrait() {
+    const minGap = 22 * this.dpr;
+    const top = this.portraitTop();
+    const bot = this.H - this.portraitBot();
+    for (const b of this.layout.order) {
+      const inCol = this.placedItems
+        .filter((p) => p.item.bucket === b)
+        .map((p) => ({ p, itemY: this.yearToY(p.year) }))
+        .filter((r) => r.itemY >= top - 6 * this.dpr && r.itemY <= bot + 6 * this.dpr)
+        .sort((a, b) => a.itemY - b.itemY);
+      let prev = -Infinity;
+      for (const r of inCol) {
+        const want = r.itemY;
+        const ly = Math.max(want, prev + minGap);
+        r.p.labelY = ly;
+        prev = ly;
+      }
+    }
+  }
+
   renderPortrait() {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.W, this.H);
+
+    this.computeLabelLayoutPortrait();
 
     const top = this.portraitTop();
     const bot = this.H - this.portraitBot();
@@ -532,7 +557,7 @@ class TimelineApp {
     const { x, y } = this.posPortrait(p);
     const top = this.portraitTop();
     const bot = this.H - this.portraitBot();
-    if (y < top - 4 * this.dpr || y > bot + 4 * this.dpr) return; // отсекаем то, что за пределами окна
+    if (y < top - 4 * this.dpr || y > bot + 4 * this.dpr) return;
     const isAct = this.activeId === p.item.id;
     const sz = (isAct ? 14 : p.item.significance === 5 ? 11 : p.item.significance >= 4 ? 10 : 8) * this.dpr;
 
@@ -555,25 +580,58 @@ class TimelineApp {
       ctx.fill();
     }
 
-    // Подпись — только для активной книги (иначе кластер 1917 = каша)
-    if (isAct) {
-      ctx.fillStyle = COLORS.brass;
-      ctx.font = `600 ${12 * this.dpr}px "20 Kopeek", monospace`;
-      ctx.textBaseline = "middle";
-      let title = p.item.title;
-      if (title.length > 32) title = title.slice(0, 30) + "…";
-      // справа, если хватает места до правого края экрана; иначе слева
-      const labelW = 12 * this.dpr * title.length * 0.6;
-      if (x + sz / 2 + 8 * this.dpr + labelW < this.W - 16 * this.dpr) {
-        ctx.textAlign = "left";
-        ctx.fillText(title, x + sz / 2 + 8 * this.dpr, y);
+    // Подпись для всех книг — stagger по labelY, тонкая линия-поводок от плашки если сдвинута.
+    if (p.labelY !== undefined) {
+      const labelY = p.labelY;
+      const isBig = p.item.significance >= 4;
+      const fontSize = (isAct ? 13 : isBig ? 11 : 10) * this.dpr;
+      const labelColor = isAct ? COLORS.brass
+        : isBig ? "rgba(247,249,239,0.78)"
+        : "rgba(247,249,239,0.5)";
+      // расположение подписи: для крайних колонок — наружу от центра, для средней — справа
+      const isLeftCol = p.item.bucket === "by-lenin";
+      const isRightCol = p.item.bucket === "about-lenin";
+      const colLeft = p.col.cx - p.col.colW / 2;
+      const colRight = p.col.cx + p.col.colW / 2;
+      let labelX, anchorX, align;
+      if (isLeftCol) {
+        align = "right";
+        labelX = x - sz / 2 - 6 * this.dpr;
+        anchorX = labelX;
+      } else if (isRightCol) {
+        align = "left";
+        labelX = x + sz / 2 + 6 * this.dpr;
+        anchorX = labelX;
       } else {
-        ctx.textAlign = "right";
-        ctx.fillText(title, x - sz / 2 - 8 * this.dpr, y);
+        // средняя колонка — справа от плашки, в пределах колонки
+        align = "left";
+        labelX = x + sz / 2 + 6 * this.dpr;
+        anchorX = labelX;
       }
+      let title = p.item.title;
+      const maxChars = isLeftCol ? 22 : isRightCol ? 26 : 18;
+      if (title.length > maxChars) title = title.slice(0, maxChars - 1) + "…";
+
+      // поводок от плашки к метке, если она съехала
+      if (Math.abs(labelY - y) > 3 * this.dpr) {
+        ctx.strokeStyle = isAct ? COLORS.brass : "rgba(247,249,239,0.22)";
+        ctx.lineWidth = 0.75 * this.dpr;
+        ctx.beginPath();
+        ctx.moveTo(anchorX, y);
+        ctx.lineTo(anchorX, labelY);
+        ctx.stroke();
+      }
+
+      ctx.fillStyle = labelColor;
+      ctx.font = `${isAct || isBig ? 600 : 400} ${fontSize}px "20 Kopeek", monospace`;
+      ctx.textBaseline = "middle";
+      ctx.textAlign = align;
+      ctx.fillText(title, labelX, labelY);
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
+    }
 
+    if (isAct) {
       ctx.strokeStyle = COLORS.brass;
       ctx.lineWidth = 1.5 * this.dpr;
       ctx.strokeRect(x - sz / 2 - 3 * this.dpr, y - sz / 2 - 3 * this.dpr, sz + 6 * this.dpr, sz + 6 * this.dpr);
