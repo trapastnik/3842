@@ -126,25 +126,28 @@ class TimelineApp {
   }
 
   // Вертикальная ось времени для портрета — сверху старые, снизу новые.
+  portraitTop() { return 230 * this.dpr; }
+  portraitBot() { return 60 * this.dpr; }
+
   yearToY(year) {
-    const top = 150 * this.dpr;
-    const bot = 60 * this.dpr;
-    const usable = this.H - top - bot;
+    const top = this.portraitTop();
+    const usable = this.H - top - this.portraitBot();
     const r = (year - this.viewYearStart) / (this.viewYearEnd - this.viewYearStart);
     return top + r * usable;
   }
   yToYear(y) {
-    const top = 150 * this.dpr;
-    const bot = 60 * this.dpr;
-    const usable = this.H - top - bot;
+    const top = this.portraitTop();
+    const usable = this.H - top - this.portraitBot();
     return this.viewYearStart + ((y - top) / usable) * (this.viewYearEnd - this.viewYearStart);
   }
 
-  // Позиция книги в портретном layout (центр маркера).
+  // Позиция книги в портретном layout (центр маркера). Слот ограничен шириной колонки.
   posPortrait(p) {
     const baseX = p.col.cx;
-    const slotW = 14 * this.dpr;
-    const offset = ((p.slotIdx ?? 0) - ((p.slotCount ?? 1) - 1) / 2) * slotW;
+    const count = p.slotCount ?? 1;
+    const maxSlotW = (p.col.colW * 0.78) / Math.max(1, count);
+    const slotW = Math.min(14 * this.dpr, maxSlotW);
+    const offset = ((p.slotIdx ?? 0) - (count - 1) / 2) * slotW;
     return { x: baseX + offset, y: this.yearToY(p.year) };
   }
 
@@ -429,25 +432,28 @@ class TimelineApp {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.W, this.H);
 
+    const top = this.portraitTop();
+    const bot = this.H - this.portraitBot();
+
     // фоновые «лужи» колонок — слабая заливка
     for (const b of this.layout.order) {
       const col = this.layout.cols[b];
       const meta = BUCKET_META[b];
       ctx.fillStyle = `${meta.accent}0E`;
-      ctx.fillRect(col.cx - col.colW / 2, 140 * this.dpr, col.colW, this.H - 200 * this.dpr);
+      ctx.fillRect(col.cx - col.colW / 2, top, col.colW, bot - top);
     }
 
-    // подписи колонок-бакетов сверху
+    // подписи колонок-бакетов в зоне над осью
     for (const b of this.layout.order) {
       const col = this.layout.cols[b];
       const meta = BUCKET_META[b];
       ctx.fillStyle = meta.accent;
       ctx.font = `600 ${15 * this.dpr}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
-      ctx.fillText(meta.label, col.cx, 100 * this.dpr);
+      ctx.fillText(meta.label, col.cx, top - 36 * this.dpr);
       ctx.fillStyle = "rgba(247,249,239,0.55)";
       ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
-      ctx.fillText(meta.note.toUpperCase(), col.cx, 122 * this.dpr);
+      ctx.fillText(meta.note.toUpperCase(), col.cx, top - 16 * this.dpr);
     }
 
     this.renderTimeAxisPortrait();
@@ -483,10 +489,12 @@ class TimelineApp {
     const stepBig = span > 120 ? 20 : span > 50 ? 10 : 5;
     const stepSmall = stepBig / 2;
     const xLeft = 48 * this.dpr;
+    const top = this.portraitTop();
+    const bot = this.H - this.portraitBot();
 
     // вертикальная ось
     ctx.fillStyle = "rgba(210,183,115,0.5)";
-    ctx.fillRect(xLeft, 140 * this.dpr, 1 * this.dpr, this.H - 200 * this.dpr);
+    ctx.fillRect(xLeft, top, 1 * this.dpr, bot - top);
 
     // деления и подписи лет
     ctx.font = `400 ${12 * this.dpr}px "20 Kopeek", monospace`;
@@ -494,7 +502,7 @@ class TimelineApp {
     ctx.textBaseline = "middle";
     for (let yr = Math.ceil(YEAR_MIN / stepSmall) * stepSmall; yr <= YEAR_MAX; yr += stepSmall) {
       const y = this.yearToY(yr);
-      if (y < 140 * this.dpr || y > this.H - 60 * this.dpr) continue;
+      if (y < top || y > bot) continue;
       const big = yr % stepBig === 0;
       ctx.fillStyle = big ? "rgba(247,249,239,0.55)" : "rgba(247,249,239,0.18)";
       ctx.fillRect(xLeft - (big ? 6 : 3) * this.dpr, y - 0.5 * this.dpr, (big ? 8 : 4) * this.dpr, 1 * this.dpr);
@@ -509,7 +517,7 @@ class TimelineApp {
     ctx.font = `600 ${11 * this.dpr}px "20 Kopeek", monospace`;
     for (const t of TIMELINE_TICKS) {
       const y = this.yearToY(t.year);
-      if (y < 140 * this.dpr || y > this.H - 60 * this.dpr) continue;
+      if (y < top || y > bot) continue;
       ctx.fillStyle = "rgba(160,33,40,0.32)";
       ctx.fillRect(xLeft + 6 * this.dpr, y, this.W - xLeft - 16 * this.dpr, 1 * this.dpr);
       ctx.fillStyle = COLORS.brass;
@@ -522,8 +530,11 @@ class TimelineApp {
   renderItemPortrait(p, dim) {
     const ctx = this.ctx;
     const { x, y } = this.posPortrait(p);
+    const top = this.portraitTop();
+    const bot = this.H - this.portraitBot();
+    if (y < top - 4 * this.dpr || y > bot + 4 * this.dpr) return; // отсекаем то, что за пределами окна
     const isAct = this.activeId === p.item.id;
-    const sz = (isAct ? 14 : p.item.significance === 5 ? 12 : p.item.significance >= 4 ? 11 : 9) * this.dpr;
+    const sz = (isAct ? 14 : p.item.significance === 5 ? 11 : p.item.significance >= 4 ? 10 : 8) * this.dpr;
 
     ctx.globalAlpha = dim ? 0.18 : 1;
     // тень
@@ -544,27 +555,25 @@ class TimelineApp {
       ctx.fill();
     }
 
-    // подпись для активного или sig=5
-    if (isAct || p.item.significance === 5) {
-      ctx.fillStyle = isAct ? COLORS.brass : "rgba(247,249,239,0.78)";
-      ctx.font = `400 ${11 * this.dpr}px "20 Kopeek", monospace`;
+    // Подпись — только для активной книги (иначе кластер 1917 = каша)
+    if (isAct) {
+      ctx.fillStyle = COLORS.brass;
+      ctx.font = `600 ${12 * this.dpr}px "20 Kopeek", monospace`;
       ctx.textBaseline = "middle";
-      // подпись либо справа от точки (если хватает места), либо слева
-      const labelMaxLeft = p.col.cx + p.col.colW / 2 - 6 * this.dpr;
       let title = p.item.title;
-      if (title.length > 30) title = title.slice(0, 28) + "…";
-      if (x + sz / 2 + 6 * this.dpr + 11 * this.dpr * title.length * 0.55 < labelMaxLeft) {
+      if (title.length > 32) title = title.slice(0, 30) + "…";
+      // справа, если хватает места до правого края экрана; иначе слева
+      const labelW = 12 * this.dpr * title.length * 0.6;
+      if (x + sz / 2 + 8 * this.dpr + labelW < this.W - 16 * this.dpr) {
         ctx.textAlign = "left";
-        ctx.fillText(title, x + sz / 2 + 6 * this.dpr, y);
+        ctx.fillText(title, x + sz / 2 + 8 * this.dpr, y);
       } else {
         ctx.textAlign = "right";
-        ctx.fillText(title, x - sz / 2 - 6 * this.dpr, y);
+        ctx.fillText(title, x - sz / 2 - 8 * this.dpr, y);
       }
       ctx.textAlign = "left";
       ctx.textBaseline = "alphabetic";
-    }
 
-    if (isAct) {
       ctx.strokeStyle = COLORS.brass;
       ctx.lineWidth = 1.5 * this.dpr;
       ctx.strokeRect(x - sz / 2 - 3 * this.dpr, y - sz / 2 - 3 * this.dpr, sz + 6 * this.dpr, sz + 6 * this.dpr);
