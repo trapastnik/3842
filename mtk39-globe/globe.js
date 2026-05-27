@@ -14,7 +14,19 @@ const USSR_ISO = new Set([
 ]);
 
 const DEFAULT_ROTATE = [-55, -50, 0];
-const DEFAULT_SCALE = 1.18;
+// Default scale: tuned for landscape viewport. In portrait (9:16 kiosk,
+// tall iframe in the hub), the globe needs more zoom to fill the
+// narrower width — picked dynamically below.
+const DEFAULT_SCALE_LANDSCAPE = 1.18;
+const DEFAULT_SCALE_PORTRAIT = 1.55;
+
+function defaultScaleForViewport() {
+  return window.innerWidth >= window.innerHeight
+    ? DEFAULT_SCALE_LANDSCAPE
+    : DEFAULT_SCALE_PORTRAIT;
+}
+
+let DEFAULT_SCALE = defaultScaleForViewport();
 
 const MIN_SCALE = 0.28;
 const MAX_SCALE = 8.5;
@@ -776,6 +788,11 @@ function populateFilter() {
   }));
   distances.sort((a, b) => a.d - b.d);
   distances.forEach((di, idx) => pointDelays.set(di.id, idx * 35));
+
+  // Re-pick default scale once we know the actual iframe viewport
+  // (in the hub the orientation is fixed by parent, not by module load).
+  DEFAULT_SCALE = defaultScaleForViewport();
+  scaleFactor = DEFAULT_SCALE;
 
   resize();
 
