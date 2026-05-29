@@ -1,12 +1,17 @@
-import {
+// d3 is vendored locally (mtk39-globe/vendor/d3.v7.min.js, loaded as a
+// classic <script> before this module) so the prototype has NO external
+// runtime dependency — required for the offline museum kiosk. Previously
+// these came from esm.sh over the network, which left the globe blank
+// whenever the CDN was unreachable.
+const {
   geoOrthographic,
   geoPath,
   geoGraticule10,
   geoDistance,
   geoInterpolate,
-} from "https://esm.sh/d3-geo@3";
-import { drag } from "https://esm.sh/d3-drag@3";
-import { select } from "https://esm.sh/d3-selection@3";
+  drag,
+  select,
+} = window.d3;
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
