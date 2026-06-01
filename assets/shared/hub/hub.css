@@ -23,10 +23,16 @@
 }
 
 :root {
-  --paper: #F7F9EF;
-  --brass: #D2B773;
-  --red: #A02128;
-  --graphite: #435059;
+  /* Брендбук-палитра (Ленин-центр / графический дизайн) */
+  --amber-black: #000000;
+  --white:       #FFFFFF;
+  --brass:       #D2B773;  /* латунь */
+  --red:         #A02128;  /* сигнальный красный */
+  --blue-grey:   #5D8970;  /* сине-серый */
+  --window:      #9DA3A8;  /* серое окно */
+  --graphite:    #435059;  /* графитовый */
+  --telegrey:    #CFD0CF;  /* телосерый */
+  --paper:       #F7F9EF;  /* тёплый белый для текста на тёмном */
 }
 
 *, *::before, *::after { box-sizing: border-box; }
@@ -59,10 +65,9 @@ html, body {
   align-items: center;
   gap: 14px;
   padding: 8px 20px;
-  background:
-    linear-gradient(105deg, transparent 0, transparent 92%, var(--red) 92%, var(--red) 96%, transparent 96.2%),
-    linear-gradient(105deg, transparent 0, transparent 86%, var(--brass) 86%, var(--brass) 86.4%, transparent 86.6%),
-    rgba(0, 0, 0, 0.5);
+  /* Спокойный полупрозрачный фон, без диагональных полос — убраны
+   * по комментарию дизайнера 2026-05-12. */
+  background: rgba(0, 0, 0, 0.5);
   -webkit-backdrop-filter: blur(8px);
   backdrop-filter: blur(8px);
   border-bottom: 1px solid rgba(210, 183, 115, 0.18);
@@ -212,12 +217,11 @@ html, body {
 }
 
 /* Vertical kiosk preview: iframe pinned to 9:16 portrait, centered,
- * scaled to fit visitor's browser. Around it — darker «outside the
- * stand» background so the kiosk frame is visually obvious. */
+ * scaled to fit visitor's browser. Around it — slightly darker shade
+ * of graphite so the kiosk frame is visually obvious without
+ * dramatic vignette. */
 .hub--vertical {
-  background:
-    radial-gradient(ellipse 120% 70% at 50% 50%, rgba(67, 80, 89, 0.5), rgba(8, 10, 12, 0.95)),
-    #0a0d10;
+  background: #2c343b; /* шаг темнее --graphite */
 }
 .hub--vertical .hub__frame {
   inset: auto;

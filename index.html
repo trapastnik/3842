@@ -28,11 +28,17 @@
       src: url("./mtk38-globe/fonts/cent/21Cent.woff") format("woff");
     }
     :root {
-      --paper: #F7F9EF;
-      --brass: #D2B773;
-      --red: #A02128;
-      --graphite: #435059;
-      --window: #9DA3A6;
+      /* Брендбук-палитра (Ленин-центр / графический дизайн) */
+      --amber-black: #000000;
+      --white:       #FFFFFF;
+      --brass:       #D2B773;  /* латунь (песочно-жёлтый) */
+      --red:         #A02128;  /* сигнальный красный */
+      --blue-grey:   #5D8970;  /* сине-серый */
+      --window:      #9DA3A8;  /* серое окно */
+      --graphite:    #435059;  /* графитовый */
+      --telegrey:    #CFD0CF;  /* телосерый */
+      /* Технический «тёплый белый» — используется только как цвет текста на тёмном */
+      --paper:       #F7F9EF;
     }
     *, *::before, *::after { box-sizing: border-box; }
     html, body {
@@ -49,11 +55,9 @@
       grid-template-rows: auto 1fr auto;
       gap: 36px;
       padding: 48px 56px 36px;
-      background:
-        linear-gradient(105deg, transparent 0, transparent 78%, var(--red) 78%, var(--red) 92%, transparent 92.2%),
-        linear-gradient(105deg, transparent 0, transparent 60%, var(--brass) 60%, var(--brass) 60.18%, transparent 60.36%),
-        radial-gradient(ellipse 130% 90% at 50% 35%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.95)),
-        var(--graphite);
+      /* Однотонный графитовый фон. Диагональные брендполосы убраны
+       * по комментарию дизайнера 2026-05-12. */
+      background: var(--graphite);
     }
     header { display: grid; gap: 12px; max-width: 1400px; }
     .subtitle {
@@ -92,9 +96,8 @@
       min-height: 320px;
       border: 1px solid rgba(210, 183, 115, 0.4);
       border-radius: 18px;
-      background:
-        linear-gradient(135deg, rgba(160, 33, 40, 0.08) 0%, transparent 60%),
-        rgba(0, 0, 0, 0.36);
+      /* Спокойный тёмно-серый, без красного градиента */
+      background: rgba(247, 249, 239, 0.04);
       color: var(--paper);
       text-decoration: none;
       transition: transform 140ms ease, border-color 140ms ease, background 140ms ease;
@@ -118,9 +121,7 @@
     .mtk-card:hover, .mtk-card:focus-visible {
       transform: translateY(-3px);
       border-color: var(--brass);
-      background:
-        linear-gradient(135deg, rgba(160, 33, 40, 0.18) 0%, transparent 60%),
-        rgba(0, 0, 0, 0.5);
+      background: rgba(247, 249, 239, 0.08);
     }
     .mtk-card .tag {
       font-family: "20 Kopeek", "Courier New", monospace;
