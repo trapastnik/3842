@@ -216,6 +216,55 @@ html, body {
   z-index: 1;
 }
 
+/* Большие угловые кнопки для киоска. Дублируют стрелки из бара —
+ * посетитель видит их сразу, в зоне комфортного жеста большим
+ * пальцем. Работают по кругу (mod N), как и верхняя навигация. */
+.hub__corner-nav {
+  position: fixed;
+  bottom: 36px;
+  z-index: 90;
+  width: 88px;
+  height: 88px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(210, 183, 115, 0.55);
+  background: rgba(0, 0, 0, 0.55);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  color: var(--paper);
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: 48px;
+  line-height: 1;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  touch-action: manipulation;
+  transition: background 140ms ease, color 140ms ease, border-color 140ms ease, transform 140ms ease;
+  padding: 0 0 6px 0;  /* визуально центрируем глиф `‹›` */
+}
+.hub__corner-nav:hover,
+.hub__corner-nav:focus-visible {
+  background: var(--brass);
+  color: var(--graphite);
+  border-color: var(--brass);
+  transform: scale(1.04);
+}
+.hub__corner-nav:active {
+  transform: scale(0.97);
+}
+.hub__corner-nav--prev { left: 36px; }
+.hub__corner-nav--next { right: 36px; }
+
+@media (max-width: 720px) {
+  .hub__corner-nav {
+    width: 64px;
+    height: 64px;
+    font-size: 36px;
+    bottom: 24px;
+  }
+  .hub__corner-nav--prev { left: 20px; }
+  .hub__corner-nav--next { right: 20px; }
+}
+
 /* Vertical kiosk preview: iframe pinned to 9:16 portrait, centered,
  * scaled to fit visitor's browser. Around it — slightly darker shade
  * of graphite so the kiosk frame is visually obvious without
