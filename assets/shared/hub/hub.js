@@ -29,6 +29,25 @@ const edge = document.createElement("div");
 edge.className = "hub__edge";
 document.body.appendChild(edge);
 
+/* Inject the two large corner nav buttons — duplicate of the bar arrows,
+ * always visible at bottom-left (prev) and bottom-right (next).
+ * This is the primary kiosk affordance — visitor doesn't need to find
+ * the slim top bar. Same circular goto() logic. */
+const prevCorner = document.createElement("button");
+prevCorner.type = "button";
+prevCorner.className = "hub__corner-nav hub__corner-nav--prev";
+prevCorner.setAttribute("aria-label", "Предыдущая идея");
+prevCorner.textContent = "‹";
+
+const nextCorner = document.createElement("button");
+nextCorner.type = "button";
+nextCorner.className = "hub__corner-nav hub__corner-nav--next";
+nextCorner.setAttribute("aria-label", "Следующая идея");
+nextCorner.textContent = "›";
+
+document.body.appendChild(prevCorner);
+document.body.appendChild(nextCorner);
+
 /* Inject orientation switch (Гор / Верт) into the bar. The hub renders
  * the iframe full-viewport for horizontal mode, or pinned to 9:16
  * portrait centered + scaled for vertical (kiosk) preview. */
@@ -69,6 +88,8 @@ function goto(idx) {
 
 prev.addEventListener("click", () => goto(i - 1));
 next.addEventListener("click", () => goto(i + 1));
+prevCorner.addEventListener("click", () => goto(i - 1));
+nextCorner.addEventListener("click", () => goto(i + 1));
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "ArrowLeft")  goto(i - 1);
@@ -91,9 +112,11 @@ const initIdx  = VARIANTS.findIndex(v => v.slug === initSlug);
 goto(initIdx >= 0 ? initIdx : 0);
 
 if (VARIANTS.length <= 1) {
-  prev.style.display   = "none";
-  next.style.display   = "none";
-  dotsEl.style.display = "none";
+  prev.style.display       = "none";
+  next.style.display       = "none";
+  dotsEl.style.display     = "none";
+  prevCorner.style.display = "none";
+  nextCorner.style.display = "none";
 }
 
 /* Orientation persistence: query ?o=v|h beats localStorage beats default 'h'. */
