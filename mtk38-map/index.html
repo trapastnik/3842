@@ -11,6 +11,30 @@
   <main class="stage" aria-label="МТК 38 Ленин на языках мира — карта">
     <canvas id="map" aria-hidden="true"></canvas>
   </main>
+
+  <div class="info-modal" id="info-modal" aria-hidden="true">
+    <div class="info-backdrop" id="info-backdrop"></div>
+    <div class="info-card" role="dialog" aria-modal="true">
+      <div class="info-word" id="info-word"></div>
+      <div class="info-lang" id="info-lang"></div>
+      <div class="info-meta">
+        <div class="info-row">
+          <span class="info-row-key">Регион</span>
+          <span class="info-row-val" id="info-region"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-key">Носители</span>
+          <span class="info-row-val" id="info-speakers"></span>
+        </div>
+        <div class="info-row">
+          <span class="info-row-key">Письменность</span>
+          <span class="info-row-val" id="info-script"></span>
+        </div>
+      </div>
+      <div class="info-hint">коснитесь снаружи, чтобы закрыть</div>
+    </div>
+  </div>
+
   <script src="./map.js"></script>
 </body>
 </html>

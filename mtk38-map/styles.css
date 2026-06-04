@@ -73,3 +73,131 @@ html, body {
   display: block;
   touch-action: none;
 }
+
+/* ── Modal info window for clicked point ───────────────────────────── */
+
+.info-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.info-modal.is-open {
+  display: flex;
+  pointer-events: auto;
+}
+
+.info-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+  cursor: pointer;
+}
+
+.info-card {
+  position: relative;
+  max-width: 86vw;
+  min-width: min(420px, 80vw);
+  padding: clamp(28px, 4vw, 56px) clamp(32px, 5vw, 72px);
+  background: rgba(18, 22, 26, 0.94);
+  border: 1.5px solid var(--brass);
+  border-radius: 18px;
+  color: var(--paper);
+  font-family: "Nolde", Georgia, serif;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.75);
+  text-align: center;
+  isolation: isolate;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.info-card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: -1;
+  background:
+    linear-gradient(105deg, transparent 0, transparent 86%, var(--red) 86%, var(--red) 92%, transparent 92.2%),
+    linear-gradient(105deg, transparent 0, transparent 64%, var(--brass) 64%, var(--brass) 64.16%, transparent 64.32%);
+  opacity: 0.55;
+}
+
+.info-word {
+  font-family: "Nolde", Georgia, serif;
+  font-weight: 600;
+  font-size: clamp(72px, 11vw, 168px);
+  line-height: 1.0;
+  color: var(--paper);
+  margin-bottom: 18px;
+  text-shadow: 0 6px 28px rgba(0, 0, 0, 0.75);
+  word-break: break-word;
+}
+
+.info-lang {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(20px, 2.2vw, 32px);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 32px;
+}
+
+.info-meta {
+  display: grid;
+  gap: 14px;
+  margin-bottom: 28px;
+  text-align: left;
+  font-family: "21 Cent", Georgia, serif;
+}
+
+.info-row {
+  display: grid;
+  grid-template-columns: clamp(140px, 22%, 220px) 1fr;
+  gap: 18px;
+  align-items: baseline;
+  font-size: clamp(16px, 1.4vw, 22px);
+  padding-bottom: 10px;
+  border-bottom: 1px solid rgba(210, 183, 115, 0.18);
+}
+
+.info-row:last-of-type {
+  border-bottom: none;
+}
+
+.info-row-key {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: 0.78em;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+}
+
+.info-row-val {
+  color: var(--paper);
+}
+
+.info-hint {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: clamp(11px, 1.1vw, 14px);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.42);
+}
+
+@media (orientation: portrait) {
+  .info-card {
+    max-width: 84vw;
+    padding: 48px 56px;
+  }
+  .info-word { font-size: clamp(120px, 16vw, 240px); }
+  .info-lang { font-size: 32px; margin-bottom: 44px; }
+  .info-row { font-size: 28px; padding-bottom: 14px; gap: 24px; }
+  .info-hint { font-size: 18px; }
+}

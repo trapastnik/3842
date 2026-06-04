@@ -12,49 +12,50 @@
 
   // Languages with primary geographic coordinates (city / region center).
   // `weight` ~ rough scaling for visual emphasis of main languages.
+  // `speakers` in millions (native + L2, rough order-of-magnitude).
   const points = [
-    { text: "Ленин",   lang: "Русский",    script: "cyrillic",   lat: 55.75,  lng: 37.62,  weight: 3 },
-    { text: "Lenin",   lang: "English",    script: "latin",      lat: 51.51,  lng: -0.13,  weight: 3 },
-    { text: "Lénine",  lang: "Français",   script: "latin",      lat: 48.85,  lng: 2.35,   weight: 3 },
-    { text: "Lenin",   lang: "Español",    script: "latin",      lat: 40.42,  lng: -3.70,  weight: 3 },
-    { text: "لينين",   lang: "العربية",   script: "arabic",     lat: 30.04,  lng: 31.24,  weight: 3 },
-    { text: "列宁",     lang: "中文",        script: "cjk",        lat: 39.90,  lng: 116.41, weight: 3 },
-    { text: "लेनिन",   lang: "Hindi",      script: "devanagari", lat: 28.61,  lng: 77.21,  weight: 2 },
-    { text: "লেনিন",   lang: "Bengali",    script: "bengali",    lat: 23.81,  lng: 90.41,  weight: 2 },
-    { text: "Lênin",   lang: "Português",  script: "latin",      lat: 38.72,  lng: -9.14,  weight: 2 },
-    { text: "Lenin",   lang: "Deutsch",    script: "latin",      lat: 52.52,  lng: 13.40,  weight: 2 },
-    { text: "Lenin",   lang: "Italiano",   script: "latin",      lat: 41.89,  lng: 12.49,  weight: 2 },
-    { text: "Lenin",   lang: "Polski",     script: "latin",      lat: 52.23,  lng: 21.01,  weight: 1 },
-    { text: "Lenin",   lang: "Türkçe",     script: "latin",      lat: 39.93,  lng: 32.86,  weight: 1 },
-    { text: "Lenin",   lang: "Indonesia",  script: "latin",      lat: -6.21,  lng: 106.85, weight: 2 },
-    { text: "Lênin",   lang: "Tiếng Việt", script: "latin",      lat: 21.03,  lng: 105.85, weight: 1 },
-    { text: "Lenin",   lang: "Kiswahili",  script: "latin",      lat: -6.79,  lng: 39.21,  weight: 1 },
-    { text: "Ленін",   lang: "Українська", script: "cyrillic",   lat: 50.45,  lng: 30.52,  weight: 1 },
-    { text: "Ленін",   lang: "Беларуская", script: "cyrillic",   lat: 53.90,  lng: 27.57,  weight: 1 },
-    { text: "Ленин",   lang: "Қазақша",    script: "cyrillic",   lat: 51.17,  lng: 71.45,  weight: 1 },
-    { text: "Ленин",   lang: "Кыргызча",   script: "cyrillic",   lat: 42.87,  lng: 74.59,  weight: 1 },
-    { text: "Ленин",   lang: "Монгол",     script: "cyrillic",   lat: 47.92,  lng: 106.92, weight: 1 },
-    { text: "Լենին",   lang: "Հայերեն",    script: "armenian",   lat: 40.18,  lng: 44.51,  weight: 1 },
-    { text: "ლენინი",  lang: "ქართული",   script: "georgian",   lat: 41.72,  lng: 44.79,  weight: 1 },
-    { text: "Λένιν",   lang: "Ελληνικά",   script: "greek",      lat: 37.98,  lng: 23.73,  weight: 1 },
-    { text: "לנין",    lang: "עברית",     script: "hebrew",     lat: 31.78,  lng: 35.22,  weight: 1 },
-    { text: "لنین",    lang: "فارسی",     script: "arabic",     lat: 35.69,  lng: 51.39,  weight: 1 },
-    { text: "لینن",    lang: "اردو",      script: "arabic",     lat: 24.86,  lng: 67.00,  weight: 1 },
-    { text: "レーニン", lang: "日本語",      script: "cjk",        lat: 35.68,  lng: 139.69, weight: 2 },
-    { text: "레닌",     lang: "한국어",      script: "hangul",     lat: 37.57,  lng: 126.98, weight: 1 },
-    { text: "เลนิน",   lang: "ไทย",       script: "thai",       lat: 13.76,  lng: 100.50, weight: 1 },
-    { text: "லெனின்",  lang: "தமிழ்",     script: "tamil",      lat: 13.08,  lng: 80.27,  weight: 1 },
-    { text: "లెనిన్",  lang: "తెలుగు",    script: "telugu",     lat: 17.39,  lng: 78.49,  weight: 1 },
-    { text: "ಲೆನಿನ್",  lang: "ಕನ್ನಡ",     script: "kannada",    lat: 12.97,  lng: 77.59,  weight: 1 },
-    { text: "ലെനിൻ",  lang: "മലയാളം",   script: "malayalam",  lat: 9.93,   lng: 76.27,  weight: 1 },
-    { text: "ਲੈਨਿਨ",   lang: "ਪੰਜਾਬੀ",    script: "gurmukhi",   lat: 31.55,  lng: 74.34,  weight: 1 },
-    { text: "लेनिन",   lang: "मराठी",     script: "devanagari", lat: 19.08,  lng: 72.88,  weight: 1 },
-    { text: "लेनिन",   lang: "नेपाली",    script: "devanagari", lat: 27.71,  lng: 85.32,  weight: 1 },
-    { text: "ලෙනින්",  lang: "සිංහල",    script: "sinhala",    lat: 6.93,   lng: 79.86,  weight: 1 },
-    { text: "ሌኒን",     lang: "Amharic",   script: "ethiopic",   lat: 9.03,   lng: 38.74,  weight: 1 },
-    { text: "ເລນິນ",   lang: "ລາວ",       script: "lao",        lat: 17.97,  lng: 102.60, weight: 1 },
-    { text: "លេនីន",   lang: "ខ្មែរ",     script: "khmer",      lat: 11.55,  lng: 104.92, weight: 1 },
-    { text: "လီနင်",   lang: "မြန်မာ",   script: "myanmar",    lat: 19.74,  lng: 96.08,  weight: 1 }
+    { text: "Ленин",   lang: "Русский",    script: "cyrillic",   lat: 55.75,  lng: 37.62,  weight: 3, speakers: 258,  region: "Россия, СНГ" },
+    { text: "Lenin",   lang: "English",    script: "latin",      lat: 51.51,  lng: -0.13,  weight: 3, speakers: 1456, region: "Великобритания, США, мир" },
+    { text: "Lénine",  lang: "Français",   script: "latin",      lat: 48.85,  lng: 2.35,   weight: 3, speakers: 274,  region: "Франция, Зап. и Центр. Африка" },
+    { text: "Lenin",   lang: "Español",    script: "latin",      lat: 40.42,  lng: -3.70,  weight: 3, speakers: 559,  region: "Испания, Латинская Америка" },
+    { text: "لينين",   lang: "العربية",   script: "arabic",     lat: 30.04,  lng: 31.24,  weight: 3, speakers: 422,  region: "Арабский мир" },
+    { text: "列宁",     lang: "中文",        script: "cjk",        lat: 39.90,  lng: 116.41, weight: 3, speakers: 1138, region: "Китай, Тайвань, диаспора" },
+    { text: "लेनिन",   lang: "Hindi",      script: "devanagari", lat: 28.61,  lng: 77.21,  weight: 2, speakers: 609,  region: "Север Индии" },
+    { text: "লেনিন",   lang: "Bengali",    script: "bengali",    lat: 23.81,  lng: 90.41,  weight: 2, speakers: 273,  region: "Бангладеш, Зап. Бенгалия" },
+    { text: "Lênin",   lang: "Português",  script: "latin",      lat: 38.72,  lng: -9.14,  weight: 2, speakers: 263,  region: "Португалия, Бразилия, Ангола" },
+    { text: "Lenin",   lang: "Deutsch",    script: "latin",      lat: 52.52,  lng: 13.40,  weight: 2, speakers: 133,  region: "Германия, Австрия, Швейцария" },
+    { text: "Lenin",   lang: "Italiano",   script: "latin",      lat: 41.89,  lng: 12.49,  weight: 2, speakers: 65,   region: "Италия, Швейцария" },
+    { text: "Lenin",   lang: "Polski",     script: "latin",      lat: 52.23,  lng: 21.01,  weight: 1, speakers: 41,   region: "Польша" },
+    { text: "Lenin",   lang: "Türkçe",     script: "latin",      lat: 39.93,  lng: 32.86,  weight: 1, speakers: 88,   region: "Турция, Кипр" },
+    { text: "Lenin",   lang: "Indonesia",  script: "latin",      lat: -6.21,  lng: 106.85, weight: 2, speakers: 199,  region: "Индонезия" },
+    { text: "Lênin",   lang: "Tiếng Việt", script: "latin",      lat: 21.03,  lng: 105.85, weight: 1, speakers: 86,   region: "Вьетнам" },
+    { text: "Lenin",   lang: "Kiswahili",  script: "latin",      lat: -6.79,  lng: 39.21,  weight: 1, speakers: 200,  region: "Восточная Африка" },
+    { text: "Ленін",   lang: "Українська", script: "cyrillic",   lat: 50.45,  lng: 30.52,  weight: 1, speakers: 40,   region: "Украина" },
+    { text: "Ленін",   lang: "Беларуская", script: "cyrillic",   lat: 53.90,  lng: 27.57,  weight: 1, speakers: 5,    region: "Беларусь" },
+    { text: "Ленин",   lang: "Қазақша",    script: "cyrillic",   lat: 51.17,  lng: 71.45,  weight: 1, speakers: 13,   region: "Казахстан" },
+    { text: "Ленин",   lang: "Кыргызча",   script: "cyrillic",   lat: 42.87,  lng: 74.59,  weight: 1, speakers: 7,    region: "Кыргызстан" },
+    { text: "Ленин",   lang: "Монгол",     script: "cyrillic",   lat: 47.92,  lng: 106.92, weight: 1, speakers: 5,    region: "Монголия" },
+    { text: "Լենին",   lang: "Հայերեն",    script: "armenian",   lat: 40.18,  lng: 44.51,  weight: 1, speakers: 6,    region: "Армения, диаспора" },
+    { text: "ლენინი",  lang: "ქართული",   script: "georgian",   lat: 41.72,  lng: 44.79,  weight: 1, speakers: 4,    region: "Грузия" },
+    { text: "Λένιν",   lang: "Ελληνικά",   script: "greek",      lat: 37.98,  lng: 23.73,  weight: 1, speakers: 13,   region: "Греция, Кипр" },
+    { text: "לנין",    lang: "עברית",     script: "hebrew",     lat: 31.78,  lng: 35.22,  weight: 1, speakers: 9,    region: "Израиль" },
+    { text: "لنین",    lang: "فارسی",     script: "arabic",     lat: 35.69,  lng: 51.39,  weight: 1, speakers: 110,  region: "Иран, Афганистан, Таджикистан" },
+    { text: "لینن",    lang: "اردو",      script: "arabic",     lat: 24.86,  lng: 67.00,  weight: 1, speakers: 232,  region: "Пакистан, Север Индии" },
+    { text: "レーニン", lang: "日本語",      script: "cjk",        lat: 35.68,  lng: 139.69, weight: 2, speakers: 125,  region: "Япония" },
+    { text: "레닌",     lang: "한국어",      script: "hangul",     lat: 37.57,  lng: 126.98, weight: 1, speakers: 81,   region: "Корея" },
+    { text: "เลนิน",   lang: "ไทย",       script: "thai",       lat: 13.76,  lng: 100.50, weight: 1, speakers: 60,   region: "Таиланд" },
+    { text: "லெனின்",  lang: "தமிழ்",     script: "tamil",      lat: 13.08,  lng: 80.27,  weight: 1, speakers: 86,   region: "Юж. Индия, Шри-Ланка" },
+    { text: "లెనిన్",  lang: "తెలుగు",    script: "telugu",     lat: 17.39,  lng: 78.49,  weight: 1, speakers: 96,   region: "Андхра-Прадеш, Телангана" },
+    { text: "ಲೆನಿನ್",  lang: "ಕನ್ನಡ",     script: "kannada",    lat: 12.97,  lng: 77.59,  weight: 1, speakers: 56,   region: "Карнатака" },
+    { text: "ലെനിൻ",  lang: "മലയാളം",   script: "malayalam",  lat: 9.93,   lng: 76.27,  weight: 1, speakers: 38,   region: "Керала" },
+    { text: "ਲੈਨਿਨ",   lang: "ਪੰਜਾਬੀ",    script: "gurmukhi",   lat: 31.55,  lng: 74.34,  weight: 1, speakers: 113,  region: "Пенджаб (Индия / Пакистан)" },
+    { text: "लेनिन",   lang: "मराठी",     script: "devanagari", lat: 19.08,  lng: 72.88,  weight: 1, speakers: 99,   region: "Махараштра" },
+    { text: "लेनिन",   lang: "नेपाली",    script: "devanagari", lat: 27.71,  lng: 85.32,  weight: 1, speakers: 32,   region: "Непал" },
+    { text: "ලෙනින්",  lang: "සිංහල",    script: "sinhala",    lat: 6.93,   lng: 79.86,  weight: 1, speakers: 17,   region: "Шри-Ланка" },
+    { text: "ሌኒን",     lang: "Amharic",   script: "ethiopic",   lat: 9.03,   lng: 38.74,  weight: 1, speakers: 32,   region: "Эфиопия" },
+    { text: "ເລນິນ",   lang: "ລາວ",       script: "lao",        lat: 17.97,  lng: 102.60, weight: 1, speakers: 30,   region: "Лаос, Сев.-Восток Таиланда" },
+    { text: "លេនីន",   lang: "ខ្មែរ",     script: "khmer",      lat: 11.55,  lng: 104.92, weight: 1, speakers: 17,   region: "Камбоджа" },
+    { text: "လီနင်",   lang: "မြန်မာ",   script: "myanmar",    lat: 19.74,  lng: 96.08,  weight: 1, speakers: 33,   region: "Мьянма" }
   ];
 
   let width = 0, height = 0, dpr = 1;
@@ -373,8 +374,85 @@
 
   window.addEventListener("resize", resize);
 
+  // ── Modal info window ────────────────────────────────────────────────
+  const modal = document.getElementById("info-modal");
+  const backdrop = document.getElementById("info-backdrop");
+  const elWord = document.getElementById("info-word");
+  const elLang = document.getElementById("info-lang");
+  const elRegion = document.getElementById("info-region");
+  const elSpeakers = document.getElementById("info-speakers");
+  const elScript = document.getElementById("info-script");
+  let modalOpen = false;
+
+  const scriptNames = {
+    cyrillic: "Кириллица",
+    latin: "Латиница",
+    arabic: "Арабская",
+    cjk: "Иероглифика",
+    devanagari: "Деванагари",
+    bengali: "Бенгальская",
+    armenian: "Армянская",
+    georgian: "Грузинская",
+    greek: "Греческая",
+    hebrew: "Еврейская",
+    hangul: "Хангыль",
+    thai: "Тайская",
+    tamil: "Тамильская",
+    telugu: "Телугу",
+    kannada: "Каннада",
+    malayalam: "Малаялам",
+    gurmukhi: "Гурмукхи",
+    sinhala: "Сингальская",
+    ethiopic: "Эфиопская",
+    lao: "Лаосская",
+    khmer: "Кхмерская",
+    myanmar: "Бирманская"
+  };
+
+  function formatSpeakers(millions) {
+    if (millions >= 1000) {
+      const bln = millions / 1000;
+      const s = bln >= 10 ? bln.toFixed(0) : bln.toFixed(1);
+      return `≈ ${s.replace(".", ",")} млрд носителей`;
+    }
+    return `≈ ${millions} млн носителей`;
+  }
+
+  function openModal(entry) {
+    elWord.textContent = entry.text;
+    elLang.textContent = entry.lang;
+    elRegion.textContent = entry.region || "—";
+    elSpeakers.textContent = formatSpeakers(entry.speakers || 0);
+    elScript.textContent = scriptNames[entry.script] || entry.script;
+    modal.classList.add("is-open");
+    modal.setAttribute("aria-hidden", "false");
+    modalOpen = true;
+  }
+
+  function closeModal() {
+    modal.classList.remove("is-open");
+    modal.setAttribute("aria-hidden", "true");
+    modalOpen = false;
+  }
+
+  backdrop.addEventListener("click", closeModal);
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape") closeModal();
+  });
+
+  // ── Pointer / tap detection ──────────────────────────────────────────
+  let pointerDownX = 0, pointerDownY = 0, pointerDownTime = 0;
+  let movedDuringDrag = false;
+  const TAP_MOVE_THRESHOLD = 12;     // px
+  const TAP_TIME_THRESHOLD = 500;    // ms
+
   canvas.addEventListener("pointerdown", event => {
+    if (modalOpen) return;             // ignore canvas interactions while modal is up
     map.dragging = true;
+    movedDuringDrag = false;
+    pointerDownX = event.clientX;
+    pointerDownY = event.clientY;
+    pointerDownTime = performance.now();
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
     lastPointerTime = performance.now();
@@ -384,6 +462,11 @@
 
   canvas.addEventListener("pointermove", event => {
     if (map.dragging) {
+      const totalDx = event.clientX - pointerDownX;
+      const totalDy = event.clientY - pointerDownY;
+      if (Math.hypot(totalDx, totalDy) > TAP_MOVE_THRESHOLD) {
+        movedDuringDrag = true;
+      }
       const now = performance.now();
       const dt = Math.max(16, now - lastPointerTime) / 1000;
       const dx = event.clientX - lastPointerX;
@@ -404,7 +487,18 @@
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
+    // Tap detection: short, near-stationary press on a point opens its modal.
+    if (!movedDuringDrag && (performance.now() - pointerDownTime) < TAP_TIME_THRESHOLD) {
+      const hit = findPointAt(event.clientX, event.clientY);
+      if (hit >= 0) {
+        openModal(points[hit]);
+        // Cancel any drag inertia from the tap
+        map.camVX = 0;
+        map.camVY = 0;
+      }
+    }
     map.dragging = false;
+    movedDuringDrag = false;
   });
 
   canvas.addEventListener("pointerleave", () => {
@@ -414,6 +508,7 @@
 
   canvas.addEventListener("pointercancel", () => {
     map.dragging = false;
+    movedDuringDrag = false;
   });
 
   // Load GeoJSON from the data/ directory (owned by bold-booth chat — read-only here)
