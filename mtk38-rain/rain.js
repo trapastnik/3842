@@ -75,7 +75,7 @@
     };
   }
 
-  function spawnParticle(rng, fromTop) {
+  function spawnParticle(rng, fromBottom) {
     // Tier picks size category. Mostly small, some medium, few large.
     const sizeRoll = rng();
     const tier =
@@ -98,9 +98,10 @@
     return {
       word,
       x: rng() * width,
-      y: fromTop ? -size * (1 + rng() * 6) : rng() * height,
+      y: fromBottom ? height + size * (1 + rng() * 6) : rng() * height,
       vx: (rng() - 0.5) * 12,
-      vy: 18 + tier * 22 + rng() * 30,             // bigger words fall faster (heavier)
+      // Negative vy = moving up.  Bigger words rise faster (more "thrust").
+      vy: -(18 + tier * 22 + rng() * 30),
       angle: (rng() - 0.5) * 0.18,
       angularVelocity: (rng() - 0.5) * 0.5,
       size,
@@ -131,7 +132,7 @@
     buildParticles();
   }
 
-  const gravity = 110;        // px/s² acceleration toward bottom
+  const buoyancy = -110;      // px/s² acceleration toward TOP (negative y)
   const drag = 0.06;          // air resistance coefficient
   const respawnRng = makeRng(0xE1E1E1);
 
@@ -143,8 +144,9 @@
     for (let i = 0; i < particles.length; i += 1) {
       const p = particles[i];
 
-      // Gravity
-      p.vy += gravity * dt / Math.max(0.6, p.mass);
+      // Anti-gravity / buoyancy — pulls words upward.  Lighter (smaller)
+      // particles get pushed up more, like bubbles in water.
+      p.vy += buoyancy * dt / Math.max(0.6, p.mass);
 
       // Air resistance
       p.vx -= p.vx * drag * dt * 4;
@@ -174,11 +176,11 @@
       p.angle += p.angularVelocity * dt;
       p.angularVelocity *= Math.pow(0.94, dt * 60);
 
-      // Bounds — wrap horizontally, respawn from top if fallen below
+      // Bounds — wrap horizontally, respawn from bottom if risen above
       if (p.x < -p.size * 4) p.x = width + p.size * 4;
       if (p.x > width + p.size * 4) p.x = -p.size * 4;
-      if (p.y > height + p.size * 4) {
-        // Respawn from top with new random word/size
+      if (p.y < -p.size * 4) {
+        // Respawn from bottom with new random word/size
         const fresh = spawnParticle(respawnRng, true);
         Object.assign(p, fresh);
       }
