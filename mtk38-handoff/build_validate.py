@@ -46,6 +46,8 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 · валидация написаний «Ленин»</title>
 <style>
 __FACE__
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
   :root{--brass:#D2B773;--red:#A02128;--blue-grey:#5D8970;--window:#9DA3A8;
     --graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
   *{box-sizing:border-box}
@@ -114,11 +116,12 @@ __FACE__
 <header>
   <h1>«<b>Ленин</b>» на языках мира — валидация написаний</h1>
   <p class="intro">
-    Лист музея — это <b>векторные контуры</b> (символов Unicode внутри нет). В каждой карточке
-    <b>сверху — слово с листа музея</b> (канон), <b>снизу — моя расшифровка</b> в Unicode шрифтом
-    Noto + коды <b>U+</b>. Контуры, скорее всего, рисовались из Noto, поэтому при верной расшифровке
-    верх и низ должны совпасть. <b>Сравните их:</b> совпали — «✓ верно»; отличаются — «✗ неверно»,
-    впишите правильное написание/комментарий. Прогресс сохраняется; в конце — «Экспорт».
+    Лист музея — это <b>векторные контуры</b> (Unicode внутри нет; набирался шрифтами
+    <b>20 Kopeek + Arial Unicode MS</b>). В карточке <b>сверху — слово с листа</b> (канон),
+    <b>снизу — моя расшифровка</b> в Unicode (латиница/кириллица — шрифтом 20 Kopeek как у музея,
+    прочее — Noto) + коды <b>U+</b>. <b>Сравните верх и низ:</b> совпали по буквам — «✓ верно»;
+    отличаются — «✗ неверно», впишите правильное/комментарий. Форма глифа зависит от шрифта —
+    сверяйте СИМВОЛЫ. Прогресс сохраняется; в конце — «Экспорт».
   </p>
   <div class="toolbar">
     <input type="text" id="reviewer" placeholder="Ваше имя / организация (для отчёта)">
@@ -151,7 +154,8 @@ let state = {}; try{ state = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch
 const grid = document.getElementById('grid');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cps = s => [...String(s)].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
-const ff  = iso => EMBED.has(iso) ? `'noto-${iso}', system-ui, sans-serif` : `system-ui, 'Noto Sans', sans-serif`;
+const ff  = iso => (iso==='Latn'||iso==='Cyrl') ? `'20 Kopeek', system-ui, sans-serif`
+                 : EMBED.has(iso) ? `'noto-${iso}', system-ui, sans-serif` : `system-ui, 'Noto Sans', sans-serif`;
 
 const langs = DATA.languages.slice().sort((a,b)=> b.weight-a.weight || a.name_ru.localeCompare(b.name_ru,'ru'));
 document.getElementById('total').textContent = langs.length;

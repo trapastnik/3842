@@ -1052,7 +1052,7 @@
       "id": "por",
       "name_ru": "Португальский",
       "endonym": "português",
-      "writing": "Lênin",
+      "writing": "LÊNIN",
       "script": {
         "iso15924": "Latn",
         "name_ru": "Латиница"
@@ -1082,7 +1082,7 @@
       "verifier": "idml-source",
       "speakers_mln": 260,
       "weight": 2,
-      "note": "в источнике строчными; КАПС на листе = стиль All-Caps"
+      "note": "хранится КАПСОМ как на листе музея; IDML подтвердил слово (строчная форма Lênin/Lénine — стиль)"
     },
     {
       "id": "sat",
@@ -1319,7 +1319,7 @@
       "id": "fra",
       "name_ru": "Французский",
       "endonym": "français",
-      "writing": "Lénine",
+      "writing": "LÉNINE",
       "script": {
         "iso15924": "Latn",
         "name_ru": "Латиница"
@@ -1353,7 +1353,7 @@
       "verifier": "idml-source",
       "speakers_mln": 280,
       "weight": 3,
-      "note": "в источнике строчными; КАПС на листе = стиль All-Caps"
+      "note": "хранится КАПСОМ как на листе музея; IDML подтвердил слово (строчная форма Lênin/Lénine — стиль)"
     },
     {
       "id": "shn",
