@@ -2,10 +2,10 @@
 # -*- coding: utf-8 -*-
 """
 Генератор аналитической вкладки mtk38-v2/analysis.html — репрезентативность списка
-52 языков относительно мировых языков + предложения по дополнению.
+52 языков + что УЖЕ есть + предложения по дополнению (с контекстом «семья уже представлена»).
 
-Метрики (языки/письменности/страны/семьи + охват по регионам) считаются из data/mtk38.json;
-мировой топ-25 по носителям и предложения — встроенные константы (знание + оценки).
+Метрики, состав по семьям и охват по регионам — из data/mtk38.json; мировой топ-25 по
+носителям и предложения — встроенные константы (знание + оценки).
 
 Запуск:  python3 mtk38-handoff/build_analysis.py
 """
@@ -39,9 +39,18 @@ families = {l["family"].split("→")[0].strip() for l in L}
 reg = collections.Counter(CONT.get(c, "пр.") for c in countries)
 regions = [{"n": k, "v": v} for k, v in reg.most_common()]
 
-stats = {"langs": len(L), "scripts": len(scripts), "countries": len(countries),
-         "families": len(families), "regions": regions}
+ours = []
+for l in L:
+    g = l["geo"]; c = g["primary"]["country_iso"] if g.get("primary") else None
+    ours.append({"n": l["name_ru"], "fam": l["family"], "ft": l["family"].split("→")[0].strip(),
+                 "sp": l["speakers_mln"], "sc": l["script"]["iso15924"],
+                 "reg": (CONT.get(c, "—") if c else "диаспора")})
+ours.sort(key=lambda x: -x["sp"])
+
+stats = {"langs": len(L), "scripts": len(scripts), "countries": len(countries), "families": len(families),
+         "regions": regions}
 stats_json = json.dumps(stats, ensure_ascii=False)
+ours_json = json.dumps(ours, ensure_ascii=False)
 
 HTML = r"""<!doctype html>
 <html lang="ru">
@@ -62,7 +71,7 @@ HTML = r"""<!doctype html>
     border-radius:8px 8px 0 0;background:rgba(255,255,255,.06)}
   nav a.active{background:var(--paper);color:var(--graphite);font-weight:600}
   header h1{font-family:"Nolde",Georgia,serif;font-weight:400;margin:0 0 14px;font-size:26px}
-  header h1 b{color:var(--brass);font-weight:400}
+  header h1 b{color:var(--brass)}
   main{padding:22px 24px 40px;max-width:1100px}
   h2{font-size:18px;font-weight:600;margin:1.8rem 0 4px}
   .sub{color:var(--blue-grey);font-size:13px;margin:0 0 14px}
@@ -78,15 +87,20 @@ HTML = r"""<!doctype html>
   .bar .tk{flex:1;background:var(--white);border:1px solid var(--telegrey);border-radius:3px;height:16px}
   .bar .fl{height:100%;border-radius:3px}
   .bar .vl{width:64px;text-align:right;flex-shrink:0;color:var(--window);font-size:12px}
+  .famrow{display:flex;gap:10px;padding:6px 0;border-bottom:1px solid var(--telegrey);font-size:13px}
+  .famn{width:230px;flex-shrink:0;color:var(--graphite)}
+  .famn b{color:var(--brass)}
+  .famls{color:var(--blue-grey)}
   .prop{background:var(--white);border:1px solid var(--telegrey);border-left:4px solid var(--brass);
     border-radius:0 10px 10px 0;padding:12px 16px;margin:8px 0}
   .prop.star{border-left-color:var(--red)}
   .prop .h{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
   .prop .nm{font-size:17px;font-weight:700}
-  .prop .sp{color:var(--red);font-weight:600;font-size:14px}
-  .prop .sc{font-size:12px;color:var(--blue-grey);margin-top:1px}
+  .prop .sp{color:var(--red);font-weight:600;font-size:13px;text-align:right}
   .prop .why{font-size:13px;margin-top:5px}
-  .verdict{background:#eef2ec;border:1px solid var(--telegrey);border-radius:10px;padding:14px 18px;margin-top:10px}
+  .prop .have{font-size:12px;margin-top:7px;padding:6px 9px;border-radius:7px;background:#eef2ec;color:var(--graphite)}
+  .prop .have b{color:var(--blue-grey)}
+  .verdict{background:#eef2ec;border:1px solid var(--telegrey);border-radius:10px;padding:14px 18px;margin-top:14px}
   .verdict b{color:var(--graphite)}
   footer{padding:18px 24px;color:var(--window);font-size:12px;border-top:1px solid var(--telegrey)}
 </style>
@@ -112,30 +126,34 @@ HTML = r"""<!doctype html>
   </div>
   <div id="top25"></div>
 
+  <h2>Уже в списке — 52 языка по семьям</h2>
+  <p class="sub">Что у нас уже есть — чтобы сравнить с предложениями ниже.</p>
+  <div id="byfam"></div>
+
   <h2>Территориальный охват — страны по регионам</h2>
   <div id="regions"></div>
 
-  <h2>Сильные стороны</h2>
-  <p class="sub">Как витрина систем письма список силён: <b id="s-scr"></b> письменности, <b id="s-fam"></b> языковых семей,
-  все обитаемые континенты, <b id="s-cou"></b> стран. Это арт‑объект про визуальное многообразие слова «Ленин» — и в этом качестве он репрезентативен.</p>
-
   <h2>Пробелы и предложения по дополнению</h2>
-  <p class="sub">По населению список пропускает несколько крупнейших языков — почти все на латинице,
-  которая уже представлена. Поэтому добавление — про узнаваемость и охват, а не про новые письменности.</p>
+  <p class="sub">Крупные языки, которых нет. Но смотрите строку «семья уже в списке»: чаще всего
+  ветвь/регион уже представлены родственниками — добавление даст узнаваемость и население,
+  а не новую письменность или семью.</p>
   <div id="props"></div>
 
   <div class="verdict">
     <b>Вывод.</b> Список оптимизирован под <b>разнообразие письменностей</b>, а не под население.
-    Если цель — витрина письменностей, он валиден как есть. Если важна узнаваемость по населению —
-    в первую очередь стоит обсудить <b>испанский</b> (2‑й язык мира, его отсутствие бросается в глаза)
-    и <b>хинди</b> как таковой (сейчас только авадхи). Остальные крупные пропуски — латиница, нового
-    письма не добавят. Числа носителей — оценки, на структуру вывода не влияют.
+    Почти у каждого крупного «пропуска» в списке уже есть родственник (германские — английский,
+    тюркские — уйгурский, индоарийские — авадхи/урду/бенгальский и ещё несколько). Поэтому если
+    цель — витрина письменностей и семей, список валиден как есть. Если важна узнаваемость по
+    населению — стоит обсудить в первую очередь <b>испанский</b> (романские есть, но именно его нет —
+    бросается в глаза) и при желании <b>хинди</b> (хотя индоарийские уже плотно покрыты).
+    Числа носителей — оценки.
   </div>
 </main>
 <footer>Музей В.И. Ленина · МТК 38 «Ленин на языках мира» · аналитика v2 · данные: data/mtk38.json</footer>
 
 <script>
 const S = __STATS__;
+const OURS = __OURS__;
 const TOP=[
  {n:'Английский',sp:1500,s:'in'},{n:'Китайский (мандарин)',sp:1100,s:'in'},
  {n:'Хинди',sp:610,s:'part'},{n:'Испанский',sp:560,s:'miss'},
@@ -151,26 +169,23 @@ const TOP=[
  {n:'Корейский',sp:82,s:'in'},{n:'Хауса',sp:80,s:'miss'},
  {n:'Персидский',sp:79,s:'part'}];
 const PROPS=[
- {n:'Испанский',sp:560,sc:'латиница (письмо уже есть)',star:true,
-  why:'2‑й язык мира по числу родных носителей. Самое заметное отсутствие — посетитель сразу спросит «а где испанский?». Покрыл бы испаноязычную Латинскую Америку (сейчас только гуарани).'},
- {n:'Хинди',sp:610,sc:'деванагари (письмо уже есть)',
-  why:'Сейчас в списке только авадхи (региональный язык хинди‑пояса). Хинди как таковой — крупнейший язык Индии и один из крупнейших в мире.'},
- {n:'Индонезийский',sp:200,sc:'латиница (письмо уже есть)',
-  why:'Лингва‑франка морской Юго‑Восточной Азии (Индонезия — 270 млн). Регион в списке не покрыт.'},
- {n:'Немецкий',sp:135,sc:'латиница (письмо уже есть)',
-  why:'Крупнейший язык Евросоюза. Ядро Европы сейчас без него (зато есть латышский, албанский, боснийский).'},
- {n:'Турецкий',sp:90,sc:'латиница (письмо уже есть)',
-  why:'Тюркский мир представлен только уйгурским. Турецкий — крупнейший тюркский язык.'},
- {n:'Вьетнамский',sp:86,sc:'латиница (письмо уже есть)',
+ {n:'Испанский',sp:560,sc:'латиница (есть)',star:true,fam:'романская',
+  why:'2‑й язык мира по числу родных носителей. Самое заметное отсутствие — посетитель сразу спросит «а где испанский?». Покрыл бы испаноязычную Латинскую Америку.'},
+ {n:'Хинди',sp:610,sc:'деванагари (есть)',fam:'индоарийская',
+  why:'Сейчас в списке только авадхи (региональный язык хинди‑пояса). Хинди как таковой — крупнейший язык Индии.'},
+ {n:'Индонезийский',sp:200,sc:'латиница (есть)',fam:'австронезийская',
+  why:'Лингва‑франка морской Юго‑Восточной Азии (Индонезия — 270 млн).'},
+ {n:'Немецкий',sp:135,sc:'латиница (есть)',fam:'германская',
+  why:'Крупнейший язык Евросоюза. Ядро Европы сейчас без него.'},
+ {n:'Турецкий',sp:90,sc:'латиница (есть)',fam:'тюркская',
+  why:'Турецкий — крупнейший тюркский язык.'},
+ {n:'Вьетнамский',sp:86,sc:'латиница (есть)',fam:'австроазиатская',
   why:'Крупный язык Юго‑Восточной Азии вне охвата.'}];
 const C={in:'#5D8970',part:'#D2B773',miss:'#A02128'};
 
 document.getElementById('cards').innerHTML=[
   ['Языков',S.langs],['Письменностей',S.scripts],['Стран охвата',S.countries],['Языковых семей',S.families]
 ].map(([l,v])=>`<div class="card"><div class="lab">${l}</div><div class="num">${v}</div></div>`).join('');
-document.getElementById('s-scr').textContent=S.scripts;
-document.getElementById('s-fam').textContent=S.families;
-document.getElementById('s-cou').textContent=S.countries;
 
 function bars(el,rows,max,colorFn,valFn){
   el.innerHTML=rows.map(r=>{const w=Math.max(2,Math.round((r.sp!==undefined?r.sp:r.v)/max*100));
@@ -182,18 +197,33 @@ bars(document.getElementById('top25'),TOP,1500,r=>C[r.s],
 const rmax=Math.max(...S.regions.map(r=>r.v));
 bars(document.getElementById('regions'),S.regions,rmax,()=>'#435059',r=>r.v+' стр.');
 
-document.getElementById('props').innerHTML=PROPS.map(p=>`
-  <div class="prop${p.star?' star':''}">
-    <div class="h"><span class="nm">${p.n}</span><span class="sp">${p.sp} млн</span></div>
-    <div class="sc">${p.sc}</div><div class="why">${p.why}</div></div>`).join('');
+const fams={}; OURS.forEach(o=>{(fams[o.ft]=fams[o.ft]||[]).push(o.n);});
+document.getElementById('byfam').innerHTML=Object.entries(fams).sort((a,b)=>b[1].length-a[1].length)
+  .map(([f,ns])=>`<div class="famrow"><span class="famn">${f} <b>(${ns.length})</b></span><span class="famls">${ns.join(', ')}</span></div>`).join('');
+
+const rel=sub=>OURS.filter(o=>o.fam.includes(sub)).map(o=>o.n);
+document.getElementById('props').innerHTML=PROPS.map(p=>{
+  const r=rel(p.fam);
+  const have=r.length
+    ? `<b>семья уже в списке (${r.length}):</b> ${r.join(', ')} — добавит население/узнаваемость, не новую ветвь`
+    : `семья в списке ещё не представлена`;
+  return `<div class="prop${p.star?' star':''}">
+    <div class="h"><span class="nm">${p.n}</span><span class="sp">${p.sp} млн<br>${p.sc}</span></div>
+    <div class="why">${p.why}</div>
+    <div class="have">${have}</div></div>`;}).join('');
 </script>
 </body>
 </html>
 """
 
-html = HTML.replace("__STATS__", stats_json)
+html = (HTML.replace("__STATS__", stats_json).replace("__OURS__", ours_json))
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
 print(f"written: {OUT}")
 print(f"langs {stats['langs']} · scripts {stats['scripts']} · countries {stats['countries']} · families {stats['families']}")
-print(f"regions: {regions}")
+# превью родственников по предложениям
+import re
+for nm, sub in [("Испанский","романская"),("Хинди","индоарийская"),("Немецкий","германская"),
+                ("Индонезийский","австронезийская"),("Турецкий","тюркская"),("Вьетнамский","австроазиатская")]:
+    r=[o["n"] for o in ours if sub in o["fam"]]
+    print(f"  {nm:14} ← семья «{sub}» уже в списке: {r if r else '—'}")
