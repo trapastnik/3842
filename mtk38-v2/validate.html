@@ -44,9 +44,12 @@
   .card.flag{border-left-color:var(--red)}
   .card.v-ok{border-left-color:var(--blue-grey);background:#f3f7f3}
   .card.v-bad{border-left-color:var(--red);background:#fbf3f3}
-  .writing{font-size:clamp(38px,5vw,56px);line-height:1.15;text-align:center;
-    padding:6px 0 2px;color:var(--amber-black);min-height:64px;
-    display:flex;align-items:center;justify-content:center;gap:.3em;flex-wrap:wrap}
+  .lbl{font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--window);
+    text-align:center;margin:7px 0 1px}
+  .writing,.canon-str{font-size:clamp(34px,4.6vw,52px);line-height:1.15;text-align:center;
+    min-height:54px;display:flex;align-items:center;justify-content:center;gap:.25em;flex-wrap:wrap}
+  .writing{color:var(--amber-black)}
+  .canon-str{color:var(--graphite);background:#eef0e6;border-radius:8px;padding:4px 10px;user-select:all}
   .name{font-size:17px;font-weight:700;color:var(--graphite)}
   .endo{font-size:14px;color:var(--blue-grey)}
   .rows{font-size:12px;color:var(--graphite);display:grid;gap:2px;margin-top:2px}
@@ -68,10 +71,8 @@
   .review input.corr{display:none}
   .card.v-bad .review input.corr{display:block}
   .corr.writing-font{font-size:20px}
-  .canon{font-size:12px;color:var(--graphite);text-align:center;margin:-2px 0 0}
-  .canon .canon-str{background:#eef0e6;padding:1px 7px;border-radius:4px;user-select:all}
   .cp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:var(--window);
-    text-align:center;word-break:break-all;margin-top:2px;user-select:all}
+    text-align:center;word-break:break-all;margin:3px 0 0;user-select:all}
   footer{padding:16px 24px;color:var(--window);font-size:12px;text-align:center}
   .hide{display:none}
 </style>
@@ -132,8 +133,10 @@ langs.forEach(l=>{
   card.className = 'card'+(flag?' flag':'');
   card.dataset.id = l.id; card.dataset.flag = flag?'1':'0';
   card.innerHTML = `
+    <div class="lbl">шрифт рисует</div>
     <div class="writing writing-font" dir="${dir}">${esc(l.writing)}</div>
-    <div class="canon">канон из файла: <span class="canon-str writing-font" dir="${dir}">${esc(l.writing)}</span></div>
+    <div class="lbl">канон из файла</div>
+    <div class="canon-str writing-font" dir="${dir}">${esc(l.writing)}</div>
     <div class="cp">${cps(l.writing)}</div>
     <div><span class="name">${esc(l.name_ru)}</span>
       <span class="endo writing-font" dir="${dir}"> · ${esc(l.endonym)}</span></div>
