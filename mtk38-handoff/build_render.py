@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Рендер-тест арт-качества (Р6) для МТК 38 v2 → mtk38-v2/render-test.html.
+Рендер-тест арт-качества (Р6, WebGL) для МТК 38 v2 → mtk38-v2/render-test.html.
 
-Глубинное типографическое поле из 52 написаний «Ленин» в реальных шрифтах
-(20 Kopeek / Arial Unicode MS / Noto), с пост-обработкой: bloom + плёночное зерно +
-виньетка, бренд-палитра, медленный дрейф/параллакс, hero-слово циклом. Canvas-2D,
-горизонталь, тянется под вьюпорт (превью 3840×2160). Без CDN.
+Сигнатурный 3D-глобус: 52 написания «Ленин» как спрайты (canvas-текстуры реальными
+шрифтами 20 Kopeek/Arial Unicode MS/Noto), распределены по сфере (Фибоначчи), авто-вращение
++ drag, настоящий UnrealBloom + графитовый фон, бренд-палитра. Three.js r137 вендорен
+локально (UMD, examples/js — работает и с file://, и на офлайн-киоске; без CDN в рантайме).
 
 Запуск:  python3 mtk38-handoff/build_render.py
 """
@@ -31,106 +31,93 @@ TEMPLATE = r"""<!doctype html>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>МТК 38 v2 · рендер-тест</title>
+<title>МТК 38 v2 · рендер-тест (WebGL)</title>
 <style>
 __FACES__
-  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
-  html,body{margin:0;height:100%;background:#384249;overflow:hidden}
-  #c{display:block;width:100vw;height:100vh}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
+  html,body{margin:0;height:100%;background:#333d44;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh;cursor:grab}
+  #c:active{cursor:grabbing}
   .hint{position:absolute;left:16px;bottom:12px;font:12px system-ui,sans-serif;color:#9DA3A8;
-    letter-spacing:.04em;opacity:.6;z-index:2}
+    letter-spacing:.04em;opacity:.6;z-index:2;pointer-events:none}
   .hint b{color:#D2B773;font-weight:600}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="hint">МТК 38 v2 · рендер-тест арт-качества — <b>bloom + зерно + виньетка</b>, 52 написания, бренд-шрифты</div>
+<div class="hint">МТК 38 v2 · WebGL рендер-тест — глобус из 52 написаний · <b>UnrealBloom</b> · потяни мышью</div>
+<script src="./vendor/three/three.min.js"></script>
+<script src="./vendor/three/js/shaders/CopyShader.js"></script>
+<script src="./vendor/three/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="./vendor/three/js/postprocessing/EffectComposer.js"></script>
+<script src="./vendor/three/js/postprocessing/MaskPass.js"></script>
+<script src="./vendor/three/js/postprocessing/ShaderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/RenderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 const WORDS = __WORDS__;
-const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
-const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',sans-serif"
-                : "'Arial Unicode MS','noto-"+iso+"',sans-serif";
 const PAPER='#F7F9EF', TELE='#CFD0CF', BRASS='#D2B773', RED='#A02128';
-const cv=document.getElementById('c'), cx=cv.getContext('2d');
-const off=document.createElement('canvas'), ox=off.getContext('2d');
-let W=0,H=0,DPR=Math.min(2,window.devicePixelRatio||1);
-function resize(){W=innerWidth;H=innerHeight;[cv,off].forEach(c=>{c.width=W*DPR;c.height=H*DPR;});
-  cx.setTransform(DPR,0,0,DPR,0,0);ox.setTransform(DPR,0,0,DPR,0,0);}
-addEventListener('resize',resize);resize();
+const FF = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',sans-serif"
+                : "'Arial Unicode MS','noto-"+iso+"',sans-serif";
+const cv=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setClearColor(0x333d44,1);
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
+camera.position.z=15;
+const group=new THREE.Group(); scene.add(group);
 
-const rnd=(a,b)=>a+Math.random()*(b-a);
-let field=[];
+function tex(text,iso,color){
+  const fs=130,pad=22,m=document.createElement('canvas'),x=m.getContext('2d');
+  x.font='700 '+fs+'px '+FF(iso);
+  const tw=Math.max(24,x.measureText(text).width);
+  m.width=Math.ceil(tw)+pad*2; m.height=fs+pad*2;
+  x.font='700 '+fs+'px '+FF(iso); x.textAlign='center'; x.textBaseline='middle';
+  x.fillStyle=color; x.fillText(text,m.width/2,m.height/2);
+  const t=new THREE.CanvasTexture(m); t.minFilter=THREE.LinearFilter; t.needsUpdate=true;
+  return {t,aspect:m.width/m.height};
+}
 function build(){
-  field=WORDS.map((d,i)=>{
-    const z=rnd(0.18,1);                 // глубина
-    const col = Math.random()<0.06?RED : Math.random()<0.28?BRASS : Math.random()<0.5?PAPER:TELE;
-    return {...d, z, x:rnd(-0.1,1.1), y:rnd(0.06,0.94),
-      vx:rnd(-0.6,0.6)*(0.2+z), col, base:(14+d.wt*7)};
-  }).sort((a,b)=>a.z-b.z);
+  const N=WORDS.length, R=6.2, gold=Math.PI*(3-Math.sqrt(5));
+  WORDS.forEach((d,i)=>{
+    const col = Math.random()<0.05?RED : Math.random()<0.32?BRASS : Math.random()<0.5?PAPER:TELE;
+    const {t,aspect}=tex(d.w,d.sc,col);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,
+      opacity:0.55+ (d.wt-1)*0.22}));
+    const s=(0.9+d.wt*0.5); sp.scale.set(s*aspect,s,1);
+    const y=1-(i/(N-1))*2, r=Math.sqrt(1-y*y), th=gold*i;
+    sp.position.set(Math.cos(th)*r*R, y*R, Math.sin(th)*r*R);
+    group.add(sp);
+  });
 }
-build();
 
-// зерно (статичный тайл)
-const gn=document.createElement('canvas');gn.width=gn.height=140;const gc=gn.getContext('2d');
-{const im=gc.createImageData(140,140);for(let i=0;i<im.data.length;i+=4){const v=200+Math.random()*55|0;
-  im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*22;}gc.putImageData(im,0,0);}
-const grain=cx.createPattern(gn,'repeat');
-
-let hero=0, heroT=0;
-function draw(t){
-  // фон: радиальный графит (светлее в центре → виньетка встроена)
-  ox.setTransform(DPR,0,0,DPR,0,0);
-  const g=ox.createRadialGradient(W*0.5,H*0.45,0,W*0.5,H*0.5,Math.max(W,H)*0.75);
-  g.addColorStop(0,'#4b5b66');g.addColorStop(0.6,'#42505a');g.addColorStop(1,'#333d44');
-  ox.fillStyle=g;ox.fillRect(0,0,W,H);
-  ox.textAlign='center';ox.textBaseline='middle';
-  // поле слов (дальние → ближние)
-  for(const w of field){
-    w.x+=(w.vx*0.00018*t?0:0); // (заполнено ниже через dt)
-  }
-  for(const w of field){
-    const size=w.base*(0.5+w.z*1.7)*(H/780);
-    ox.font=(w.z>0.7?'700 ':'')+size+"px "+ff(w.sc);
-    ox.globalAlpha=0.10+w.z*0.72;
-    ox.fillStyle=w.col;
-    const px=((w.x%1.2+1.2)%1.2-0.1)*W, py=w.y*H;
-    ox.fillText(w.w, px, py);
-  }
-  ox.globalAlpha=1;
-  // hero — крупное слово циклом
-  const hw=WORDS[hero];
-  const hs=Math.min(W*0.36, H*0.34)* (0.85+0.15*Math.sin(t*0.0011));
-  const fade=Math.min(1,heroT/900)*Math.min(1,(3600-heroT)/700);
-  ox.globalAlpha=Math.max(0,fade)*0.92;
-  ox.font="700 "+hs+"px "+ff(hw.sc);
-  ox.fillStyle=PAPER;
-  ox.fillText(hw.w, W*0.5, H*0.47);
-  ox.globalAlpha=1;
-
-  // на основной канвас: сцена + bloom (размытая «светлая» копия)
-  cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);
-  cx.drawImage(off,0,0);
-  cx.globalCompositeOperation='lighter';cx.globalAlpha=0.55;
-  cx.filter='blur('+(7*DPR)+'px)';cx.drawImage(off,0,0);
-  cx.filter='none';cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
-  // зерно
-  cx.setTransform(DPR,0,0,DPR,0,0);
-  cx.globalAlpha=0.5;cx.fillStyle=grain;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
-  // виньетка
-  const v=cx.createRadialGradient(W*0.5,H*0.5,Math.min(W,H)*0.3,W*0.5,H*0.5,Math.max(W,H)*0.62);
-  v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(20,25,28,0.55)');
-  cx.fillStyle=v;cx.fillRect(0,0,W,H);
+let composer,bloom;
+function setup(){
+  const W=innerWidth,H=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
+  renderer.setPixelRatio(dpr); renderer.setSize(W,H);
+  camera.aspect=W/H; camera.updateProjectionMatrix();
+  composer=new THREE.EffectComposer(renderer);
+  composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),0.75,0.55,0.72); // strength,radius,threshold
+  composer.addPass(bloom);
+  composer.setPixelRatio(dpr); composer.setSize(W,H);
 }
-let last=0;
-function loop(t){
-  const dt=Math.min(40,t-last);last=t;
-  for(const w of field){ w.x+=w.vx*0.00006*dt; }
-  heroT+=dt; if(heroT>3600){heroT=0;hero=(hero+1)%WORDS.length;}
-  draw(t);requestAnimationFrame(loop);
+addEventListener('resize',setup);
+
+let drag=false,lx=0,ly=0,vy=0.0016,vx=0;
+cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
+addEventListener('pointerup',()=>drag=false);
+addEventListener('pointermove',e=>{ if(!drag)return;
+  const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX;ly=e.clientY;
+  group.rotation.y+=dx*0.005; group.rotation.x+=dy*0.005;
+  vy=dx*0.0004||vy; });
+function animate(){
+  requestAnimationFrame(animate);
+  if(!drag){ group.rotation.y+=vy; }
+  composer.render();
 }
-(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(loop));
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{ build(); setup(); animate(); });
 </script>
 </body>
 </html>
@@ -139,4 +126,4 @@ function loop(t){
 html = TEMPLATE.replace("__FACES__", faces).replace("__WORDS__", words_json)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
-print(f"written: {OUT}  ({len(words)} слов, {len(embed)} noto-faces, {len(html)//1024} KB)")
+print(f"written: {OUT}  ({len(words)} спрайтов, {len(embed)} noto-faces, WebGL/Three.js r137)")
