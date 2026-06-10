@@ -54,7 +54,11 @@ __FACE__
   body{margin:0;background:var(--paper);color:var(--graphite);
     font:15px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
   header{position:sticky;top:0;z-index:5;background:var(--graphite);color:var(--paper);
-    padding:16px 24px;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+    padding:14px 24px 16px;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+  header nav{display:flex;gap:6px;margin-bottom:12px}
+  header nav a{font-size:13px;color:var(--telegrey);text-decoration:none;padding:6px 13px;
+    border-radius:8px 8px 0 0;background:rgba(255,255,255,.06)}
+  header nav a.active{background:var(--paper);color:var(--graphite);font-weight:600}
   header h1{margin:0 0 6px;font-size:21px}
   header h1 b{color:var(--brass)}
   .intro{font-size:13px;max-width:1180px;color:var(--telegrey);margin:0 0 12px}
@@ -116,6 +120,11 @@ __FACE__
 </head>
 <body>
 <header>
+  <nav>
+    <a href="./index.html">Прототипы</a>
+    <a href="./validate.html" class="active">Валидация написаний</a>
+    <a href="./analysis.html">Аналитика и предложения</a>
+  </nav>
   <h1>«<b>Ленин</b>» на языках мира — валидация написаний</h1>
   <p class="intro">
     Лист музея — это <b>векторные контуры</b> (Unicode внутри нет; набирался шрифтами
