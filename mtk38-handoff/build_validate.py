@@ -33,6 +33,7 @@ TEMPLATE = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>МТК 38 · валидация написаний «Ленин»</title>
 <style>
+  /*FONTFACES*/
   :root{
     --amber-black:#000;--white:#fff;--brass:#D2B773;--red:#A02128;
     --blue-grey:#5D8970;--window:#9DA3A8;--graphite:#435059;
@@ -112,8 +113,8 @@ TEMPLATE = r"""<!doctype html>
     Проверьте, как пишется слово «Ленин» в каждом языке. Нажмите <b>✓ верно</b> или
     <b>✗ неверно</b>. Если неверно — впишите правильное написание и/или комментарий.
     <span class="warn">⚠ красная метка</span> — наш черновик считан с картинки и особенно
-    нуждается в проверке. Если вместо буквы видите □ — на этом компьютере нет шрифта для
-    этой письменности (это нормально, просто отметьте в комментарии). Прогресс сохраняется
+    нуждается в проверке. Шрифты всех письменностей встроены в эту страницу — рисуется на любой машине;
+    если где-то всё же видите □, отметьте это в комментарии. Прогресс сохраняется
     автоматически; в конце нажмите «Экспорт» и пришлите нам файл.
   </p>
   <div class="toolbar">
@@ -135,6 +136,8 @@ TEMPLATE = r"""<!doctype html>
 <script>
 const DATA = JSON.parse(document.getElementById('mtk38-data').textContent);
 const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
+const EMBED = new Set(__EMBED__);
+const ff = iso => EMBED.has(iso) ? `'noto-${iso}','Noto Sans',system-ui,sans-serif` : `'Noto Sans',system-ui,sans-serif`;
 const KEY = 'mtk38-review-v2';
 let state = {};
 try{ state = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
@@ -155,6 +158,7 @@ function updateProg(){
 langs.forEach(l=>{
   const flag = l.verifier==='needs-verification';
   const dir = RTL.has(l.script.iso15924)?'rtl':'ltr';
+  const FF = ff(l.script.iso15924);
   const geo = l.geo.diaspora ? 'диаспора (без территории)'
             : (l.geo.primary ? esc(l.geo.primary.region_ru) : '—');
   const card = document.createElement('article');
@@ -162,12 +166,12 @@ langs.forEach(l=>{
   card.dataset.id = l.id; card.dataset.flag = flag?'1':'0';
   card.innerHTML = `
     <div class="lbl">шрифт рисует</div>
-    <div class="writing writing-font" dir="${dir}">${esc(l.writing)}</div>
+    <div class="writing writing-font" dir="${dir}" style="font-family:${FF}">${esc(l.writing)}</div>
     <div class="lbl">канон из файла</div>
-    <div class="canon-str writing-font" dir="${dir}">${esc(l.writing)}</div>
+    <div class="canon-str writing-font" dir="${dir}" style="font-family:${FF}">${esc(l.writing)}</div>
     <div class="cp">${cps(l.writing)}</div>
     <div><span class="name">${esc(l.name_ru)}</span>
-      <span class="endo writing-font" dir="${dir}"> · ${esc(l.endonym)}</span></div>
+      <span class="endo writing-font" dir="${dir}" style="font-family:${FF}"> · ${esc(l.endonym)}</span></div>
     <div class="rows">
       <span><b>письмо:</b> ${esc(l.script.iso15924)} · ${esc(l.script.name_ru)}</span>
       <span><b>семья:</b> ${esc(l.family)}</span>
@@ -183,7 +187,7 @@ langs.forEach(l=>{
         <button class="vok">✓ верно</button>
         <button class="vbad">✗ неверно</button>
       </div>
-      <input class="corr writing-font" dir="${dir}" placeholder="правильное написание">
+      <input class="corr writing-font" dir="${dir}" style="font-family:${FF}" placeholder="правильное написание">
       <div class="corr-cp cp"></div>
       <input class="cmt" placeholder="комментарий (необязательно)">
     </div>`;
@@ -249,10 +253,25 @@ document.getElementById('export').onclick = ()=>{
 </html>
 """
 
-html = TEMPLATE.replace("__DATA__", data_json)
+# вшитые subset-шрифты (см. mtk38-handoff/build_fonts.py)
+FONTS_DIR = os.path.join(OUTDIR, "fonts", "noto")
+embed_scripts = []
+try:
+    embed_scripts = json.load(open(os.path.join(FONTS_DIR, "manifest.json"),
+                                   encoding="utf-8")).get("scripts", [])
+except Exception:
+    pass
+fontface = "\n".join(
+    f'  @font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
+    for s in embed_scripts)
+
+html = (TEMPLATE.replace("/*FONTFACES*/", fontface)
+                .replace("__EMBED__", json.dumps(embed_scripts))
+                .replace("__DATA__", data_json))
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
 
 print(f"written: {OUT}")
 print(f"languages: {n}  (flagged needs-verification: {n_flag})")
 print(f"size: {len(html)} bytes")
+print(f"embedded subset-fonts: {len(embed_scripts)} scripts")
