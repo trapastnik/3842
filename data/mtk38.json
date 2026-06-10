@@ -1,25 +1,29 @@
 {
   "mtk": 38,
   "title": "Ленин на языках мира",
-  "status": "draft-schema",
-  "note": "Черновик canonical-схемы для v2. Поля карточки языка согласованы с пользователем 2026-06-10. Примеры ниже — ДЕМОНСТРАЦИЯ ФОРМАТА, написания и метаданные НЕ верифицированы. Заполняется в фазе 0 (три research-блока: список языков, написания «Ленин», цитаты). См. mtk38-handoff/HANDOFF.md.",
+  "status": "v2-canonical-draft",
+  "version": 2,
+  "note": "Canonical-список v2: 52 языка = 50 подписанных с PDF-specimen (~/Downloads/LENIN_Languages_MTK_38.pdf) + русская и латинская опоры. Написания считаны поглифно с image-PDF; латиница/кириллица надёжны, не-латиница подлежит native-валидации (см. verifier/note). Метаданные (эндоним/семья/гео/носители) — черновые, точечная сверка. Схема и решения — mtk38-handoff/PLAN-v2.md и HANDOFF.md.",
   "schema": {
-    "id": "kebab-case уникальный (iso639-3 если есть)",
+    "id": "kebab/iso639-3",
     "name_ru": "название по-русски",
     "endonym": "самоназвание языка его письмом",
-    "writing": "написание слова «Ленин» в этом языке",
-    "script": { "iso15924": "код ISO 15924", "name_ru": "название письменности по-русски" },
+    "writing": "написание слова «Ленин»",
+    "script": {
+      "iso15924": "код ISO 15924",
+      "name_ru": "название письменности"
+    },
     "family": "языковая семья → ветвь",
     "geo": {
-      "territorial": "true | false (false = язык без своей территории)",
-      "diaspora": "true для диаспоральных (идиш, ладино, эсперанто)",
-      "primary": { "country_iso": "ISO-3166", "region_ru": "регион", "lat": 0, "lng": 0 },
-      "also": [ { "country_iso": "", "region_ru": "" } ]
+      "territorial": "bool",
+      "diaspora": "bool (Р4)",
+      "primary": "{country_iso,region_ru,lat,lng} | null (Р3)",
+      "also": "[{country_iso,region_ru}] приглушённая подсветка"
     },
-    "writing_source": "провенанс написания: pdf-specimen | wikidata-q1394 | wiki-interwiki | translator | triangulated",
-    "verifier": "кто подтвердил: machine-triangulated | native:<имя> | linguist:<имя> | unverified",
-    "speakers_mln": "оценка носителей в млн (native+L2), приблизительно",
-    "weight": "1-3, визуальная значимость (3 = рабочие языки ООН)"
+    "writing_source": "pdf-specimen | wiki-interwiki | wikidata-q1394 | triangulated",
+    "verifier": "machine-triangulated | needs-verification | native:<имя> | unverified",
+    "speakers_mln": "оценка носителей, млн (native+L2)",
+    "weight": "1-3 (3 = рабочие языки ООН)"
   },
   "languages": [
     {
@@ -27,43 +31,645 @@
       "name_ru": "Русский",
       "endonym": "русский",
       "writing": "Ленин",
-      "script": { "iso15924": "Cyrl", "name_ru": "Кириллица" },
+      "script": {
+        "iso15924": "Cyrl",
+        "name_ru": "Кириллица"
+      },
       "family": "индоевропейская → славянская → восточнославянская",
       "geo": {
         "territorial": true,
         "diaspora": false,
-        "primary": { "country_iso": "RU", "region_ru": "Россия", "lat": 55.75, "lng": 37.62 },
-        "also": [ { "country_iso": "BY", "region_ru": "Беларусь" }, { "country_iso": "KZ", "region_ru": "Казахстан" } ]
+        "primary": {
+          "country_iso": "RU",
+          "region_ru": "Россия",
+          "lat": 55.75,
+          "lng": 37.62
+        },
+        "also": [
+          {
+            "country_iso": "BY",
+            "region_ru": "Беларусь"
+          },
+          {
+            "country_iso": "KZ",
+            "region_ru": "Казахстан"
+          }
+        ]
       },
-      "writing_source": "triangulated",
+      "writing_source": "pdf-specimen",
       "verifier": "machine-triangulated",
-      "speakers_mln": 258,
+      "speakers_mln": 255,
+      "weight": 3,
+      "note": "опорная форма на листе (без подписи); язык-источник"
+    },
+    {
+      "id": "eng",
+      "name_ru": "Английский",
+      "endonym": "English",
+      "writing": "Lenin",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → германская → западногерманская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "GB",
+          "region_ru": "Великобритания",
+          "lat": 51.51,
+          "lng": -0.13
+        },
+        "also": [
+          {
+            "country_iso": "US",
+            "region_ru": "США"
+          },
+          {
+            "country_iso": "IN",
+            "region_ru": "Индия"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 1500,
+      "weight": 3,
+      "note": "опорная латинская форма на листе (без подписи)"
+    },
+    {
+      "id": "zho",
+      "name_ru": "Китайский (упрощ.)",
+      "endonym": "中文",
+      "writing": "列宁",
+      "script": {
+        "iso15924": "Hans",
+        "name_ru": "Китайская (упрощённая)"
+      },
+      "family": "сино-тибетская → синитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "CN",
+          "region_ru": "Китай",
+          "lat": 39.9,
+          "lng": 116.4
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 1100,
       "weight": 3
+    },
+    {
+      "id": "awa",
+      "name_ru": "Авадхи",
+      "endonym": "अवधी",
+      "writing": "लेनिन",
+      "script": {
+        "iso15924": "Deva",
+        "name_ru": "Деванагари"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Уттар-Прадеш",
+          "lat": 26.85,
+          "lng": 80.95
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 38,
+      "weight": 1
+    },
+    {
+      "id": "sqi",
+      "name_ru": "Албанский",
+      "endonym": "shqip",
+      "writing": "LENINI",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → албанская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "AL",
+          "region_ru": "Албания",
+          "lat": 41.33,
+          "lng": 19.82
+        },
+        "also": [
+          {
+            "country_iso": "XK",
+            "region_ru": "Косово"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 7.5,
+      "weight": 1
+    },
+    {
+      "id": "amh",
+      "name_ru": "Амхарский",
+      "endonym": "አማርኛ",
+      "writing": "ሌኒን",
+      "script": {
+        "iso15924": "Ethi",
+        "name_ru": "Эфиопская (геэз)"
+      },
+      "family": "афразийская → семитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "ET",
+          "region_ru": "Эфиопия",
+          "lat": 9.03,
+          "lng": 38.74
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 57,
+      "weight": 1
+    },
+    {
+      "id": "ara",
+      "name_ru": "Арабский",
+      "endonym": "العربية",
+      "writing": "لينين",
+      "script": {
+        "iso15924": "Arab",
+        "name_ru": "Арабица"
+      },
+      "family": "афразийская → семитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "EG",
+          "region_ru": "Египет",
+          "lat": 30.04,
+          "lng": 31.24
+        },
+        "also": [
+          {
+            "country_iso": "SA",
+            "region_ru": "Сауд. Аравия"
+          },
+          {
+            "country_iso": "IQ",
+            "region_ru": "Ирак"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 370,
+      "weight": 3
+    },
+    {
+      "id": "hye",
+      "name_ru": "Армянский",
+      "endonym": "հայերեն",
+      "writing": "Լենին",
+      "script": {
+        "iso15924": "Armn",
+        "name_ru": "Армянская"
+      },
+      "family": "индоевропейская → армянская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "AM",
+          "region_ru": "Армения",
+          "lat": 40.18,
+          "lng": 44.51
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 6.7,
+      "weight": 1
+    },
+    {
+      "id": "asm",
+      "name_ru": "Ассамский",
+      "endonym": "অসমীয়া",
+      "writing": "লেনিন",
+      "script": {
+        "iso15924": "Beng",
+        "name_ru": "Бенгальская (восточный нагари)"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Ассам",
+          "lat": 26.14,
+          "lng": 91.74
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 15,
+      "weight": 1
+    },
+    {
+      "id": "bel",
+      "name_ru": "Белорусский",
+      "endonym": "беларуская",
+      "writing": "Ленін",
+      "script": {
+        "iso15924": "Cyrl",
+        "name_ru": "Кириллица"
+      },
+      "family": "индоевропейская → славянская → восточнославянская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "BY",
+          "region_ru": "Беларусь",
+          "lat": 53.9,
+          "lng": 27.57
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 5,
+      "weight": 1
+    },
+    {
+      "id": "bal",
+      "name_ru": "Белуджский",
+      "endonym": "بلۏچی",
+      "writing": "لينن",
+      "script": {
+        "iso15924": "Arab",
+        "name_ru": "Арабица"
+      },
+      "family": "индоевропейская → иранская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "PK",
+          "region_ru": "Белуджистан",
+          "lat": 30.18,
+          "lng": 66.97
+        },
+        "also": [
+          {
+            "country_iso": "IR",
+            "region_ru": "Иран"
+          },
+          {
+            "country_iso": "AF",
+            "region_ru": "Афганистан"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 8,
+      "weight": 1
     },
     {
       "id": "ben",
       "name_ru": "Бенгальский",
       "endonym": "বাংলা",
       "writing": "লেনিন",
-      "script": { "iso15924": "Beng", "name_ru": "Бенгальское письмо" },
+      "script": {
+        "iso15924": "Beng",
+        "name_ru": "Бенгальская (восточный нагари)"
+      },
       "family": "индоевропейская → индоарийская",
       "geo": {
         "territorial": true,
         "diaspora": false,
-        "primary": { "country_iso": "BD", "region_ru": "Бангладеш", "lat": 23.81, "lng": 90.41 },
-        "also": [ { "country_iso": "IN", "region_ru": "Западная Бенгалия" } ]
+        "primary": {
+          "country_iso": "BD",
+          "region_ru": "Бангладеш",
+          "lat": 23.81,
+          "lng": 90.41
+        },
+        "also": [
+          {
+            "country_iso": "IN",
+            "region_ru": "Зап. Бенгалия"
+          }
+        ]
       },
       "writing_source": "pdf-specimen",
-      "verifier": "unverified",
-      "speakers_mln": 273,
+      "verifier": "machine-triangulated",
+      "speakers_mln": 270,
       "weight": 2
+    },
+    {
+      "id": "mya",
+      "name_ru": "Бирманский",
+      "endonym": "မြန်မာဘာသာ",
+      "writing": "လီနင်",
+      "script": {
+        "iso15924": "Mymr",
+        "name_ru": "Мьянманская"
+      },
+      "family": "сино-тибетская → лоло-бирманская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "MM",
+          "region_ru": "Мьянма",
+          "lat": 16.87,
+          "lng": 96.2
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 43,
+      "weight": 1
+    },
+    {
+      "id": "bos",
+      "name_ru": "Боснийский",
+      "endonym": "bosanski",
+      "writing": "LENJIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → славянская → южнославянская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "BA",
+          "region_ru": "Босния и Герцеговина",
+          "lat": 43.86,
+          "lng": 18.41
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 2.5,
+      "weight": 1
+    },
+    {
+      "id": "haw",
+      "name_ru": "Гавайский",
+      "endonym": "ʻŌlelo Hawaiʻi",
+      "writing": "ʻO LENIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "австронезийская → полинезийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "US",
+          "region_ru": "Гавайи",
+          "lat": 21.31,
+          "lng": -157.86
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 0.024,
+      "weight": 1
+    },
+    {
+      "id": "ell",
+      "name_ru": "Греческий",
+      "endonym": "ελληνικά",
+      "writing": "Λένιν",
+      "script": {
+        "iso15924": "Grek",
+        "name_ru": "Греческая"
+      },
+      "family": "индоевропейская → эллинская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "GR",
+          "region_ru": "Греция",
+          "lat": 37.98,
+          "lng": 23.73
+        },
+        "also": [
+          {
+            "country_iso": "CY",
+            "region_ru": "Кипр"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 13,
+      "weight": 1
+    },
+    {
+      "id": "kat",
+      "name_ru": "Грузинский",
+      "endonym": "ქართული",
+      "writing": "ლენინი",
+      "script": {
+        "iso15924": "Geor",
+        "name_ru": "Грузинская (мхедрули)"
+      },
+      "family": "картвельская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "GE",
+          "region_ru": "Грузия",
+          "lat": 41.72,
+          "lng": 44.83
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 3.7,
+      "weight": 1
+    },
+    {
+      "id": "grn",
+      "name_ru": "Гуарани",
+      "endonym": "avañeʼẽ",
+      "writing": "LÉNIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "тупийская → тупи-гуарани",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "PY",
+          "region_ru": "Парагвай",
+          "lat": -25.3,
+          "lng": -57.64
+        },
+        "also": [
+          {
+            "country_iso": "AR",
+            "region_ru": "Аргентина"
+          },
+          {
+            "country_iso": "BO",
+            "region_ru": "Боливия"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 6.5,
+      "weight": 1
+    },
+    {
+      "id": "guj",
+      "name_ru": "Гуджарати",
+      "endonym": "ગુજરાતી",
+      "writing": "લેનિન",
+      "script": {
+        "iso15924": "Gujr",
+        "name_ru": "Гуджарати"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Гуджарат",
+          "lat": 23.03,
+          "lng": 72.58
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 56,
+      "weight": 1
+    },
+    {
+      "id": "prs",
+      "name_ru": "Дари",
+      "endonym": "دری",
+      "writing": "لنین",
+      "script": {
+        "iso15924": "Arab",
+        "name_ru": "Арабица"
+      },
+      "family": "индоевропейская → иранская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "AF",
+          "region_ru": "Афганистан",
+          "lat": 34.53,
+          "lng": 69.17
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 15,
+      "weight": 1
+    },
+    {
+      "id": "dzo",
+      "name_ru": "Дзонгкха",
+      "endonym": "རྫོང་ཁ",
+      "writing": "LËNIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "сино-тибетская → бодская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "BT",
+          "region_ru": "Бутан",
+          "lat": 27.47,
+          "lng": 89.64
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 0.6,
+      "weight": 1,
+      "note": "подпись «дзинка» + латинский глиф подозрительны: дзонгкха пишется тибетицей. Сверить язык и письмо."
+    },
+    {
+      "id": "heb",
+      "name_ru": "Иврит",
+      "endonym": "עברית",
+      "writing": "לנין",
+      "script": {
+        "iso15924": "Hebr",
+        "name_ru": "Еврейская"
+      },
+      "family": "афразийская → семитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IL",
+          "region_ru": "Израиль",
+          "lat": 31.78,
+          "lng": 35.22
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 9,
+      "weight": 1
     },
     {
       "id": "yid",
       "name_ru": "Идиш",
       "endonym": "ייִדיש",
       "writing": "לענין",
-      "script": { "iso15924": "Hebr", "name_ru": "Еврейское письмо" },
+      "script": {
+        "iso15924": "Hebr",
+        "name_ru": "Еврейская"
+      },
       "family": "индоевропейская → германская → западногерманская",
       "geo": {
         "territorial": false,
@@ -72,8 +678,853 @@
         "also": []
       },
       "writing_source": "wiki-interwiki",
-      "verifier": "unverified",
+      "verifier": "machine-triangulated",
       "speakers_mln": 1.5,
+      "weight": 1,
+      "note": "диаспоральный язык без своей территории (Р4)"
+    },
+    {
+      "id": "kan",
+      "name_ru": "Каннада",
+      "endonym": "ಕನ್ನಡ",
+      "writing": "ಲೆನಿನ್",
+      "script": {
+        "iso15924": "Knda",
+        "name_ru": "Каннада"
+      },
+      "family": "дравидийская → южнодравидийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Карнатака",
+          "lat": 12.97,
+          "lng": 77.59
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 44,
+      "weight": 1
+    },
+    {
+      "id": "yue",
+      "name_ru": "Кантонский",
+      "endonym": "粵語",
+      "writing": "列寧",
+      "script": {
+        "iso15924": "Hant",
+        "name_ru": "Китайская (традиционная)"
+      },
+      "family": "сино-тибетская → синитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "HK",
+          "region_ru": "Гонконг",
+          "lat": 22.32,
+          "lng": 114.17
+        },
+        "also": [
+          {
+            "country_iso": "CN",
+            "region_ru": "Гуандун"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 85,
+      "weight": 2
+    },
+    {
+      "id": "mal",
+      "name_ru": "Малаялам",
+      "endonym": "മലയാളം",
+      "writing": "ലെനിൻ",
+      "script": {
+        "iso15924": "Mlym",
+        "name_ru": "Малаялам"
+      },
+      "family": "дравидийская → южнодравидийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Керала",
+          "lat": 9.93,
+          "lng": 76.27
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 38,
+      "weight": 1
+    },
+    {
+      "id": "lav",
+      "name_ru": "Латышский",
+      "endonym": "latviešu",
+      "writing": "Ļeņins",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → балтийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "LV",
+          "region_ru": "Латвия",
+          "lat": 56.95,
+          "lng": 24.11
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 1.5,
+      "weight": 1
+    },
+    {
+      "id": "lit",
+      "name_ru": "Литовский",
+      "endonym": "lietuvių",
+      "writing": "LENINAS",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → балтийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "LT",
+          "region_ru": "Литва",
+          "lat": 54.69,
+          "lng": 25.28
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 3.0,
+      "weight": 1
+    },
+    {
+      "id": "lao",
+      "name_ru": "Лаосский",
+      "endonym": "ລາວ",
+      "writing": "ເລນິນ",
+      "script": {
+        "iso15924": "Laoo",
+        "name_ru": "Лаосская"
+      },
+      "family": "тай-кадайская → тайская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "LA",
+          "region_ru": "Лаос",
+          "lat": 17.97,
+          "lng": 102.63
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 30,
+      "weight": 1,
+      "note": "глиф на листе похож на тайское письмо, не лаосское — сверить написание носителем."
+    },
+    {
+      "id": "khm",
+      "name_ru": "Кхмерский",
+      "endonym": "ខ្មែរ",
+      "writing": "លេនីន",
+      "script": {
+        "iso15924": "Khmr",
+        "name_ru": "Кхмерская"
+      },
+      "family": "австроазиатская → кхмерская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "KH",
+          "region_ru": "Камбоджа",
+          "lat": 11.56,
+          "lng": 104.92
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 18,
+      "weight": 1
+    },
+    {
+      "id": "kor",
+      "name_ru": "Корейский",
+      "endonym": "한국어",
+      "writing": "레닌",
+      "script": {
+        "iso15924": "Kore",
+        "name_ru": "Корейская (хангыль)"
+      },
+      "family": "корейская (изолят)",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "KR",
+          "region_ru": "Респ. Корея",
+          "lat": 37.57,
+          "lng": 126.98
+        },
+        "also": [
+          {
+            "country_iso": "KP",
+            "region_ru": "КНДР"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 82,
+      "weight": 2
+    },
+    {
+      "id": "mni",
+      "name_ru": "Манипури (мейтейлон)",
+      "endonym": "ꯃꯩꯇꯩꯂꯣꯟ",
+      "writing": "ꯂꯦꯅꯤꯟ",
+      "script": {
+        "iso15924": "Mtei",
+        "name_ru": "Мейтей-маєк"
+      },
+      "family": "сино-тибетская → куки-чин-нага",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Манипур",
+          "lat": 24.66,
+          "lng": 93.91
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 1.8,
+      "weight": 1,
+      "note": "глиф на specimen-листе не читается уверенно как «Ленин» в мейтей-маєк — перепроверить."
+    },
+    {
+      "id": "nus",
+      "name_ru": "Нуэр",
+      "endonym": "Thok Nath",
+      "writing": "LƐNIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "нило-сахарская → западнонилотская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "SS",
+          "region_ru": "Южный Судан",
+          "lat": 9.55,
+          "lng": 31.66
+        },
+        "also": [
+          {
+            "country_iso": "ET",
+            "region_ru": "Эфиопия"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 2.0,
+      "weight": 1
+    },
+    {
+      "id": "ory",
+      "name_ru": "Ория",
+      "endonym": "ଓଡ଼ିଆ",
+      "writing": "ଲେନିନ୍",
+      "script": {
+        "iso15924": "Orya",
+        "name_ru": "Ория"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Одиша",
+          "lat": 20.3,
+          "lng": 85.82
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 38,
+      "weight": 1
+    },
+    {
+      "id": "orm",
+      "name_ru": "Оромо",
+      "endonym": "Afaan Oromoo",
+      "writing": "LEENINII",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "афразийская → кушитская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "ET",
+          "region_ru": "Оромия",
+          "lat": 8.54,
+          "lng": 39.27
+        },
+        "also": [
+          {
+            "country_iso": "KE",
+            "region_ru": "Кения"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 37,
+      "weight": 1
+    },
+    {
+      "id": "pan",
+      "name_ru": "Панджаби",
+      "endonym": "ਪੰਜਾਬੀ",
+      "writing": "ਲੈਨਿਨ",
+      "script": {
+        "iso15924": "Guru",
+        "name_ru": "Гурмукхи"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Пенджаб",
+          "lat": 30.73,
+          "lng": 76.78
+        },
+        "also": [
+          {
+            "country_iso": "PK",
+            "region_ru": "Пакистан"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 113,
+      "weight": 2
+    },
+    {
+      "id": "por",
+      "name_ru": "Португальский",
+      "endonym": "português",
+      "writing": "LÊNIN",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → романская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "BR",
+          "region_ru": "Бразилия",
+          "lat": -15.79,
+          "lng": -47.88
+        },
+        "also": [
+          {
+            "country_iso": "PT",
+            "region_ru": "Португалия"
+          },
+          {
+            "country_iso": "AO",
+            "region_ru": "Ангола"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 260,
+      "weight": 2
+    },
+    {
+      "id": "sat",
+      "name_ru": "Сантали",
+      "endonym": "ᱥᱟᱱᱛᱟᱲᱤ",
+      "writing": "ᱞᱮᱱᱤᱱ",
+      "script": {
+        "iso15924": "Olck",
+        "name_ru": "Ол-чики"
+      },
+      "family": "австроазиатская → мунда",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Джаркханд",
+          "lat": 23.61,
+          "lng": 85.28
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 7.6,
+      "weight": 1
+    },
+    {
+      "id": "urd",
+      "name_ru": "Урду",
+      "endonym": "اردو",
+      "writing": "لینین",
+      "script": {
+        "iso15924": "Arab",
+        "name_ru": "Арабица"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "PK",
+          "region_ru": "Пакистан",
+          "lat": 33.69,
+          "lng": 73.06
+        },
+        "also": [
+          {
+            "country_iso": "IN",
+            "region_ru": "Индия"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 230,
+      "weight": 2
+    },
+    {
+      "id": "uig",
+      "name_ru": "Уйгурский",
+      "endonym": "ئۇيغۇرچە",
+      "writing": "لىنىن",
+      "script": {
+        "iso15924": "Arab",
+        "name_ru": "Арабица"
+      },
+      "family": "тюркская → карлукская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "CN",
+          "region_ru": "Синьцзян",
+          "lat": 43.83,
+          "lng": 87.62
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 11,
+      "weight": 1
+    },
+    {
+      "id": "ton",
+      "name_ru": "Тонганский",
+      "endonym": "lea faka-Tonga",
+      "writing": "LĒNINI",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "австронезийская → полинезийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "TO",
+          "region_ru": "Тонга",
+          "lat": -21.14,
+          "lng": -175.2
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 0.19,
+      "weight": 1
+    },
+    {
+      "id": "tel",
+      "name_ru": "Телугу",
+      "endonym": "తెలుగు",
+      "writing": "లెనిన్",
+      "script": {
+        "iso15924": "Telu",
+        "name_ru": "Телугу"
+      },
+      "family": "дравидийская → южно-центральная",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Телангана / Андхра",
+          "lat": 17.39,
+          "lng": 78.49
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 83,
+      "weight": 1
+    },
+    {
+      "id": "tam",
+      "name_ru": "Тамильский",
+      "endonym": "தமிழ்",
+      "writing": "லெனின்",
+      "script": {
+        "iso15924": "Taml",
+        "name_ru": "Тамильская"
+      },
+      "family": "дравидийская → южнодравидийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "IN",
+          "region_ru": "Тамилнад",
+          "lat": 13.08,
+          "lng": 80.27
+        },
+        "also": [
+          {
+            "country_iso": "LK",
+            "region_ru": "Шри-Ланка"
+          },
+          {
+            "country_iso": "SG",
+            "region_ru": "Сингапур"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 86,
+      "weight": 2
+    },
+    {
+      "id": "sin",
+      "name_ru": "Сингальский",
+      "endonym": "සිංහල",
+      "writing": "ලෙනින්",
+      "script": {
+        "iso15924": "Sinh",
+        "name_ru": "Сингальская"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "LK",
+          "region_ru": "Шри-Ланка",
+          "lat": 6.93,
+          "lng": 79.86
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 17,
+      "weight": 1
+    },
+    {
+      "id": "srp",
+      "name_ru": "Сербский",
+      "endonym": "српски",
+      "writing": "Лењин",
+      "script": {
+        "iso15924": "Cyrl",
+        "name_ru": "Кириллица"
+      },
+      "family": "индоевропейская → славянская → южнославянская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "RS",
+          "region_ru": "Сербия",
+          "lat": 44.79,
+          "lng": 20.45
+        },
+        "also": [
+          {
+            "country_iso": "BA",
+            "region_ru": "Босния"
+          },
+          {
+            "country_iso": "ME",
+            "region_ru": "Черногория"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 9,
+      "weight": 1
+    },
+    {
+      "id": "fra",
+      "name_ru": "Французский",
+      "endonym": "français",
+      "writing": "LÉNINE",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → романская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "FR",
+          "region_ru": "Франция",
+          "lat": 48.85,
+          "lng": 2.35
+        },
+        "also": [
+          {
+            "country_iso": "BE",
+            "region_ru": "Бельгия"
+          },
+          {
+            "country_iso": "CH",
+            "region_ru": "Швейцария"
+          },
+          {
+            "country_iso": "CA",
+            "region_ru": "Канада"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 280,
+      "weight": 3
+    },
+    {
+      "id": "shn",
+      "name_ru": "Шанский",
+      "endonym": "လိၵ်ႈတႆး",
+      "writing": "လီၢ်ခ့ၣ်ႇ",
+      "script": {
+        "iso15924": "Mymr",
+        "name_ru": "Мьянманская"
+      },
+      "family": "тай-кадайская → тайская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "MM",
+          "region_ru": "Шан",
+          "lat": 21.5,
+          "lng": 98.0
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 4.7,
+      "weight": 1,
+      "note": "глиф на листе требует сверки носителем шанского."
+    },
+    {
+      "id": "jpn",
+      "name_ru": "Японский",
+      "endonym": "日本語",
+      "writing": "レーニン",
+      "script": {
+        "iso15924": "Jpan",
+        "name_ru": "Японская (кандзи + кана)"
+      },
+      "family": "японская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "JP",
+          "region_ru": "Япония",
+          "lat": 35.68,
+          "lng": 139.76
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 125,
+      "weight": 2
+    },
+    {
+      "id": "bod",
+      "name_ru": "Тибетский",
+      "endonym": "བོད་སྐད",
+      "writing": "ལེ་ནིན",
+      "script": {
+        "iso15924": "Tibt",
+        "name_ru": "Тибетская"
+      },
+      "family": "сино-тибетская → бодская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "CN",
+          "region_ru": "Тибет",
+          "lat": 29.65,
+          "lng": 91.13
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 6,
+      "weight": 1,
+      "note": "первый глиф на листе нетипичен — сверить тибетское написание."
+    },
+    {
+      "id": "div",
+      "name_ru": "Мальдивский (дивехи)",
+      "endonym": "ދިވެހި",
+      "writing": "ލެނިން",
+      "script": {
+        "iso15924": "Thaa",
+        "name_ru": "Тхана"
+      },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "MV",
+          "region_ru": "Мальдивы",
+          "lat": 4.17,
+          "lng": 73.51
+        },
+        "also": []
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 0.34,
+      "weight": 1,
+      "note": "письмо тхана пишется справа налево; глиф на листе сверить носителем."
+    },
+    {
+      "id": "nqo",
+      "name_ru": "Нко",
+      "endonym": "ߒߞߏ",
+      "writing": "ߟߋߣߌ߲",
+      "script": {
+        "iso15924": "Nkoo",
+        "name_ru": "Нко"
+      },
+      "family": "нигеро-конголезская → манде",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "GN",
+          "region_ru": "Гвинея",
+          "lat": 9.64,
+          "lng": -13.58
+        },
+        "also": [
+          {
+            "country_iso": "ML",
+            "region_ru": "Мали"
+          },
+          {
+            "country_iso": "CI",
+            "region_ru": "Кот-д’Ивуар"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "needs-verification",
+      "speakers_mln": 4,
+      "weight": 1,
+      "note": "письмо нко справа налево; сверить написание."
+    },
+    {
+      "id": "tzm",
+      "name_ru": "Тамазигхт",
+      "endonym": "ⵜⴰⵎⴰⵣⵉⵖⵜ",
+      "writing": "ⵍⵉⵏⵉⵏ",
+      "script": {
+        "iso15924": "Tfng",
+        "name_ru": "Тифинаг"
+      },
+      "family": "афразийская → берберская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "MA",
+          "region_ru": "Марокко",
+          "lat": 31.79,
+          "lng": -7.09
+        },
+        "also": [
+          {
+            "country_iso": "DZ",
+            "region_ru": "Алжир"
+          }
+        ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 5,
       "weight": 1
     }
   ]
