@@ -56,8 +56,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 255,
       "weight": 3,
       "note": "опорная форма на листе (без подписи); язык-источник"
@@ -92,8 +92,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 1500,
       "weight": 3,
       "note": "опорная латинская форма на листе (без подписи)"
@@ -119,8 +119,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 1100,
       "weight": 3
     },
@@ -145,8 +145,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 38,
       "weight": 1
     },
@@ -237,8 +237,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 370,
       "weight": 3
     },
@@ -263,8 +263,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 6.7,
       "weight": 1
     },
@@ -315,8 +315,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 5,
       "weight": 1
     },
@@ -490,8 +490,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 13,
       "weight": 1
     },
@@ -516,8 +516,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 3.7,
       "weight": 1
     },
@@ -603,8 +603,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 15,
       "weight": 1
     },
@@ -656,8 +656,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 9,
       "weight": 1
     },
@@ -735,8 +735,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 85,
       "weight": 2
     },
@@ -897,8 +897,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 82,
       "weight": 2
     },
@@ -1052,7 +1052,7 @@
       "id": "por",
       "name_ru": "Португальский",
       "endonym": "português",
-      "writing": "LÊNIN",
+      "writing": "Lênin",
       "script": {
         "iso15924": "Latn",
         "name_ru": "Латиница"
@@ -1078,10 +1078,11 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 260,
-      "weight": 2
+      "weight": 2,
+      "note": "в источнике строчными; КАПС на листе = стиль All-Caps"
     },
     {
       "id": "sat",
@@ -1309,8 +1310,8 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 9,
       "weight": 1
     },
@@ -1318,7 +1319,7 @@
       "id": "fra",
       "name_ru": "Французский",
       "endonym": "français",
-      "writing": "LÉNINE",
+      "writing": "Lénine",
       "script": {
         "iso15924": "Latn",
         "name_ru": "Латиница"
@@ -1348,10 +1349,11 @@
           }
         ]
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 280,
-      "weight": 3
+      "weight": 3,
+      "note": "в источнике строчными; КАПС на листе = стиль All-Caps"
     },
     {
       "id": "shn",
@@ -1401,8 +1403,8 @@
         },
         "also": []
       },
-      "writing_source": "pdf-specimen",
-      "verifier": "machine-triangulated",
+      "writing_source": "idml-source",
+      "verifier": "idml-source",
       "speakers_mln": 125,
       "weight": 2
     },
@@ -1527,5 +1529,10 @@
       "speakers_mln": 5,
       "weight": 1
     }
-  ]
+  ],
+  "fonts_source": {
+    "brand": "20 Kopeek (латиница/кириллица)",
+    "fallback": "Arial Unicode MS (прочие письменности)",
+    "note": "из IDML Lenin_words.idml; НЕ Noto. Текст строчный, КАПС на листе = стиль All-Caps. На киоске не-латиница — bundled Noto (Arial Unicode MS проприетарный)."
+  }
 }
