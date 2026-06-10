@@ -86,6 +86,8 @@ __FACE__
   main.bold .mine,main.bold .endo{font-weight:700}
   main.caps .mine{text-transform:uppercase}
   .filters button.tg.on{background:var(--blue-grey);color:#fff;border-color:var(--blue-grey)}
+  .usedfont{font-size:11px;color:var(--blue-grey);text-align:center;margin-top:1px}
+  .usedfont b{font-weight:600}
   .cp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:var(--window);
     text-align:center;word-break:break-all;user-select:all}
   .name{font-size:16px;font-weight:700;color:var(--graphite);margin-top:2px}
@@ -166,6 +168,7 @@ document.getElementById('reviewer').value = state._reviewer||'';
 function save(){ localStorage.setItem(KEY, JSON.stringify(state)); upd(); }
 function upd(){ document.getElementById('done').textContent = langs.filter(l=>state[l.id]&&state[l.id].verdict).length; }
 
+const checks=[];
 langs.forEach(l=>{
   const flag = l.verifier==='needs-verification';
   const dir = RTL.has(l.script.iso15924)?'rtl':'ltr';
@@ -178,8 +181,9 @@ langs.forEach(l=>{
   card.innerHTML = `
     <div class="lbl canon">лист музея · контуры (канон)</div>
     <div class="specimen">${spec}</div>
-    <div class="lbl">моя расшифровка · Unicode → Noto</div>
+    <div class="lbl">моя расшифровка</div>
     <div class="mine" style="font-family:${ff(l.script.iso15924)}" dir="${dir}">${esc(l.writing)}</div>
+    <div class="usedfont"></div>
     <div class="cp">${cps(l.writing)}</div>
     <div class="name">${esc(l.name_ru)} <span class="endo" style="font-family:${ff(l.script.iso15924)}" dir="${dir}">· ${esc(l.endonym)}</span></div>
     <div class="rows">
@@ -198,6 +202,7 @@ langs.forEach(l=>{
       <input class="cmt" placeholder="комментарий (необязательно)">
     </div>`;
   grid.appendChild(card);
+  checks.push({el:card.querySelector('.usedfont'),text:l.writing,iso:l.script.iso15924});
 
   const st = state[l.id]||{};
   const ok=card.querySelector('.vok'), bad=card.querySelector('.vbad');
@@ -213,6 +218,20 @@ langs.forEach(l=>{
   corr.oninput=commit; cmt.oninput=commit;
 });
 upd();
+// под каждым написанием — реально использованный шрифт (по фактическому рендеру, со стеком fallback)
+const _cv=document.createElement('canvas'),_cx=_cv.getContext('2d');
+const _w=(t,f)=>{_cx.font='28px '+f;return _cx.measureText(t).width;};
+const _present=(t,f)=>['monospace','serif','sans-serif'].every(g=>Math.abs(_w(t,`'${f}', ${g}`)-_w(t,g))>0.5);
+const _aum=_present('لينين','Arial Unicode MS');   // наличие AUM пробуем по арабскому (латиница AUM≈Arial→неотличима); CJK/кана/хангыль одинаковой ширины
+function _used(t,iso){
+  if(['Hans','Hant','Jpan','Kore'].includes(iso)) return _aum?'Arial Unicode MS':'Noto (subset)';
+  const stack=(iso==='Latn'||iso==='Cyrl')?['20 Kopeek','Arial Unicode MS']:['Arial Unicode MS','noto-'+iso];
+  for(const f of stack){ if(_present(t,f)) return f.startsWith('noto-')?'Noto (subset)':f; }
+  return 'системный';
+}
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{
+  checks.forEach(c=>{ c.el.innerHTML='шрифт: <b>'+_used(c.text,c.iso)+'</b>'; });
+});
 document.getElementById('reviewer').oninput=e=>{ state._reviewer=e.target.value; save(); };
 document.querySelectorAll('.filters button[data-f]').forEach(b=>b.onclick=()=>{
   document.querySelectorAll('.filters button[data-f]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
