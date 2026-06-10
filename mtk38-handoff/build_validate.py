@@ -15,7 +15,9 @@ import json, os
 
 HERE = os.path.dirname(__file__)
 SRC = os.path.normpath(os.path.join(HERE, "..", "data", "mtk38.json"))
-OUT = os.path.join(HERE, "validate.html")
+OUTDIR = os.path.normpath(os.path.join(HERE, "..", "mtk38-v2"))
+os.makedirs(OUTDIR, exist_ok=True)
+OUT = os.path.join(OUTDIR, "validate.html")
 
 with open(SRC, encoding="utf-8") as f:
     data = json.load(f)
