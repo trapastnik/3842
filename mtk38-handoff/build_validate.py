@@ -154,8 +154,11 @@ let state = {}; try{ state = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch
 const grid = document.getElementById('grid');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const cps = s => [...String(s)].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
-const ff  = iso => (iso==='Latn'||iso==='Cyrl') ? `'20 Kopeek', system-ui, sans-serif`
-                 : EMBED.has(iso) ? `'noto-${iso}', system-ui, sans-serif` : `system-ui, 'Noto Sans', sans-serif`;
+// латиница/кириллица — бренд 20 Kopeek (как у музея); прочее — Arial Unicode MS (как у музея),
+// дальше вшитый Noto-subset (машины без AUM + новые письменности, которых в AUM нет: мейтей/ол-чики/нко/тифинаг)
+const ff  = iso => (iso==='Latn'||iso==='Cyrl')
+      ? `'20 Kopeek', 'Arial Unicode MS', system-ui, sans-serif`
+      : `'Arial Unicode MS', 'noto-${iso}', system-ui, sans-serif`;
 
 const langs = DATA.languages.slice().sort((a,b)=> b.weight-a.weight || a.name_ru.localeCompare(b.name_ru,'ru'));
 document.getElementById('total').textContent = langs.length;
