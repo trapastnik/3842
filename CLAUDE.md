@@ -22,6 +22,10 @@
 
 ## Стек
 
-Vanilla JS + canvas 2D, без WebGL и без бандлеров. Шрифты бренда — `mtk38-globe/fonts/` (Nolde, 21 Cent, 20 Kopeek). Брендовая палитра — paper-white / brass / signal-red / graphite. Для постера используется `pretext` через esm.sh — единственная внешняя зависимость на текущий момент.
+Vanilla JS, без бандлеров. **WebGL разрешён** (решение 2026-06-10) — для арт-качества на 4K, во всех МТК, при **одном жёстком условии: все библиотеки вендорятся локально** (Three.js, regl, pixi и т.п. — бандл в `<prototype>/vendor/` или `assets/shared/vendor/`, без рантайм-CDN). Музейный киоск может стоять офлайн — любая зависимость от сети = чёрный экран. Canvas 2D остаётся валидным выбором там, где WebGL избыточен.
+
+Шрифты: бренд — `mtk38-globe/fonts/` (Nolde, 21 Cent, 20 Kopeek); не-латиница (Noto CJK/Arabic/Indic/…) — `assets/shared/fonts/noto/` (bundled, SIL OFL). Брендовая палитра — см. `COORDINATION.md` → «Шрифтово-цветовые правила» (актуальная редакция от 2026-05-12).
+
+Внешние зависимости — **только вендоренные** (см. `COORDINATION.md` → «Внешние зависимости»). На миграцию остаётся `pretext` через esm.sh в `mtk38-poster` — задача владельца МТК 38.
 
 См. также: [SETUP.md](SETUP.md), [COORDINATION.md](COORDINATION.md), [PLAN.md](PLAN.md), [README.md](README.md).
