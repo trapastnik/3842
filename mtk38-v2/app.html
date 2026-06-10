@@ -1,0 +1,259 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>МТК 38 v2 · Ленин на языках мира</title>
+<style>
+@font-face{font-family:"noto-Arab";src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";src:url("./fonts/noto/Beng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";src:url("./fonts/noto/Deva.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";src:url("./fonts/noto/Ethi.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";src:url("./fonts/noto/Geor.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";src:url("./fonts/noto/Grek.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";src:url("./fonts/noto/Gujr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";src:url("./fonts/noto/Guru.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";src:url("./fonts/noto/Hans.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";src:url("./fonts/noto/Hant.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";src:url("./fonts/noto/Hebr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";src:url("./fonts/noto/Jpan.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";src:url("./fonts/noto/Khmr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";src:url("./fonts/noto/Knda.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";src:url("./fonts/noto/Kore.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";src:url("./fonts/noto/Laoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";src:url("./fonts/noto/Mlym.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";src:url("./fonts/noto/Mtei.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";src:url("./fonts/noto/Mymr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Nkoo";src:url("./fonts/noto/Nkoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";src:url("./fonts/noto/Olck.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";src:url("./fonts/noto/Orya.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";src:url("./fonts/noto/Sinh.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";src:url("./fonts/noto/Taml.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";src:url("./fonts/noto/Telu.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tfng";src:url("./fonts/noto/Tfng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";src:url("./fonts/noto/Thaa.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
+  @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff")}
+  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype")}
+  :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--graphite:#333d44;
+    --glow:1;--blur:18;--scrim:1;--qscale:1}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#222a30;font-family:"20 Kopeek",system-ui,sans-serif;color:#CFD0CF}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;cursor:grab}#c:active{cursor:grabbing}
+  .bar{position:fixed;top:14px;left:14px;z-index:5;display:flex;flex-wrap:wrap;gap:5px;max-width:62vw;
+    background:rgba(24,29,33,.8);backdrop-filter:blur(8px);border:1px solid rgba(210,183,115,.28);border-radius:11px;padding:6px}
+  .bar button{background:transparent;border:0;color:var(--telegrey);font-size:13px;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:inherit}
+  .bar button.on{background:var(--brass);color:#1a1f23;font-weight:700}
+  #panel{position:fixed;top:14px;right:14px;width:232px;z-index:5;background:rgba(24,29,33,.85);backdrop-filter:blur(8px);
+    border:1px solid rgba(210,183,115,.28);border-radius:12px;padding:11px 13px;font-size:12px;max-height:92vh;overflow:auto}
+  #panel h3{margin:0 0 7px;font-size:12px;color:var(--brass);font-weight:700;letter-spacing:.05em;text-transform:uppercase}
+  #panel h3:not(:first-child){margin-top:12px}
+  .pr{margin:7px 0}.pr label{display:flex;justify-content:space-between;margin-bottom:2px}.pr label b{color:var(--paper)}
+  input[type=range]{width:100%;accent-color:var(--brass);height:15px}
+  .qmodes{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+  .qmodes button{flex:1;background:transparent;border:1px solid var(--window);color:var(--telegrey);border-radius:6px;padding:4px;font-size:11px;cursor:pointer;font-family:inherit}
+  .qmodes button.on{background:var(--brass);color:#1a1f23;border-color:var(--brass)}
+  .chk{display:flex;align-items:center;gap:7px;margin:8px 0}
+  #copy{width:100%;margin-top:10px;background:var(--brass);color:#1a1f23;border:0;border-radius:7px;padding:7px;font-weight:700;cursor:pointer;font-family:inherit}
+  /* карточка языка */
+  #card{position:fixed;left:50%;bottom:-340px;transform:translateX(-50%);z-index:6;width:min(560px,90vw);
+    background:rgba(20,25,28,.92);backdrop-filter:blur(14px);border:1px solid rgba(210,183,115,.4);
+    border-radius:16px;padding:18px 22px;transition:bottom .5s cubic-bezier(.2,.7,.2,1)}
+  #card.show{bottom:26px}
+  #card .x{position:absolute;top:12px;right:14px;cursor:pointer;color:var(--window);font-size:18px}
+  #card .cw{font-size:clamp(34px,5vw,60px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
+  #card .cn{font-size:19px;color:var(--paper);font-weight:700;margin-top:4px}
+  #card .ce{font-size:15px;color:var(--brass)}
+  #card .rows{margin-top:10px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}
+  #card .rows b{color:var(--window);font-weight:600}
+  #card .ver{margin-top:9px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
+  .ver-ok{background:var(--brass);color:#1a1f23}.ver-warn{background:#A02128;color:#fff}
+  /* слой цитат */
+  .scrim{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:0;transition:opacity .6s}
+  body.q-on .scrim{opacity:var(--scrim)}
+  .qbox{position:fixed;z-index:3;opacity:0;transition:opacity 1s,transform 1s;pointer-events:none}
+  body.q-on .qbox.show{opacity:1}
+  .qbox::before{content:"";position:absolute;inset:-16% -9%;z-index:-1;
+    backdrop-filter:blur(calc(var(--blur)*1px));-webkit-backdrop-filter:blur(calc(var(--blur)*1px));background:rgba(18,22,25,.14);
+    -webkit-mask-image:radial-gradient(ellipse at center,#000 42%,transparent 100%);mask-image:radial-gradient(ellipse at center,#000 42%,transparent 100%)}
+  .qru{font-family:"21 Cent",Georgia,serif;color:var(--paper);line-height:1.24;margin:0;font-size:calc(var(--qb,34px)*var(--qscale));
+    text-shadow:0 0 calc(var(--glow)*24px) rgba(247,249,239,.5),0 0 calc(var(--glow)*64px) rgba(210,183,115,.28)}
+  .qat{margin-top:18px;font-size:clamp(12px,1.3vw,17px);color:var(--brass)}.qat .nm{color:var(--paper)}
+  body.qm-center .scrim{background:radial-gradient(ellipse at 50% 50%,rgba(18,22,25,.5),rgba(18,22,25,.08) 62%)}
+  body.qm-center .qbox{--qb:clamp(26px,3.3vw,50px);left:50%;top:50%;transform:translate(-50%,-50%);max-width:62vw;text-align:center}
+  body.qm-center .qbox.show{transform:translate(-50%,-50%)}
+  body.qm-lower .scrim{background:linear-gradient(to top,rgba(18,22,25,.82),rgba(18,22,25,.3) 24%,transparent 44%)}
+  body.qm-lower .qbox{--qb:clamp(22px,2.5vw,38px);left:0;right:0;bottom:5vh;padding:0 9vw;text-align:center}
+  body.qm-scene .scrim{background:rgba(18,22,25,.6)}
+  body.qm-scene .qbox{--qb:clamp(30px,4.2vw,70px);left:50%;top:50%;transform:translate(-50%,-50%);max-width:72vw;text-align:center}
+  body.qm-scene .qbox.show{transform:translate(-50%,-50%)}
+  .hint{position:fixed;left:16px;bottom:10px;z-index:4;font-size:11px;color:var(--window);opacity:.5;pointer-events:none}
+  .hint b{color:var(--brass)}
+</style>
+</head>
+<body class="qm-center">
+<canvas id="c"></canvas>
+<div class="scrim"></div>
+<div class="qbox" id="qbox"><p class="qru" id="qru"></p><div class="qat"><span class="nm">В. И. Ленин</span> · <span id="qsrc"></span></div></div>
+<div class="bar" id="bar"></div>
+<div id="panel">
+  <h3>Композиция</h3><div id="layouts" class="qmodes"></div>
+  <h3>Рендер</h3><div id="ctrls"></div>
+  <h3>Цитаты</h3>
+  <div class="chk"><input type="checkbox" id="qon"><label for="qon">Показывать цитаты</label></div>
+  <div class="qmodes" id="qmodes"></div>
+  <div id="qctrls"></div>
+  <button id="copy">Скопировать настройки</button>
+</div>
+<div id="card"><span class="x" id="cardx">✕</span>
+  <div class="cw" id="c_w"></div><div class="cn" id="c_n"></div><div class="ce" id="c_e"></div>
+  <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
+<div class="hint">МТК 38 v2 · переключай композиции слева, крути параметры справа, тяни мышью, <b>тапни слово</b> → карточка</div>
+<script src="./vendor/three/three.min.js"></script>
+<script src="./vendor/three/js/shaders/CopyShader.js"></script>
+<script src="./vendor/three/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="./vendor/three/js/postprocessing/EffectComposer.js"></script>
+<script src="./vendor/three/js/postprocessing/MaskPass.js"></script>
+<script src="./vendor/three/js/postprocessing/ShaderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/RenderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
+<script>
+const DATA={"langs": [{"id": "rus", "n": "Русский", "e": "русский", "w": "Ленин", "sc": "Cyrl", "scn": "Кириллица", "f": "индоевропейская → славянская → восточнославянская", "r": "Россия", "lat": 55.75, "lng": 37.62, "src": "idml-source", "ver": "idml-source", "wt": 3, "dia": false}, {"id": "eng", "n": "Английский", "e": "English", "w": "Lenin", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → германская → западногерманская", "r": "Великобритания", "lat": 51.51, "lng": -0.13, "src": "idml-source", "ver": "idml-source", "wt": 3, "dia": false}, {"id": "zho", "n": "Китайский (упрощ.)", "e": "中文", "w": "列宁", "sc": "Hans", "scn": "Китайская (упрощённая)", "f": "сино-тибетская → синитская", "r": "Китай", "lat": 39.9, "lng": 116.4, "src": "idml-source", "ver": "idml-source", "wt": 3, "dia": false}, {"id": "awa", "n": "Авадхи", "e": "अवधी", "w": "लेनिन", "sc": "Deva", "scn": "Деванагари", "f": "индоевропейская → индоарийская", "r": "Уттар-Прадеш", "lat": 26.85, "lng": 80.95, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "sqi", "n": "Албанский", "e": "shqip", "w": "LENINI", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → албанская", "r": "Албания", "lat": 41.33, "lng": 19.82, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "amh", "n": "Амхарский", "e": "አማርኛ", "w": "ሌኒን", "sc": "Ethi", "scn": "Эфиопская (геэз)", "f": "афразийская → семитская", "r": "Эфиопия", "lat": 9.03, "lng": 38.74, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "ara", "n": "Арабский", "e": "العربية", "w": "لينين", "sc": "Arab", "scn": "Арабица", "f": "афразийская → семитская", "r": "Египет", "lat": 30.04, "lng": 31.24, "src": "idml-source", "ver": "idml-source", "wt": 3, "dia": false}, {"id": "hye", "n": "Армянский", "e": "հայերեն", "w": "Լենին", "sc": "Armn", "scn": "Армянская", "f": "индоевропейская → армянская", "r": "Армения", "lat": 40.18, "lng": 44.51, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "asm", "n": "Ассамский", "e": "অসমীয়া", "w": "লেনিন", "sc": "Beng", "scn": "Бенгальская (восточный нагари)", "f": "индоевропейская → индоарийская", "r": "Ассам", "lat": 26.14, "lng": 91.74, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "bel", "n": "Белорусский", "e": "беларуская", "w": "Ленін", "sc": "Cyrl", "scn": "Кириллица", "f": "индоевропейская → славянская → восточнославянская", "r": "Беларусь", "lat": 53.9, "lng": 27.57, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "bal", "n": "Белуджский", "e": "بلۏچی", "w": "لينن", "sc": "Arab", "scn": "Арабица", "f": "индоевропейская → иранская", "r": "Белуджистан", "lat": 30.18, "lng": 66.97, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "ben", "n": "Бенгальский", "e": "বাংলা", "w": "লেনিন", "sc": "Beng", "scn": "Бенгальская (восточный нагари)", "f": "индоевропейская → индоарийская", "r": "Бангладеш", "lat": 23.81, "lng": 90.41, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 2, "dia": false}, {"id": "mya", "n": "Бирманский", "e": "မြန်မာဘာသာ", "w": "လီနင်", "sc": "Mymr", "scn": "Мьянманская", "f": "сино-тибетская → лоло-бирманская", "r": "Мьянма", "lat": 16.87, "lng": 96.2, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "bos", "n": "Боснийский", "e": "bosanski", "w": "LENJIN", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → славянская → южнославянская", "r": "Босния и Герцеговина", "lat": 43.86, "lng": 18.41, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "haw", "n": "Гавайский", "e": "ʻŌlelo Hawaiʻi", "w": "ʻO LENIN", "sc": "Latn", "scn": "Латиница", "f": "австронезийская → полинезийская", "r": "Гавайи", "lat": 21.31, "lng": -157.86, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "ell", "n": "Греческий", "e": "ελληνικά", "w": "Λένιν", "sc": "Grek", "scn": "Греческая", "f": "индоевропейская → эллинская", "r": "Греция", "lat": 37.98, "lng": 23.73, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "kat", "n": "Грузинский", "e": "ქართული", "w": "ლენინი", "sc": "Geor", "scn": "Грузинская (мхедрули)", "f": "картвельская", "r": "Грузия", "lat": 41.72, "lng": 44.83, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "grn", "n": "Гуарани", "e": "avañeʼẽ", "w": "LÉNIN", "sc": "Latn", "scn": "Латиница", "f": "тупийская → тупи-гуарани", "r": "Парагвай", "lat": -25.3, "lng": -57.64, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "guj", "n": "Гуджарати", "e": "ગુજરાતી", "w": "લેનિન", "sc": "Gujr", "scn": "Гуджарати", "f": "индоевропейская → индоарийская", "r": "Гуджарат", "lat": 23.03, "lng": 72.58, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "prs", "n": "Дари", "e": "دری", "w": "لنین", "sc": "Arab", "scn": "Арабица", "f": "индоевропейская → иранская", "r": "Афганистан", "lat": 34.53, "lng": 69.17, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "dzo", "n": "Дзонгкха", "e": "རྫོང་ཁ", "w": "LËNIN", "sc": "Latn", "scn": "Латиница", "f": "сино-тибетская → бодская", "r": "Бутан", "lat": 27.47, "lng": 89.64, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "heb", "n": "Иврит", "e": "עברית", "w": "לנין", "sc": "Hebr", "scn": "Еврейская", "f": "афразийская → семитская", "r": "Израиль", "lat": 31.78, "lng": 35.22, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "yid", "n": "Идиш", "e": "ייִדיש", "w": "לענין", "sc": "Hebr", "scn": "Еврейская", "f": "индоевропейская → германская → западногерманская", "r": "диаспора", "lat": null, "lng": null, "src": "wiki-interwiki", "ver": "machine-triangulated", "wt": 1, "dia": true}, {"id": "kan", "n": "Каннада", "e": "ಕನ್ನಡ", "w": "ಲೆನಿನ್", "sc": "Knda", "scn": "Каннада", "f": "дравидийская → южнодравидийская", "r": "Карнатака", "lat": 12.97, "lng": 77.59, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "yue", "n": "Кантонский", "e": "粵語", "w": "列寧", "sc": "Hant", "scn": "Китайская (традиционная)", "f": "сино-тибетская → синитская", "r": "Гонконг", "lat": 22.32, "lng": 114.17, "src": "idml-source", "ver": "idml-source", "wt": 2, "dia": false}, {"id": "mal", "n": "Малаялам", "e": "മലയാളം", "w": "ലെനിൻ", "sc": "Mlym", "scn": "Малаялам", "f": "дравидийская → южнодравидийская", "r": "Керала", "lat": 9.93, "lng": 76.27, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "lav", "n": "Латышский", "e": "latviešu", "w": "Ļeņins", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → балтийская", "r": "Латвия", "lat": 56.95, "lng": 24.11, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "lit", "n": "Литовский", "e": "lietuvių", "w": "LENINAS", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → балтийская", "r": "Литва", "lat": 54.69, "lng": 25.28, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "lao", "n": "Лаосский", "e": "ລາວ", "w": "ເລນິນ", "sc": "Laoo", "scn": "Лаосская", "f": "тай-кадайская → тайская", "r": "Лаос", "lat": 17.97, "lng": 102.63, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "khm", "n": "Кхмерский", "e": "ខ្មែរ", "w": "លេនីន", "sc": "Khmr", "scn": "Кхмерская", "f": "австроазиатская → кхмерская", "r": "Камбоджа", "lat": 11.56, "lng": 104.92, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "kor", "n": "Корейский", "e": "한국어", "w": "레닌", "sc": "Kore", "scn": "Корейская (хангыль)", "f": "корейская (изолят)", "r": "Респ. Корея", "lat": 37.57, "lng": 126.98, "src": "idml-source", "ver": "idml-source", "wt": 2, "dia": false}, {"id": "mni", "n": "Манипури (мейтейлон)", "e": "ꯃꯩꯇꯩꯂꯣꯟ", "w": "ꯂꯦꯅꯤꯟ", "sc": "Mtei", "scn": "Мейтей-маєк", "f": "сино-тибетская → куки-чин-нага", "r": "Манипур", "lat": 24.66, "lng": 93.91, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "nus", "n": "Нуэр", "e": "Thok Nath", "w": "LƐNIN", "sc": "Latn", "scn": "Латиница", "f": "нило-сахарская → западнонилотская", "r": "Южный Судан", "lat": 9.55, "lng": 31.66, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "ory", "n": "Ория", "e": "ଓଡ଼ିଆ", "w": "ଲେନିନ୍", "sc": "Orya", "scn": "Ория", "f": "индоевропейская → индоарийская", "r": "Одиша", "lat": 20.3, "lng": 85.82, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "orm", "n": "Оромо", "e": "Afaan Oromoo", "w": "LEENINII", "sc": "Latn", "scn": "Латиница", "f": "афразийская → кушитская", "r": "Оромия", "lat": 8.54, "lng": 39.27, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "pan", "n": "Панджаби", "e": "ਪੰਜਾਬੀ", "w": "ਲੈਨਿਨ", "sc": "Guru", "scn": "Гурмукхи", "f": "индоевропейская → индоарийская", "r": "Пенджаб", "lat": 30.73, "lng": 76.78, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 2, "dia": false}, {"id": "por", "n": "Португальский", "e": "português", "w": "LÊNIN", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → романская", "r": "Бразилия", "lat": -15.79, "lng": -47.88, "src": "idml-source", "ver": "idml-source", "wt": 2, "dia": false}, {"id": "sat", "n": "Сантали", "e": "ᱥᱟᱱᱛᱟᱲᱤ", "w": "ᱞᱮᱱᱤᱱ", "sc": "Olck", "scn": "Ол-чики", "f": "австроазиатская → мунда", "r": "Джаркханд", "lat": 23.61, "lng": 85.28, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "urd", "n": "Урду", "e": "اردو", "w": "لینین", "sc": "Arab", "scn": "Арабица", "f": "индоевропейская → индоарийская", "r": "Пакистан", "lat": 33.69, "lng": 73.06, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 2, "dia": false}, {"id": "uig", "n": "Уйгурский", "e": "ئۇيغۇرچە", "w": "لىنىن", "sc": "Arab", "scn": "Арабица", "f": "тюркская → карлукская", "r": "Синьцзян", "lat": 43.83, "lng": 87.62, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "ton", "n": "Тонганский", "e": "lea faka-Tonga", "w": "LĒNINI", "sc": "Latn", "scn": "Латиница", "f": "австронезийская → полинезийская", "r": "Тонга", "lat": -21.14, "lng": -175.2, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "tel", "n": "Телугу", "e": "తెలుగు", "w": "లెనిన్", "sc": "Telu", "scn": "Телугу", "f": "дравидийская → южно-центральная", "r": "Телангана / Андхра", "lat": 17.39, "lng": 78.49, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "tam", "n": "Тамильский", "e": "தமிழ்", "w": "லெனின்", "sc": "Taml", "scn": "Тамильская", "f": "дравидийская → южнодравидийская", "r": "Тамилнад", "lat": 13.08, "lng": 80.27, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 2, "dia": false}, {"id": "sin", "n": "Сингальский", "e": "සිංහල", "w": "ලෙනින්", "sc": "Sinh", "scn": "Сингальская", "f": "индоевропейская → индоарийская", "r": "Шри-Ланка", "lat": 6.93, "lng": 79.86, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}, {"id": "srp", "n": "Сербский", "e": "српски", "w": "Лењин", "sc": "Cyrl", "scn": "Кириллица", "f": "индоевропейская → славянская → южнославянская", "r": "Сербия", "lat": 44.79, "lng": 20.45, "src": "idml-source", "ver": "idml-source", "wt": 1, "dia": false}, {"id": "fra", "n": "Французский", "e": "français", "w": "LÉNINE", "sc": "Latn", "scn": "Латиница", "f": "индоевропейская → романская", "r": "Франция", "lat": 48.85, "lng": 2.35, "src": "idml-source", "ver": "idml-source", "wt": 3, "dia": false}, {"id": "shn", "n": "Шанский", "e": "လိၵ်ႈတႆး", "w": "လီၢ်ခ့ၣ်ႇ", "sc": "Mymr", "scn": "Мьянманская", "f": "тай-кадайская → тайская", "r": "Шан", "lat": 21.5, "lng": 98.0, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "jpn", "n": "Японский", "e": "日本語", "w": "レーニン", "sc": "Jpan", "scn": "Японская (кандзи + кана)", "f": "японская", "r": "Япония", "lat": 35.68, "lng": 139.76, "src": "idml-source", "ver": "idml-source", "wt": 2, "dia": false}, {"id": "bod", "n": "Тибетский", "e": "བོད་སྐད", "w": "ལེ་ནིན", "sc": "Tibt", "scn": "Тибетская", "f": "сино-тибетская → бодская", "r": "Тибет", "lat": 29.65, "lng": 91.13, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "div", "n": "Мальдивский (дивехи)", "e": "ދިވެހި", "w": "ލެނިން", "sc": "Thaa", "scn": "Тхана", "f": "индоевропейская → индоарийская", "r": "Мальдивы", "lat": 4.17, "lng": 73.51, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "nqo", "n": "Нко", "e": "ߒߞߏ", "w": "ߟߋߣߌ߲", "sc": "Nkoo", "scn": "Нко", "f": "нигеро-конголезская → манде", "r": "Гвинея", "lat": 9.64, "lng": -13.58, "src": "pdf-specimen", "ver": "needs-verification", "wt": 1, "dia": false}, {"id": "tzm", "n": "Тамазигхт", "e": "ⵜⴰⵎⴰⵣⵉⵖⵜ", "w": "ⵍⵉⵏⵉⵏ", "sc": "Tfng", "scn": "Тифинаг", "f": "афразийская → берберская", "r": "Марокко", "lat": 31.79, "lng": -7.09, "src": "pdf-specimen", "ver": "machine-triangulated", "wt": 1, "dia": false}], "quotes": [{"ru": "Коммунизм есть Советская власть плюс электрификация всей страны.", "work": "Наши внешнее и внутреннее положение и задачи партии", "year": ""}, {"ru": "Без революционной теории не может быть и революционного движения.", "work": "Что делать?", "year": "1902"}, {"ru": "Учиться, учиться и учиться.", "work": "Лучше меньше, да лучше", "year": "1923"}, {"ru": "Задачи молодёжи… можно было бы выразить одним словом: учиться.", "work": "Задачи союзов молодёжи", "year": ""}, {"ru": "Лучше меньше, да лучше.", "work": "Лучше меньше, да лучше", "year": "1923"}, {"ru": "Религия есть опиум народа.", "work": "Социализм и религия", "year": "1905"}, {"ru": "Кто не работает, тот не ест.", "work": "Государство и революция", "year": "1917"}, {"ru": "Истина всегда конкретна.", "work": "Шаг вперёд, два шага назад", "year": "1904"}, {"ru": "Жить в обществе и быть свободным от общества нельзя.", "work": "Партийная организация и партийная литература", "year": "1905"}, {"ru": "Учение Маркса всесильно, потому что оно верно.", "work": "Три источника и три составных части марксизма", "year": "1913"}, {"ru": "Дайте нам организацию революционеров — и мы перевернём Россию!", "work": "Что делать?", "year": "1902"}, {"ru": "Государство есть машина для угнетения одного класса другим.", "work": "Государство и революция", "year": "1917"}, {"ru": "Мы не утописты. Мы знаем, что любой чернорабочий и любая кухарка не способны сейчас же вступить в управление государством.", "work": "Удержат ли большевики государственную власть?", "year": "1917"}]}, L=DATA.langs, QUOTES=DATA.quotes, N=L.length;
+const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
+const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-"+iso+"',sans-serif";
+let seed=1;const rng=()=>(seed=(seed*16807)%2147483647)/2147483647;
+const RV=L.map(()=>({x:rng()*2-1,y:rng()*2-1,z:rng()*2-1,ph:rng()*Math.PI*2,sp:0.6+rng()*0.8}));
+
+const cv=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
+const scene=new THREE.Scene();
+const camera=new THREE.PerspectiveCamera(45,1,0.1,200);camera.position.z=16;
+const group=new THREE.Group();scene.add(group);
+const raycaster=new THREE.Raycaster();
+
+function tex(t,iso,c){const fs=128,pad=20,m=document.createElement('canvas'),x=m.getContext('2d');
+  x.font='700 '+fs+'px '+FF(iso);const tw=Math.max(24,x.measureText(t).width);m.width=Math.ceil(tw)+pad*2;m.height=fs+pad*2;
+  x.font='700 '+fs+'px '+FF(iso);x.textAlign='center';x.textBaseline='middle';x.fillStyle=c;x.fillText(t,m.width/2,m.height/2);
+  const tx=new THREE.CanvasTexture(m);tx.minFilter=THREE.LinearFilter;return{t:tx,aspect:m.width/m.height};}
+const sprites=[], targets=[];
+function buildSprites(){
+  L.forEach((d,i)=>{const h=(i*131)%100;const col=h<5?RED:h<34?BRASS:(i%2?PAPER:TELE);
+    const {t,aspect}=tex(d.w,d.sc,col);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:true,opacity:0.55+(d.wt-1)*0.2}));
+    sp.userData={i,aspect,baseOp:0.55+(d.wt-1)*0.2};group.add(sp);sprites.push(sp);targets.push(new THREE.Vector3());});
+}
+const P={layout:'globe',bloom:0.85,radius:0.55,thresh:0.7,expo:1.1,fog:0.22,speed:1.0,size:1.0,brass:34,red:5,bg:42,
+         q:false,qmode:'center',glow:1,blur:18,scrim:1,qscale:1};
+
+function setScale(){sprites.forEach((sp,i)=>{const s=(0.9+L[i].wt*0.5)*P.size;sp.scale.set(s*sp.userData.aspect,s,1);});}
+function computeTargets(){
+  const R=6.4,gold=Math.PI*(3-Math.sqrt(5));
+  for(let i=0;i<N;i++){const t=targets[i],d=L[i],rv=RV[i];
+    if(P.layout==='globe'){const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;t.set(Math.cos(th)*r*R,y*R,Math.sin(th)*r*R);}
+    else if(P.layout==='cloud'){t.set(rv.x*8,rv.y*5.5,rv.z*8);}
+    else if(P.layout==='mandala'){const ring=1+(i%5),a=gold*i;const rr=ring*1.5;t.set(Math.cos(a)*rr,Math.sin(a)*rr,(d.wt-2)*0.6);}
+    else if(P.layout==='wall'){const cols=Math.ceil(Math.sqrt(N*1.7)),cx=i%cols,cy=Math.floor(i/cols),rows=Math.ceil(N/cols);
+      t.set((cx-(cols-1)/2)*2.4,((rows-1)/2-cy)*1.5,rv.z*0.6);}
+    else if(P.layout==='map'){if(d.lat==null){const a=gold*i;t.set(Math.cos(a)*8.5,5.2+Math.sin(a*3)*0.4,Math.sin(a)*8.5);}
+      else{const la=d.lat*Math.PI/180,lo=d.lng*Math.PI/180;t.set(R*Math.cos(la)*Math.cos(lo),R*Math.sin(la),R*Math.cos(la)*Math.sin(lo));}}
+    else if(P.layout==='rain'){t.set((rv.x)*9,(rv.y)*6,(rv.z)*5);}
+    else if(P.layout==='ticker'){const rowN=7,row=i%rowN;t.set(rv.x*8.5,((rowN-1)/2-row)*1.6,(rv.z)*3);}
+  }
+}
+let composer,bloom;
+function setup(){const W=innerWidth,H=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
+  renderer.setPixelRatio(dpr);renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+  composer=new THREE.EffectComposer(renderer);composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),P.bloom,P.radius,P.thresh);composer.addPass(bloom);
+  composer.setPixelRatio(dpr);composer.setSize(W,H);}
+addEventListener('resize',setup);
+function applyRender(){const s=Math.round(P.bg);const bg=new THREE.Color(`rgb(${s-6},${s+6},${s+13})`);
+  scene.background=bg;scene.fog=new THREE.FogExp2(bg.getHex(),P.fog*0.06);renderer.toneMappingExposure=P.expo;
+  if(bloom){bloom.strength=P.bloom;bloom.radius=P.radius;bloom.threshold=P.thresh;}}
+function applyColors(){sprites.forEach((sp,i)=>{const h=(i*131)%100;const col=h<P.red?RED:h<P.red+P.brass?BRASS:(i%2?PAPER:TELE);
+  const {t,aspect}=tex(L[i].w,L[i].sc,col);sp.material.map=t;sp.userData.aspect=aspect;sp.material.needsUpdate=true;});setScale();}
+
+let drag=false,lx,ly,flow=0;
+cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;cv.dataset.moved='0';});
+addEventListener('pointerup',e=>{drag=false;if(cv.dataset.moved==='0')pick(e);});
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;
+  if(Math.abs(dx)+Math.abs(dy)>4)cv.dataset.moved='1';lx=e.clientX;ly=e.clientY;
+  group.rotation.y+=dx*0.005;group.rotation.x+=dy*0.005;});
+function pick(e){const r=cv.getBoundingClientRect();
+  const m=new THREE.Vector2(((e.clientX-r.left)/r.width)*2-1,-((e.clientY-r.top)/r.height)*2+1);
+  raycaster.setFromCamera(m,camera);const hit=raycaster.intersectObjects(sprites,false)[0];
+  if(hit)openCard(hit.object.userData.i);}
+
+const card=document.getElementById('card');
+function openCard(i){const d=L[i];
+  document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
+  document.getElementById('c_n').textContent=d.n;
+  document.getElementById('c_e').textContent=d.e;document.getElementById('c_e').style.fontFamily=FF(d.sc);
+  document.getElementById('c_rows').innerHTML=
+    `<b>письмо</b><span>${d.scn} (${d.sc})</span><b>семья</b><span>${d.f}</span>`+
+    `<b>ареал</b><span>${d.r}</span><b>источник</b><span>${d.src}</span>`;
+  const ver=document.getElementById('c_ver');const warn=d.ver==='needs-verification';
+  ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+d.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');
+  card.classList.add('show');}
+document.getElementById('cardx').onclick=()=>card.classList.remove('show');
+
+// цитаты
+const qru=document.getElementById('qru'),qsrc=document.getElementById('qsrc'),qbox=document.getElementById('qbox');
+let qi=-1,qt;function qshow(n){const q=QUOTES[n];qru.textContent=q.ru;qsrc.textContent=q.work+(q.year?', '+q.year:'');}
+function qcycle(){qbox.classList.remove('show');setTimeout(()=>{qi=(qi+1)%QUOTES.length;qshow(qi);qbox.classList.add('show');},700);}
+function qStart(){qi=0;qshow(0);qbox.classList.add('show');clearInterval(qt);qt=setInterval(qcycle,8000);}
+function qStop(){clearInterval(qt);qbox.classList.remove('show');}
+
+let last=0;
+function animate(t){requestAnimationFrame(animate);const dt=Math.min(40,t-(last||t));last=t;
+  const spin=P.speed*0.0009;
+  if(['globe','cloud','map'].includes(P.layout))group.rotation.y+=spin;
+  else if(P.layout==='mandala')group.rotation.z+=spin*0.8;
+  else group.rotation.set(group.rotation.x*0.95,0,0);
+  if(P.layout==='rain'){flow+=dt;for(let i=0;i<N;i++){targets[i].y+=RV[i].sp*P.speed*0.012*dt;if(targets[i].y>6.5)targets[i].y=-6.5;}}
+  else if(P.layout==='ticker'){for(let i=0;i<N;i++){const dir=(i%7)%2?1:-1;targets[i].x+=dir*RV[i].sp*P.speed*0.012*dt;if(targets[i].x>9)targets[i].x=-9;if(targets[i].x<-9)targets[i].x=9;}}
+  for(let i=0;i<N;i++)sprites[i].position.lerp(targets[i],0.06);
+  composer.render();}
+
+// панель
+const LAYOUTS=[['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],['ticker','Лента'],['wall','Стена'],['map','Карта']];
+const bar=document.getElementById('bar'),layoutsEl=document.getElementById('layouts');
+function setLayout(k){P.layout=k;computeTargets();group.rotation.set(0,0,0);
+  [...bar.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));
+  [...layoutsEl.children].forEach(b=>b.classList.toggle('on',b.dataset.k===k));}
+bar.innerHTML=LAYOUTS.map(([k,l],i)=>`<button data-k="${k}"${i===0?' class="on"':''}>${l}</button>`).join('');
+layoutsEl.innerHTML=LAYOUTS.map(([k,l],i)=>`<button data-k="${k}"${i===0?' class="on"':''}>${l}</button>`).join('');
+bar.onclick=layoutsEl.onclick=e=>{const b=e.target.closest('button');if(b)setLayout(b.dataset.k);};
+
+const RSPEC=[['bloom','Bloom',0,2.5,.01],['radius','Радиус bloom',0,1,.01],['thresh','Порог bloom',0,1,.01],
+ ['expo','Экспозиция',.4,2,.01],['fog','Туман',0,1,.01],['speed','Скорость',0,4,.05],['size','Размер слов',.4,2.4,.05],
+ ['brass','Латунь %',0,80,1],['red','Красный %',0,25,1],['bg','Фон',24,60,1]];
+const ctrls=document.getElementById('ctrls');
+ctrls.innerHTML=RSPEC.map(([k,l,mn,mx,st])=>`<div class="pr"><label>${l}<b id="v_${k}">${P[k]}</b></label><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${st}" value="${P[k]}"></div>`).join('');
+RSPEC.forEach(([k])=>{document.getElementById('r_'+k).oninput=e=>{P[k]=parseFloat(e.target.value);document.getElementById('v_'+k).textContent=P[k];
+  if(['brass','red'].includes(k))applyColors();else if(k==='size')setScale();else applyRender();};});
+
+const QSPEC=[['glow','Свечение',0,2.5,.05],['blur','Разблюр',0,40,1],['scrim','Затемнение',0,1,.02],['qscale','Размер',.6,1.8,.02]];
+const qctrls=document.getElementById('qctrls');
+qctrls.innerHTML=QSPEC.map(([k,l,mn,mx,st])=>`<div class="pr"><label>${l}<b id="qv_${k}">${P[k]}</b></label><input type="range" id="qr_${k}" min="${mn}" max="${mx}" step="${st}" value="${P[k]}"></div>`).join('');
+QSPEC.forEach(([k])=>{document.getElementById('qr_'+k).oninput=e=>{P[k]=parseFloat(e.target.value);document.getElementById('qv_'+k).textContent=P[k];
+  document.documentElement.style.setProperty('--'+k,P[k]);};});
+const QM=[['center','Центр'],['lower','Низ'],['scene','Сцена']];const qmEl=document.getElementById('qmodes');
+qmEl.innerHTML=QM.map(([k,l],i)=>`<button data-q="${k}"${i===0?' class="on"':''}>${l}</button>`).join('');
+qmEl.onclick=e=>{const b=e.target.closest('button');if(!b)return;P.qmode=b.dataset.q;
+  document.body.classList.remove('qm-center','qm-lower','qm-scene');document.body.classList.add('qm-'+b.dataset.q);
+  [...qmEl.children].forEach(x=>x.classList.toggle('on',x===b));};
+document.getElementById('qon').onchange=e=>{P.q=e.target.checked;document.body.classList.toggle('q-on',P.q);P.q?qStart():qStop();};
+document.getElementById('copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(JSON.stringify(P));
+  const b=document.getElementById('copy');b.textContent='Скопировано ✓';setTimeout(()=>b.textContent='Скопировать настройки',1200);};
+
+['glow','blur','scrim','qscale'].forEach(k=>document.documentElement.style.setProperty('--'+k,P[k]));
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{buildSprites();setScale();computeTargets();
+  sprites.forEach((s,i)=>s.position.copy(targets[i]));setup();applyRender();animate();});
+</script>
+</body>
+</html>
