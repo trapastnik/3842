@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Прототип визуализации цитат МТК 38 v2 → mtk38-v2/quotes-test.html.
+Исследователь РАЗМЕЩЕНИЯ цитат МТК 38 v2 → mtk38-v2/quotes-test.html.
 
-Идея-сцена: крупная цитата самого Ленина по-русски (бренд-шрифт, мягкое свечение),
-атрибуция «В. И. Ленин · работа», на фоне — гигантское полупрозрачное «Ленин» в разных
-письменностях (эхо глобуса), плавная смена раз в ~8 с. Бренд-палитра, виньетка.
-Только цитаты show:true (Р5). Может работать и как наложение поверх глобуса.
+Вращающийся WebGL-глобус написаний (на фоне) + цитата Ленина поверх (циклится),
+с переключателем режимов РАЗМЕЩЕНИЯ: Центр · Нижняя треть · Сбоку · Сцена · Уголок.
+Чтобы вживую сравнить, как цитата совмещается с визуалом. Бренд-палитра, шрифты, bloom.
+Только show:true (Р5). Three.js r137 вендорен (без CDN).
 
 Запуск:  python3 mtk38-handoff/build_quotes_viz.py
 """
@@ -22,106 +22,129 @@ OUT = os.path.join(ROOT, "mtk38-v2", "quotes-test.html")
 
 quotes = []
 for q in Q["quotes"]:
-    if not q.get("show"):
-        continue
+    if not q.get("show"): continue
     m = re.search(r"\((\d{4})\)", q.get("work", ""))
-    work = re.sub(r"\s*\(.*$", "", q.get("work", "")).strip()
-    quotes.append({"ru": q["ru"], "en": q.get("en", ""), "work": work, "year": m.group(1) if m else ""})
-
-# фоновые написания (эхо глобуса) — разные письменности
-bg = [{"w": l["writing"], "sc": l["script"]["iso15924"]} for l in D["languages"]]
+    quotes.append({"ru": q["ru"], "en": q.get("en", ""),
+                   "work": re.sub(r"\s*\(.*$", "", q.get("work", "")).strip(),
+                   "year": m.group(1) if m else ""})
+words = [{"w": l["writing"], "sc": l["script"]["iso15924"], "wt": l["weight"]} for l in D["languages"]]
 faces = "\n".join(
     f'@font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
     for s in sorted(embed))
-data_json = json.dumps({"q": quotes, "bg": bg}, ensure_ascii=False)
+data_json = json.dumps({"q": quotes, "words": words}, ensure_ascii=False)
 
 TEMPLATE = r"""<!doctype html>
 <html lang="ru">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>МТК 38 v2 · визуализация цитат</title>
+<title>МТК 38 v2 · размещение цитат</title>
 <style>
 __FACES__
   @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
-  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
   @font-face{font-family:"20 Kopeek";src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-  :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8}
+  :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--graphite:#333d44}
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:#333d44}
-  #stage{position:fixed;inset:0;display:flex;align-items:center;justify-content:center}
-  .vign{position:fixed;inset:0;pointer-events:none;z-index:3;
-    background:radial-gradient(ellipse at 50% 46%, rgba(0,0,0,0) 40%, rgba(18,22,25,.62) 100%)}
-  .grain{position:fixed;inset:0;pointer-events:none;z-index:4;opacity:.05;mix-blend-mode:overlay}
-  #back{position:fixed;z-index:1;left:50%;top:48%;transform:translate(-50%,-50%);
-    font-weight:700;color:#fff;opacity:.05;white-space:nowrap;
-    transition:opacity 1.6s ease, letter-spacing 12s linear;letter-spacing:.02em}
-  .wrap{position:relative;z-index:2;max-width:1180px;padding:0 6vw;text-align:center;
-    transition:opacity 1.1s ease, transform 1.1s ease}
-  .ru{font-family:"21 Cent",Georgia,serif;color:var(--paper);line-height:1.22;
-    text-shadow:0 0 26px rgba(247,249,239,.28),0 0 60px rgba(210,183,115,.12);margin:0}
-  .attr{margin-top:30px;font-family:"20 Kopeek",system-ui,sans-serif;font-size:clamp(14px,1.5vw,19px);
-    color:var(--brass);letter-spacing:.04em}
+  html,body{margin:0;height:100%;overflow:hidden;background:#2d363d;font-family:"20 Kopeek",system-ui,sans-serif}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;z-index:0}
+  .scrim{position:fixed;inset:0;z-index:1;pointer-events:none;transition:opacity .6s, background .6s}
+  .qbox{position:fixed;z-index:2;transition:all .6s ease;opacity:0}
+  .qbox.show{opacity:1}
+  .ru{font-family:"21 Cent",Georgia,serif;color:var(--paper);line-height:1.24;margin:0;
+    text-shadow:0 0 22px rgba(247,249,239,.30),0 0 54px rgba(210,183,115,.14)}
+  .attr{margin-top:22px;font-size:clamp(13px,1.4vw,18px);color:var(--brass);letter-spacing:.04em}
   .attr .nm{color:var(--paper)}
-  .en{margin-top:14px;font-family:"21 Cent",Georgia,serif;font-size:clamp(13px,1.3vw,17px);
-    color:var(--window);font-style:italic;opacity:.85}
-  .dots{position:fixed;z-index:5;left:0;right:0;bottom:26px;display:flex;gap:7px;justify-content:center}
-  .dots i{width:6px;height:6px;border-radius:50%;background:#5d6b74;transition:.4s}
-  .dots i.on{background:var(--brass);width:18px;border-radius:3px}
-  .hint{position:fixed;left:16px;bottom:12px;z-index:5;font:12px system-ui,sans-serif;color:var(--window);opacity:.5}
+  .en{margin-top:12px;font-family:"21 Cent",Georgia,serif;font-style:italic;color:var(--window);
+    font-size:clamp(12px,1.2vw,16px);opacity:.85}
+  /* === режимы размещения === */
+  body.m-center .scrim{background:radial-gradient(ellipse at 50% 50%, rgba(20,25,28,.55) 0%, rgba(20,25,28,.15) 60%)}
+  body.m-center .qbox{left:50%;top:50%;transform:translate(-50%,-50%);max-width:60vw;text-align:center}
+  body.m-center .ru{font-size:clamp(26px,3.4vw,52px)}
+  body.m-lower .scrim{background:linear-gradient(to top, rgba(18,22,25,.82) 0%, rgba(18,22,25,.35) 22%, rgba(0,0,0,0) 42%)}
+  body.m-lower .qbox{left:0;right:0;bottom:6vh;padding:0 8vw;text-align:center}
+  body.m-lower .ru{font-size:clamp(22px,2.6vw,40px)}
+  body.m-side .scrim{background:linear-gradient(to right, rgba(0,0,0,0) 40%, rgba(18,22,25,.86) 64%)}
+  body.m-side .qbox{right:0;top:0;bottom:0;width:44vw;padding:0 5vw;display:flex;flex-direction:column;
+    justify-content:center;text-align:left}
+  body.m-side .ru{font-size:clamp(22px,2.4vw,38px)}
+  body.m-scene .scrim{background:rgba(20,24,27,.62)}
+  body.m-scene .qbox{left:50%;top:50%;transform:translate(-50%,-50%);max-width:70vw;text-align:center}
+  body.m-scene .ru{font-size:clamp(30px,4.4vw,72px)}
+  body.m-corner .scrim{background:linear-gradient(to top right, rgba(18,22,25,.6), rgba(0,0,0,0) 36%)}
+  body.m-corner .qbox{left:3vw;bottom:5vh;max-width:38vw;text-align:left}
+  body.m-corner .ru{font-size:clamp(17px,1.7vw,26px)}
+  body.m-corner .en{display:none}
+  .bar{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:5;display:flex;gap:6px;
+    background:rgba(28,34,39,.8);backdrop-filter:blur(8px);border:1px solid rgba(210,183,115,.3);
+    border-radius:11px;padding:6px}
+  .bar button{background:transparent;border:0;color:var(--telegrey);font-size:13px;padding:7px 13px;
+    border-radius:7px;cursor:pointer;font-family:"20 Kopeek",sans-serif}
+  .bar button.on{background:var(--brass);color:#1a1f23;font-weight:600}
+  .hint{position:fixed;left:16px;bottom:10px;z-index:5;font-size:11px;color:var(--window);opacity:.5;pointer-events:none}
 </style>
 </head>
-<body>
-<div id="back"></div>
-<div id="stage"><div class="wrap" id="wrap">
-  <p class="ru" id="ru"></p>
+<body class="m-center">
+<canvas id="c"></canvas>
+<div class="scrim"></div>
+<div class="qbox" id="qbox"><p class="ru" id="ru"></p>
   <div class="attr"><span class="nm">В. И. Ленин</span> · <span id="src"></span></div>
-  <div class="en" id="en"></div>
-</div></div>
-<div class="vign"></div>
-<canvas class="grain" id="grain"></canvas>
-<div class="dots" id="dots"></div>
-<div class="hint">МТК 38 v2 · визуализация цитат — идея сцены (можно как слой поверх глобуса)</div>
+  <div class="en" id="en"></div></div>
+<div class="bar" id="bar"></div>
+<div class="hint">режимы размещения цитаты над глобусом — переключай сверху</div>
+<script src="./vendor/three/three.min.js"></script>
+<script src="./vendor/three/js/shaders/CopyShader.js"></script>
+<script src="./vendor/three/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="./vendor/three/js/postprocessing/EffectComposer.js"></script>
+<script src="./vendor/three/js/postprocessing/MaskPass.js"></script>
+<script src="./vendor/three/js/postprocessing/ShaderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/RenderPass.js"></script>
+<script src="./vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
-const DATA = __DATA__;
-const Q = DATA.q, BG = DATA.bg;
-const FF = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',sans-serif"
-                : "'Arial Unicode MS','noto-"+iso+"',sans-serif";
-const ru=document.getElementById('ru'), src=document.getElementById('src'), en=document.getElementById('en');
-const wrap=document.getElementById('wrap'), back=document.getElementById('back');
-const dots=document.getElementById('dots');
-Q.forEach((_,i)=>{const d=document.createElement('i');dots.appendChild(d);});
-const dn=[...dots.children];
-let i=-1;
-function size(t){ const n=t.length; return n<28?'clamp(34px,5.2vw,76px)':n<60?'clamp(28px,3.8vw,54px)':'clamp(22px,2.9vw,40px)'; }
-function show(n){
-  const q=Q[n];
-  ru.textContent=q.ru; ru.style.fontSize=size(q.ru);
-  src.textContent=q.work+(q.year?(', '+q.year):'');
-  en.textContent=q.en;
-  const b=BG[Math.floor(Math.random()*BG.length)];
-  back.style.fontFamily=FF(b.sc); back.textContent=b.w;
-  back.style.fontSize=Math.min(innerWidth*0.62,innerHeight*0.7)+'px';
-  dn.forEach((d,k)=>d.classList.toggle('on',k===n));
-}
-function fade(){
-  wrap.style.opacity=0; wrap.style.transform='translateY(10px)';
-  back.style.opacity=0;
-  setTimeout(()=>{ i=(i+1)%Q.length; show(i);
-    wrap.style.opacity=1; wrap.style.transform='translateY(0)'; back.style.opacity=.06;
-  },1100);
-}
-// плёночное зерно
-const gc=document.getElementById('grain'),gx=gc.getContext('2d');
-function grain(){gc.width=160;gc.height=160;const im=gx.createImageData(160,160);
-  for(let k=0;k<im.data.length;k+=4){const v=Math.random()*255|0;im.data[k]=im.data[k+1]=im.data[k+2]=v;im.data[k+3]=255;}
-  gx.putImageData(im,0,0);}
-grain();gc.style.width=gc.style.height='100%';
-
+const DATA=__DATA__, Q=DATA.q, WORDS=DATA.words;
+const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
+const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-"+iso+"',sans-serif";
+// --- глобус ---
+const cv=document.getElementById('c');
+const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+renderer.setClearColor(0x2d363d,1);
+const scene=new THREE.Scene(); scene.fog=new THREE.FogExp2(0x2d363d,0.035);
+const camera=new THREE.PerspectiveCamera(45,1,0.1,100); camera.position.z=15;
+const group=new THREE.Group(); scene.add(group);
+function tex(text,iso,color){const fs=128,pad=20,m=document.createElement('canvas'),x=m.getContext('2d');
+  x.font='700 '+fs+'px '+FF(iso);const tw=Math.max(24,x.measureText(text).width);
+  m.width=Math.ceil(tw)+pad*2;m.height=fs+pad*2;x.font='700 '+fs+'px '+FF(iso);
+  x.textAlign='center';x.textBaseline='middle';x.fillStyle=color;x.fillText(text,m.width/2,m.height/2);
+  const t=new THREE.CanvasTexture(m);t.minFilter=THREE.LinearFilter;return{t,aspect:m.width/m.height};}
+(function build(){const N=WORDS.length,R=6.2,gold=Math.PI*(3-Math.sqrt(5));
+  WORDS.forEach((d,i)=>{const h=(i*131)%100;const col=h<5?RED:h<37?BRASS:(i%2?PAPER:TELE);
+    const {t,aspect}=tex(d.w,d.sc,col);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:true,opacity:0.5+(d.wt-1)*0.22}));
+    const s=0.9+d.wt*0.5;sp.scale.set(s*aspect,s,1);
+    const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;
+    sp.position.set(Math.cos(th)*r*R,y*R,Math.sin(th)*r*R);group.add(sp);});})();
+let composer,bloom;
+function setup(){const W=innerWidth,H=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
+  renderer.setPixelRatio(dpr);renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+  composer=new THREE.EffectComposer(renderer);composer.addPass(new THREE.RenderPass(scene,camera));
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),0.82,0.55,0.72);composer.addPass(bloom);
+  composer.setPixelRatio(dpr);composer.setSize(W,H);}
+addEventListener('resize',setup);
+function animate(){requestAnimationFrame(animate);group.rotation.y+=0.0014;composer.render();}
+// --- цитаты ---
+const ru=document.getElementById('ru'),src=document.getElementById('src'),en=document.getElementById('en'),qbox=document.getElementById('qbox');
+let qi=-1;
+function show(n){const q=Q[n];ru.textContent=q.ru;src.textContent=q.work+(q.year?(', '+q.year):'');en.textContent=q.en;}
+function cycle(){qbox.classList.remove('show');
+  setTimeout(()=>{qi=(qi+1)%Q.length;show(qi);qbox.classList.add('show');},650);}
+// --- переключатель режимов ---
+const MODES=[['m-center','Центр'],['m-lower','Нижняя треть'],['m-side','Сбоку'],['m-scene','Сцена'],['m-corner','Уголок']];
+const bar=document.getElementById('bar');
+bar.innerHTML=MODES.map(([m,l],i)=>`<button data-m="${m}"${i===0?' class="on"':''}>${l}</button>`).join('');
+bar.onclick=e=>{const b=e.target.closest('button');if(!b)return;
+  document.body.className=b.dataset.m;
+  [...bar.children].forEach(x=>x.classList.toggle('on',x===b));};
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{
-  i=0; show(0); wrap.style.opacity=1; back.style.opacity=.06;
-  setInterval(fade, 8000);
-});
+  setup();animate();qi=0;show(0);qbox.classList.add('show');setInterval(cycle,8000);});
 </script>
 </body>
 </html>
@@ -129,4 +152,4 @@ grain();gc.style.width=gc.style.height='100%';
 html = TEMPLATE.replace("__FACES__", faces).replace("__DATA__", data_json)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
-print(f"written: {OUT}  (цитат show:true {len(quotes)}, фоновых написаний {len(bg)})")
+print(f"written: {OUT}  (цитат show:true {len(quotes)}, режимов размещения 5, глобус WebGL)")
