@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>МТК 38 v2 · рендер-тест</title>
+<style>
+@font-face{font-family:"noto-Arab";src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";src:url("./fonts/noto/Beng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";src:url("./fonts/noto/Deva.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";src:url("./fonts/noto/Ethi.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";src:url("./fonts/noto/Geor.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";src:url("./fonts/noto/Grek.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";src:url("./fonts/noto/Gujr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";src:url("./fonts/noto/Guru.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";src:url("./fonts/noto/Hans.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";src:url("./fonts/noto/Hant.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";src:url("./fonts/noto/Hebr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";src:url("./fonts/noto/Jpan.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";src:url("./fonts/noto/Khmr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";src:url("./fonts/noto/Knda.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";src:url("./fonts/noto/Kore.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";src:url("./fonts/noto/Laoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";src:url("./fonts/noto/Mlym.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";src:url("./fonts/noto/Mtei.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";src:url("./fonts/noto/Mymr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Nkoo";src:url("./fonts/noto/Nkoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";src:url("./fonts/noto/Olck.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";src:url("./fonts/noto/Orya.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";src:url("./fonts/noto/Sinh.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";src:url("./fonts/noto/Taml.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";src:url("./fonts/noto/Telu.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tfng";src:url("./fonts/noto/Tfng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";src:url("./fonts/noto/Thaa.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
+  html,body{margin:0;height:100%;background:#384249;overflow:hidden}
+  #c{display:block;width:100vw;height:100vh}
+  .hint{position:absolute;left:16px;bottom:12px;font:12px system-ui,sans-serif;color:#9DA3A8;
+    letter-spacing:.04em;opacity:.6;z-index:2}
+  .hint b{color:#D2B773;font-weight:600}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div class="hint">МТК 38 v2 · рендер-тест арт-качества — <b>bloom + зерно + виньетка</b>, 52 написания, бренд-шрифты</div>
+<script>
+const WORDS = [{"w": "Ленин", "sc": "Cyrl", "wt": 3}, {"w": "Lenin", "sc": "Latn", "wt": 3}, {"w": "列宁", "sc": "Hans", "wt": 3}, {"w": "लेनिन", "sc": "Deva", "wt": 1}, {"w": "LENINI", "sc": "Latn", "wt": 1}, {"w": "ሌኒን", "sc": "Ethi", "wt": 1}, {"w": "لينين", "sc": "Arab", "wt": 3}, {"w": "Լենին", "sc": "Armn", "wt": 1}, {"w": "লেনিন", "sc": "Beng", "wt": 1}, {"w": "Ленін", "sc": "Cyrl", "wt": 1}, {"w": "لينن", "sc": "Arab", "wt": 1}, {"w": "লেনিন", "sc": "Beng", "wt": 2}, {"w": "လီနင်", "sc": "Mymr", "wt": 1}, {"w": "LENJIN", "sc": "Latn", "wt": 1}, {"w": "ʻO LENIN", "sc": "Latn", "wt": 1}, {"w": "Λένιν", "sc": "Grek", "wt": 1}, {"w": "ლენინი", "sc": "Geor", "wt": 1}, {"w": "LÉNIN", "sc": "Latn", "wt": 1}, {"w": "લેનિન", "sc": "Gujr", "wt": 1}, {"w": "لنین", "sc": "Arab", "wt": 1}, {"w": "LËNIN", "sc": "Latn", "wt": 1}, {"w": "לנין", "sc": "Hebr", "wt": 1}, {"w": "לענין", "sc": "Hebr", "wt": 1}, {"w": "ಲೆನಿನ್", "sc": "Knda", "wt": 1}, {"w": "列寧", "sc": "Hant", "wt": 2}, {"w": "ലെനിൻ", "sc": "Mlym", "wt": 1}, {"w": "Ļeņins", "sc": "Latn", "wt": 1}, {"w": "LENINAS", "sc": "Latn", "wt": 1}, {"w": "ເລນິນ", "sc": "Laoo", "wt": 1}, {"w": "លេនីន", "sc": "Khmr", "wt": 1}, {"w": "레닌", "sc": "Kore", "wt": 2}, {"w": "ꯂꯦꯅꯤꯟ", "sc": "Mtei", "wt": 1}, {"w": "LƐNIN", "sc": "Latn", "wt": 1}, {"w": "ଲେନିନ୍", "sc": "Orya", "wt": 1}, {"w": "LEENINII", "sc": "Latn", "wt": 1}, {"w": "ਲੈਨਿਨ", "sc": "Guru", "wt": 2}, {"w": "LÊNIN", "sc": "Latn", "wt": 2}, {"w": "ᱞᱮᱱᱤᱱ", "sc": "Olck", "wt": 1}, {"w": "لینین", "sc": "Arab", "wt": 2}, {"w": "لىنىن", "sc": "Arab", "wt": 1}, {"w": "LĒNINI", "sc": "Latn", "wt": 1}, {"w": "లెనిన్", "sc": "Telu", "wt": 1}, {"w": "லெனின்", "sc": "Taml", "wt": 2}, {"w": "ලෙනින්", "sc": "Sinh", "wt": 1}, {"w": "Лењин", "sc": "Cyrl", "wt": 1}, {"w": "LÉNINE", "sc": "Latn", "wt": 3}, {"w": "လီၢ်ခ့ၣ်ႇ", "sc": "Mymr", "wt": 1}, {"w": "レーニン", "sc": "Jpan", "wt": 2}, {"w": "ལེ་ནིན", "sc": "Tibt", "wt": 1}, {"w": "ލެނިން", "sc": "Thaa", "wt": 1}, {"w": "ߟߋߣߌ߲", "sc": "Nkoo", "wt": 1}, {"w": "ⵍⵉⵏⵉⵏ", "sc": "Tfng", "wt": 1}];
+const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
+const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',sans-serif"
+                : "'Arial Unicode MS','noto-"+iso+"',sans-serif";
+const PAPER='#F7F9EF', TELE='#CFD0CF', BRASS='#D2B773', RED='#A02128';
+const cv=document.getElementById('c'), cx=cv.getContext('2d');
+const off=document.createElement('canvas'), ox=off.getContext('2d');
+let W=0,H=0,DPR=Math.min(2,window.devicePixelRatio||1);
+function resize(){W=innerWidth;H=innerHeight;[cv,off].forEach(c=>{c.width=W*DPR;c.height=H*DPR;});
+  cx.setTransform(DPR,0,0,DPR,0,0);ox.setTransform(DPR,0,0,DPR,0,0);}
+addEventListener('resize',resize);resize();
+
+const rnd=(a,b)=>a+Math.random()*(b-a);
+let field=[];
+function build(){
+  field=WORDS.map((d,i)=>{
+    const z=rnd(0.18,1);                 // глубина
+    const col = Math.random()<0.06?RED : Math.random()<0.28?BRASS : Math.random()<0.5?PAPER:TELE;
+    return {...d, z, x:rnd(-0.1,1.1), y:rnd(0.06,0.94),
+      vx:rnd(-0.6,0.6)*(0.2+z), col, base:(14+d.wt*7)};
+  }).sort((a,b)=>a.z-b.z);
+}
+build();
+
+// зерно (статичный тайл)
+const gn=document.createElement('canvas');gn.width=gn.height=140;const gc=gn.getContext('2d');
+{const im=gc.createImageData(140,140);for(let i=0;i<im.data.length;i+=4){const v=200+Math.random()*55|0;
+  im.data[i]=im.data[i+1]=im.data[i+2]=v;im.data[i+3]=Math.random()*22;}gc.putImageData(im,0,0);}
+const grain=cx.createPattern(gn,'repeat');
+
+let hero=0, heroT=0;
+function draw(t){
+  // фон: радиальный графит (светлее в центре → виньетка встроена)
+  ox.setTransform(DPR,0,0,DPR,0,0);
+  const g=ox.createRadialGradient(W*0.5,H*0.45,0,W*0.5,H*0.5,Math.max(W,H)*0.75);
+  g.addColorStop(0,'#4b5b66');g.addColorStop(0.6,'#42505a');g.addColorStop(1,'#333d44');
+  ox.fillStyle=g;ox.fillRect(0,0,W,H);
+  ox.textAlign='center';ox.textBaseline='middle';
+  // поле слов (дальние → ближние)
+  for(const w of field){
+    w.x+=(w.vx*0.00018*t?0:0); // (заполнено ниже через dt)
+  }
+  for(const w of field){
+    const size=w.base*(0.5+w.z*1.7)*(H/780);
+    ox.font=(w.z>0.7?'700 ':'')+size+"px "+ff(w.sc);
+    ox.globalAlpha=0.10+w.z*0.72;
+    ox.fillStyle=w.col;
+    const px=((w.x%1.2+1.2)%1.2-0.1)*W, py=w.y*H;
+    ox.fillText(w.w, px, py);
+  }
+  ox.globalAlpha=1;
+  // hero — крупное слово циклом
+  const hw=WORDS[hero];
+  const hs=Math.min(W*0.36, H*0.34)* (0.85+0.15*Math.sin(t*0.0011));
+  const fade=Math.min(1,heroT/900)*Math.min(1,(3600-heroT)/700);
+  ox.globalAlpha=Math.max(0,fade)*0.92;
+  ox.font="700 "+hs+"px "+ff(hw.sc);
+  ox.fillStyle=PAPER;
+  ox.fillText(hw.w, W*0.5, H*0.47);
+  ox.globalAlpha=1;
+
+  // на основной канвас: сцена + bloom (размытая «светлая» копия)
+  cx.setTransform(1,0,0,1,0,0);cx.clearRect(0,0,cv.width,cv.height);
+  cx.drawImage(off,0,0);
+  cx.globalCompositeOperation='lighter';cx.globalAlpha=0.55;
+  cx.filter='blur('+(7*DPR)+'px)';cx.drawImage(off,0,0);
+  cx.filter='none';cx.globalAlpha=1;cx.globalCompositeOperation='source-over';
+  // зерно
+  cx.setTransform(DPR,0,0,DPR,0,0);
+  cx.globalAlpha=0.5;cx.fillStyle=grain;cx.fillRect(0,0,W,H);cx.globalAlpha=1;
+  // виньетка
+  const v=cx.createRadialGradient(W*0.5,H*0.5,Math.min(W,H)*0.3,W*0.5,H*0.5,Math.max(W,H)*0.62);
+  v.addColorStop(0,'rgba(0,0,0,0)');v.addColorStop(1,'rgba(20,25,28,0.55)');
+  cx.fillStyle=v;cx.fillRect(0,0,W,H);
+}
+let last=0;
+function loop(t){
+  const dt=Math.min(40,t-last);last=t;
+  for(const w of field){ w.x+=w.vx*0.00006*dt; }
+  heroT+=dt; if(heroT>3600){heroT=0;hero=(hero+1)%WORDS.length;}
+  draw(t);requestAnimationFrame(loop);
+}
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>requestAnimationFrame(loop));
+</script>
+</body>
+</html>

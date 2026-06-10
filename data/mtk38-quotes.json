@@ -1,0 +1,151 @@
+{
+  "mtk": 38,
+  "title": "Цитаты В.И. Ленина",
+  "status": "v2-draft",
+  "note": "Короткие фразы САМОГО Ленина (не «о Ленине» — то зона МТК 42). Верификация против ПСС (5-е изд.) и Marxists Internet Archive (marxists.org). Поле show: true = подтверждено, можно показывать; false = спорно/по мемуарам, НЕ показывать на стенде (правило Р5). Собрано research-проходом 2026-06-10, каждая — со ссылкой для перепроверки. Финальную редакцию текста согласовать с куратором.",
+  "schema": {
+    "id": "kebab-slug",
+    "ru": "оригинал (формулировка ПСС)",
+    "en": "перевод (Lenin Collected Works, если есть)",
+    "work": "произведение + год",
+    "pss": "том ПСС (5-е изд.) и/или том LCW",
+    "source": "URL для проверки",
+    "confidence": "high | medium | low",
+    "show": "true|false — выводить ли на стенд",
+    "note": "оговорки"
+  },
+  "quotes": [
+    {
+      "id": "electrification",
+      "ru": "Коммунизм есть Советская власть плюс электрификация всей страны.",
+      "en": "Communism is Soviet power plus the electrification of the whole country.",
+      "work": "Наши внешнее и внутреннее положение и задачи партии (речь 21 ноября 1920)",
+      "pss": "ПСС т. 42, с. 30 · LCW vol. 31",
+      "source": "https://www.marxists.org/archive/lenin/works/1920/nov/21.htm",
+      "confidence": "high", "show": true,
+      "note": "Полная фраза: «…так как без электрификации поднять промышленность невозможно»."
+    },
+    {
+      "id": "theory",
+      "ru": "Без революционной теории не может быть и революционного движения.",
+      "en": "Without revolutionary theory there can be no revolutionary movement.",
+      "work": "Что делать? (1902), гл. I",
+      "pss": "ПСС т. 6, с. 24 · LCW vol. 5",
+      "source": "https://www.marxists.org/archive/lenin/works/1901/witbd/i.htm",
+      "confidence": "high", "show": true, "note": ""
+    },
+    {
+      "id": "learn3",
+      "ru": "Учиться, учиться и учиться.",
+      "en": "Learn, learn, and learn.",
+      "work": "Лучше меньше, да лучше (1923)",
+      "pss": "ПСС т. 45, с. 391 · LCW vol. 33",
+      "source": "https://www.marxists.org/archive/lenin/works/1923/mar/02.htm",
+      "confidence": "medium", "show": true,
+      "note": "Компактный лозунг — советская популяризация. Точная формулировка ПСС: «во-первых — учиться, во-вторых — учиться и в-третьих — учиться»."
+    },
+    {
+      "id": "youth-learn",
+      "ru": "Задачи молодёжи… можно было бы выразить одним словом: учиться.",
+      "en": "The tasks of the youth… might be summed up in a single word: learn.",
+      "work": "Задачи союзов молодёжи (речь на III съезде комсомола, 2 октября 1920)",
+      "pss": "ПСС т. 41, с. 298 · LCW vol. 31",
+      "source": "https://www.marxists.org/archive/lenin/works/1920/oct/02.htm",
+      "confidence": "high", "show": true, "note": "Дословно из речи."
+    },
+    {
+      "id": "fewer-better",
+      "ru": "Лучше меньше, да лучше.",
+      "en": "Better fewer, but better.",
+      "work": "Лучше меньше, да лучше (1923) — заглавие последней статьи",
+      "pss": "ПСС т. 45, с. 389 · LCW vol. 33",
+      "source": "https://www.marxists.org/archive/lenin/works/1923/mar/02.htm",
+      "confidence": "high", "show": true, "note": ""
+    },
+    {
+      "id": "religion-opium",
+      "ru": "Религия есть опиум народа.",
+      "en": "Religion is opium for the people.",
+      "work": "Социализм и религия (1905)",
+      "pss": "ПСС т. 12, с. 142 · LCW vol. 10",
+      "source": "https://www.marxists.org/archive/lenin/works/1905/dec/03.htm",
+      "confidence": "high", "show": true,
+      "note": "Ленин повторяет Маркса. Возможна политическая чувствительность — на усмотрение куратора."
+    },
+    {
+      "id": "no-work-no-eat",
+      "ru": "Кто не работает, тот не ест.",
+      "en": "He who does not work, neither shall he eat.",
+      "work": "Государство и революция (1917)",
+      "pss": "ПСС т. 33, с. 95 · LCW vol. 25",
+      "source": "https://www.marxists.org/archive/lenin/works/1917/staterev/ch05.htm",
+      "confidence": "medium", "show": true,
+      "note": "Восходит к Библии (2 Фес 3:10); Ленин принял как «первый принцип социализма». Не оригинал Ленина, но подлинно им использовано."
+    },
+    {
+      "id": "truth-concrete",
+      "ru": "Истина всегда конкретна.",
+      "en": "Truth is always concrete.",
+      "work": "Шаг вперёд, два шага назад (1904)",
+      "pss": "ПСС т. 8, с. 400 · LCW vol. 7",
+      "source": "https://www.marxists.org/archive/lenin/works/1904/onestep/",
+      "confidence": "medium", "show": true, "note": "Формулировка восходит к Гегелю; у Ленина встречается, ПСС-атрибуция."
+    },
+    {
+      "id": "society-freedom",
+      "ru": "Жить в обществе и быть свободным от общества нельзя.",
+      "en": "One cannot live in society and be free from society.",
+      "work": "Партийная организация и партийная литература (1905)",
+      "pss": "ПСС т. 12, с. 104 · LCW vol. 10",
+      "source": "https://www.marxists.org/archive/lenin/works/1905/nov/13.htm",
+      "confidence": "high", "show": true, "note": "Дословно."
+    },
+    {
+      "id": "marx-true",
+      "ru": "Учение Маркса всесильно, потому что оно верно.",
+      "en": "The Marxist doctrine is omnipotent because it is true.",
+      "work": "Три источника и три составных части марксизма (1913)",
+      "pss": "ПСС т. 23, с. 43 · LCW vol. 19",
+      "source": "https://www.marxists.org/archive/lenin/works/1913/mar/x01.htm",
+      "confidence": "high", "show": true, "note": "Первая строка статьи."
+    },
+    {
+      "id": "organisation",
+      "ru": "Дайте нам организацию революционеров — и мы перевернём Россию!",
+      "en": "Give us an organisation of revolutionaries, and we will overturn Russia!",
+      "work": "Что делать? (1902), гл. IV",
+      "pss": "ПСС т. 6, с. 127 · LCW vol. 5",
+      "source": "https://www.marxists.org/archive/lenin/works/1901/witbd/iv.htm",
+      "confidence": "high", "show": true, "note": ""
+    },
+    {
+      "id": "state-machine",
+      "ru": "Государство есть машина для угнетения одного класса другим.",
+      "en": "The state is a machine for the oppression of one class by another.",
+      "work": "Государство и революция (1917)",
+      "pss": "ПСС т. 33, с. 24 · LCW vol. 25",
+      "source": "https://www.marxists.org/archive/lenin/works/1917/staterev/ch01.htm",
+      "confidence": "high", "show": true, "note": "Перефразирование Энгельса; ключевой тезис работы."
+    },
+    {
+      "id": "cook-state",
+      "ru": "Мы не утописты. Мы знаем, что любой чернорабочий и любая кухарка не способны сейчас же вступить в управление государством.",
+      "en": "We are not utopians. We know that an unskilled labourer or a cook cannot immediately get on with the job of state administration.",
+      "work": "Удержат ли большевики государственную власть? (1917)",
+      "pss": "ПСС т. 34, с. 315 · LCW vol. 26",
+      "source": "https://www.marxists.org/archive/lenin/works/1917/oct/01.htm",
+      "confidence": "high", "show": true,
+      "note": "ПОДЛИННАЯ формулировка. Знаменитое «каждая кухарка может управлять государством» — искажение (через Маяковского/плакат 1925), обратное смыслу. Длинновата для стенда."
+    },
+    {
+      "id": "cinema",
+      "ru": "Из всех искусств для нас важнейшим является кино.",
+      "en": "Of all the arts, for us the cinema is the most important.",
+      "work": "Приписывается по воспоминанию А. Луначарского (беседа ~1922, опубл. 1925)",
+      "pss": "ПСС т. 44, с. 579 (редакционное примечание, не текст Ленина)",
+      "source": "https://csdfmuseum.ru/articles/229",
+      "confidence": "low", "show": false,
+      "note": "СПОРНО — известно только по мемуару Луначарского, автографа/стенограммы нет. По Р5 на стенд НЕ выводим. Расширение «кино и цирк» — фабрикация."
+    }
+  ]
+}
