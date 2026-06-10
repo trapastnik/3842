@@ -68,6 +68,10 @@
   .review input.corr{display:none}
   .card.v-bad .review input.corr{display:block}
   .corr.writing-font{font-size:20px}
+  .canon{font-size:12px;color:var(--graphite);text-align:center;margin:-2px 0 0}
+  .canon .canon-str{background:#eef0e6;padding:1px 7px;border-radius:4px;user-select:all}
+  .cp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:var(--window);
+    text-align:center;word-break:break-all;margin-top:2px;user-select:all}
   footer{padding:16px 24px;color:var(--window);font-size:12px;text-align:center}
   .hide{display:none}
 </style>
@@ -107,6 +111,7 @@ let state = {};
 try{ state = JSON.parse(localStorage.getItem(KEY)||'{}'); }catch(e){}
 const grid = document.getElementById('grid');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const cps = s => [...String(s)].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
 
 const langs = DATA.languages.slice().sort((a,b)=> b.weight-a.weight || a.name_ru.localeCompare(b.name_ru,'ru'));
 document.getElementById('total').textContent = langs.length;
@@ -128,6 +133,8 @@ langs.forEach(l=>{
   card.dataset.id = l.id; card.dataset.flag = flag?'1':'0';
   card.innerHTML = `
     <div class="writing writing-font" dir="${dir}">${esc(l.writing)}</div>
+    <div class="canon">канон из файла: <span class="canon-str writing-font" dir="${dir}">${esc(l.writing)}</span></div>
+    <div class="cp">${cps(l.writing)}</div>
     <div><span class="name">${esc(l.name_ru)}</span>
       <span class="endo writing-font" dir="${dir}"> · ${esc(l.endonym)}</span></div>
     <div class="rows">
@@ -146,6 +153,7 @@ langs.forEach(l=>{
         <button class="vbad">✗ неверно</button>
       </div>
       <input class="corr writing-font" dir="${dir}" placeholder="правильное написание">
+      <div class="corr-cp cp"></div>
       <input class="cmt" placeholder="комментарий (необязательно)">
     </div>`;
   grid.appendChild(card);
@@ -163,9 +171,12 @@ langs.forEach(l=>{
   paint();
   function commit(){ state[l.id] = {verdict:st.verdict, correction:corr.value.trim(), comment:cmt.value.trim(),
     name_ru:l.name_ru, original_writing:l.writing}; save(); }
+  const corrcp = card.querySelector('.corr-cp');
+  function echoCorr(){ corrcp.textContent = corr.value ? cps(corr.value) : ''; }
+  echoCorr();
   ok.onclick = ()=>{ st.verdict='ok'; paint(); commit(); };
   bad.onclick = ()=>{ st.verdict='bad'; paint(); commit(); };
-  corr.oninput = commit; cmt.oninput = commit;
+  corr.oninput = ()=>{ echoCorr(); commit(); }; cmt.oninput = commit;
 });
 updateProg();
 
