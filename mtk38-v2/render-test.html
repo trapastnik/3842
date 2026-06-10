@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>МТК 38 v2 · рендер-тест (WebGL)</title>
+<title>МТК 38 v2 · рендер-сэндбокс (WebGL)</title>
 <style>
 @font-face{font-family:"noto-Arab";src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Armn";src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
@@ -36,17 +36,37 @@
 @font-face{font-family:"noto-Tibt";src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
   @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
   @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
-  html,body{margin:0;height:100%;background:#333d44;overflow:hidden}
-  #c{display:block;width:100vw;height:100vh;cursor:grab}
-  #c:active{cursor:grabbing}
-  .hint{position:absolute;left:16px;bottom:12px;font:12px system-ui,sans-serif;color:#9DA3A8;
-    letter-spacing:.04em;opacity:.6;z-index:2;pointer-events:none}
-  .hint b{color:#D2B773;font-weight:600}
+  html,body{margin:0;height:100%;background:#2d363d;overflow:hidden;font-family:"20 Kopeek",system-ui,sans-serif}
+  #c{display:block;width:100vw;height:100vh;cursor:grab}#c:active{cursor:grabbing}
+  #panel{position:fixed;top:14px;right:14px;width:236px;z-index:5;background:rgba(28,34,39,.82);
+    backdrop-filter:blur(8px);border:1px solid rgba(210,183,115,.3);border-radius:12px;
+    padding:12px 14px;color:#CFD0CF;font-size:12px;max-height:94vh;overflow:auto}
+  #panel h3{margin:0 0 8px;font-size:13px;color:#D2B773;font-weight:600;letter-spacing:.04em}
+  .row{margin:8px 0}
+  .row label{display:flex;justify-content:space-between;margin-bottom:3px}
+  .row label b{color:#F7F9EF;font-weight:600}
+  input[type=range]{width:100%;accent-color:#D2B773;height:16px}
+  .btns{display:flex;gap:6px;margin-top:10px}
+  .btns button{flex:1;background:#D2B773;color:#1a1f23;border:0;border-radius:7px;padding:7px;
+    font-weight:600;cursor:pointer;font-size:12px}
+  .btns button.alt{background:transparent;color:#D2B773;border:1px solid #D2B773}
+  #out{margin-top:9px;font-size:10px;color:#9DA3A8;word-break:break-all;font-family:ui-monospace,monospace}
+  .toggle{position:fixed;top:14px;right:14px;z-index:6;display:none;background:rgba(28,34,39,.82);
+    border:1px solid rgba(210,183,115,.3);border-radius:10px;color:#D2B773;padding:8px 11px;cursor:pointer}
+  .hint{position:fixed;left:16px;bottom:12px;font-size:12px;color:#9DA3A8;opacity:.6;z-index:2;pointer-events:none}
+  .hint b{color:#D2B773}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div class="hint">МТК 38 v2 · WebGL рендер-тест — глобус из 52 написаний · <b>UnrealBloom</b> · потяни мышью</div>
+<div class="hint">МТК 38 v2 · рендер-сэндбокс — крути параметры справа, тяни глобус мышью · <b>WebGL + UnrealBloom</b></div>
+<div id="panel">
+  <h3>Параметры рендера</h3>
+  <div id="ctrls"></div>
+  <div class="btns"><button id="copy">Скопировать</button><button class="alt" id="reset">Сброс</button></div>
+  <div id="out"></div>
+</div>
+<button class="toggle" id="toggle">⚙</button>
 <script src="./vendor/three/three.min.js"></script>
 <script src="./vendor/three/js/shaders/CopyShader.js"></script>
 <script src="./vendor/three/js/shaders/LuminosityHighPassShader.js"></script>
@@ -57,41 +77,53 @@
 <script src="./vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
 <script>
 const WORDS = [{"w": "Ленин", "sc": "Cyrl", "wt": 3}, {"w": "Lenin", "sc": "Latn", "wt": 3}, {"w": "列宁", "sc": "Hans", "wt": 3}, {"w": "लेनिन", "sc": "Deva", "wt": 1}, {"w": "LENINI", "sc": "Latn", "wt": 1}, {"w": "ሌኒን", "sc": "Ethi", "wt": 1}, {"w": "لينين", "sc": "Arab", "wt": 3}, {"w": "Լենին", "sc": "Armn", "wt": 1}, {"w": "লেনিন", "sc": "Beng", "wt": 1}, {"w": "Ленін", "sc": "Cyrl", "wt": 1}, {"w": "لينن", "sc": "Arab", "wt": 1}, {"w": "লেনিন", "sc": "Beng", "wt": 2}, {"w": "လီနင်", "sc": "Mymr", "wt": 1}, {"w": "LENJIN", "sc": "Latn", "wt": 1}, {"w": "ʻO LENIN", "sc": "Latn", "wt": 1}, {"w": "Λένιν", "sc": "Grek", "wt": 1}, {"w": "ლენინი", "sc": "Geor", "wt": 1}, {"w": "LÉNIN", "sc": "Latn", "wt": 1}, {"w": "લેનિન", "sc": "Gujr", "wt": 1}, {"w": "لنین", "sc": "Arab", "wt": 1}, {"w": "LËNIN", "sc": "Latn", "wt": 1}, {"w": "לנין", "sc": "Hebr", "wt": 1}, {"w": "לענין", "sc": "Hebr", "wt": 1}, {"w": "ಲೆನಿನ್", "sc": "Knda", "wt": 1}, {"w": "列寧", "sc": "Hant", "wt": 2}, {"w": "ലെനിൻ", "sc": "Mlym", "wt": 1}, {"w": "Ļeņins", "sc": "Latn", "wt": 1}, {"w": "LENINAS", "sc": "Latn", "wt": 1}, {"w": "ເລນິນ", "sc": "Laoo", "wt": 1}, {"w": "លេនីន", "sc": "Khmr", "wt": 1}, {"w": "레닌", "sc": "Kore", "wt": 2}, {"w": "ꯂꯦꯅꯤꯟ", "sc": "Mtei", "wt": 1}, {"w": "LƐNIN", "sc": "Latn", "wt": 1}, {"w": "ଲେନିନ୍", "sc": "Orya", "wt": 1}, {"w": "LEENINII", "sc": "Latn", "wt": 1}, {"w": "ਲੈਨਿਨ", "sc": "Guru", "wt": 2}, {"w": "LÊNIN", "sc": "Latn", "wt": 2}, {"w": "ᱞᱮᱱᱤᱱ", "sc": "Olck", "wt": 1}, {"w": "لینین", "sc": "Arab", "wt": 2}, {"w": "لىنىن", "sc": "Arab", "wt": 1}, {"w": "LĒNINI", "sc": "Latn", "wt": 1}, {"w": "లెనిన్", "sc": "Telu", "wt": 1}, {"w": "லெனின்", "sc": "Taml", "wt": 2}, {"w": "ලෙනින්", "sc": "Sinh", "wt": 1}, {"w": "Лењин", "sc": "Cyrl", "wt": 1}, {"w": "LÉNINE", "sc": "Latn", "wt": 3}, {"w": "လီၢ်ခ့ၣ်ႇ", "sc": "Mymr", "wt": 1}, {"w": "レーニン", "sc": "Jpan", "wt": 2}, {"w": "ལེ་ནིན", "sc": "Tibt", "wt": 1}, {"w": "ލެނިން", "sc": "Thaa", "wt": 1}, {"w": "ߟߋߣߌ߲", "sc": "Nkoo", "wt": 1}, {"w": "ⵍⵉⵏⵉⵏ", "sc": "Tfng", "wt": 1}];
-const PAPER='#F7F9EF', TELE='#CFD0CF', BRASS='#D2B773', RED='#A02128';
+const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
 const FF = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',sans-serif"
                 : "'Arial Unicode MS','noto-"+iso+"',sans-serif";
+// параметры (живые + структурные)
+const DEF={bloom:0.85, radius:0.55, thresh:0.70, expo:1.10, fog:0.30, spin:1.6,
+           R:6.2, size:1.0, brass:32, red:5, bg:46};
+let P=Object.assign({},DEF);
+const SPEC=[
+ ['bloom','Bloom — сила',0,2.5,0.01],['radius','Bloom — радиус',0,1,0.01],['thresh','Bloom — порог',0,1,0.01],
+ ['expo','Экспозиция',0.4,2,0.01],['fog','Глубина/туман',0,1,0.01],['spin','Вращение',0,6,0.1],
+ ['R','Радиус сферы',3.5,9,0.1],['size','Размер слов',0.4,2.4,0.05],
+ ['brass','Доля латуни %',0,80,1],['red','Доля красного %',0,25,1],['bg','Фон (светлота)',24,64,1]];
+
 const cv=document.getElementById('c');
 const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
-renderer.setClearColor(0x333d44,1);
+renderer.toneMapping=THREE.ACESFilmicToneMapping;
 const scene=new THREE.Scene();
-const camera=new THREE.PerspectiveCamera(45,1,0.1,100);
-camera.position.z=15;
+const camera=new THREE.PerspectiveCamera(45,1,0.1,100); camera.position.z=15;
 const group=new THREE.Group(); scene.add(group);
-
+const texCache={};
 function tex(text,iso,color){
+  const k=text+'|'+color, c0=texCache[k]; if(c0)return c0;
   const fs=130,pad=22,m=document.createElement('canvas'),x=m.getContext('2d');
-  x.font='700 '+fs+'px '+FF(iso);
-  const tw=Math.max(24,x.measureText(text).width);
+  x.font='700 '+fs+'px '+FF(iso); const tw=Math.max(24,x.measureText(text).width);
   m.width=Math.ceil(tw)+pad*2; m.height=fs+pad*2;
   x.font='700 '+fs+'px '+FF(iso); x.textAlign='center'; x.textBaseline='middle';
   x.fillStyle=color; x.fillText(text,m.width/2,m.height/2);
-  const t=new THREE.CanvasTexture(m); t.minFilter=THREE.LinearFilter; t.needsUpdate=true;
-  return {t,aspect:m.width/m.height};
+  const t=new THREE.CanvasTexture(m); t.minFilter=THREE.LinearFilter;
+  const r={t,aspect:m.width/m.height}; texCache[k]=r; return r;
 }
+let sprites=[];
 function build(){
-  const N=WORDS.length, R=6.2, gold=Math.PI*(3-Math.sqrt(5));
+  while(group.children.length){const s=group.children.pop();}
+  group.clear&&group.clear(); sprites=[];
+  const N=WORDS.length,gold=Math.PI*(3-Math.sqrt(5));
   WORDS.forEach((d,i)=>{
-    const col = Math.random()<0.05?RED : Math.random()<0.32?BRASS : Math.random()<0.5?PAPER:TELE;
+    const h=(i*131)%100;
+    const col = h<P.red?RED : h<P.red+P.brass?BRASS : (i%2?PAPER:TELE);
     const {t,aspect}=tex(d.w,d.sc,col);
-    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,
-      opacity:0.55+ (d.wt-1)*0.22}));
-    const s=(0.9+d.wt*0.5); sp.scale.set(s*aspect,s,1);
-    const y=1-(i/(N-1))*2, r=Math.sqrt(1-y*y), th=gold*i;
-    sp.position.set(Math.cos(th)*r*R, y*R, Math.sin(th)*r*R);
-    group.add(sp);
+    const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:true}));
+    sp.userData={base:0.55+(d.wt-1)*0.22,aspect};
+    const s=(0.9+d.wt*0.5)*P.size; sp.scale.set(s*aspect,s,1);
+    const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;
+    sp.position.set(Math.cos(th)*r*P.R, y*P.R, Math.sin(th)*r*P.R);
+    group.add(sp); sprites.push(sp);
   });
 }
-
 let composer,bloom;
 function setup(){
   const W=innerWidth,H=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
@@ -99,25 +131,45 @@ function setup(){
   camera.aspect=W/H; camera.updateProjectionMatrix();
   composer=new THREE.EffectComposer(renderer);
   composer.addPass(new THREE.RenderPass(scene,camera));
-  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),0.75,0.55,0.72); // strength,radius,threshold
-  composer.addPass(bloom);
-  composer.setPixelRatio(dpr); composer.setSize(W,H);
+  bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),P.bloom,P.radius,P.thresh);
+  composer.addPass(bloom); composer.setPixelRatio(dpr); composer.setSize(W,H);
 }
 addEventListener('resize',setup);
-
-let drag=false,lx=0,ly=0,vy=0.0016,vx=0;
+function apply(){
+  const sh=Math.round(P.bg); scene.background=new THREE.Color(`rgb(${sh-5},${sh+7},${sh+14})`);
+  scene.fog=new THREE.FogExp2(scene.background.getHex(), P.fog*0.07);
+  renderer.toneMappingExposure=P.expo;
+  if(bloom){bloom.strength=P.bloom;bloom.radius=P.radius;bloom.threshold=P.thresh;}
+}
+let drag=false,lx=0,ly=0,vy=0;
 cv.addEventListener('pointerdown',e=>{drag=true;lx=e.clientX;ly=e.clientY;});
 addEventListener('pointerup',()=>drag=false);
-addEventListener('pointermove',e=>{ if(!drag)return;
-  const dx=e.clientX-lx,dy=e.clientY-ly; lx=e.clientX;ly=e.clientY;
-  group.rotation.y+=dx*0.005; group.rotation.x+=dy*0.005;
-  vy=dx*0.0004||vy; });
-function animate(){
-  requestAnimationFrame(animate);
-  if(!drag){ group.rotation.y+=vy; }
-  composer.render();
+addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+  group.rotation.y+=dx*0.005;group.rotation.x+=dy*0.005;});
+function animate(){requestAnimationFrame(animate);
+  if(!drag)group.rotation.y+=P.spin*0.001;
+  composer.render();}
+
+// панель
+const ctrls=document.getElementById('ctrls'), out=document.getElementById('out');
+function buildPanel(){
+  ctrls.innerHTML=SPEC.map(([k,lab,mn,mx,st])=>
+    `<div class="row"><label>${lab}<b id="v_${k}">${P[k]}</b></label>
+     <input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${st}" value="${P[k]}"></div>`).join('');
+  SPEC.forEach(([k])=>{const r=document.getElementById('r_'+k);
+    r.oninput=()=>{P[k]=parseFloat(r.value);document.getElementById('v_'+k).textContent=P[k];
+      if(['R','size','brass','red'].includes(k))build(); apply(); dump();};});
+  dump();
 }
-(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{ build(); setup(); animate(); });
+function dump(){out.textContent=JSON.stringify(P);}
+document.getElementById('copy').onclick=()=>{navigator.clipboard&&navigator.clipboard.writeText(JSON.stringify(P,null,0));
+  document.getElementById('copy').textContent='Скопировано ✓';setTimeout(()=>document.getElementById('copy').textContent='Скопировать',1200);};
+document.getElementById('reset').onclick=()=>{P=Object.assign({},DEF);build();setup();apply();buildPanel();};
+const tg=document.getElementById('toggle'),pn=document.getElementById('panel');
+tg.onclick=()=>{pn.style.display='block';tg.style.display='none';};
+addEventListener('keydown',e=>{if(e.key==='h'){const v=pn.style.display==='none';pn.style.display=v?'block':'none';tg.style.display=v?'none':'block';}});
+
+(document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{build();setup();apply();animate();buildPanel();});
 </script>
 </body>
 </html>
