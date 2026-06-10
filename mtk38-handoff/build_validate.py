@@ -23,15 +23,19 @@ FONT_MANIFEST = os.path.join(ROOT, "mtk38-v2", "fonts", "noto", "manifest.json")
 SPEC_DIR = os.path.join(ROOT, "assets", "mtk38", "specimen")
 
 data = json.load(open(SRC, encoding="utf-8"))
-embed = set(json.load(open(FONT_MANIFEST, encoding="utf-8"))["scripts"]) if os.path.exists(FONT_MANIFEST) else set()
+_man = json.load(open(FONT_MANIFEST, encoding="utf-8")) if os.path.exists(FONT_MANIFEST) else {"scripts": [], "bold": []}
+embed = set(_man.get("scripts", [])); bold = set(_man.get("bold", []))
 have_spec = {f[:-4] for f in os.listdir(SPEC_DIR) if f.endswith(".png")} if os.path.isdir(SPEC_DIR) else set()
 
 n = len(data["languages"])
 n_flag = sum(1 for l in data["languages"] if l["verifier"] == "needs-verification")
 data_json = json.dumps(data, ensure_ascii=False)
-face = "\n".join(
-    f'@font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
-    for s in sorted(embed))
+_faces = []
+for s in sorted(embed):
+    _faces.append(f'@font-face{{font-family:"noto-{s}";font-weight:400;src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}')
+    if s in bold:
+        _faces.append(f'@font-face{{font-family:"noto-{s}";font-weight:700;src:url("./fonts/noto/{s}-700.woff2") format("woff2");font-display:swap}}')
+face = "\n".join(_faces)
 cfg_json = json.dumps({"embed": sorted(embed), "spec": sorted(have_spec)}, ensure_ascii=False)
 
 TEMPLATE = r"""<!doctype html>
@@ -77,6 +81,9 @@ __FACE__
   .specimen .nofile{font-size:12px;color:var(--window)}
   .mine{font-size:clamp(30px,4vw,46px);line-height:1.15;text-align:center;color:var(--graphite);
     min-height:50px;display:flex;align-items:center;justify-content:center;gap:.2em;flex-wrap:wrap}
+  main.bold .mine,main.bold .endo{font-weight:700}
+  main.caps .mine{text-transform:uppercase}
+  .filters button.tg.on{background:var(--blue-grey);color:#fff;border-color:var(--blue-grey)}
   .cp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:var(--window);
     text-align:center;word-break:break-all;user-select:all}
   .name{font-size:16px;font-weight:700;color:var(--graphite);margin-top:2px}
@@ -120,6 +127,10 @@ __FACE__
       <button data-f="flag">Спорные ⚠</button>
       <button data-f="todo">Непроверенные</button>
       <button data-f="bad">Отмеченные ✗</button>
+    </span>
+    <span class="filters" title="Применить к моей расшифровке для сравнения с листом музея">
+      <button class="tg" data-tg="bold">Жирный</button>
+      <button class="tg" data-tg="caps">КАПС</button>
     </span>
     <span class="prog">Проверено: <b id="done">0</b> / <span id="total">0</span></span>
     <button class="act" id="export">⬇ Экспорт результатов</button>
@@ -196,13 +207,21 @@ langs.forEach(l=>{
 });
 upd();
 document.getElementById('reviewer').oninput=e=>{ state._reviewer=e.target.value; save(); };
-document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+document.querySelectorAll('.filters button[data-f]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.filters button[data-f]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
   const f=b.dataset.f;
   document.querySelectorAll('.card').forEach(c=>{ const s=state[c.dataset.id]||{}; let show=true;
     if(f==='flag') show=c.dataset.flag==='1'; else if(f==='todo') show=!s.verdict; else if(f==='bad') show=s.verdict==='bad';
     c.classList.toggle('hide',!show); });
 });
+// переключатели вида: Жирный / КАПС — применяются к .mine (моя расшифровка), для сравнения с листом
+const VKEY='mtk38-view-v1'; let view={}; try{view=JSON.parse(localStorage.getItem(VKEY)||'{}')}catch(e){}
+function applyView(){ const m=document.querySelector('main');
+  m.classList.toggle('bold',!!view.bold); m.classList.toggle('caps',!!view.caps);
+  document.querySelectorAll('.tg').forEach(b=>b.classList.toggle('on',!!view[b.dataset.tg])); }
+document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ view[b.dataset.tg]=!view[b.dataset.tg];
+  localStorage.setItem(VKEY,JSON.stringify(view)); applyView(); });
+applyView();
 document.getElementById('export').onclick=()=>{
   const v={}; langs.forEach(l=>{const s=state[l.id]; if(s&&s.verdict) v[l.id]=s;});
   const out={mtk:38,tool:'mtk38-validate',canon:'museum-outlines',source:'data/mtk38.json',

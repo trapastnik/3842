@@ -30,5 +30,34 @@
     "Thaa",
     "Tibt"
   ],
-  "note": "subset-Noto только для валидатора"
+  "bold": [
+    "Arab",
+    "Armn",
+    "Beng",
+    "Deva",
+    "Ethi",
+    "Geor",
+    "Grek",
+    "Gujr",
+    "Guru",
+    "Hans",
+    "Hant",
+    "Hebr",
+    "Jpan",
+    "Khmr",
+    "Knda",
+    "Kore",
+    "Laoo",
+    "Mlym",
+    "Mtei",
+    "Mymr",
+    "Olck",
+    "Orya",
+    "Sinh",
+    "Taml",
+    "Telu",
+    "Thaa",
+    "Tibt"
+  ],
+  "note": "subset-Noto (400+700) только для валидатора"
 }

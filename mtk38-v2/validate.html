@@ -5,35 +5,62 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>МТК 38 · валидация написаний «Ленин»</title>
 <style>
-@font-face{font-family:"noto-Arab";src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Armn";src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Beng";src:url("./fonts/noto/Beng.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Deva";src:url("./fonts/noto/Deva.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Ethi";src:url("./fonts/noto/Ethi.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Geor";src:url("./fonts/noto/Geor.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Grek";src:url("./fonts/noto/Grek.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Gujr";src:url("./fonts/noto/Gujr.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Guru";src:url("./fonts/noto/Guru.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Hans";src:url("./fonts/noto/Hans.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Hant";src:url("./fonts/noto/Hant.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Hebr";src:url("./fonts/noto/Hebr.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Jpan";src:url("./fonts/noto/Jpan.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Khmr";src:url("./fonts/noto/Khmr.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Knda";src:url("./fonts/noto/Knda.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Kore";src:url("./fonts/noto/Kore.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Laoo";src:url("./fonts/noto/Laoo.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Mlym";src:url("./fonts/noto/Mlym.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Mtei";src:url("./fonts/noto/Mtei.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Mymr";src:url("./fonts/noto/Mymr.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Nkoo";src:url("./fonts/noto/Nkoo.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Olck";src:url("./fonts/noto/Olck.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Orya";src:url("./fonts/noto/Orya.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Sinh";src:url("./fonts/noto/Sinh.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Taml";src:url("./fonts/noto/Taml.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Telu";src:url("./fonts/noto/Telu.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Tfng";src:url("./fonts/noto/Tfng.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Thaa";src:url("./fonts/noto/Thaa.woff2") format("woff2");font-display:swap}
-@font-face{font-family:"noto-Tibt";src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Arab";font-weight:400;src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Arab";font-weight:700;src:url("./fonts/noto/Arab-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";font-weight:400;src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";font-weight:700;src:url("./fonts/noto/Armn-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";font-weight:400;src:url("./fonts/noto/Beng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";font-weight:700;src:url("./fonts/noto/Beng-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";font-weight:400;src:url("./fonts/noto/Deva.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";font-weight:700;src:url("./fonts/noto/Deva-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";font-weight:400;src:url("./fonts/noto/Ethi.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";font-weight:700;src:url("./fonts/noto/Ethi-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";font-weight:400;src:url("./fonts/noto/Geor.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";font-weight:700;src:url("./fonts/noto/Geor-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";font-weight:400;src:url("./fonts/noto/Grek.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";font-weight:700;src:url("./fonts/noto/Grek-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";font-weight:400;src:url("./fonts/noto/Gujr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";font-weight:700;src:url("./fonts/noto/Gujr-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";font-weight:400;src:url("./fonts/noto/Guru.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";font-weight:700;src:url("./fonts/noto/Guru-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";font-weight:400;src:url("./fonts/noto/Hans.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";font-weight:700;src:url("./fonts/noto/Hans-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";font-weight:400;src:url("./fonts/noto/Hant.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";font-weight:700;src:url("./fonts/noto/Hant-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";font-weight:400;src:url("./fonts/noto/Hebr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";font-weight:700;src:url("./fonts/noto/Hebr-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";font-weight:400;src:url("./fonts/noto/Jpan.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";font-weight:700;src:url("./fonts/noto/Jpan-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";font-weight:400;src:url("./fonts/noto/Khmr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";font-weight:700;src:url("./fonts/noto/Khmr-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";font-weight:400;src:url("./fonts/noto/Knda.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";font-weight:700;src:url("./fonts/noto/Knda-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";font-weight:400;src:url("./fonts/noto/Kore.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";font-weight:700;src:url("./fonts/noto/Kore-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";font-weight:400;src:url("./fonts/noto/Laoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";font-weight:700;src:url("./fonts/noto/Laoo-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";font-weight:400;src:url("./fonts/noto/Mlym.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";font-weight:700;src:url("./fonts/noto/Mlym-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";font-weight:400;src:url("./fonts/noto/Mtei.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";font-weight:700;src:url("./fonts/noto/Mtei-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";font-weight:400;src:url("./fonts/noto/Mymr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";font-weight:700;src:url("./fonts/noto/Mymr-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Nkoo";font-weight:400;src:url("./fonts/noto/Nkoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";font-weight:400;src:url("./fonts/noto/Olck.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";font-weight:700;src:url("./fonts/noto/Olck-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";font-weight:400;src:url("./fonts/noto/Orya.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";font-weight:700;src:url("./fonts/noto/Orya-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";font-weight:400;src:url("./fonts/noto/Sinh.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";font-weight:700;src:url("./fonts/noto/Sinh-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";font-weight:400;src:url("./fonts/noto/Taml.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";font-weight:700;src:url("./fonts/noto/Taml-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";font-weight:400;src:url("./fonts/noto/Telu.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";font-weight:700;src:url("./fonts/noto/Telu-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tfng";font-weight:400;src:url("./fonts/noto/Tfng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";font-weight:400;src:url("./fonts/noto/Thaa.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";font-weight:700;src:url("./fonts/noto/Thaa-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";font-weight:400;src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";font-weight:700;src:url("./fonts/noto/Tibt-700.woff2") format("woff2");font-display:swap}
   :root{--brass:#D2B773;--red:#A02128;--blue-grey:#5D8970;--window:#9DA3A8;
     --graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
   *{box-sizing:border-box}
@@ -69,6 +96,9 @@
   .specimen .nofile{font-size:12px;color:var(--window)}
   .mine{font-size:clamp(30px,4vw,46px);line-height:1.15;text-align:center;color:var(--graphite);
     min-height:50px;display:flex;align-items:center;justify-content:center;gap:.2em;flex-wrap:wrap}
+  main.bold .mine,main.bold .endo{font-weight:700}
+  main.caps .mine{text-transform:uppercase}
+  .filters button.tg.on{background:var(--blue-grey);color:#fff;border-color:var(--blue-grey)}
   .cp{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:10px;color:var(--window);
     text-align:center;word-break:break-all;user-select:all}
   .name{font-size:16px;font-weight:700;color:var(--graphite);margin-top:2px}
@@ -112,6 +142,10 @@
       <button data-f="flag">Спорные ⚠</button>
       <button data-f="todo">Непроверенные</button>
       <button data-f="bad">Отмеченные ✗</button>
+    </span>
+    <span class="filters" title="Применить к моей расшифровке для сравнения с листом музея">
+      <button class="tg" data-tg="bold">Жирный</button>
+      <button class="tg" data-tg="caps">КАПС</button>
     </span>
     <span class="prog">Проверено: <b id="done">0</b> / <span id="total">0</span></span>
     <button class="act" id="export">⬇ Экспорт результатов</button>
@@ -188,13 +222,21 @@ langs.forEach(l=>{
 });
 upd();
 document.getElementById('reviewer').oninput=e=>{ state._reviewer=e.target.value; save(); };
-document.querySelectorAll('.filters button').forEach(b=>b.onclick=()=>{
-  document.querySelectorAll('.filters button').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+document.querySelectorAll('.filters button[data-f]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.filters button[data-f]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
   const f=b.dataset.f;
   document.querySelectorAll('.card').forEach(c=>{ const s=state[c.dataset.id]||{}; let show=true;
     if(f==='flag') show=c.dataset.flag==='1'; else if(f==='todo') show=!s.verdict; else if(f==='bad') show=s.verdict==='bad';
     c.classList.toggle('hide',!show); });
 });
+// переключатели вида: Жирный / КАПС — применяются к .mine (моя расшифровка), для сравнения с листом
+const VKEY='mtk38-view-v1'; let view={}; try{view=JSON.parse(localStorage.getItem(VKEY)||'{}')}catch(e){}
+function applyView(){ const m=document.querySelector('main');
+  m.classList.toggle('bold',!!view.bold); m.classList.toggle('caps',!!view.caps);
+  document.querySelectorAll('.tg').forEach(b=>b.classList.toggle('on',!!view[b.dataset.tg])); }
+document.querySelectorAll('.tg').forEach(b=>b.onclick=()=>{ view[b.dataset.tg]=!view[b.dataset.tg];
+  localStorage.setItem(VKEY,JSON.stringify(view)); applyView(); });
+applyView();
 document.getElementById('export').onclick=()=>{
   const v={}; langs.forEach(l=>{const s=state[l.id]; if(s&&s.verdict) v[l.id]=s;});
   const out={mtk:38,tool:'mtk38-validate',canon:'museum-outlines',source:'data/mtk38.json',
