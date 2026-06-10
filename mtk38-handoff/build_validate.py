@@ -121,7 +121,8 @@ __FACE__
 <body>
 <header>
   <nav>
-    <a href="./index.html">Прототипы</a>
+    <a href="./index.html">Главная</a>
+    <a href="./app.html">Арт-объект</a>
     <a href="./validate.html" class="active">Валидация написаний</a>
     <a href="./analysis.html">Аналитика и предложения</a>
   </nav>

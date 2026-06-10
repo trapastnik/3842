@@ -108,7 +108,8 @@ HTML = r"""<!doctype html>
 <body>
 <header>
   <nav>
-    <a href="./index.html">Прототипы</a>
+    <a href="./index.html">Главная</a>
+    <a href="./app.html">Арт-объект</a>
     <a href="./validate.html">Валидация написаний</a>
     <a href="./analysis.html" class="active">Аналитика и предложения</a>
   </nav>

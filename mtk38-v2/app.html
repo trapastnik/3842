@@ -253,7 +253,10 @@ document.getElementById('copy').onclick=()=>{navigator.clipboard&&navigator.clip
 
 ['glow','blur','scrim','qscale'].forEach(k=>document.documentElement.style.setProperty('--'+k,P[k]));
 (document.fonts?document.fonts.ready:Promise.resolve()).then(()=>{buildSprites();setScale();computeTargets();
-  sprites.forEach((s,i)=>s.position.copy(targets[i]));setup();applyRender();animate();});
+  sprites.forEach((s,i)=>s.position.copy(targets[i]));setup();applyRender();animate();
+  const _sp=new URLSearchParams(location.search);
+  if(_sp.get('layout'))setLayout(_sp.get('layout'));
+  if(_sp.get('q')==='1'){const c=document.getElementById('qon');c.checked=true;P.q=true;document.body.classList.add('q-on');qStart();}});
 </script>
 </body>
 </html>

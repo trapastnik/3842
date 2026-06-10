@@ -44,7 +44,8 @@
     text-transform:uppercase;color:var(--window);margin:0 0 18px}
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
   .v{background:#3b4751;border:1px solid #51606a;border-radius:12px;padding:18px 18px 16px;
-    opacity:.62;position:relative}
+    position:relative;display:block;text-decoration:none;transition:.15s}
+  .v:hover{background:#445360;border-color:var(--brass);transform:translateY(-2px)}
   .v .n{font-family:"Nolde",Georgia,serif;font-size:22px;color:var(--paper)}
   .v .d{font-size:13px;color:var(--telegrey);margin-top:4px}
   .v .st{position:absolute;top:12px;right:12px;font-family:"20 Kopeek",sans-serif;
@@ -68,27 +69,27 @@
   <div class="cta">
     <div class="big">✦</div>
     <div class="txt">
-      <div class="tag" style="color:var(--paper)">Для заказчика</div>
-      <strong style="font-size:20px">Валидация написаний · 52 языка</strong>
-      <p>Проверка, как пишется «Ленин» на каждом языке: написание из файла + юникод-коды,
-        отметки ✓/✗, экспорт результатов. Откройте, проверьте, пришлите нам файл.</p>
+      <div class="tag" style="color:var(--paper)">Арт-объект v2 · кинематографичный WebGL</div>
+      <strong style="font-size:20px">7 композиций · 52 языка · всё настраивается</strong>
+      <p>Глобус, облако, мандала, дождь, лента, стена, карта — переключаемые композиции слова «Ленин»
+        с bloom-свечением. Тап по слову → карточка языка. Цитаты Ленина отдельным слоем.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
-      <a class="go" href="./validate.html">Валидатор написаний →</a>
+      <a class="go" href="./app.html">Открыть арт-объект →</a>
+      <a class="go go2" href="./validate.html">Валидатор написаний →</a>
       <a class="go go2" href="./analysis.html">Аналитика и предложения →</a>
     </div>
   </div>
 
-  <h2>Прототипы v2</h2>
+  <h2>Композиции — 7 в одном движке</h2>
   <div class="grid">
-    <div class="v"><span class="st">в работе</span><div class="n">Глобус</div><div class="d">3D-сфера слов, drag-rotate</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Карта</div><div class="d">точки на карте мира, гео</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Каталог</div><div class="d">сетка карточек языков</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Постер</div><div class="d">плотная типокомпозиция</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Облако</div><div class="d">слова в объёме, орбита</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Мандала</div><div class="d">радиальные кольца</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Дождь</div><div class="d">слова восходят снизу вверх</div></div>
-    <div class="v"><span class="st">в работе</span><div class="n">Лента</div><div class="d">горизонтальные строки</div></div>
+    <a class="v" href="./app.html?layout=globe"><div class="n">Глобус</div><div class="d">3D-сфера слов</div></a>
+    <a class="v" href="./app.html?layout=cloud"><div class="n">Облако</div><div class="d">слова в объёме</div></a>
+    <a class="v" href="./app.html?layout=mandala"><div class="n">Мандала</div><div class="d">радиальные кольца</div></a>
+    <a class="v" href="./app.html?layout=rain"><div class="n">Дождь</div><div class="d">слова восходят вверх</div></a>
+    <a class="v" href="./app.html?layout=ticker"><div class="n">Лента</div><div class="d">горизонтальные строки</div></a>
+    <a class="v" href="./app.html?layout=wall"><div class="n">Стена</div><div class="d">плотная сетка</div></a>
+    <a class="v" href="./app.html?layout=map"><div class="n">Карта</div><div class="d">гео по странам</div></a>
   </div>
 </main>
 
