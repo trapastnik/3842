@@ -1,0 +1,80 @@
+{
+  "mtk": 38,
+  "title": "Ленин на языках мира",
+  "status": "draft-schema",
+  "note": "Черновик canonical-схемы для v2. Поля карточки языка согласованы с пользователем 2026-06-10. Примеры ниже — ДЕМОНСТРАЦИЯ ФОРМАТА, написания и метаданные НЕ верифицированы. Заполняется в фазе 0 (три research-блока: список языков, написания «Ленин», цитаты). См. mtk38-handoff/HANDOFF.md.",
+  "schema": {
+    "id": "kebab-case уникальный (iso639-3 если есть)",
+    "name_ru": "название по-русски",
+    "endonym": "самоназвание языка его письмом",
+    "writing": "написание слова «Ленин» в этом языке",
+    "script": { "iso15924": "код ISO 15924", "name_ru": "название письменности по-русски" },
+    "family": "языковая семья → ветвь",
+    "geo": {
+      "territorial": "true | false (false = язык без своей территории)",
+      "diaspora": "true для диаспоральных (идиш, ладино, эсперанто)",
+      "primary": { "country_iso": "ISO-3166", "region_ru": "регион", "lat": 0, "lng": 0 },
+      "also": [ { "country_iso": "", "region_ru": "" } ]
+    },
+    "writing_source": "провенанс написания: pdf-specimen | wikidata-q1394 | wiki-interwiki | translator | triangulated",
+    "verifier": "кто подтвердил: machine-triangulated | native:<имя> | linguist:<имя> | unverified",
+    "speakers_mln": "оценка носителей в млн (native+L2), приблизительно",
+    "weight": "1-3, визуальная значимость (3 = рабочие языки ООН)"
+  },
+  "languages": [
+    {
+      "id": "rus",
+      "name_ru": "Русский",
+      "endonym": "русский",
+      "writing": "Ленин",
+      "script": { "iso15924": "Cyrl", "name_ru": "Кириллица" },
+      "family": "индоевропейская → славянская → восточнославянская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": { "country_iso": "RU", "region_ru": "Россия", "lat": 55.75, "lng": 37.62 },
+        "also": [ { "country_iso": "BY", "region_ru": "Беларусь" }, { "country_iso": "KZ", "region_ru": "Казахстан" } ]
+      },
+      "writing_source": "triangulated",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 258,
+      "weight": 3
+    },
+    {
+      "id": "ben",
+      "name_ru": "Бенгальский",
+      "endonym": "বাংলা",
+      "writing": "লেনিন",
+      "script": { "iso15924": "Beng", "name_ru": "Бенгальское письмо" },
+      "family": "индоевропейская → индоарийская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": { "country_iso": "BD", "region_ru": "Бангладеш", "lat": 23.81, "lng": 90.41 },
+        "also": [ { "country_iso": "IN", "region_ru": "Западная Бенгалия" } ]
+      },
+      "writing_source": "pdf-specimen",
+      "verifier": "unverified",
+      "speakers_mln": 273,
+      "weight": 2
+    },
+    {
+      "id": "yid",
+      "name_ru": "Идиш",
+      "endonym": "ייִדיש",
+      "writing": "לענין",
+      "script": { "iso15924": "Hebr", "name_ru": "Еврейское письмо" },
+      "family": "индоевропейская → германская → западногерманская",
+      "geo": {
+        "territorial": false,
+        "diaspora": true,
+        "primary": null,
+        "also": []
+      },
+      "writing_source": "wiki-interwiki",
+      "verifier": "unverified",
+      "speakers_mln": 1.5,
+      "weight": 1
+    }
+  ]
+}
