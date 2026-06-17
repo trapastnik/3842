@@ -7,7 +7,7 @@ import { makeWordTexture } from '../engine/text.js';
 
 const PAPER = '#F7F9EF', BRASS = '#D2B773', RED = '#A02128';
 
-export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, density = 1.0 } = {}) {
+export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, density = 1.0, withBody = true } = {}) {
   const group = new THREE.Group();
   const colorFor = (wd) => wd.id === 'rus' ? RED : wd.pr ? BRASS : PAPER;
 
@@ -78,14 +78,17 @@ export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, de
     meshes.push(im);
   });
 
-  // тело глобуса — тёмная сфера-окклюдер (даёт силуэт + свет лепит форму)
-  const body = new THREE.Mesh(
-    new THREE.SphereGeometry(radius * 0.965, 96, 64),
-    // dithering: true — дробит 8-битный бандинг в плавном тёмном градиенте сферы
-    new THREE.MeshStandardMaterial({ color: 0x252c33, roughness: 0.83, metalness: 0.16, dithering: true })
-  );
-  body.renderOrder = -1;
-  group.add(body);
+  // тело глобуса — тёмная сфера-окклюдер (опц.; выключается, когда под именами лежит Земля)
+  let body = null;
+  if (withBody) {
+    body = new THREE.Mesh(
+      new THREE.SphereGeometry(radius * 0.965, 96, 64),
+      // dithering: true — дробит 8-битный бандинг в плавном тёмном градиенте сферы
+      new THREE.MeshStandardMaterial({ color: 0x252c33, roughness: 0.83, metalness: 0.16, dithering: true })
+    );
+    body.renderOrder = -1;
+    group.add(body);
+  }
 
   return {
     group, body, meshes, textures: tex,
@@ -96,7 +99,7 @@ export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, de
       mat.forEach((m) => m.dispose());
       tex.forEach((t) => t.texture.dispose());
       meshes.forEach((m) => m.dispose());
-      body.geometry.dispose(); body.material.dispose();
+      if (body) { body.geometry.dispose(); body.material.dispose(); }
     },
   };
 }

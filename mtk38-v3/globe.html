@@ -48,6 +48,7 @@ import { createStats } from './engine/stats.js';
 import { createCard } from './engine/card.js';
 import { createTuner } from './tuner.js';
 import { createGlobe } from './scenes/globe-rings.js';
+import { createEarth } from './scenes/earth.js';
 import { WORDS } from './words.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -70,10 +71,15 @@ try {
   camera.position.set(0, 0, 8.2);
   camera.lookAt(0, 0, 0);
 
-  // глобус слов (структура v1) + тело
-  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0 });
+  // глобус слов (структура v1) — без плоского тела: под именами ляжет Земля
+  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
   scene.add(globe.group);
   let autoSpin = 0.06;
+
+  // географический глобус ПОД именами — своя группа → своя скорость (параллакс-глубина)
+  let earth = null, earthYaw = -0.25, earthSpin = 0.028;
+  try { earth = await createEarth(THREE, { radius: 2.5 * 0.965 }); scene.add(earth.group); }
+  catch (e) { console.warn('[earth off]', e); }
 
   // свет — лепит тело (слова unlit, остаются читаемыми)
   scene.add(new THREE.AmbientLight(0x9DA3A8, 0.45));
@@ -154,7 +160,7 @@ try {
     if (Math.hypot(e.clientX - R.dx0, e.clientY - R.dy0) > 6) R.moved = true;
     const now = performance.now(), dt = Math.max(16, now - R.lt);
     const dx = e.clientX - R.lx, dy = e.clientY - R.ly;
-    R.yaw += dx * 0.005; R.pitch = clamp(R.pitch + dy * 0.005, -1.15, 1.15);
+    R.yaw += dx * 0.005; earthYaw += dx * 0.005; R.pitch = clamp(R.pitch + dy * 0.005, -1.15, 1.15);
     R.vy = dx * 0.005 / (dt / 1000); R.vp = dy * 0.005 / (dt / 1000);
     R.lx = e.clientX; R.ly = e.clientY; R.lt = now;
   }, { passive: true });
@@ -194,7 +200,7 @@ try {
     densityTimer = setTimeout(() => {
       const old = globe;
       scene.remove(old.group);
-      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d });
+      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
       scene.add(globe.group);
       old.dispose();
     }, 180);
@@ -215,6 +221,8 @@ try {
       case 'fog': scene.fog.density = v; break;
       case 'grain': { const g = document.getElementById('grain'); if (g) g.style.opacity = v; break; }
       case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
+      case 'earthSpin': earthSpin = v; break;
+      case 'earthGlow': if (earth) earth.setGlow(v); break;
     }
   }
   createTuner({
@@ -236,6 +244,10 @@ try {
         { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.07 },
         { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
       ] },
+      { title: 'земля', params: [
+        { key: 'earthSpin', label: 'скорость Земли', min: 0, max: 0.5, step: .005, value: 0.028 },
+        { key: 'earthGlow', label: 'яркость линий', min: 0, max: 1.5, step: .05, value: 0.7 },
+      ] },
     ],
     onChange: (k, v) => apply(k, v),
   });
@@ -254,8 +266,10 @@ try {
       R.yaw += (R.vy + autoSpin) * dt;
       R.pitch = clamp(R.pitch + R.vp * dt, -1.15, 1.15);
       R.vy *= Math.pow(0.94, dt * 60); R.vp *= Math.pow(0.9, dt * 60);
+      earthYaw += earthSpin * dt;   // Земля дрейфует со своей скоростью (параллакс к именам)
     }
     globe.group.rotation.set(R.pitch, R.yaw, 0);
+    if (earth) earth.group.rotation.set(R.pitch, earthYaw, 0);
     if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
     stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
     if (++n === 3) { window.__globe = { ready: true, backend, count: globe.count }; document.title = 'globe READY:' + backend; }
