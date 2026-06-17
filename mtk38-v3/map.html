@@ -19,7 +19,7 @@
 <canvas id="map"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · карта · 52 написания «Ленин» по миру · тяни — двигай · <b>тап по точке</b> → карточка · <b>T</b> параметры</div>
+<div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>тап</b> → карточка · <b>T</b> параметры</div>
 <div id="err"></div>
 <script type="module">
 import { loadWords } from './engine/data.js';
@@ -132,6 +132,20 @@ try {
     for (const p of WORDS) { if (p === moscow || p.wt < 2) continue; const b = toScreen(p.lat, p.lng); if (Math.abs(a.x - b.x) > W * 1.2) continue; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
     ctx.setLineDash([]); ctx.restore();
   }
+  // мини-эмблема ООН: глобус (азимутальная сетка) — для официальных языков ООН
+  function drawUNLogo(cx, cy, r, alpha) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = cc(PAL.brass, alpha * 0.12);
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = cc(PAL.brass, alpha);
+    ctx.lineWidth = Math.max(0.6, r * 0.10);
+    for (const rr of [r, r * 0.62, r * 0.3]) { ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke(); }
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+    ctx.restore();
+  }
   let hits = [];
   function drawPoints() {
     hits = []; const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
@@ -149,8 +163,10 @@ try {
       ctx.shadowColor = cc('#000', 0.7); ctx.shadowBlur = (7 + prox * 13) * (0.4 + P.glow);
       ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.5 + prox * 0.5;
       const ox = sz * 0.45, oy = -sz * 0.12;
-      ctx.fillText(p.w, s.x + ox, s.y + oy);
-      if (prox > 0.22) { ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.55 + prox * 0.3); ctx.fillText(p.n, s.x + ox, s.y + oy + sz * 0.62); }
+      let wordX = s.x + ox;
+      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.55 + prox * 0.45); wordX += lr * 2 + sz * 0.16; }
+      ctx.fillText(p.w, wordX, s.y + oy);
+      if (prox > 0.22) { ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.55 + prox * 0.3); ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.62); }
       ctx.globalAlpha = 1;
       hits.push({ x: s.x, y: s.y, r: Math.max(14, sz * 0.6), i });
     }

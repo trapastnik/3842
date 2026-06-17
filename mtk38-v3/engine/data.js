@@ -20,6 +20,7 @@ export async function loadWords(url = '../data/mtk38.json') {
       n: l.name_ru, e: l.endonym, f: l.family,
       r: p ? p.region_ru : 'диаспора',
       also, src: l.writing_source, ver: l.verifier, wt: l.weight, pr: l.weight >= 3,
+      un: l.un === true,                              // официальный язык ООН (6 шт.)
       lat: p ? p.lat : null, lng: p ? p.lng : null,   // гео-координаты (для карты)
       speakers: l.speakers_mln,
     };
