@@ -115,7 +115,7 @@ try {
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', endDrag);
 
-  const stats = createStats(renderer, { extra: () => `слова     ${globe.count}` });
+  const stats = createStats(renderer, { extra: () => `слова     ${globe.count} (меш ${globe.drawWords})` });
 
   function onResize() { fit(renderer, camera, document.body); }
   addEventListener('resize', onResize); onResize();

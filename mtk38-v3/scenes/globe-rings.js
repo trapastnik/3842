@@ -20,27 +20,29 @@ export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, de
     toneMapped: true,
   }));
 
-  const instances = [];
   const m4 = new THREE.Matrix4();
+  const scl = new THREE.Vector3();
   const n = new THREE.Vector3(), e = new THREE.Vector3(), u = new THREE.Vector3(), pos = new THREE.Vector3();
   const rnd = () => Math.random();
 
-  // Раскладка БЕЗ НАЛЕГАНИЯ:
+  // ПАСС 1 — матрицы размещений, сгруппированные по слову. Раскладка БЕЗ НАЛЕГАНИЯ:
   //  · вертикаль — ряды-параллели с шагом ≥ макс. высоты слова (соседние ряды не пересекаются);
   //  · горизонталь — слова по дуге через их фактическую ширину + зазор (в ряду не пересекаются);
-  //  · джиттера по широте НЕТ (он и давал налегание); мягкая вариация размера + кирпичный сдвиг рядов.
+  //  · джиттера по широте НЕТ (он давал налегание); мягкая вариация размера + кирпичный сдвиг рядов.
+  const byWord = words.map(() => []);          // wi → [Matrix4, …]
+  let total = 0;
   const SC_MIN = 0.9, SC_MAX = 1.12;
   const rowH = baseH * SC_MAX * 1.03;          // вертикальный шаг ряда
   const dLat = rowH / radius;                  // радиан между рядами
   let ri = 0;
-  for (let lat = -Math.PI / 2 + dLat; lat < Math.PI / 2 - dLat * 0.5 && instances.length < maxInstances; lat += dLat, ri++) {
+  for (let lat = -Math.PI / 2 + dLat; lat < Math.PI / 2 - dLat * 0.5 && total < maxInstances; lat += dLat, ri++) {
     const cosL = Math.cos(lat), sinL = Math.sin(lat);
     const rr = cosL * radius;
     if (rr < 0.16) continue;
     const circ = 2 * Math.PI * rr;
     const theta0 = ri * 0.7 + (ri % 2) * 0.5;  // сдвиг чёт/нечёт рядов → кирпичная кладка, не решётка
     let arc = 0, k = ri * 5;
-    while (instances.length < maxInstances) {
+    while (total < maxInstances) {
       const wi = ((k % words.length) + words.length) % words.length;
       const t = tex[wi];
       const sc = SC_MIN + rnd() * (SC_MAX - SC_MIN);
@@ -52,20 +54,29 @@ export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, de
       n.copy(pos).normalize();
       e.set(Math.sin(th), 0, -Math.cos(th)).normalize();  // текст читается снаружи
       u.crossVectors(n, e).normalize();
-      m4.makeBasis(e, u, n);
-      const plane = new THREE.Mesh(geo[wi], mat[wi]);
-      plane.applyMatrix4(m4);
-      plane.position.copy(pos);
-      plane.scale.setScalar(sc);
-      plane.matrixAutoUpdate = false;           // статичны относительно группы → дешевле
-      plane.updateMatrix();
-      plane.userData.wi = wi;
-      group.add(plane);
-      instances.push(plane);
+      m4.makeBasis(e, u, n);                    // поворот (касательный базис)
+      m4.scale(scl.set(sc, sc, sc));            // + масштаб
+      m4.setPosition(pos);                      // + позиция → полная TRS
+      byWord[wi].push(m4.clone());
+      total++;
       arc += ww + gap;
       k++;
     }
   }
+
+  // ПАСС 2 — один InstancedMesh на слово → ~52 draw call вместо сотен.
+  // back-cull (FrontSide) и тонемап работают как и с обычными mesh'ами.
+  const meshes = [];
+  byWord.forEach((mats, wi) => {
+    if (!mats.length) return;
+    const im = new THREE.InstancedMesh(geo[wi], mat[wi], mats.length);
+    for (let i = 0; i < mats.length; i++) im.setMatrixAt(i, mats[i]);
+    im.instanceMatrix.needsUpdate = true;
+    im.frustumCulled = false;
+    im.userData.wi = wi;                        // для будущего raycast → карточка Р2
+    group.add(im);
+    meshes.push(im);
+  });
 
   // тело глобуса — тёмная сфера-окклюдер (даёт силуэт + свет лепит форму)
   const body = new THREE.Mesh(
@@ -77,13 +88,14 @@ export function createGlobe(THREE, { words, radius = 2.5, maxInstances = 760, de
   group.add(body);
 
   return {
-    group, body, instances, textures: tex,
-    count: instances.length,
-    setDensity() { /* перестройка плотности — на следующей итерации (tuner) */ },
+    group, body, meshes, textures: tex,
+    count: total,        // всего размещений «Ленин» (для монитора)
+    drawWords: meshes.length,  // сколько draw call съедают слова (= число уникальных слов на сфере)
     dispose() {
       geo.forEach((g) => g.dispose());
       mat.forEach((m) => m.dispose());
       tex.forEach((t) => t.texture.dispose());
+      meshes.forEach((m) => m.dispose());
       body.geometry.dispose(); body.material.dispose();
     },
   };
