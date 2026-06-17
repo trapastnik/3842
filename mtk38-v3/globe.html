@@ -17,7 +17,7 @@
   :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--red:#A02128;--window:#9DA3A8}
   html,body{margin:0;height:100%;overflow:hidden;background:#12161a;
     font-family:"20 Kopeek",ui-monospace,Menlo,monospace;color:var(--paper)}
-  #c{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:grab;touch-action:none}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
   #c:active{cursor:grabbing}
   /* виньетка поверх (дёшево и кинематографично) */
   #vign{position:fixed;inset:0;z-index:6;pointer-events:none;
@@ -53,6 +53,7 @@ window.__globe = { ready: false };
 
 try {
   const canvas = document.getElementById('c');
+  const DEBUG = new URLSearchParams(location.search).has('debug');  // ?debug=1 — крестик-центр + цифры
   // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
 
@@ -137,7 +138,26 @@ try {
   canvas.addEventListener('pointerup', endDrag);
   canvas.addEventListener('pointercancel', () => { R.drag = false; });
 
-  const stats = createStats(renderer, { extra: () => `слова     ${globe.count} (меш ${globe.drawWords})` });
+  if (DEBUG) {
+    const cr = document.createElement('div');
+    cr.style.cssText = 'position:fixed;inset:0;z-index:20;pointer-events:none';
+    cr.innerHTML = '<div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:rgba(255,80,80,.7)"></div>'
+      + '<div style="position:absolute;top:50%;left:0;height:1px;width:100%;background:rgba(255,80,80,.7)"></div>';
+    document.body.appendChild(cr);
+  }
+  const stats = createStats(renderer, {
+    extra: () => {
+      let s = `слова     ${globe.count} (меш ${globe.drawWords})`;
+      if (DEBUG) {
+        const r = canvas.getBoundingClientRect();
+        s += `\n— debug —\nwin ${globalThis.innerWidth}×${globalThis.innerHeight} dpr ${globalThis.devicePixelRatio}`
+          + `\nbuf ${canvas.width}×${canvas.height}`
+          + `\nrect ${r.left | 0},${r.top | 0} ${r.width | 0}×${r.height | 0}`
+          + `\naspect ${camera.aspect.toFixed(3)}`;
+      }
+      return s;
+    },
+  });
 
   const onResize = () => { fit(renderer, camera); if (post) post.needsUpdate = true; };
   addEventListener('resize', onResize);

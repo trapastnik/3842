@@ -54,7 +54,9 @@ export async function createRenderer({
 export function fit(renderer, camera) {
   const w = globalThis.innerWidth || 1;
   const h = globalThis.innerHeight || 1;
-  renderer.setSize(w, h, false);
+  // updateStyle=true: three выставит inline-размер канваса = w×h px, точно совпадающий с буфером
+  // (убирает рассинхрон CSS-размер ≠ drawing buffer — типичный источник смещения на Retina).
+  renderer.setSize(w, h, true);
   if (camera && camera.isPerspectiveCamera) {
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
