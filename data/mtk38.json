@@ -3,7 +3,7 @@
   "title": "Ленин на языках мира",
   "status": "v2-canonical-draft",
   "version": 2,
-  "note": "Canonical-список v2: 52 языка = 50 подписанных с PDF-specimen (~/Downloads/LENIN_Languages_MTK_38.pdf) + русская и латинская опоры. Написания считаны поглифно с image-PDF; латиница/кириллица надёжны, не-латиница подлежит native-валидации (см. verifier/note). Метаданные (эндоним/семья/гео/носители) — черновые, точечная сверка. Схема и решения — mtk38-handoff/PLAN-v2.md и HANDOFF.md.",
+  "note": "Canonical-список v2: 53 языка = 52 с листа музея (50 подписанных с PDF-specimen ~/Downloads/LENIN_Languages_MTK_38.pdf + русская и латинская опоры) + испанский (добавлен для полноты 6 рабочих языков ООН, на листе музея отсутствует). Написания считаны поглифно с image-PDF; латиница/кириллица надёжны, не-латиница подлежит native-валидации (см. verifier/note). Метаданные (эндоним/семья/гео/носители) — черновые, точечная сверка. Схема и решения — mtk38-handoff/PLAN-v2.md и HANDOFF.md.",
   "schema": {
     "id": "kebab/iso639-3",
     "name_ru": "название по-русски",
@@ -23,7 +23,8 @@
     "writing_source": "pdf-specimen | wiki-interwiki | wikidata-q1394 | triangulated",
     "verifier": "machine-triangulated | needs-verification | native:<имя> | unverified",
     "speakers_mln": "оценка носителей, млн (native+L2)",
-    "weight": "1-3 (3 = рабочие языки ООН)"
+    "weight": "1-3 (3 = рабочие языки ООН)",
+    "un": "bool — официальный рабочий язык ООН (6: ar/zh/en/fr/ru/es); опускается = не ООН"
   },
   "languages": [
     {
@@ -59,6 +60,7 @@
       "writing_source": "idml-source",
       "verifier": "idml-source",
       "speakers_mln": 255,
+      "un": true,
       "weight": 3,
       "note": "опорная форма на листе (без подписи); язык-источник"
     },
@@ -95,6 +97,7 @@
       "writing_source": "idml-source",
       "verifier": "idml-source",
       "speakers_mln": 1500,
+      "un": true,
       "weight": 3,
       "note": "опорная латинская форма на листе (без подписи)"
     },
@@ -122,6 +125,7 @@
       "writing_source": "idml-source",
       "verifier": "idml-source",
       "speakers_mln": 1100,
+      "un": true,
       "weight": 3
     },
     {
@@ -240,6 +244,7 @@
       "writing_source": "idml-source",
       "verifier": "idml-source",
       "speakers_mln": 370,
+      "un": true,
       "weight": 3
     },
     {
@@ -682,6 +687,43 @@
       "speakers_mln": 1.5,
       "weight": 1,
       "note": "диаспоральный язык без своей территории (Р4)"
+    },
+    {
+      "id": "spa",
+      "name_ru": "Испанский",
+      "endonym": "español",
+      "writing": "Lenin",
+      "script": {
+        "iso15924": "Latn",
+        "name_ru": "Латиница"
+      },
+      "family": "индоевропейская → романская",
+      "geo": {
+        "territorial": true,
+        "diaspora": false,
+        "primary": {
+          "country_iso": "ES",
+          "region_ru": "Испания",
+          "lat": 40.42,
+          "lng": -3.7
+        },
+        "also": [
+          {
+            "country_iso": "MX",
+            "region_ru": "Мексика"
+          },
+          {
+            "country_iso": "AR",
+            "region_ru": "Аргентина"
+          }
+        ]
+      },
+      "writing_source": "wiki-interwiki",
+      "verifier": "machine-triangulated",
+      "speakers_mln": 560,
+      "un": true,
+      "weight": 3,
+      "note": "добавлен для полноты 6 рабочих языков ООН; на листе музея отсутствует. Написание «Lenin» по исп. Википедии."
     },
     {
       "id": "kan",
@@ -1352,6 +1394,7 @@
       "writing_source": "idml-source",
       "verifier": "idml-source",
       "speakers_mln": 280,
+      "un": true,
       "weight": 3,
       "note": "хранится КАПСОМ как на листе музея; IDML подтвердил слово (строчная форма Lênin/Lénine — стиль)"
     },

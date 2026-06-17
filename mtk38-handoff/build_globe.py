@@ -30,6 +30,8 @@ faces = "\n".join(
     f'@font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
     for s in sorted(embed))
 WORDS = json.dumps(words, ensure_ascii=False)
+nlang = lambda n: f"{n} " + ("язык" if n%10==1 and n%100!=11 else "языка" if 2<=n%10<=4 and not 12<=n%100<=14 else "языков")
+NL = nlang(len(words))
 
 TEMPLATE = r"""<!doctype html>
 <html lang="ru">
@@ -70,7 +72,7 @@ __FACES__
 <div id="panel"><h3>Глобус — параметры</h3><div id="ctrls"></div><button id="copy">Скопировать настройки</button></div>
 <div id="card"><span class="x" id="cx">✕</span><div class="w" id="c_w"></div><div class="n" id="c_n"></div><div class="e" id="c_e"></div>
   <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
-<div class="hint">Вращаемая сфера слов · 52 языка · тяни — поворот с инерцией, <b>тап по слову</b> → карточка</div>
+<div class="hint">Вращаемая сфера слов · __NL__ · тяни — поворот с инерцией, <b>тап по слову</b> → карточка</div>
 <script>
 const WORDS=__WORDS__;
 const PAL={paper:'#F7F9EF',brass:'#D2B773',red:'#A02128',window:'#9DA3A8',black:'#000'};
@@ -167,7 +169,7 @@ mkGrain();resize();
 </body>
 </html>
 """
-html = TEMPLATE.replace("__FACES__", faces).replace("__WORDS__", WORDS)
+html = TEMPLATE.replace("__FACES__", faces).replace("__WORDS__", WORDS).replace("__NL__", NL)
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
-print(f"written: {OUT}  (52 языка, 19 колец-широт, инерция, тап→карточка Р2, кинематографик-пост + панель)")
+print(f"written: {OUT}  ({NL}, 19 колец-широт, инерция, тап→карточка Р2, кинематографик-пост + панель)")

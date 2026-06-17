@@ -34,6 +34,8 @@ faces = "\n".join(
     f'@font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
     for s in sorted(embed))
 PTS = json.dumps(pts, ensure_ascii=False)
+nlang = lambda n: f"{n} " + ("язык" if n%10==1 and n%100!=11 else "языка" if 2<=n%10<=4 and not 12<=n%100<=14 else "языков")
+NL = nlang(len(pts))
 
 TEMPLATE = r"""<!doctype html>
 <html lang="ru">
@@ -81,7 +83,7 @@ __FACES__
 <div id="modal"><div id="backdrop"></div><div class="mcard"><span class="x" id="mx">✕</span>
   <div class="w" id="m_w"></div><div class="n" id="m_n"></div><div class="e" id="m_e"></div>
   <div class="rows" id="m_rows"></div><span class="ver" id="m_ver"></span></div></div>
-<div class="hint">Карта мира · 51 язык · тяни — pan, <b>тап по точке</b> → карточка языка</div>
+<div class="hint">Карта мира · __NL__ · тяни — pan, <b>тап по точке</b> → карточка языка</div>
 <script>
 const GEO=__GEO__, POINTS=__PTS__;
 const PAL={paper:'#F7F9EF',brass:'#D2B773',red:'#A02128',window:'#9DA3A8',black:'#000'};
@@ -189,7 +191,7 @@ mkGrain();resize();
 </body>
 </html>
 """
-html = (TEMPLATE.replace("__FACES__", faces).replace("__GEO__", GEO).replace("__PTS__", PTS))
+html = (TEMPLATE.replace("__FACES__", faces).replace("__GEO__", GEO).replace("__PTS__", PTS).replace("__NL__", NL))
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
 print(f"written: {OUT}  (точек {len(pts)}, geojson вшит {len(GEO)//1024} КБ, кинематографик-пост + панель + модалка Р2)")
