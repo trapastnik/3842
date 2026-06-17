@@ -41,10 +41,10 @@ try {
   const P = { base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
   const card = createCard();
   let geojson = null, reliefImg = null, physicalImg = null;
-  fetch('../data/ne_110m_countries.geojson').then((r) => r.json()).then((j) => { geojson = j; rebuildCache(); }).catch(() => {});
+  try { geojson = await (await fetch('../data/ne_110m_countries.geojson')).json(); } catch (_) {}
   const loadImg = (u) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = u; });
-  loadImg('../assets/mtk38/textures/earth-relief.jpg').then((im) => { reliefImg = im; if (P.base === 'relief') rebuildCache(); });
-  loadImg('../assets/mtk38/textures/earth-physical.jpg').then((im) => { physicalImg = im; if (P.base === 'physical') rebuildCache(); });
+  loadImg('../assets/mtk38/textures/earth-relief.jpg').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-physical.jpg').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
 
   let W = 0, H = 0, dpr = 1;
   const map = { worldW: 0, worldH: 0, camX: 0, camY: 0, camVX: 0, camVY: 0, camYAnchor: 0, dragging: false, cache: null };
@@ -94,13 +94,14 @@ try {
     dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // вписать bbox точек по ширине
-    let minLat = 90, maxLat = -90, minLng = 180, maxLng = -180;
-    for (const p of WORDS) { minLat = Math.min(minLat, p.lat); maxLat = Math.max(maxLat, p.lat); minLng = Math.min(minLng, p.lng); maxLng = Math.max(maxLng, p.lng); }
-    const lngSpan = (maxLng + 10) - (minLng - 10);
-    map.worldW = W * (360 / lngSpan); map.worldH = map.worldW / 2;
-    const tl = project(maxLat + 8, minLng - 10), br = project(minLat - 8, maxLng + 10);
-    map.camX = (tl.x + br.x) / 2 - W / 2; map.camY = (tl.y + br.y) / 2 - H / 2; map.camYAnchor = map.camY;
+    // ЦЕНТР — медиана координат (устойчиво к выбросам Гавайи/Тонга, центрирует на Евразию),
+    // охват ~185° долготы (виден весь Старый Свет; Америку/Тихий — панорамой влево/вправо).
+    const lats = WORDS.map((p) => p.lat).sort((a, b) => a - b);
+    const lngs = WORDS.map((p) => p.lng).sort((a, b) => a - b);
+    const medLat = lats[lats.length >> 1], medLng = lngs[lngs.length >> 1];
+    map.worldW = W * (360 / 185); map.worldH = map.worldW / 2;
+    const c = project(medLat, medLng);
+    map.camX = c.x - W / 2; map.camY = c.y - H / 2; map.camYAnchor = map.camY;
     rebuildCache();
   }
   addEventListener('resize', resize);
@@ -161,12 +162,12 @@ try {
       ctx.font = `${p.wt >= 2 ? 600 : 400} ${sz}px ${FAM(p.sc)}`;
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.shadowColor = cc('#000', 0.7); ctx.shadowBlur = (7 + prox * 13) * (0.4 + P.glow);
-      ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.5 + prox * 0.5;
+      ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.72 + prox * 0.28;
       const ox = sz * 0.45, oy = -sz * 0.12;
       let wordX = s.x + ox;
-      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.55 + prox * 0.45); wordX += lr * 2 + sz * 0.16; }
+      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.6 + prox * 0.4); wordX += lr * 2 + sz * 0.16; }
       ctx.fillText(p.w, wordX, s.y + oy);
-      if (prox > 0.22) { ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.55 + prox * 0.3); ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.62); }
+      if (prox > 0.08 || p.wt >= 2) { ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.5 + prox * 0.35); ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.62); }
       ctx.globalAlpha = 1;
       hits.push({ x: s.x, y: s.y, r: Math.max(14, sz * 0.6), i });
     }
@@ -181,12 +182,12 @@ try {
   }
 
   let prev = performance.now();
-  function frame(now) {
-    const dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000)); prev = now; dynamics(dt);
+  function draw() {
+    const now = performance.now(), dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000)); prev = now; dynamics(dt);
     ctx.clearRect(0, 0, W, H);
     drawBase(); drawRoutes(); drawPoints(); bloom();
-    requestAnimationFrame(frame);
   }
+  function frame() { draw(); requestAnimationFrame(frame); }
 
   // pan + тап
   let dx0 = 0, dy0 = 0, dt0 = 0, moved = false, lx = 0, ly = 0, lt = 0;
@@ -237,7 +238,8 @@ try {
   });
 
   resize();
-  requestAnimationFrame(frame);
+  draw();   // синхронный первый кадр — чтобы headless захватил 2D-canvas (rAF-кадры он не тянет)
+  if (!new URLSearchParams(location.search).has('static')) requestAnimationFrame(frame);
   window.__map = { ready: true, n: WORDS.length };
   document.title = 'map READY ' + WORDS.length;
 } catch (e) { showErr((e && e.stack) || e); document.title = 'map ERROR'; console.error(e); }
