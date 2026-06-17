@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<title>rain core test</title>
+<script type="importmap">{ "imports": {
+  "three": "./vendor/three/build/three.webgpu.js",
+  "three/webgpu": "./vendor/three/build/three.webgpu.js",
+  "three/tsl": "./vendor/three/build/three.tsl.js",
+  "three/addons/": "./vendor/three/jsm/"
+}}</script>
+<style>html,body{margin:0;height:100%;background:#0e1216;overflow:hidden;font:13px monospace;color:#cfd0cf}
+#h{position:fixed;left:12px;top:10px;z-index:5;white-space:pre}#h b{color:#D2B773}</style>
+</head><body>
+<canvas id="c"></canvas>
+<div id="h">rain core · бэкенд: <b id="bk">…</b> · <span id="st">init</span></div>
+<script type="module">
+import * as THREE from 'three';
+import { Fn, instancedArray, instanceIndex, uniform, vec2, vec3, vec4, float } from 'three/tsl';
+import { createRenderer, fit } from './engine/renderer.js';
+
+const st = (s)=>document.getElementById('st').textContent=s;
+try {
+  const canvas = document.getElementById('c');
+  const { renderer, backend } = await createRenderer({ canvas, tonemap:'neutral', clear:0x0e1216 });
+  document.getElementById('bk').textContent = backend;
+
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0,0,16); camera.lookAt(0,0,0);
+
+  const COUNT = 3000;
+  const position = instancedArray(COUNT, 'vec3');
+  const velocity = instancedArray(COUNT, 'vec3');
+  // простой fract-sin хеш от индекса
+  const rnd = (k)=> instanceIndex.toFloat().add(k).mul(0.013).sin().mul(43758.5453).fract();
+
+  const init = Fn(()=>{
+    const p = position.element(instanceIndex);
+    const v = velocity.element(instanceIndex);
+    p.assign(vec3( rnd(1.0).sub(0.5).mul(22), rnd(2.0).sub(0.5).mul(16), rnd(3.0).sub(0.5).mul(8) ));
+    v.assign(vec3( 0, float(1.5).add(rnd(4.0).mul(3.5)), 0 ));
+  })().compute(COUNT);
+  await renderer.computeAsync(init);
+
+  const uDt = uniform(0);
+  const update = Fn(()=>{
+    const p = position.element(instanceIndex);
+    const v = velocity.element(instanceIndex);
+    p.addAssign(v.mul(uDt));
+    // wrap по Y: поднялся выше 9 → вернуть вниз
+    p.y.assign( p.y.add(9).mod(18).sub(9) );
+  })().compute(COUNT);
+
+  const mat = new THREE.SpriteNodeMaterial({ transparent:true });
+  mat.positionNode = position.element(instanceIndex);
+  mat.scaleNode = vec2(0.32, 0.32);
+  mat.colorNode = vec4(0.823, 0.718, 0.451, 1.0);   // латунь
+  const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1,1), mat, COUNT);
+  mesh.frustumCulled = false;
+  scene.add(mesh);
+
+  const onR=()=>fit(renderer,camera); addEventListener('resize',onR); onR();
+  let prev=performance.now(), n=0;
+  renderer.setAnimationLoop(async ()=>{
+    const now=performance.now(), dt=Math.min(0.05,(now-prev)/1000); prev=now;
+    uDt.value=dt;
+    await renderer.computeAsync(update);
+    await renderer.renderAsync(scene,camera);
+    if(++n===3){ st('рендер идёт ✓ ('+COUNT+' частиц)'); document.title='rain READY:'+backend; }
+  });
+} catch(e){ st('ОШИБКА: '+(e&&e.message||e)); document.title='rain ERROR'; console.error(e); }
+</script>
+</body></html>
