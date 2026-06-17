@@ -1,0 +1,146 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v3 · Глобус (WebGPU)</title>
+<link rel="stylesheet" href="./fonts/faces.css">
+<script type="importmap">
+{ "imports": {
+  "three":         "./vendor/three/build/three.webgpu.js",
+  "three/webgpu":  "./vendor/three/build/three.webgpu.js",
+  "three/tsl":     "./vendor/three/build/three.tsl.js",
+  "three/addons/": "./vendor/three/jsm/"
+}}
+</script>
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--red:#A02128;--window:#9DA3A8}
+  html,body{margin:0;height:100%;overflow:hidden;background:#12161a;
+    font-family:"20 Kopeek",ui-monospace,Menlo,monospace;color:var(--paper)}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;display:block;cursor:grab;touch-action:none}
+  #c:active{cursor:grabbing}
+  /* виньетка поверх (дёшево и кинематографично) */
+  #vign{position:fixed;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(ellipse 64% 64% at 50% 46%,transparent 30%,rgba(6,8,10,.82) 100%)}
+  /* плёночное зерно — дробит бандинг градиентов (сфера + CSS-виньетка) + кинематографик */
+  #grain{position:fixed;inset:0;z-index:7;pointer-events:none;opacity:.07;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:158px 158px}
+  #hint{position:fixed;left:16px;bottom:12px;z-index:7;font-size:12px;color:var(--window);opacity:.6;pointer-events:none}
+  #hint b{color:var(--brass)}
+  #err{position:fixed;left:16px;top:60px;z-index:9;max-width:60vw;color:#ff9a9a;font-size:13px;white-space:pre-wrap;display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vign"></div>
+<div id="grain"></div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот с инерцией · <b>P</b> — нагрузка</div>
+<div id="err"></div>
+<script type="module">
+import * as THREE from 'three';
+import { pass } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { createRenderer, fit } from './engine/renderer.js';
+import { createStats } from './engine/stats.js';
+import { createGlobe } from './scenes/globe-rings.js';
+import { WORDS } from './words.js';
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
+window.__globe = { ready: false };
+
+try {
+  const canvas = document.getElementById('c');
+  // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+
+  const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x12161a);
+  scene.fog = new THREE.FogExp2(0x12161a, 0.021);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 0, 8.2);
+
+  // глобус слов (структура v1) + тело
+  const globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0 });
+  scene.add(globe.group);
+
+  // свет — лепит тело (слова unlit, остаются читаемыми)
+  scene.add(new THREE.AmbientLight(0x9DA3A8, 0.45));
+  const key = new THREE.DirectionalLight(0xF7F9EF, 1.7); key.position.set(-4, 5, 4); scene.add(key);
+  const warm = new THREE.PointLight(0xD2B773, 16, 32); warm.position.set(5, -2, 3); scene.add(warm);
+
+  // латунное гало за глобусом
+  scene.add(makeHalo());
+
+  function makeHalo() {
+    const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(s / 2, s / 2, s * 0.16, s / 2, s / 2, s * 0.5);
+    g.addColorStop(0, 'rgba(210,183,115,0.34)');
+    g.addColorStop(0.45, 'rgba(210,183,115,0.10)');
+    g.addColorStop(1, 'rgba(210,183,115,0)');
+    x.fillStyle = g; x.fillRect(0, 0, s, s);
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true }));
+    sp.scale.set(7.4, 7.4, 1); sp.position.set(0, 0, -2); sp.renderOrder = -10;
+    return sp;
+  }
+
+  // кино-пост: TSL bloom (с graceful-фоллбэком на чистый рендер)
+  let post = null;
+  try {
+    post = new THREE.PostProcessing(renderer);
+    const scenePass = pass(scene, camera);
+    const col = scenePass.getTextureNode('output');
+    const bloomPass = bloom(col, 0.5, 0.42, 0.82);  // strength, radius, threshold (только яркие ядра)
+    post.outputNode = col.add(bloomPass);
+  } catch (err) { console.warn('[bloom off]', err); post = null; }
+
+  // drag-вращение группы + инерция + авто-вращение
+  const R = { yaw: -0.25, pitch: -0.14, vy: 0.10, vp: 0, drag: false, lx: 0, ly: 0, lt: 0 };
+  canvas.addEventListener('pointerdown', (e) => { R.drag = true; R.lx = e.clientX; R.ly = e.clientY; R.lt = performance.now(); canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!R.drag) return;
+    const now = performance.now(), dt = Math.max(16, now - R.lt);
+    const dx = e.clientX - R.lx, dy = e.clientY - R.ly;
+    R.yaw += dx * 0.005; R.pitch = clamp(R.pitch + dy * 0.005, -1.15, 1.15);
+    R.vy = dx * 0.005 / (dt / 1000); R.vp = dy * 0.005 / (dt / 1000);
+    R.lx = e.clientX; R.ly = e.clientY; R.lt = now;
+  }, { passive: true });
+  const endDrag = (e) => { R.drag = false; canvas.releasePointerCapture && e && e.pointerId != null && (() => { try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} })(); };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', endDrag);
+
+  const stats = createStats(renderer, { extra: () => `слова     ${globe.count}` });
+
+  function onResize() { fit(renderer, camera, document.body); }
+  addEventListener('resize', onResize); onResize();
+
+  // ручной rAF-цикл: ждём завершения renderAsync → renderer.info заполнен → монитор честен
+  let prev = performance.now(), n = 0;
+  async function frame() {
+    const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+    if (!R.drag) {
+      R.yaw += (R.vy + 0.06) * dt;
+      R.pitch = clamp(R.pitch + R.vp * dt, -1.15, 1.15);
+      R.vy *= Math.pow(0.94, dt * 60); R.vp *= Math.pow(0.9, dt * 60);
+    }
+    globe.group.rotation.set(R.pitch, R.yaw, 0);
+    if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
+    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    if (++n === 3) { window.__globe = { ready: true, backend, count: globe.count }; document.title = 'globe READY:' + backend; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+} catch (e) {
+  showErr((e && e.stack) || e);
+  document.title = 'globe ERROR';
+  console.error(e);
+}
+</script>
+</body>
+</html>
