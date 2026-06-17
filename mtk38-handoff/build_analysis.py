@@ -112,7 +112,7 @@ HTML = r"""<!doctype html>
   <nav>
     <a href="./index.html">Главная</a>
     <a href="./app.html">Арт-объект</a>
-    <a href="./validate.html">Валидация написаний</a>
+    <a href="./editor.html">Данные и приёмка</a>
     <a href="./analysis.html" class="active">Аналитика и предложения</a>
   </nav>
   <h1>Репрезентативность списка: <b>__NL__</b> и мир</h1>
