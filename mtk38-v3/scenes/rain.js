@@ -45,6 +45,7 @@ export async function createRain(THREE, renderer, {
   // — ОБНОВЛЕНИЕ —
   const uDt = uniform(0), uBuoy = uniform(2.4), uDrag = uniform(0.6), uRepel = uniform(11.0);
   const uPointer = uniform(new THREE.Vector3(0, 0, 0)), uPointerR = uniform(0);
+  const uSizeScale = uniform(1.0);
   const uTop = float(HY + 2.5), uBottom = float(-HY - 2.5);
 
   const computeUpdate = Fn(() => {
@@ -86,7 +87,7 @@ export async function createRain(THREE, renderer, {
   const wi = data.x.toInt();
   const size = sizeArr.element(data.y.toInt());
   const aspect = aspectArr.element(wi);
-  mat.scaleNode = vec2(size.mul(aspect), size);
+  mat.scaleNode = vec2(size.mul(aspect), size).mul(uSizeScale);
   const rect = rectArr.element(wi);
   const texel = texture(atlas.texture, rect.xy.add(uv().mul(rect.zw)));
   mat.colorNode = toneArr.element(data.z.toInt());
@@ -97,7 +98,7 @@ export async function createRain(THREE, renderer, {
 
   return {
     mesh, count,
-    params: { uBuoy, uDrag, uRepel },
+    params: { uBuoy, uDrag, uRepel, uSizeScale },
     setPointer(v3, radius) { uPointer.value.copy(v3); uPointerR.value = radius; },
     update(dt) { uDt.value = dt; return renderer.computeAsync(computeUpdate); },
   };
