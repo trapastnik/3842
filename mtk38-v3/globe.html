@@ -77,8 +77,8 @@ try {
   let autoSpin = 0.06;
 
   // географический глобус ПОД именами — своя группа → своя скорость (параллакс-глубина)
-  let earth = null, earthYaw = -0.25, earthSpin = 0.028;
-  try { earth = await createEarth(THREE, { radius: 2.5 * 0.965 }); scene.add(earth.group); }
+  let earth = null, earthYaw = -0.25, earthSpin = 0.028, earthMode = 'countries', earthBorders = false;
+  try { earth = await createEarth(THREE, { radius: 2.5 * 0.965, mode: earthMode }); scene.add(earth.group); }
   catch (e) { console.warn('[earth off]', e); }
 
   // свет — лепит тело (слова unlit, остаются читаемыми)
@@ -223,10 +223,16 @@ try {
       case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
       case 'earthSpin': earthSpin = v; break;
       case 'earthGlow': if (earth) earth.setGlow(v); break;
+      case 'earthMap': earthMode = v; if (earth) earth.setMode(earthMode, earthBorders); break;
+      case 'earthBorders': earthBorders = !!v; if (earth) earth.setMode(earthMode, earthBorders); break;
     }
   }
   createTuner({
     title: 'глобус v3',
+    segments: [
+      { key: 'earthMap', label: 'карта Земли', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
+      { key: 'earthBorders', label: 'границы на карте', options: [[0, 'выкл'], [1, 'вкл']], value: 0 },
+    ],
     groups: [
       { title: 'сфера', params: [
         { key: 'spin', label: 'вращение', min: 0, max: 1.2, step: .01, value: 0.06 },
