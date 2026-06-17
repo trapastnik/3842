@@ -50,10 +50,10 @@ export async function createRenderer({
   return { THREE, renderer, backend, webgpuAvailable };
 }
 
-/** Подгоняет рендерер и камеру под размер контейнера (вызывать на resize). */
-export function fit(renderer, camera, el = renderer.domElement) {
-  const w = el.clientWidth || globalThis.innerWidth;
-  const h = el.clientHeight || globalThis.innerHeight;
+/** Подгоняет рендерер и камеру под визуальный вьюпорт (вызывать на resize). */
+export function fit(renderer, camera) {
+  const w = globalThis.innerWidth || 1;
+  const h = globalThis.innerHeight || 1;
   renderer.setSize(w, h, false);
   if (camera && camera.isPerspectiveCamera) {
     camera.aspect = w / h;

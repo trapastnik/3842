@@ -35,7 +35,7 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот с инерцией · <b>P</b> — нагрузка</div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап по слову</b> → карточка · <b>P</b> — нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -43,6 +43,7 @@ import { pass } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
+import { createCard } from './engine/card.js';
 import { createGlobe } from './scenes/globe-rings.js';
 import { WORDS } from './words.js';
 
@@ -63,6 +64,7 @@ try {
 
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
   camera.position.set(0, 0, 8.2);
+  camera.lookAt(0, 0, 0);
 
   // глобус слов (структура v1) + тело
   const globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0 });
@@ -100,25 +102,48 @@ try {
     post.outputNode = col.add(bloomPass);
   } catch (err) { console.warn('[bloom off]', err); post = null; }
 
-  // drag-вращение группы + инерция + авто-вращение
-  const R = { yaw: -0.25, pitch: -0.14, vy: 0.10, vp: 0, drag: false, lx: 0, ly: 0, lt: 0 };
-  canvas.addEventListener('pointerdown', (e) => { R.drag = true; R.lx = e.clientX; R.ly = e.clientY; R.lt = performance.now(); canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId); });
+  // карточка языка Р2 (переиспользуемый модуль по образцу v2)
+  const card = createCard();
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function tapAt(cx, cy) {
+    ndc.set((cx / globalThis.innerWidth) * 2 - 1, -(cy / globalThis.innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(globe.meshes, false)[0];   // FrontSide → только видимые (передние) слова
+    if (hit && hit.object.userData.wi != null) card.open(WORDS[hit.object.userData.wi]);
+    else card.close();
+  }
+
+  // drag-вращение + инерция + авто-вращение; ТАП (без движения, быстро) → карточка
+  const R = { yaw: -0.25, pitch: -0.14, vy: 0.10, vp: 0, drag: false, lx: 0, ly: 0, lt: 0, dx0: 0, dy0: 0, dt0: 0, moved: false };
+  canvas.addEventListener('pointerdown', (e) => {
+    R.drag = true; R.moved = false; R.lx = e.clientX; R.ly = e.clientY; R.lt = performance.now();
+    R.dx0 = e.clientX; R.dy0 = e.clientY; R.dt0 = R.lt;
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  });
   canvas.addEventListener('pointermove', (e) => {
     if (!R.drag) return;
+    if (Math.hypot(e.clientX - R.dx0, e.clientY - R.dy0) > 6) R.moved = true;
     const now = performance.now(), dt = Math.max(16, now - R.lt);
     const dx = e.clientX - R.lx, dy = e.clientY - R.ly;
     R.yaw += dx * 0.005; R.pitch = clamp(R.pitch + dy * 0.005, -1.15, 1.15);
     R.vy = dx * 0.005 / (dt / 1000); R.vp = dy * 0.005 / (dt / 1000);
     R.lx = e.clientX; R.ly = e.clientY; R.lt = now;
   }, { passive: true });
-  const endDrag = (e) => { R.drag = false; canvas.releasePointerCapture && e && e.pointerId != null && (() => { try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} })(); };
+  const endDrag = (e) => {
+    if (R.drag && !R.moved && (performance.now() - R.dt0) < 400) tapAt(e.clientX, e.clientY);
+    R.drag = false;
+    if (canvas.releasePointerCapture && e && e.pointerId != null) { try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} }
+  };
   canvas.addEventListener('pointerup', endDrag);
-  canvas.addEventListener('pointercancel', endDrag);
+  canvas.addEventListener('pointercancel', () => { R.drag = false; });
 
   const stats = createStats(renderer, { extra: () => `слова     ${globe.count} (меш ${globe.drawWords})` });
 
-  function onResize() { fit(renderer, camera, document.body); }
-  addEventListener('resize', onResize); onResize();
+  const onResize = () => { fit(renderer, camera); if (post) post.needsUpdate = true; };
+  addEventListener('resize', onResize);
+  if (globalThis.ResizeObserver) new ResizeObserver(onResize).observe(document.documentElement);
+  onResize();
+  requestAnimationFrame(onResize);   // повторный фит после раскладки (Retina/позднее layout)
 
   // ручной rAF-цикл: ждём завершения renderAsync → renderer.info заполнен → монитор честен
   let prev = performance.now(), n = 0;
