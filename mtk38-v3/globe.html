@@ -35,15 +35,18 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап по слову</b> → карточка · <b>P</b> — нагрузка</div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
-import { pass } from 'three/tsl';
+import { pass, uniform, convertToTexture, normalView, positionViewDirection, float, vec3, vec2 } from 'three/tsl';
 import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
+import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
 import { createCard } from './engine/card.js';
+import { createTuner } from './tuner.js';
 import { createGlobe } from './scenes/globe-rings.js';
 import { WORDS } from './words.js';
 
@@ -68,8 +71,9 @@ try {
   camera.lookAt(0, 0, 0);
 
   // глобус слов (структура v1) + тело
-  const globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0 });
+  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0 });
   scene.add(globe.group);
+  let autoSpin = 0.06;
 
   // свет — лепит тело (слова unlit, остаются читаемыми)
   scene.add(new THREE.AmbientLight(0x9DA3A8, 0.45));
@@ -93,15 +97,39 @@ try {
     return sp;
   }
 
-  // кино-пост: TSL bloom (с graceful-фоллбэком на чистый рендер)
+  // живые юниформы пост-эффектов (крутятся из tuner)
+  const uDofFocus = uniform(8.2), uDofRange = uniform(6.0), uDofBokeh = uniform(0.0), uCa = uniform(0.4), uAtmo = uniform(1.0);
+  let bloomPass = null;
+
+  // fresnel-атмосфера (латунный лимб) — TSL-нода на оболочке-сфере, аддитивно
+  try {
+    const atmoMat = new THREE.MeshBasicNodeMaterial();
+    atmoMat.transparent = true; atmoMat.depthWrite = false; atmoMat.depthTest = false;
+    atmoMat.side = THREE.FrontSide; atmoMat.blending = THREE.AdditiveBlending;
+    const fres = float(1).sub(normalView.dot(positionViewDirection).max(0)).pow(2.6);
+    atmoMat.colorNode = vec3(0.823, 0.718, 0.451);     // латунь
+    atmoMat.opacityNode = fres.mul(uAtmo);
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(2.5 * 1.045, 64, 48), atmoMat);
+    atmo.renderOrder = 5; scene.add(atmo);
+  } catch (e) { console.warn('[atmo off]', e); }
+
+  // кино-пост: DOF (rack-focus) → bloom → хром. аберрация. Параметры живые (юниформы выше).
   let post = null;
   try {
     post = new THREE.PostProcessing(renderer);
     const scenePass = pass(scene, camera);
-    const col = scenePass.getTextureNode('output');
-    const bloomPass = bloom(col, 0.5, 0.42, 0.82);  // strength, radius, threshold (только яркие ядра)
-    post.outputNode = col.add(bloomPass);
-  } catch (err) { console.warn('[bloom off]', err); post = null; }
+    const colorTex = scenePass.getTextureNode('output');
+    let base = colorTex;
+    try { base = dof(colorTex, scenePass.getViewZNode(), uDofFocus, uDofRange, uDofBokeh); }
+    catch (e) { console.warn('[dof off]', e); base = colorTex; }
+    const baseTex = convertToTexture(base);
+    let out = baseTex;
+    try { bloomPass = bloom(baseTex, 0.5, 0.42, 0.82); out = baseTex.add(bloomPass); }
+    catch (e) { console.warn('[bloom off]', e); out = baseTex; }
+    try { out = chromaticAberration(out, uCa, vec2(0.5, 0.5), 1.1); }
+    catch (e) { console.warn('[ca off]', e); }
+    post.outputNode = out;
+  } catch (err) { console.warn('[post off]', err); post = null; }
 
   // карточка языка Р2 (переиспользуемый модуль по образцу v2)
   const card = createCard();
@@ -159,6 +187,59 @@ try {
     },
   });
 
+  // плотность — перестройка глобуса (debounce); масштабирует и число слов (стресс ×N)
+  let densityTimer = 0;
+  function setDensity(d) {
+    clearTimeout(densityTimer);
+    densityTimer = setTimeout(() => {
+      const old = globe;
+      scene.remove(old.group);
+      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d });
+      scene.add(globe.group);
+      old.dispose();
+    }, 180);
+  }
+
+  // живая панель параметров (переиспользуемый tuner.js)
+  function apply(k, v) {
+    switch (k) {
+      case 'spin': autoSpin = v; break;
+      case 'density': setDensity(v); break;
+      case 'exposure': renderer.toneMappingExposure = v; break;
+      case 'bloom': if (bloomPass) bloomPass.strength.value = v; break;
+      case 'bloomThr': if (bloomPass) bloomPass.threshold.value = v; break;
+      case 'atmo': uAtmo.value = v; break;
+      case 'dofBokeh': uDofBokeh.value = v; break;
+      case 'dofFocus': uDofFocus.value = v; break;
+      case 'ca': uCa.value = v; break;
+      case 'fog': scene.fog.density = v; break;
+      case 'grain': { const g = document.getElementById('grain'); if (g) g.style.opacity = v; break; }
+      case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
+    }
+  }
+  createTuner({
+    title: 'глобус v3',
+    groups: [
+      { title: 'сфера', params: [
+        { key: 'spin', label: 'вращение', min: 0, max: 1.2, step: .01, value: 0.06 },
+        { key: 'density', label: 'плотность', min: 0.5, max: 2.2, step: .05, value: 1 },
+      ] },
+      { title: 'свет / пост', params: [
+        { key: 'exposure', label: 'экспозиция', min: 0.4, max: 1.8, step: .02, value: 1.0 },
+        { key: 'bloom', label: 'свечение', min: 0, max: 2, step: .02, value: 0.5 },
+        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: 0.82 },
+        { key: 'atmo', label: 'атмосфера', min: 0, max: 3, step: .05, value: 1.0 },
+        { key: 'dofBokeh', label: 'DOF боке', min: 0, max: 3, step: .05, value: 0 },
+        { key: 'dofFocus', label: 'DOF фокус', min: 4, max: 13, step: .1, value: 8.2 },
+        { key: 'ca', label: 'аберрация', min: 0, max: 3, step: .05, value: 0.4 },
+        { key: 'fog', label: 'туман', min: 0, max: 0.06, step: .002, value: 0.021 },
+        { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.07 },
+        { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
+      ] },
+    ],
+    onChange: (k, v) => apply(k, v),
+  });
+
   const onResize = () => { fit(renderer, camera); if (post) post.needsUpdate = true; };
   addEventListener('resize', onResize);
   if (globalThis.ResizeObserver) new ResizeObserver(onResize).observe(document.documentElement);
@@ -170,7 +251,7 @@ try {
   async function frame() {
     const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
     if (!R.drag) {
-      R.yaw += (R.vy + 0.06) * dt;
+      R.yaw += (R.vy + autoSpin) * dt;
       R.pitch = clamp(R.pitch + R.vp * dt, -1.15, 1.15);
       R.vy *= Math.pow(0.94, dt * 60); R.vp *= Math.pow(0.9, dt * 60);
     }
