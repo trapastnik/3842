@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v2 · превью всего сделанного</title>
+<style>
+  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype")}
+  :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--graphite:#435059;--red:#A02128}
+  *{box-sizing:border-box}
+  body{margin:0;background:#333d44;color:var(--telegrey);font:15px/1.5 system-ui,-apple-system,sans-serif;padding:32px clamp(20px,5vw,64px) 60px}
+  h1{font-family:"Nolde",Georgia,serif;font-weight:400;font-size:clamp(30px,5vw,52px);color:var(--paper);margin:0 0 4px}
+  h1 b{color:var(--brass);font-weight:400}
+  .sub{color:var(--window);font-size:14px;margin:0 0 28px;max-width:70ch}
+  h2{font-size:14px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);margin:30px 0 12px;border-bottom:1px solid #51606a;padding-bottom:6px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  a.card{display:block;text-decoration:none;background:#3b4751;border:1px solid #51606a;border-radius:12px;padding:16px 18px;transition:.15s}
+  a.card:hover{background:#465562;border-color:var(--brass);transform:translateY(-2px)}
+  .card .n{font-family:"Nolde",Georgia,serif;font-size:21px;color:var(--paper)}
+  .card .d{font-size:13px;color:var(--telegrey);margin-top:5px;line-height:1.45}
+  .badge{display:inline-block;font-size:10px;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:10px;margin-top:9px}
+  .b-v1{background:var(--brass);color:#1a1f23}.b-tool{background:var(--graphite);color:var(--paper);border:1px solid var(--window)}
+  .b-draft{background:transparent;color:var(--window);border:1px dashed var(--window)}
+  .note{font-size:12px;color:var(--window);margin-top:8px}
+  footer{margin-top:36px;color:var(--window);font-size:12px;border-top:1px solid #51606a;padding-top:16px}
+</style>
+</head>
+<body>
+<h1>«<b>Ленин</b>» на языках мира — v2 · превью</h1>
+<p class="sub">Всё, что собрано в этом цикле. Открывается локально (двойной клик / file://). Папка:
+<code>mtk38-v2/</code> · данные: <code>data/mtk38.json</code> (52 языка), <code>data/mtk38-quotes.json</code> (13 цитат).</p>
+
+<h2>Варианты — структурно по V1 (пересобраны)</h2>
+<div class="grid">
+  <a class="card" href="./globe.html"><div class="n">Глобус</div><div class="d">Сфера из 19 колец-широт, слова на параллелях, поворот с инерцией, светящийся лимб. Тап по слову → карточка языка.</div><span class="badge b-v1">по V1 + апгрейд</span></a>
+  <a class="card" href="./map.html"><div class="n">Карта мира</div><div class="d">Настоящая карта (контуры стран), точки по координатам, pan с инерцией, идеологические маршруты. Тап по точке → модалка.</div><span class="badge b-v1">по V1 + апгрейд</span></a>
+</div>
+<p class="note">↑ это те два, что ты просил вернуть к структуре V1. Остальные 6 (каталог · мандала · дождь · лента · постер · облако) — в очереди на пересборку по тому же принципу.</p>
+
+<h2>Сэндбоксы рендера (тюнинг параметров)</h2>
+<div class="grid">
+  <a class="card" href="./render-test.html"><div class="n">Рендер-сэндбокс</div><div class="d">WebGL-глобус + панель: bloom, туман, экспозиция, вращение, размер, цвет, фон. «Скопировать» настройки.</div><span class="badge b-draft">сэндбокс</span></a>
+  <a class="card" href="./quotes-test.html"><div class="n">Размещение цитат</div><div class="d">Цитата над глобусом: 5 режимов (центр/низ/сбоку/сцена/уголок), свечение + feather-разблюр, панель.</div><span class="badge b-draft">сэндбокс</span></a>
+  <a class="card" href="./app.html"><div class="n">Единый движок (7 раскладок)</div><div class="d">Обобщённый WebGL-движок: globe/cloud/mandala/rain/ticker/wall/map в одном, тюнинг + цитаты. Ранний черновик до коррекции по V1.</div><span class="badge b-draft">черновик</span></a>
+</div>
+
+<h2>Инструменты для заказчика</h2>
+<div class="grid">
+  <a class="card" href="./index.html"><div class="n">Лендинг</div><div class="d">Входная страница v2 (арт-объект + инструменты).</div><span class="badge b-tool">инструмент</span></a>
+  <a class="card" href="./validate.html"><div class="n">Валидатор написаний</div><div class="d">Контур с листа музея ↔ моя расшифровка + реальный шрифт + юникод-коды. Отметки ✓/✗, экспорт. 52 языка.</div><span class="badge b-tool">инструмент</span></a>
+  <a class="card" href="./analysis.html"><div class="n">Аналитика + предложения</div><div class="d">Репрезентативность: мировой топ-25, охват по регионам, что уже есть по семьям, предложения (испанский/хинди…).</div><span class="badge b-tool">инструмент</span></a>
+</div>
+
+<footer>МТК 38 «Ленин на языках мира» · версия 2 · ветка claude/mtk38-worker (не задеплоено) ·
+все варианты используют 20 Kopeek / Arial Unicode MS / Noto, без CDN.</footer>
+</body>
+</html>
