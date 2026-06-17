@@ -8,8 +8,9 @@
 <script type="module">
 import * as THREE from 'three';
 import { makeWordAtlas } from './engine/atlas.js';
-import { WORDS } from './words.js';
+import { loadWords } from './engine/data.js';
 await (document.fonts ? document.fonts.ready : Promise.resolve());
+const WORDS = await loadWords();
 const a = makeWordAtlas(THREE, WORDS, {});
 const src = a.texture.image;                       // канвас атласа
 const c = document.createElement('canvas');

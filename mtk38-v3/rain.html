@@ -36,13 +36,14 @@ import { createStats } from './engine/stats.js';
 import { createTuner } from './tuner.js';
 import { makeWordAtlas } from './engine/atlas.js';
 import { createRain } from './scenes/rain.js';
-import { WORDS } from './words.js';
+import { loadWords } from './engine/data.js';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
 window.__rain = { ready: false };
 try {
   const canvas = document.getElementById('c');
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+  const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x10141a });
 

@@ -49,7 +49,7 @@ import { createCard } from './engine/card.js';
 import { createTuner } from './tuner.js';
 import { createGlobe } from './scenes/globe-rings.js';
 import { createEarth } from './scenes/earth.js';
-import { WORDS } from './words.js';
+import { loadWords } from './engine/data.js';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
@@ -60,6 +60,7 @@ try {
   const DEBUG = new URLSearchParams(location.search).has('debug');  // ?debug=1 — крестик-центр + цифры
   // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+  const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
 
