@@ -10,7 +10,7 @@ import * as THREE from 'three';
 import { makeWordAtlas } from './engine/atlas.js';
 import { WORDS } from './words.js';
 await (document.fonts ? document.fonts.ready : Promise.resolve());
-const a = makeWordAtlas(THREE, WORDS, { cell: 256, cols: 8 });
+const a = makeWordAtlas(THREE, WORDS, {});
 const src = a.texture.image;                       // канвас атласа
 const c = document.createElement('canvas');
 c.width = Math.round(src.width / 2.5); c.height = Math.round(src.height / 2.5);

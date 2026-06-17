@@ -1,65 +1,54 @@
 // МТК 38 v3 · engine/atlas.js
-// Упаковка всех слов «Ленин» в ОДИН атлас-текстуру (для GPU-частиц: 1 draw call).
-// Глифы — БЕЛЫЕ (тон задаётся в шейдере умножением на цвет). Размер ячейки по фактическим
-// границам глифа (actualBoundingBox), хранится плотный UV-rect + аспект каждого слова.
+// Атлас глифов для GPU-частиц (1 draw call). КАЖДОЕ слово рисуется по СВОИМ фактическим
+// границам чернил (actualBoundingBox + поля) и пакуется полками — НИКАКОГО фикс. кегля/
+// ячеек со скейлом. Так выносные элементы сложных письменностей (тибетское/индийские/
+// арабское/лаосское/кхмерское/…) НЕ обрезаются. Белые глифы (тон задаётся в шейдере).
+// Источник слов и шрифт-стек идентичны globe (words.js + text.js FAM).
 
 const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl')
   ? `'20 Kopeek','Arial Unicode MS',sans-serif`
   : `'Arial Unicode MS','noto-${sc}',sans-serif`;
 
 /**
- * @returns {{texture, rects:Array<{x,y,w,h,aspect}>, W:number, H:number, cols:number, rows:number}}
- *   rects[i] — нормализованный UV-прямоугольник плотной рамки слова i + его аспект (w/h).
+ * @returns {{texture, rects:Array<{x,y,w,h,aspect}>, W, H, count}}
+ *   rects[i] — нормализованный UV-rect плотной рамки слова i (по чернилам + поля) + аспект.
  */
-export function makeWordAtlas(THREE, words, { cols = 8, cell = 320, pad = 0.10, glow = 0.05 } = {}) {
-  const n = words.length;
-  const rows = Math.ceil(n / cols);
-  const cellW = Math.round(cell * 2.0);     // ячейки шире, чем выше (слова широкие)
-  const cellH = cell;
-  const W = cols * cellW, H = rows * cellH;
-  const cnv = document.createElement('canvas'); cnv.width = W; cnv.height = H;
-  const ctx = cnv.getContext('2d');
+export function makeWordAtlas(THREE, words, { fontPx = 170, pad = 12, maxW = 4096 } = {}) {
+  const meas = document.createElement('canvas').getContext('2d');
 
-  const rects = new Array(n);
-  for (let i = 0; i < n; i++) {
-    const wd = words[i];
-    const col = i % cols, row = Math.floor(i / cols);
-    const ox = col * cellW, oy = row * cellH;
-    const fam = FAM(wd.sc);
+  // 1) измерить каждое слово ПО ФАКТИЧЕСКИМ ГРАНИЦАМ (actualBoundingBox), не по кеглю
+  const boxes = words.map((wd) => {
     const wt = (wd.sc === 'Latn' || wd.sc === 'Cyrl') ? 600 : 400;
-
-    // подобрать кегль так, чтобы глиф влез в ячейку с полями
-    let fs = cellH * 0.7;
-    ctx.font = `${wt} ${fs}px ${fam}`;
-    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
-    let m = ctx.measureText(wd.w);
-    let gw = (m.actualBoundingBoxLeft ?? 0) + (m.actualBoundingBoxRight ?? m.width);
-    let gh = (m.actualBoundingBoxAscent ?? fs * 0.8) + (m.actualBoundingBoxDescent ?? fs * 0.2);
-    const fit = Math.min((cellW * (1 - pad * 2)) / gw, (cellH * (1 - pad * 2)) / gh, 1);
-    fs *= fit;
-
-    ctx.font = `${wt} ${fs}px ${fam}`;
-    m = ctx.measureText(wd.w);
+    const fam = FAM(wd.sc);
+    meas.font = `${wt} ${fontPx}px ${fam}`;
+    meas.textAlign = 'left'; meas.textBaseline = 'alphabetic';
+    const m = meas.measureText(wd.w);
     const left = m.actualBoundingBoxLeft ?? 0;
     const right = m.actualBoundingBoxRight ?? m.width;
-    const asc = m.actualBoundingBoxAscent ?? fs * 0.8;
-    const desc = m.actualBoundingBoxDescent ?? fs * 0.2;
-    const dw = Math.max(1, left + right), dh = Math.max(1, asc + desc);
+    const asc = m.actualBoundingBoxAscent ?? fontPx * 0.82;   // реальный верхний вынос
+    const desc = m.actualBoundingBoxDescent ?? fontPx * 0.22; // реальный нижний вынос
+    const gw = Math.max(1, left + right), gh = Math.max(1, asc + desc);
+    return { wd, wt, fam, left, asc, w: Math.ceil(gw) + pad * 2, h: Math.ceil(gh) + pad * 2 };
+  });
 
-    // позиция базовой линии: центрируем плотную рамку в ячейке
-    const bx = ox + (cellW - dw) / 2 + left;
-    const by = oy + (cellH - dh) / 2 + asc;
-    ctx.fillStyle = '#ffffff';
-    ctx.shadowColor = '#ffffff'; ctx.shadowBlur = fs * glow;
-    ctx.fillText(wd.w, bx, by);
-
-    // плотный UV-rect (+ небольшой запас под свечение)
-    const padPx = fs * glow * 1.2;
-    const rx = ox + (cellW - dw) / 2 - padPx;
-    const ry = oy + (cellH - dh) / 2 - padPx;
-    const rw = dw + padPx * 2, rh = dh + padPx * 2;
-    rects[i] = { x: rx / W, y: ry / H, w: rw / W, h: rh / H, aspect: rw / rh };
+  // 2) упаковка полками (shelf packing) в ширину maxW
+  let x = 0, y = 0, rowH = 0;
+  for (const b of boxes) {
+    if (x + b.w > maxW && x > 0) { x = 0; y += rowH; rowH = 0; }
+    b.x = x; b.y = y; x += b.w; rowH = Math.max(rowH, b.h);
   }
+  const W = maxW, H = y + rowH;
+
+  // 3) отрисовка белым + плотные UV-rect (глиф ровно в своей рамке с полем pad → не режется)
+  const cnv = document.createElement('canvas'); cnv.width = W; cnv.height = H;
+  const ctx = cnv.getContext('2d');
+  ctx.fillStyle = '#ffffff';
+  const rects = boxes.map((b) => {
+    ctx.font = `${b.wt} ${fontPx}px ${b.fam}`;
+    ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
+    ctx.fillText(b.wd.w, b.x + pad + b.left, b.y + pad + b.asc);
+    return { x: b.x / W, y: b.y / H, w: b.w / W, h: b.h / H, aspect: b.w / b.h };
+  });
 
   const tex = new THREE.CanvasTexture(cnv);
   tex.colorSpace = THREE.SRGBColorSpace;
@@ -68,5 +57,5 @@ export function makeWordAtlas(THREE, words, { cols = 8, cell = 320, pad = 0.10, 
   tex.magFilter = THREE.LinearFilter;
   tex.generateMipmaps = true;
   tex.needsUpdate = true;
-  return { texture: tex, rects, W, H, cols, rows };
+  return { texture: tex, rects, W, H, count: words.length };
 }

@@ -52,7 +52,7 @@ try {
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
   camera.position.set(0, 0, 26); camera.lookAt(0, 0, 0);
 
-  const atlas = makeWordAtlas(THREE, WORDS, { cell: 256, cols: 8, glow: 0 });
+  const atlas = makeWordAtlas(THREE, WORDS, {});
   let rain = await createRain(THREE, renderer, { atlas, count: 500 });
   scene.add(rain.mesh);
 
@@ -119,7 +119,7 @@ try {
     title: 'дождь v3',
     groups: [
       { title: 'дождь', params: [
-        { key: 'count', label: 'количество', min: 200, max: 14000, step: 100, value: 500 },
+        { key: 'count', label: 'количество', min: 100, max: 14000, step: 100, value: 500 },
         { key: 'speed', label: 'скорость', min: 0, max: 6, step: .1, value: 2.4 },
         { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
         { key: 'size', label: 'размер', min: 0.4, max: 2.5, step: .05, value: 1 },
