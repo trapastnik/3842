@@ -94,14 +94,11 @@ try {
     dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
     canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    // ЦЕНТР — медиана координат (устойчиво к выбросам Гавайи/Тонга, центрирует на Евразию),
-    // охват ~185° долготы (виден весь Старый Свет; Америку/Тихий — панорамой влево/вправо).
-    const lats = WORDS.map((p) => p.lat).sort((a, b) => a - b);
-    const lngs = WORDS.map((p) => p.lng).sort((a, b) => a - b);
-    const medLat = lats[lats.length >> 1], medLng = lngs[lngs.length >> 1];
-    map.worldW = W * (360 / 185); map.worldH = map.worldW / 2;
-    const c = project(medLat, medLng);
-    map.camX = c.x - W / 2; map.camY = c.y - H / 2; map.camYAnchor = map.camY;
+    // ВЕСЬ МИР ЦЕЛИКОМ: 360° долготы по ширине вьюпорта, центр — нулевой меридиан.
+    // Все 52 точки в кадре сразу; вертикаль сдвинута к северу (там основная масса языков).
+    map.worldW = W; map.worldH = W / 2;
+    map.camX = 0;
+    map.camY = project(20, 0).y - H / 2; map.camYAnchor = map.camY;
     rebuildCache();
   }
   addEventListener('resize', resize);
@@ -158,7 +155,7 @@ try {
       ctx.beginPath(); ctx.arc(s.x, s.y, 2 + p.wt * 1.1 + prox * 2.4, 0, Math.PI * 2);
       ctx.fillStyle = PAL.red; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
       // слово
-      const sz = (ss * (0.017 + p.wt * 0.007) + prox * ss * 0.011) * P.label;
+      const sz = (ss * (0.013 + p.wt * 0.006) + prox * ss * 0.008) * P.label;
       ctx.font = `${p.wt >= 2 ? 600 : 400} ${sz}px ${FAM(p.sc)}`;
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.shadowColor = cc('#000', 0.7); ctx.shadowBlur = (7 + prox * 13) * (0.4 + P.glow);
