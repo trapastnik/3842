@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v3 · Дождь имён (GPU)</title>
+<link rel="stylesheet" href="./fonts/faces.css">
+<script type="importmap">{ "imports": {
+  "three": "./vendor/three/build/three.webgpu.js",
+  "three/webgpu": "./vendor/three/build/three.webgpu.js",
+  "three/tsl": "./vendor/three/build/three.tsl.js",
+  "three/addons/": "./vendor/three/jsm/"
+}}</script>
+<style>
+  html,body{margin:0;height:100%;overflow:hidden;background:#10141a;font-family:"20 Kopeek",ui-monospace,Menlo,monospace;color:#F7F9EF}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;touch-action:none}
+  #vign{position:fixed;inset:0;z-index:6;pointer-events:none;background:radial-gradient(ellipse 70% 70% at 50% 50%,transparent 45%,rgba(5,7,10,.7) 100%)}
+  #grain{position:fixed;inset:0;z-index:7;pointer-events:none;opacity:.06;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:158px 158px}
+  #hint{position:fixed;left:16px;bottom:12px;z-index:7;font-size:12px;color:#9DA3A8;opacity:.6;pointer-events:none}#hint b{color:#D2B773}
+  #err{position:fixed;left:16px;top:60px;z-index:9;max-width:60vw;color:#ff9a9a;font-size:13px;white-space:pre-wrap;display:none}
+</style>
+</head><body>
+<canvas id="c"></canvas>
+<div id="vign"></div>
+<div id="grain"></div>
+<div id="hint">МТК 38 v3 · дождь имён (GPU) · <b>веди/жми</b> — отталкивай · <b>T</b> параметры · <b>P</b> нагрузка</div>
+<div id="err"></div>
+<script type="module">
+import * as THREE from 'three';
+import { pass, uniform, convertToTexture, vec2 } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
+import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
+import { createRenderer, fit } from './engine/renderer.js';
+import { createStats } from './engine/stats.js';
+import { createTuner } from './tuner.js';
+import { makeWordAtlas } from './engine/atlas.js';
+import { createRain } from './scenes/rain.js';
+import { loadWords } from './engine/data.js';
+
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
+window.__rain = { ready: false };
+try {
+  const canvas = document.getElementById('c');
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+  const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+
+  const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x10141a });
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x10141a);
+  scene.fog = new THREE.FogExp2(0x10141a, 0.005);
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+  camera.position.set(0, 0, 26); camera.lookAt(0, 0, 0);
+
+  const atlas = makeWordAtlas(THREE, WORDS, {});
+  let rain = await createRain(THREE, renderer, { atlas, count: 500 });
+  scene.add(rain.mesh);
+
+  // кино-пост: DOF → bloom → хром. аберрация (живые юниформы)
+  const uDofFocus = uniform(26), uDofRange = uniform(11), uDofBokeh = uniform(0), uCa = uniform(0.3);
+  let bloomPass = null, post = null;
+  try {
+    post = new THREE.PostProcessing(renderer);
+    const sp = pass(scene, camera);
+    const col = sp.getTextureNode('output');
+    let base = col;
+    try { base = dof(col, sp.getViewZNode(), uDofFocus, uDofRange, uDofBokeh); } catch (e) { console.warn('[dof off]', e); base = col; }
+    const baseTex = convertToTexture(base);
+    let out = baseTex;
+    try { bloomPass = bloom(baseTex, 0.45, 0.5, 0.62); out = baseTex.add(bloomPass); } catch (e) { console.warn('[bloom off]', e); out = baseTex; }
+    try { out = chromaticAberration(out, uCa, vec2(0.5, 0.5), 1.1); } catch (e) { console.warn('[ca off]', e); }
+    post.outputNode = out;
+  } catch (e) { console.warn('[post off]', e); post = null; }
+
+  // палец → мир (плоскость z=0) → отталкивание
+  const ndc = new THREE.Vector2(), ray = new THREE.Raycaster();
+  const toWorld = (cx, cy) => { ndc.set(cx / globalThis.innerWidth * 2 - 1, -(cy / globalThis.innerHeight * 2 - 1)); ray.setFromCamera(ndc, camera);
+    const t = -ray.ray.origin.z / ray.ray.direction.z; return ray.ray.origin.clone().addScaledVector(ray.ray.direction, t); };
+  let pr = 0;
+  canvas.addEventListener('pointermove', (e) => { rain.setPointer(toWorld(e.clientX, e.clientY), pr || 5.5); pr = pr || 5.5; }, { passive: true });
+  canvas.addEventListener('pointerdown', (e) => { pr = 8.5; rain.setPointer(toWorld(e.clientX, e.clientY), pr); });
+  canvas.addEventListener('pointerup', () => { pr = 5.5; });
+  canvas.addEventListener('pointerleave', () => { pr = 0; rain.setPointer(new THREE.Vector3(0, 0, 0), 0); });
+
+  const stats = createStats(renderer, { extra: () => `частиц    ${rain.count}` });
+
+  // количество — пересборка rain (debounce, async); переносим живые параметры
+  let countTimer = 0;
+  function setCount(c) {
+    clearTimeout(countTimer);
+    countTimer = setTimeout(async () => {
+      const old = rain;
+      const nw = await createRain(THREE, renderer, { atlas, count: c });
+      nw.params.uSizeScale.value = old.params.uSizeScale.value;
+      nw.params.uBuoy.value = old.params.uBuoy.value;
+      nw.params.uRepel.value = old.params.uRepel.value;
+      rain = nw; scene.add(nw.mesh); scene.remove(old.mesh);
+      old.mesh.geometry.dispose(); old.mesh.material.dispose();
+    }, 280);
+  }
+  function apply(k, v) {
+    switch (k) {
+      case 'count': setCount(Math.round(v)); break;
+      case 'speed': rain.params.uBuoy.value = v; break;
+      case 'repel': rain.params.uRepel.value = v; break;
+      case 'size': rain.params.uSizeScale.value = v; break;
+      case 'exposure': renderer.toneMappingExposure = v; break;
+      case 'bloom': if (bloomPass) bloomPass.strength.value = v; break;
+      case 'bloomThr': if (bloomPass) bloomPass.threshold.value = v; break;
+      case 'dofBokeh': uDofBokeh.value = v; break;
+      case 'dofFocus': uDofFocus.value = v; break;
+      case 'ca': uCa.value = v; break;
+      case 'fog': scene.fog.density = v; break;
+      case 'grain': { const g = document.getElementById('grain'); if (g) g.style.opacity = v; break; }
+      case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
+    }
+  }
+  createTuner({
+    title: 'дождь v3',
+    groups: [
+      { title: 'дождь', params: [
+        { key: 'count', label: 'количество', min: 100, max: 14000, step: 100, value: 500 },
+        { key: 'speed', label: 'скорость', min: 0, max: 6, step: .1, value: 2.4 },
+        { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
+        { key: 'size', label: 'размер', min: 0.4, max: 2.5, step: .05, value: 1 },
+      ] },
+      { title: 'свет / пост', params: [
+        { key: 'exposure', label: 'экспозиция', min: .4, max: 1.8, step: .02, value: 1 },
+        { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .45 },
+        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .62 },
+        { key: 'dofBokeh', label: 'DOF боке', min: 0, max: 3, step: .05, value: 0 },
+        { key: 'dofFocus', label: 'DOF фокус', min: 14, max: 40, step: .5, value: 26 },
+        { key: 'ca', label: 'аберрация', min: 0, max: 2.5, step: .05, value: .3 },
+        { key: 'fog', label: 'туман', min: 0, max: .03, step: .001, value: .005 },
+        { key: 'grain', label: 'зерно', min: 0, max: .2, step: .005, value: .06 },
+        { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
+      ] },
+    ],
+    onChange: (k, v) => apply(k, v),
+  });
+
+  const onResize = () => { fit(renderer, camera); if (post) post.needsUpdate = true; };
+  addEventListener('resize', onResize); onResize();
+
+  let prev = performance.now(), n = 0;
+  renderer.setAnimationLoop(async () => {
+    const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+    await rain.update(dt);
+    if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
+    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    if (++n === 3) { window.__rain = { ready: true, backend }; document.title = 'rain READY:' + backend; }
+  });
+} catch (e) { showErr((e && e.stack) || e); document.title = 'rain ERROR'; console.error(e); }
+</script>
+</body></html>
