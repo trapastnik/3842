@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 · демо v2 + v3</title>
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--window:#9DA3A8;--telegrey:#CFD0CF;--red:#A02128;--green:#5D8970}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;background:var(--graphite);color:var(--paper);
+    font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;line-height:1.5;padding:clamp(22px,5vw,64px)}
+  header{max-width:1180px;margin:0 auto 32px}
+  .tag{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--brass)}
+  h1{font-weight:400;font-size:clamp(30px,5vw,56px);margin:.1em 0 .15em}
+  h1 b{color:var(--brass);font-weight:600}
+  .sub{color:var(--telegrey);max-width:70ch;font-size:15px}
+  main{max-width:1180px;margin:0 auto}
+  h2{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--window);margin:30px 0 14px;
+    border-bottom:1px solid #51606a;padding-bottom:8px}
+  h2 .b{color:var(--brass)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:15px}
+  a.card{display:block;text-decoration:none;background:#3b4751;border:1px solid #51606a;border-radius:13px;
+    padding:18px 20px;color:var(--paper);transition:.15s;position:relative}
+  a.card:hover{background:#445360;border-color:var(--brass);transform:translateY(-2px)}
+  a.card .n{font-size:20px;font-weight:600}
+  a.card .d{font-size:13px;color:var(--telegrey);margin-top:5px}
+  a.card .badge{position:absolute;top:13px;right:14px;font-size:10px;letter-spacing:.07em;text-transform:uppercase;
+    border-radius:20px;padding:2px 9px;border:1px solid currentColor}
+  .badge.v3{color:var(--brass)} .badge.v2{color:var(--green)}
+  footer{max-width:1180px;margin:40px auto 0;padding-top:18px;border-top:1px solid #51606a;color:var(--window);font-size:12px}
+</style>
+</head>
+<body>
+<header>
+  <div class="tag">Музей В.И. Ленина · МТК 38 · демонстрация</div>
+  <h1>«<b>Ленин</b>» на языках мира — <b>v2 + v3</b></h1>
+  <p class="sub">Совмещённое демо: <b>v3</b> — новый движок (Three r184, WebGPU + фоллбэк, кино-пост);
+    <b>v2</b> — инструменты данных и приёмки, облако имён с цитатами. Единый источник — 53 языка.</p>
+</header>
+<main>
+  <h2><span class="b">v3</span> — новый движок (WebGPU)</h2>
+  <div class="grid">
+    <a class="card" href="./globe.html"><span class="badge v3">v3</span><div class="n">Глобус</div><div class="d">кольцевая сфера слов, кино-пост (DOF/CA/атмосфера)</div></a>
+    <a class="card" href="./rain.html"><span class="badge v3">v3</span><div class="n">Дождь</div><div class="d">восходящие частицы-слова, настройки количества</div></a>
+    <a class="card" href="./map.html"><span class="badge v3">v3</span><div class="n">Карта</div><div class="d">мир, точки по гео, UN-эмблема, тап → карточка</div></a>
+  </div>
+
+  <h2><span class="b">v2</span> — инструменты и облако имён</h2>
+  <div class="grid">
+    <a class="card" href="../mtk38-v2/studio.html"><span class="badge v2">v2</span><div class="n">Студия</div><div class="d">облако имён + цитаты Ленина, тюнинг-панель</div></a>
+    <a class="card" href="../mtk38-v2/editor.html"><span class="badge v2">v2</span><div class="n">Данные и приёмка</div><div class="d">редактор всех полей + сверка написаний с листом музея</div></a>
+    <a class="card" href="../mtk38-v2/map.html"><span class="badge v2">v2</span><div class="n">Карта (v2)</div><div class="d">Canvas-2D вариант карты, модалка Р2</div></a>
+  </div>
+</main>
+<footer>Временная демо-сборка (ветка claude/mtk38-demo). Прод = офлайн-киоск, VPS = демо.</footer>
+</body>
+</html>
