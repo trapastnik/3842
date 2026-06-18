@@ -112,7 +112,15 @@ try {
     else { const maxY = map.worldH - H + map.worldH * 0.04, minY = -map.worldH * 0.04; map.camY = Math.max(minY, Math.min(maxY, map.camY)); }
     if (map.camX < 0) map.camX += map.worldW; if (map.camX >= map.worldW) map.camX -= map.worldW;
   }
-  function toScreen(lat, lng) { const w = project(lat, lng); let x = w.x - map.camX; if (x < -map.worldW * 0.5) x += map.worldW; else if (x > map.worldW * 0.5) x -= map.worldW; return { x, y: w.y - map.camY }; }
+  function toScreen(lat, lng) {
+    const w = project(lat, lng); let x = w.x - map.camX;
+    // привести к копии, ближайшей к ЦЕНТРУ вьюпорта (W/2), а не к нулю — иначе точки
+    // восточнее центра улетали за левый край и отсекались (появлялись только при панораме).
+    const c = W / 2, hw = map.worldW / 2;
+    while (x < c - hw) x += map.worldW;
+    while (x > c + hw) x -= map.worldW;
+    return { x, y: w.y - map.camY };
+  }
 
   function drawBase() {
     if (!map.cache) return;
@@ -147,26 +155,36 @@ try {
   let hits = [];
   function drawPoints() {
     hits = []; const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
-    for (let i = 0; i < WORDS.length; i++) {
+    const drawn = [];  // занятые прямоугольники подписей (деклаттер)
+    // приоритет: языки ООН → крупные → мелкие. Маркеры — всем; подписи — без наложения.
+    const order = WORDS.map((p, i) => i).sort((a, b) => (WORDS[b].un - WORDS[a].un) || (WORDS[b].wt - WORDS[a].wt));
+    for (const i of order) {
       const p = WORDS[i], s = toScreen(p.lat, p.lng);
-      if (s.x < -220 || s.x > W + 220 || s.y < -120 || s.y > H + 120) continue;
-      const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.55));
-      // маркер
-      ctx.beginPath(); ctx.arc(s.x, s.y, 2 + p.wt * 1.1 + prox * 2.4, 0, Math.PI * 2);
-      ctx.fillStyle = PAL.red; ctx.globalAlpha = 0.85; ctx.fill(); ctx.globalAlpha = 1;
-      // слово
-      const sz = (ss * (0.013 + p.wt * 0.006) + prox * ss * 0.008) * P.label;
+      if (s.x < -30 || s.x > W + 30 || s.y < -30 || s.y > H + 30) continue;
+      const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));
+      // маркер + хит (всегда — тап даёт карточку, даже если подпись скрыта деклаттером)
+      ctx.beginPath(); ctx.arc(s.x, s.y, 2 + p.wt * 1.0 + prox * 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = PAL.red; ctx.globalAlpha = 0.85; ctx.shadowBlur = 0; ctx.fill(); ctx.globalAlpha = 1;
+      hits.push({ x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i });
+      // подпись с проверкой наложения
+      const sz = (ss * (0.013 + p.wt * 0.006) + prox * ss * 0.006) * P.label;
+      const ox = sz * 0.5, oy = -sz * 0.08;
       ctx.font = `${p.wt >= 2 ? 600 : 400} ${sz}px ${FAM(p.sc)}`;
+      const tw = ctx.measureText(p.w).width, lw = p.un ? sz : 0;
+      const box = { x: s.x + ox, y: s.y + oy - sz * 0.6, w: tw + lw + 4, h: sz * 1.6 };
+      const important = p.un || p.wt >= 2;
+      const overlap = drawn.some((d) => box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y);
+      if (!important && overlap) continue;   // мелкие не рисуем поверх соседних
+      drawn.push(box);
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
-      ctx.shadowColor = cc('#000', 0.7); ctx.shadowBlur = (7 + prox * 13) * (0.4 + P.glow);
-      ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.72 + prox * 0.28;
-      const ox = sz * 0.45, oy = -sz * 0.12;
+      ctx.shadowColor = cc('#000', 0.72); ctx.shadowBlur = 5 * (0.5 + P.glow);
       let wordX = s.x + ox;
-      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.6 + prox * 0.4); wordX += lr * 2 + sz * 0.16; }
+      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.9); wordX += lr * 2 + sz * 0.12; }
+      ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.8 + prox * 0.2;
       ctx.fillText(p.w, wordX, s.y + oy);
-      if (prox > 0.08 || p.wt >= 2) { ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.5 + prox * 0.35); ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.62); }
+      ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.62);
+      ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.58);
       ctx.globalAlpha = 1;
-      hits.push({ x: s.x, y: s.y, r: Math.max(14, sz * 0.6), i });
     }
   }
   // дешёвый bloom: даунскейл-блюр + lighter
