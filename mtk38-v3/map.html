@@ -166,7 +166,8 @@ try {
       // маркер + хит (всегда — тап даёт карточку, даже если подпись скрыта деклаттером)
       ctx.beginPath(); ctx.arc(s.x, s.y, 2 + p.wt * 1.0 + prox * 1.6, 0, Math.PI * 2);
       ctx.fillStyle = PAL.red; ctx.globalAlpha = 0.85; ctx.shadowBlur = 0; ctx.fill(); ctx.globalAlpha = 1;
-      hits.push({ x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i });
+      const hit = { x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i, box: null };
+      hits.push(hit);
       // подпись с проверкой наложения
       const sz = (ss * (0.013 + p.wt * 0.006) + prox * ss * 0.006) * P.label;
       const ox = sz * 0.5, oy = -sz * 0.08;
@@ -177,6 +178,7 @@ try {
       const overlap = drawn.some((d) => box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y);
       if (!important && overlap) continue;   // мелкие не рисуем поверх соседних
       drawn.push(box);
+      hit.box = box;   // подпись нарисована → тап по тексту тоже открывает карточку
       ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
       ctx.shadowColor = cc('#000', 0.72); ctx.shadowBlur = 5 * (0.5 + P.glow);
       let wordX = s.x + ox;
@@ -241,7 +243,14 @@ try {
   }, { passive: true });
   const up = (e) => {
     if (ptrs.size === 1 && !moved && (performance.now() - dt0) < 450) {   // тап → карточка (только один палец)
-      let best = -1, bd = 1e9; for (const h of hits) { const dd = Math.hypot(e.clientX - h.x, e.clientY - h.y); if (dd < h.r + 12 && dd < bd) { bd = dd; best = h.i; } }
+      // ловим клик и по кружку-маркеру, и по прямоугольнику надписи; из кандидатов — ближайший к точке
+      let best = -1, bd = 1e9;
+      for (const h of hits) {
+        const dd = Math.hypot(e.clientX - h.x, e.clientY - h.y);
+        const inDot = dd < h.r + 12;
+        const b = h.box, inBox = b && e.clientX >= b.x - 4 && e.clientX <= b.x + b.w + 4 && e.clientY >= b.y - 4 && e.clientY <= b.y + b.h + 4;
+        if ((inDot || inBox) && dd < bd) { bd = dd; best = h.i; }
+      }
       if (best >= 0) { card.open(WORDS[best]); map.camVX = 0; map.camVY = 0; } else card.close();
     }
     ptrs.delete(e.pointerId);
