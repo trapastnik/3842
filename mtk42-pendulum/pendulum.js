@@ -475,7 +475,12 @@ function bindUi() {
     el.addEventListener("input", () => onSliderChange(el));
   });
 
-  // tap outside card / settings closes them
+  // Legend popover (independent of settings)
+  const legend = $("#legend");
+  $("#legend-toggle").addEventListener("click", () => (legend.hidden = !legend.hidden));
+  $(".legend__close").addEventListener("click", () => (legend.hidden = true));
+
+  // tap outside card / settings / legend closes them
   document.addEventListener("pointerdown", (e) => {
     const card = $("#card");
     if (!card.hidden && !card.contains(e.target) && !e.target.closest(".dot")) {
@@ -485,6 +490,11 @@ function bindUi() {
         && !settings.contains(e.target)
         && !e.target.closest("#settings-toggle")) {
       settings.classList.remove("is-open");
+    }
+    if (!legend.hidden
+        && !legend.contains(e.target)
+        && !e.target.closest("#legend-toggle")) {
+      legend.hidden = true;
     }
   });
 }

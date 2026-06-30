@@ -667,14 +667,6 @@ body.hide-epochs .epoch-label { display: none; }
 .legend__dot--researcher { border-color: var(--brass); }
 .legend__dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
 
-.settings__group--legend { gap: 6px; }
-.settings__legend-text {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.5;
-  color: rgba(247, 249, 239, 0.74);
-}
-
 .settings__reset {
   margin-top: auto;
   padding: 12px 16px;
@@ -690,6 +682,99 @@ body.hide-epochs .epoch-label { display: none; }
 }
 .settings__reset:hover { background: rgba(160, 33, 40, 0.18); }
 
+/* ─── Legend popover (separate from settings) ─── */
+.legend-toggle {
+  position: absolute;
+  right: 98px;        /* sits to the left of the settings gear */
+  bottom: 28px;
+  z-index: 6;
+  width: 48px;
+  height: 48px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--brass);
+  font-family: var(--font-display);
+  font-size: 22px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+}
+.legend {
+  position: absolute;
+  right: 28px;
+  bottom: 92px;
+  z-index: 7;
+  width: min(360px, calc(100% - 56px));
+  padding: 18px 20px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 12px;
+  background: rgba(8, 12, 14, 0.94);
+  backdrop-filter: blur(10px);
+  color: var(--paper);
+  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+}
+.legend[hidden] { display: none; }
+.legend__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--brass);
+  margin-bottom: 10px;
+}
+.legend__close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper);
+  font-size: 14px;
+  cursor: pointer;
+  opacity: 0.7;
+}
+.legend__row {
+  margin: 0 0 12px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: rgba(247, 249, 239, 0.85);
+}
+.legend__list {
+  list-style: none;
+  margin: 0 0 10px;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+  font-size: 13px;
+}
+.legend__list li { display: flex; align-items: center; gap: 10px; }
+.legend__dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.85);
+  border: 2px solid var(--brass);
+}
+.legend__line {
+  width: 22px;
+  height: 2px;
+  background: var(--brass-soft);
+  border-radius: 999px;
+}
+.legend__hint {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+}
+
 @media (max-width: 760px) {
   .title { padding: 20px 22px 12px; }
   .axis-top { margin: 0 22px; }
@@ -697,6 +782,8 @@ body.hide-epochs .epoch-label { display: none; }
   .card { top: 116px; right: 18px; width: calc(100% - 36px); }
   .settings-toggle { right: 18px; bottom: 18px; }
   .settings { width: 100%; }
+  .legend-toggle { right: 80px; bottom: 18px; }
+  .legend { right: 18px; bottom: 76px; width: calc(100% - 36px); }
 }
 
 /* ─── Vertical (portrait) — 49" 4K kiosk preview ──────────────────
@@ -812,5 +899,21 @@ body.hide-epochs .epoch-label { display: none; }
   .settings__title { font-size: 12px; }
   .settings__row { font-size: 16px; min-height: 42px; }
   .settings__num { font-size: 14px; }
-  .settings__legend-text { font-size: 14px; }
+
+  /* Legend popover — separate i-button to the left of the gear */
+  .legend-toggle {
+    width: 52px;
+    height: 52px;
+    font-size: 22px;
+    right: 100px;
+    bottom: 24px;
+  }
+  .legend {
+    width: min(380px, calc(100% - 48px));
+    right: 24px;
+    bottom: 92px;
+    padding: 18px 20px;
+  }
+  .legend__row, .legend__list { font-size: 14px; line-height: 1.5; }
+  .legend__dot { width: 18px; height: 18px; border-width: 2px; }
 }
