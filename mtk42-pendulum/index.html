@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Маятник</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
   </head>
   <body>
     <main class="stage">
@@ -58,24 +58,86 @@
         </div>
       </aside>
 
-      <button id="legend-toggle" class="legend-toggle" type="button" aria-label="Легенда">i</button>
-      <aside id="legend" class="legend" hidden>
-        <header class="legend__head">
-          <span>Как читать</span>
-          <button class="legend__close" type="button" aria-label="Закрыть">✕</button>
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+
+      <aside id="settings" class="settings">
+        <header class="settings__head">
+          <span>Настройки</span>
+          <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
         </header>
-        <p class="legend__row">Каждая точка — голос об образе Ленина. Положение по&nbsp;горизонтали — тон от&nbsp;резкой критики (слева) до&nbsp;почитания (справа). По&nbsp;вертикали — год высказывания или ключевой работы.</p>
-        <ul class="legend__list">
-          <li><span class="legend__dot legend__dot--leaders"></span>Вожди — генсеки ВКП(б) / КПСС</li>
-          <li><span class="legend__dot legend__dot--politician"></span>Политики — соратники, оппоненты, современные деятели</li>
-          <li><span class="legend__dot legend__dot--researcher"></span>Исследователи — академические историки, философы</li>
-          <li><span class="legend__dot legend__dot--writers"></span>Литература и&nbsp;публицистика — писатели, мемуаристы</li>
-          <li><span class="legend__line"></span>Маятник — скользящее среднее по&nbsp;десятилетию</li>
-        </ul>
-        <p class="legend__hint">Тап на&nbsp;точке — открыть карточку.</p>
+
+        <section class="settings__group">
+          <div class="settings__title">Категории</div>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="catLeaders" checked />
+            <span class="settings__legend-dot legend__dot--leaders"></span>
+            <span>Вожди</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="catPolitician" checked />
+            <span class="settings__legend-dot legend__dot--politician"></span>
+            <span>Политики</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="catResearcher" checked />
+            <span class="settings__legend-dot legend__dot--researcher"></span>
+            <span>Исследователи</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="catWriters" checked />
+            <span class="settings__legend-dot legend__dot--writers"></span>
+            <span>Литература и&nbsp;публицистика</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Размер</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер точек, px</span>
+            <input type="range" min="72" max="160" step="4" data-setting-num="dotSize" />
+            <span class="settings__num" data-bind-num="dotSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Толщина кривой, px</span>
+            <input type="range" min="2" max="16" step="1" data-setting-num="strokeWidth" />
+            <span class="settings__num" data-bind-num="strokeWidth"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Плотность лет, px/год</span>
+            <input type="range" min="22" max="60" step="2" data-setting-num="pxPerYear" />
+            <span class="settings__num" data-bind-num="pxPerYear"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Отображение</div>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="showPendulum" checked />
+            <span>Кривая маятника</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="showRuler" checked />
+            <span>Шкала лет справа</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="showEpochs" checked />
+            <span>Подписи эпох</span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="compressCanon" checked />
+            <span>Сжать пустую эпоху «Канон»</span>
+          </label>
+        </section>
+
+        <section class="settings__group settings__group--legend">
+          <div class="settings__title">Легенда</div>
+          <p class="settings__legend-text">Каждая точка — голос об&nbsp;образе Ленина. По&nbsp;горизонтали — тон от&nbsp;резкой критики (слева) до&nbsp;почитания (справа). По&nbsp;вертикали — год высказывания или ключевой работы. Линия — скользящее среднее по&nbsp;десятилетию.</p>
+        </section>
+
+        <button class="settings__reset" type="button">Сбросить настройки</button>
       </aside>
     </main>
 
-    <script type="module" src="./pendulum.js?v=5"></script>
+    <script type="module" src="./pendulum.js?v=6"></script>
   </body>
 </html>

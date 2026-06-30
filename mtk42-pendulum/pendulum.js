@@ -3,77 +3,112 @@
 
 const YEAR_MIN = 1920;
 const YEAR_MAX = 2026;
-const PX_PER_YEAR = 42;       // chart density (base)
-const SIDE_PAD = 64;          // px reserved on each side of plot area
+const SIDE_PAD = 64;
 const TOP_PAD = 36;
 const BOTTOM_PAD = 36;
 
-// Year-axis compression: "Канон" 1934–1985 is empty in the data and would
-// otherwise take ~2000 px of dead space. Compress it so the eye flies over it.
-const COMPRESSED_RANGES = [
+const COMPRESSED_RANGES_DEFINITION = [
   { from: 1934, to: 1985, scale: 0.18 },
 ];
 
-function compressionAtYear(y) {
-  for (const r of COMPRESSED_RANGES) {
-    if (y >= r.from && y < r.to) return r.scale;
-  }
-  return 1;
-}
+const DEFAULTS = {
+  pxPerYear: 42,
+  dotSize: 112,
+  strokeWidth: 6,
+  compressCanon: true,
+  showPendulum: true,
+  showRuler: true,
+  showEpochs: true,
+  catLeaders: true,
+  catPolitician: true,
+  catResearcher: true,
+  catWriters: true,
+};
+const CATEGORY_FLAG = {
+  leaders: "catLeaders",
+  politician: "catPolitician",
+  researcher: "catResearcher",
+  writers: "catWriters",
+};
+const LS_KEY = "mtk42-pendulum-settings-v1";
 
-// Piecewise integral of compressionAtYear from YEAR_MIN to YEAR_MAX.
-function buildSegments() {
-  const breakpoints = new Set([YEAR_MIN, YEAR_MAX]);
-  for (const r of COMPRESSED_RANGES) {
-    breakpoints.add(r.from);
-    breakpoints.add(r.to);
+const state = {
+  settings: loadSettings(),
+  content: null,
+  portraits: null,
+  segments: [],
+};
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+  } catch {
+    return { ...DEFAULTS };
   }
-  const sorted = [...breakpoints].filter((y) => y >= YEAR_MIN && y <= YEAR_MAX).sort((a, b) => a - b);
-  const segs = [];
-  for (let i = 0; i < sorted.length - 1; i++) {
-    const from = sorted[i];
-    const to = sorted[i + 1];
-    segs.push({ from, to, scale: compressionAtYear(from) });
-  }
-  return segs;
 }
-const SEGMENTS = buildSegments();
+function saveSettings() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state.settings)); } catch {}
+}
 
 const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 (async function init() {
   const [content, portraits] = await Promise.all([
     fetch("../data/mtk42.json").then((r) => r.json()),
     fetch("../assets/mtk42/portraits/manifest.json").then((r) => r.json()).catch(() => ({})),
   ]);
+  state.content = content;
+  state.portraits = portraits;
 
-  buildChart(content, portraits);
+  applyVisualSettings();
+  rebuildChart();
   bindUi();
+  syncControlsFromState();
+
+  // Initial scroll close to 1988 (entry to back-to-lenin) for visual interest.
+  requestAnimationFrame(() => {
+    const chart = $("#chart");
+    chart.scrollTop = yearToY(1988) - chart.clientHeight / 4;
+  });
 })();
 
-function buildChart(content, portraits) {
-  const inner = $("#chart-inner");
-  const chartHeight = yearToY(YEAR_MAX) + BOTTOM_PAD;
-  inner.style.height = chartHeight + "px";
-
-  drawEpochs(inner, content.epochs);
-  drawYearRuler(inner);
-  drawZeroLine(inner);
-
-  const items = collectItems(content, portraits);
-  drawPendulum(inner, items);
-  drawDots(inner, items);
+// ─── Segments / compression ─────────────────────────────────
+function rebuildSegments() {
+  const ranges = state.settings.compressCanon ? COMPRESSED_RANGES_DEFINITION : [];
+  const breakpoints = new Set([YEAR_MIN, YEAR_MAX]);
+  for (const r of ranges) {
+    breakpoints.add(r.from);
+    breakpoints.add(r.to);
+  }
+  const sorted = [...breakpoints]
+    .filter((y) => y >= YEAR_MIN && y <= YEAR_MAX)
+    .sort((a, b) => a - b);
+  const segs = [];
+  for (let i = 0; i < sorted.length - 1; i++) {
+    const from = sorted[i];
+    const to = sorted[i + 1];
+    const r = ranges.find((rr) => rr.from <= from && to <= rr.to);
+    segs.push({ from, to, scale: r ? r.scale : 1 });
+  }
+  state.segments = segs;
 }
 
-// ─── Coordinate helpers ──────────────────────────────────────
+function activeCompressedRanges() {
+  return state.settings.compressCanon ? COMPRESSED_RANGES_DEFINITION : [];
+}
+
+// ─── Coordinate helpers ─────────────────────────────────────
 function yearToY(year) {
   const y = Math.max(YEAR_MIN, Math.min(YEAR_MAX, year));
+  const px = state.settings.pxPerYear;
   let acc = TOP_PAD;
-  for (const s of SEGMENTS) {
+  for (const s of state.segments) {
     if (y >= s.to) {
-      acc += (s.to - s.from) * PX_PER_YEAR * s.scale;
+      acc += (s.to - s.from) * px * s.scale;
     } else if (y > s.from) {
-      acc += (y - s.from) * PX_PER_YEAR * s.scale;
+      acc += (y - s.from) * px * s.scale;
       break;
     } else {
       break;
@@ -83,16 +118,30 @@ function yearToY(year) {
 }
 
 function toneToXPercent(tone) {
-  // tone in [-1, 1] → percent in [PAD, 100 - PAD]. Padding is wide enough that
-  // a default-size dot (112 px) at the extreme positions never overflows the
-  // plot, even in a narrow iframe (≈540 px wide).
   const t = Math.max(-1, Math.min(1, tone));
-  const norm = (t + 1) / 2; // [0..1]
-  return 12 + norm * 76; // 12% .. 88%
+  const norm = (t + 1) / 2;
+  return 12 + norm * 76;
 }
 
-// ─── Epoch bands ────────────────────────────────────────────
+// ─── Build chart ────────────────────────────────────────────
+function rebuildChart() {
+  rebuildSegments();
+  const inner = $("#chart-inner");
+  inner.innerHTML = "";
+  const chartHeight = yearToY(YEAR_MAX) + BOTTOM_PAD;
+  inner.style.height = chartHeight + "px";
+
+  drawEpochs(inner, state.content.epochs);
+  drawYearRuler(inner);
+  drawZeroLine(inner);
+
+  const items = collectItems(state.content, state.portraits);
+  drawPendulum(inner, items);
+  drawDots(inner, items);
+}
+
 function drawEpochs(root, epochs) {
+  const ranges = activeCompressedRanges();
   for (const ep of epochs) {
     const [y1, y2] = ep.years;
     if (y2 <= YEAR_MIN || y1 >= YEAR_MAX) continue;
@@ -100,7 +149,7 @@ function drawEpochs(root, epochs) {
     const b = Math.min(YEAR_MAX, y2);
     const top = yearToY(a);
     const height = yearToY(b) - top;
-    const compressed = COMPRESSED_RANGES.some((r) => r.from <= a && b <= r.to);
+    const compressed = ranges.some((r) => r.from <= a && b <= r.to);
     const band = document.createElement("div");
     band.className = `epoch-band epoch-band--${ep.id}${compressed ? " epoch-band--compressed" : ""}`;
     band.style.top = top + "px";
@@ -109,8 +158,6 @@ function drawEpochs(root, epochs) {
 
     const label = document.createElement("div");
     label.className = "epoch-label" + (compressed ? " epoch-label--compressed" : "");
-    // For compressed bands the label sits on top of the band centred vertically;
-    // for normal bands keep it near the top edge as before.
     label.style.top = compressed
       ? (top + height / 2) + "px"
       : (top + 18) + "px";
@@ -119,13 +166,12 @@ function drawEpochs(root, epochs) {
   }
 }
 
-// ─── Year ruler ─────────────────────────────────────────────
 function drawYearRuler(root) {
   const ruler = document.createElement("div");
   ruler.className = "year-ruler";
+  const ranges = activeCompressedRanges();
   for (let y = YEAR_MIN; y <= YEAR_MAX; y += 10) {
-    // In compressed ranges keep only the boundary years to avoid cramming.
-    const inCompressed = COMPRESSED_RANGES.find((r) => y > r.from && y < r.to);
+    const inCompressed = ranges.find((r) => y > r.from && y < r.to);
     if (inCompressed) continue;
     const tick = document.createElement("div");
     tick.className = "year-tick";
@@ -136,7 +182,6 @@ function drawYearRuler(root) {
   root.appendChild(ruler);
 }
 
-// ─── Zero line ──────────────────────────────────────────────
 function drawZeroLine(root) {
   const line = document.createElement("div");
   line.className = "zero-line";
@@ -155,6 +200,8 @@ const CATEGORY_TAG = {
 function collectItems(content, portraits) {
   const items = [];
   for (const p of content.people) {
+    const flag = CATEGORY_FLAG[p.category];
+    if (flag && !state.settings[flag]) continue;
     const portraitMeta = portraits[p.id] || {};
     items.push({
       id: p.id,
@@ -175,7 +222,6 @@ function collectItems(content, portraits) {
 }
 
 function initialsFromName(fullname) {
-  // "Г.М. Кржижановский" → "К"; "Дмитрий Антонович Волкогонов" → "В"; fallback: first letter
   const parts = fullname.replace(/\(.*?\)/g, "").trim().split(/\s+/);
   const last = parts[parts.length - 1] || fullname;
   return last.charAt(0).toUpperCase();
@@ -191,13 +237,15 @@ function drawPendulum(root, items) {
   svg.setAttribute("viewBox", `0 0 ${width} ${height}`);
   svg.setAttribute("preserveAspectRatio", "none");
 
-  // Build year → list of tones
+  if (items.length === 0) {
+    root.appendChild(svg);
+    return;
+  }
   const buckets = new Map();
   for (const it of items) {
     if (!buckets.has(it.year)) buckets.set(it.year, []);
     buckets.get(it.year).push(it.tone);
   }
-  // Smoothed mean by sliding ±7 yr window
   const series = [];
   const HALF_WIN = 7;
   for (let y = YEAR_MIN; y <= YEAR_MAX; y++) {
@@ -212,15 +260,12 @@ function drawPendulum(root, items) {
         count += w;
       }
     }
-    if (count > 0) {
-      series.push({ y, mean: sum / count });
-    }
+    if (count > 0) series.push({ y, mean: sum / count });
   }
   if (series.length < 2) {
     root.appendChild(svg);
     return;
   }
-  // Build path with cardinal-like smoothing (use simple quadratic blending)
   const pts = series.map((s) => {
     const x = (toneToXPercent(s.mean) / 100) * width;
     const yy = yearToY(s.y);
@@ -245,18 +290,13 @@ function drawPendulum(root, items) {
 
 // ─── Dots ───────────────────────────────────────────────────
 function drawDots(root, items) {
-  // Simple collision avoidance: sort by year, then iterate and bump x if too close.
-  // Direction follows the sign of `tone` (outward from the centre), like before.
-  // After the loop we hard-clamp xPct inside the plot rectangle so a dot whose
-  // ideal position is at the extreme (±0.95) can't get pushed off-screen.
+  const dotSize = state.settings.dotSize;
   const placed = [];
   const sorted = [...items].sort((a, b) => a.year - b.year || a.tone - b.tone);
-  const MIN_DIST = 92;          // px horizontal (dots are 112 px wide)
-  const VERT_THRESHOLD = 100;   // px — collision matters only within this Y window
+  const MIN_DIST = Math.max(40, dotSize - 20);
+  const VERT_THRESHOLD = Math.max(60, dotSize - 12);
   const containerW = root.clientWidth;
-  const DOT_HALF_PX = 56;       // half of dot width (112 px)
-  const EDGE_PAD_PX = 4;        // extra cosmetic margin
-  const halfPct = ((DOT_HALF_PX + EDGE_PAD_PX) / containerW) * 100;
+  const halfPct = ((dotSize / 2 + 4) / containerW) * 100;
   const MIN_X = halfPct;
   const MAX_X = 100 - halfPct;
   for (const it of sorted) {
@@ -276,7 +316,6 @@ function drawDots(root, items) {
       }
       if (!collided) break;
     }
-    // Hard clamp inside the plot rectangle so dots never overflow.
     xPct = Math.max(MIN_X, Math.min(MAX_X, xPct));
     placed.push({ ...it, xPct, yPx });
   }
@@ -349,7 +388,6 @@ function openCard(item, sourceDot) {
   marker.style.left = (norm * 100).toFixed(1) + "%";
   $('[data-bind="tone-value"]', card).textContent = (item.tone >= 0 ? "+" : "") + item.tone.toFixed(2);
 
-  // ensure dot is roughly in view
   const chart = $("#chart");
   const dotRect = sourceDot.getBoundingClientRect();
   const chartRect = chart.getBoundingClientRect();
@@ -365,30 +403,88 @@ function closeCard() {
   }
 }
 
-// ─── UI bindings ────────────────────────────────────────────
+// ─── Visual settings (CSS variables + body flags) ───────────
+function applyVisualSettings() {
+  const root = document.documentElement;
+  root.style.setProperty("--dot-size", state.settings.dotSize + "px");
+  root.style.setProperty("--pendulum-stroke", state.settings.strokeWidth);
+  document.body.classList.toggle("hide-pendulum", !state.settings.showPendulum);
+  document.body.classList.toggle("hide-ruler", !state.settings.showRuler);
+  document.body.classList.toggle("hide-epochs", !state.settings.showEpochs);
+}
+
+// ─── Controls ───────────────────────────────────────────────
+function syncControlsFromState() {
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.checked = !!state.settings[el.dataset.setting];
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.value = state.settings[el.dataset.settingNum];
+    const num = $(`[data-bind-num="${el.dataset.settingNum}"]`);
+    if (num) num.textContent = el.value;
+  });
+}
+
+function onCheckboxChange(el) {
+  const key = el.dataset.setting;
+  state.settings[key] = !!el.checked;
+  saveSettings();
+  if (key.startsWith("cat") || key === "compressCanon") {
+    rebuildChart();
+  } else {
+    applyVisualSettings();
+  }
+}
+
+function onSliderChange(el) {
+  const key = el.dataset.settingNum;
+  const v = Number(el.value);
+  state.settings[key] = v;
+  const num = $(`[data-bind-num="${key}"]`);
+  if (num) num.textContent = v;
+  saveSettings();
+  if (key === "pxPerYear") {
+    rebuildChart();
+  } else if (key === "dotSize") {
+    applyVisualSettings();
+    rebuildChart(); // re-run collision avoidance for new dot size
+  } else {
+    applyVisualSettings();
+  }
+}
+
 function bindUi() {
   $(".card__close").addEventListener("click", closeCard);
-  $("#legend-toggle").addEventListener("click", () => {
-    const l = $("#legend");
-    l.hidden = !l.hidden;
-  });
-  $(".legend__close").addEventListener("click", () => ($("#legend").hidden = true));
 
-  // tap outside card / legend closes them
+  // Settings panel
+  const settings = $("#settings");
+  $("#settings-toggle").addEventListener("click", () => settings.classList.toggle("is-open"));
+  $(".settings__close").addEventListener("click", () => settings.classList.remove("is-open"));
+  $(".settings__reset").addEventListener("click", () => {
+    state.settings = { ...DEFAULTS };
+    saveSettings();
+    applyVisualSettings();
+    rebuildChart();
+    syncControlsFromState();
+  });
+
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.addEventListener("change", () => onCheckboxChange(el));
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.addEventListener("input", () => onSliderChange(el));
+  });
+
+  // tap outside card / settings closes them
   document.addEventListener("pointerdown", (e) => {
     const card = $("#card");
     if (!card.hidden && !card.contains(e.target) && !e.target.closest(".dot")) {
       closeCard();
     }
-    const legend = $("#legend");
-    if (!legend.hidden && !legend.contains(e.target) && !e.target.closest("#legend-toggle")) {
-      legend.hidden = true;
+    if (settings.classList.contains("is-open")
+        && !settings.contains(e.target)
+        && !e.target.closest("#settings-toggle")) {
+      settings.classList.remove("is-open");
     }
-  });
-
-  // Scroll to "1990s" (entry to деленинизация) on load for visual interest
-  requestAnimationFrame(() => {
-    const chart = $("#chart");
-    chart.scrollTop = yearToY(1988) - chart.clientHeight / 4;
   });
 }
