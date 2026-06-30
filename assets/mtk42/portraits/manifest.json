@@ -68,7 +68,8 @@
   "kotelenets": {
     "title": "Котеленец, Елена Анатольевна",
     "lang": "ru",
-    "image": null
+    "image": "kotelenets.jpg",
+    "source_url": "curator (2026-06)"
   },
   "subetto": {
     "title": "Субетто, Александр Иванович",
@@ -122,7 +123,8 @@
   "ioffe": {
     "title": "Иоффе, Генрих Зиновьевич",
     "lang": "ru",
-    "image": null
+    "image": "ioffe.jpg",
+    "source_url": "curator (2026-06)"
   },
   "arutyunov": {
     "title": "Арутюнов, Аким Арутюнович",
