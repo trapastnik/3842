@@ -83,12 +83,12 @@ function yearToY(year) {
 }
 
 function toneToXPercent(tone) {
-  // tone in [-1, 1] → percent in [SIDE_PAD_PCT, 100 - SIDE_PAD_PCT]
-  // we keep dots within a plot rectangle that has horizontal padding
+  // tone in [-1, 1] → percent in [PAD, 100 - PAD]. Padding is wide enough that
+  // a default-size dot (112 px) at the extreme positions never overflows the
+  // plot, even in a narrow iframe (≈540 px wide).
   const t = Math.max(-1, Math.min(1, tone));
   const norm = (t + 1) / 2; // [0..1]
-  // map norm 0..1 into 8%..92% to leave room for year ruler on right
-  return 8 + norm * 84;
+  return 12 + norm * 76; // 12% .. 88%
 }
 
 // ─── Epoch bands ────────────────────────────────────────────
@@ -245,12 +245,19 @@ function drawPendulum(root, items) {
 
 // ─── Dots ───────────────────────────────────────────────────
 function drawDots(root, items) {
-  // Simple collision avoidance: sort by year, then iterate and bump x if too close
+  // Simple collision avoidance: sort by year, then iterate and bump x if too close.
+  // Direction is choosen to stay inside the plot area (away from whichever edge is closer);
+  // a hard final clamp guarantees no dot is pushed off-screen.
   const placed = [];
   const sorted = [...items].sort((a, b) => a.year - b.year || a.tone - b.tone);
   const MIN_DIST = 92;          // px horizontal (dots are 112 px wide)
   const VERT_THRESHOLD = 100;   // px — collision matters only within this Y window
   const containerW = root.clientWidth;
+  const DOT_HALF_PX = 56;       // half of dot width (112 px)
+  const EDGE_PAD_PX = 4;        // extra cosmetic margin
+  const halfPct = ((DOT_HALF_PX + EDGE_PAD_PX) / containerW) * 100;
+  const MIN_X = halfPct;
+  const MAX_X = 100 - halfPct;
   for (const it of sorted) {
     let xPct = toneToXPercent(it.tone);
     const yPx = yearToY(it.year);
@@ -261,13 +268,19 @@ function drawDots(root, items) {
         const xPx = (xPct / 100) * containerW;
         const pxPx = (p.xPct / 100) * containerW;
         if (Math.abs(xPx - pxPx) < MIN_DIST) {
-          const direction = it.tone >= 0 ? +1 : -1;
+          // Pick a direction that steers AWAY from the nearest edge — so dots
+          // pile up toward the centre rather than escaping the plot.
+          const distLeft = xPct - MIN_X;
+          const distRight = MAX_X - xPct;
+          const direction = distRight < distLeft ? -1 : +1;
           xPct += direction * 2.0;
           collided = true;
         }
       }
       if (!collided) break;
     }
+    // Hard clamp inside the plot rectangle so dots never overflow.
+    xPct = Math.max(MIN_X, Math.min(MAX_X, xPct));
     placed.push({ ...it, xPct, yPx });
   }
 
