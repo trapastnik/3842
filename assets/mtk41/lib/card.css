@@ -326,8 +326,9 @@
   width: 100%;
   height: 100%;
   aspect-ratio: auto;
-  background-size: cover;
-  background-position: center 25%;
+  background-size: contain;
+  background-position: center top;
+  background-color: var(--graphite);
   border-bottom: 0;
 }
 .card.layout-overlay .card-photo.empty { background: var(--graphite); }
