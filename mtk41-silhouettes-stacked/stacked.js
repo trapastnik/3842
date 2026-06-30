@@ -19,27 +19,9 @@
     { id: "large",  label: "20–60 м · колоссы",                     maxM: 60 },
   ];
 
-  // Heights (метрах) from data/mtk41.json + Wikipedia
-  const HEIGHTS = {
-    "alekseev-1919-bust":            { statue: 0.6,  pedestal: 0.0 },
-    "leningrad-1920s":               { statue: 4.0,  pedestal: 3.0 },
-    "kaluga-1920s":                  { statue: 3.5,  pedestal: 2.5 },
-    "yaroslavl-1920s":               { statue: 4.5,  pedestal: 3.0 },
-    "vladivostok-1920s":             { statue: 3.5,  pedestal: 2.5 },
-    "ufa-1924-larionov":             { statue: 3.0,  pedestal: 2.0 },
-    "moscow-oktyabrskaya-1925":      { statue: 2.5,  pedestal: 1.5 },
-    "nizhny-tagil-1925":             { statue: 4.0,  pedestal: 2.5 },
-    "chelyabinsk-aloe-pole-1925":    { statue: 1.5,  pedestal: 5.0 },
-    "voznesenye-1925-capital-bust":  { statue: 1.0,  pedestal: 1.5 },
-    "kostroma-1928":                 { statue: 4.0,  pedestal: 8.0 },
-    "moscow-canal-1937-merkurov":    { statue: 25.0, pedestal: 12.0 },
-    "gorki-pinchuk-taurit":          { statue: 2.5,  pedestal: 0.8 },
-    "kazan-1954-young-volodya":      { statue: 3.0,  pedestal: 2.0 },
-    "rybinsk-1957-askar-saryja":     { statue: 4.5,  pedestal: 2.5 },
-    "merkurov-1958-funeral":         { statue: 2.5,  pedestal: 0.5 },
-    "ulan-ude-1970-zilberman":       { statue: 7.7,  pedestal: 6.3 },
-    "volgograd-1973-vuchetich":      { statue: 27.0, pedestal: 30.0 },
-  };
+  // Heights loaded from assets/mtk41/heights.json (curator's monument table).
+  let HEIGHTS = {};
+  const FALLBACK_HEIGHT = { statue: 5.0, pedestal: 2.0 };
 
   const HUMAN_HEIGHT_M = 1.75;
 
@@ -62,7 +44,7 @@
     }
   }
   function totalH(id) {
-    const h = HEIGHTS[id] || { statue: 5, pedestal: 2 };
+    const h = HEIGHTS[id] || FALLBACK_HEIGHT;
     return h.statue + h.pedestal;
   }
   function chooseBand(h) {
@@ -137,7 +119,7 @@
       const figW = Math.min(slotW * 0.75, 110);
       for (let k = 0; k < items.length; k += 1) {
         const it = items[k];
-        const h = HEIGHTS[it.m.id] || { statue: 5, pedestal: 2 };
+        const h = HEIGHTS[it.m.id] || FALLBACK_HEIGHT;
         const cx = left + slotW * (k + 0.5);
         placed.push({
           i: it.i, m: it.m, band: b.id,
@@ -400,8 +382,10 @@
 
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
+    fetch("../assets/mtk41/heights.json").then(r => r.json()).catch(() => ({})),
     loadFlatSilhouettes(),
-  ]).then(([mtk]) => {
+  ]).then(([mtk, heights]) => {
+    HEIGHTS = heights || {};
     monuments = mtk.items || [];
     resize();
     requestAnimationFrame(render);

@@ -10,29 +10,11 @@
     window: "#9DA3A6",
   };
 
-  // Heights are best-effort, based on Wikipedia / source descriptions in the JSON.
-  // statue = sculpture only; pedestal = base/podium. Total = statue + pedestal.
-  // For monuments where no source data is available, conservative typical values.
-  const HEIGHTS = {
-    "alekseev-1919-bust":            { statue: 0.6,  pedestal: 0.0,  note: "Бюст ~0.6 м, без постамента (натурный бюст)" },
-    "leningrad-1920s":               { statue: 4.0,  pedestal: 3.0,  note: "Типичный для 1920-х памятник в Ленинграде, ≈7 м" },
-    "kaluga-1920s":                  { statue: 3.5,  pedestal: 2.5,  note: "Типичный памятник 1920-х, ≈6 м" },
-    "yaroslavl-1920s":               { statue: 4.5,  pedestal: 3.0,  note: "На Красной площади, ≈7.5 м" },
-    "vladivostok-1920s":             { statue: 3.5,  pedestal: 2.5,  note: "Типичный 1920-х, ≈6 м" },
-    "ufa-1924-larionov":             { statue: 3.0,  pedestal: 2.0,  note: "В сквере Ленина, ≈5 м" },
-    "moscow-oktyabrskaya-1925":      { statue: 2.5,  pedestal: 1.5,  note: "Скромный объект на станции, ≈4 м" },
-    "nizhny-tagil-1925":             { statue: 4.0,  pedestal: 2.5,  note: "Типичный, ≈6.5 м" },
-    "chelyabinsk-aloe-pole-1925":    { statue: 1.5,  pedestal: 5.0,  note: "Бюст в нише мавзолея; здание ≈6.5 м" },
-    "voznesenye-1925-capital-bust":  { statue: 1.0,  pedestal: 1.5,  note: "Бюст на трёх томах «Капитала» в посёлке" },
-    "kostroma-1928":                 { statue: 4.0,  pedestal: 8.0,  note: "На постаменте 300-летия Романовых ≈12 м" },
-    "moscow-canal-1937-merkurov":    { statue: 25.0, pedestal: 12.0, note: "Колосс Меркурова, ≈37 м" },
-    "gorki-pinchuk-taurit":          { statue: 2.5,  pedestal: 0.8,  note: "Скульптурная группа, в натуральную величину" },
-    "kazan-1954-young-volodya":      { statue: 3.0,  pedestal: 2.0,  note: "Молодой Володя-студент, ≈5 м" },
-    "rybinsk-1957-askar-saryja":     { statue: 4.5,  pedestal: 2.5,  note: "На Красной площади Рыбинска, ≈7 м" },
-    "merkurov-1958-funeral":         { statue: 2.5,  pedestal: 0.5,  note: "Композиция «Похороны вождя», группа фигур" },
-    "ulan-ude-1970-zilberman":       { statue: 7.7,  pedestal: 6.3,  note: "Самая большая голова Ленина в мире — 14 м" },
-    "volgograd-1973-vuchetich":      { statue: 27.0, pedestal: 30.0, note: "Самый большой памятник реальному человеку — 57 м" },
-  };
+  // Heights loaded from assets/mtk41/heights.json (sourced from the curator's
+  // monument table — column «Размеры»). Conservative fallback for entries
+  // without a height in the catalog.
+  let HEIGHTS = {};
+  const FALLBACK_HEIGHT = { statue: 5.0, pedestal: 2.0 };
 
   const HUMAN_HEIGHT_M = 1.75;
 
@@ -76,7 +58,7 @@
   }
 
   function totalHeight(id) {
-    const h = HEIGHTS[id] || { statue: 5, pedestal: 2 };
+    const h = HEIGHTS[id] || FALLBACK_HEIGHT;
     return h.statue + h.pedestal;
   }
 
@@ -124,7 +106,7 @@
     for (let k = 0; k < items.length; k += 1) {
       const it = items[k];
       const m = it.m;
-      const h = HEIGHTS[m.id] || { statue: 5, pedestal: 2 };
+      const h = HEIGHTS[m.id] || FALLBACK_HEIGHT;
       const cx = left + slotW * (k + 0.5);
       const totalH = (h.statue + h.pedestal) * mPx;
       const statueH = h.statue * mPx;
@@ -383,8 +365,10 @@
 
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
-  ]).then(([mtk]) => {
+    fetch("../assets/mtk41/heights.json").then(r => r.json()).catch(() => ({})),
+  ]).then(([mtk, heights]) => {
     monuments = mtk.items || [];
+    HEIGHTS = heights || {};
     resize();
     requestAnimationFrame(render);
   }).catch(err => {
