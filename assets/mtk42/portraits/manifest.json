@@ -160,5 +160,149 @@
     "lang": "ru",
     "image": "r-palamarchuk.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%9F%D1%91%D1%82%D1%80_%D0%9F%D0%B0%D0%BB%D0%B0%D0%BC%D0%B0%D1%80%D1%87%D1%83%D0%BA.jpg"
+  },
+  "churchill": {
+    "title": "Черчилль, Уинстон",
+    "lang": "ru",
+    "image": "churchill.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Sir_Winston_Churchill_-_19086236948.jpg"
+  },
+  "gandhi": {
+    "title": "Ганди, Махатма",
+    "lang": "ru",
+    "image": "gandhi.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg"
+  },
+  "ho-chi-minh": {
+    "title": "Хо Ши Мин",
+    "lang": "ru",
+    "image": "ho-chi-minh.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Ho_Chi_Minh_-_1946_Portrait.jpg"
+  },
+  "zetkin": {
+    "title": "Цеткин, Клара",
+    "lang": "ru",
+    "image": "zetkin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/C_Zetkin_2.jpg"
+  },
+  "krasnov": {
+    "title": "Краснов, Пётр Николаевич",
+    "lang": "ru",
+    "image": "krasnov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Pyotr_Nikolayevich_Krasnov.jpg"
+  },
+  "roerich": {
+    "title": "Рерих, Николай Константинович",
+    "lang": "ru",
+    "image": "roerich.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/51/N_Roerich.jpg"
+  },
+  "trotsky": {
+    "title": "Троцкий, Лев Давидович",
+    "lang": "ru",
+    "image": "trotsky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/%D0%9B%D0%B5%D0%B2_%D0%94%D0%B0%D0%B2%D0%B8%D0%B4%D0%BE%D0%B2%D0%B8%D1%87_%D0%A2%D1%80%D0%BE%D1%86%D0%BA%D0%B8%D0%B9.jpg"
+  },
+  "wells": {
+    "title": "Уэллс, Герберт",
+    "lang": "ru",
+    "image": "wells.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/H.G._Wells_by_Beresford.jpg"
+  },
+  "rolland": {
+    "title": "Роллан, Ромен",
+    "lang": "ru",
+    "image": "rolland.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Romain_Rolland_1915.jpg"
+  },
+  "keynes": {
+    "title": "Кейнс, Джон Мейнард",
+    "lang": "ru",
+    "image": "keynes.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Keynes_1933.jpg"
+  },
+  "einstein": {
+    "title": "Эйнштейн, Альберт",
+    "lang": "ru",
+    "image": "einstein.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Albert_Einstein_Head_cleaned.jpg/3840px-Albert_Einstein_Head_cleaned.jpg"
+  },
+  "bunin": {
+    "title": "Бунин, Иван Алексеевич",
+    "lang": "ru",
+    "image": "bunin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/00/%D0%98%D0%B2%D0%B0%D0%BD_%D0%91%D1%83%D0%BD%D0%B8%D0%BD_%281928%29.jpg"
+  },
+  "vernadsky": {
+    "title": "Вернадский, Георгий Владимирович",
+    "lang": "ru",
+    "image": "vernadsky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/George_Vernandsky_1909.jpg"
+  },
+  "kerensky": {
+    "title": "Керенский, Александр Фёдорович",
+    "lang": "ru",
+    "image": "kerensky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Alexander_Kerensky_1917_Crop.jpg"
+  },
+  "romanov-am": {
+    "title": "Александр Михайлович (внук Николая I)",
+    "lang": "ru",
+    "image": "romanov-am.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Grand_Duke_Alexander_Mikhailovich_%28LOC%29.jpg"
+  },
+  "struve": {
+    "title": "Струве, Пётр Бернгардович",
+    "lang": "ru",
+    "image": "struve.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Piotr_Struve.jpg"
+  },
+  "reed": {
+    "title": "John_Reed_(journalist)",
+    "lang": "en",
+    "image": "reed.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg/3840px-John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg"
+  },
+  "tsiolkovsky": {
+    "title": "Циолковский, Константин Эдуардович",
+    "lang": "ru",
+    "image": "tsiolkovsky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B0%D0%BD%D1%82%D0%B8%D0%BD_%D0%A6%D0%B8%D0%BE%D0%BB%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9.jpg"
+  },
+  "shaw": {
+    "title": "Шоу, Бернард",
+    "lang": "ru",
+    "image": "shaw.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/George_Bernard_Shaw_1909.jpg"
+  },
+  "zinovyev": {
+    "title": "Зиновьев, Григорий Евсеевич",
+    "lang": "ru",
+    "image": "zinovyev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Grigorii_Zinovieff_1920.jpg"
+  },
+  "kautsky": {
+    "title": "Каутский, Карл",
+    "lang": "ru",
+    "image": "kautsky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Karl_Kautsky_01.jpg"
+  },
+  "potresov": {
+    "title": "Потресов, Александр Николаевич",
+    "lang": "ru",
+    "image": "potresov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Alexander_Potresov.jpg"
+  },
+  "sun-yatsen": {
+    "title": "Сунь Ятсен",
+    "lang": "ru",
+    "image": "sun-yatsen.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d9/%E5%AD%99%E4%B8%AD%E5%B1%B1%E8%82%96%E5%83%8F.jpg"
+  },
+  "herriot": {
+    "title": "Эррио, Эдуар",
+    "lang": "ru",
+    "image": "herriot.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg/3840px-%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg"
   }
 }
