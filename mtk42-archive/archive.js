@@ -1,14 +1,20 @@
-// МТК 42 · Картотека — grid of researcher & quote cards.
+// МТК 42 · Картотека — grid of people cards across 3 categories.
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
 
 const state = {
   epoch: "all",
-  kind: "all",
+  category: "all",
   items: [],
   epochs: [],
   byId: new Map(),
+};
+
+const CATEGORY_TAG = {
+  politician: "Политик",
+  researcher: "Исследователь",
+  writers: "Литература",
 };
 
 (async function init() {
@@ -25,52 +31,29 @@ const state = {
 
 function buildItems(content, portraits) {
   const items = [];
-  for (const q of content.quotes) {
-    const p = portraits[q.id] || {};
+  for (const p of content.people) {
+    const portraitMeta = portraits[p.id] || {};
     items.push({
-      id: q.id,
-      kind: "quote",
-      name: q.author,
-      meta: `${q.role} · ${q.year}`,
-      year: q.year,
-      epoch: epochForYear(content.epochs, q.year),
-      tone: q.tone,
-      text: q.text,
-      source: q.source,
-      portrait: p.image ? `../assets/mtk42/portraits/${p.image}` : null,
-      initials: initials(q.author),
-      tag: "Цитата",
-      work: null,
-    });
-  }
-  for (const r of content.researchers) {
-    const p = portraits[r.id] || {};
-    items.push({
-      id: r.id,
-      kind: "research",
-      name: r.name,
-      meta: `${r.role} · ${r.years}`,
-      year: r.key_year,
-      epoch: r.epoch,
-      tone: r.tone,
-      text: r.summary,
-      source: r.role,
-      portrait: p.image ? `../assets/mtk42/portraits/${p.image}` : null,
-      initials: initials(r.short || r.name),
-      tag: "Исследователь",
-      work: `«${r.key_work}» · ${r.key_year}`,
+      id: p.id,
+      category: p.category,
+      name: p.name,
+      short: p.short || p.name,
+      role: p.role,
+      yearsAlive: p.years,
+      year: p.year,
+      epoch: p.epoch,
+      tone: p.tone,
+      keyWork: p.key_work,
+      summary: p.summary,
+      quote: p.quote || null,
+      portrait: portraitMeta.image ? `../assets/mtk42/portraits/${portraitMeta.image}` : null,
+      initials: initials(p.short || p.name),
+      tag: CATEGORY_TAG[p.category] || p.category,
     });
   }
   // sort: by year, then by absolute tone (more extreme first)
   items.sort((a, b) => a.year - b.year || Math.abs(b.tone) - Math.abs(a.tone));
   return items;
-}
-
-function epochForYear(epochs, year) {
-  for (const ep of epochs) {
-    if (year >= ep.years[0] && year < ep.years[1]) return ep.id;
-  }
-  return epochs[epochs.length - 1].id;
 }
 
 function initials(fullname) {
@@ -100,7 +83,7 @@ function render() {
   let shown = 0;
   for (const it of state.items) {
     if (state.epoch !== "all" && it.epoch !== state.epoch) continue;
-    if (state.kind !== "all" && it.kind !== state.kind) continue;
+    if (state.category !== "all" && it.category !== state.category) continue;
     grid.appendChild(renderCard(it));
     shown++;
   }
@@ -111,7 +94,7 @@ function render() {
 function renderCard(it) {
   const tpl = document.createElement("button");
   tpl.type = "button";
-  tpl.className = `card ${it.kind === "quote" ? "is-quote" : "is-research"}`;
+  tpl.className = `card is-${it.category}`;
   tpl.dataset.id = it.id;
   tpl.setAttribute("aria-label", `${it.name}, ${it.year}`);
 
@@ -144,7 +127,7 @@ function renderCard(it) {
   heading.appendChild(name);
   const meta = document.createElement("p");
   meta.className = "card__meta";
-  meta.textContent = it.kind === "research" ? (it.work || it.meta) : it.meta;
+  meta.textContent = it.keyWork || it.role;
   heading.appendChild(meta);
   tpl.appendChild(heading);
 
@@ -187,19 +170,27 @@ function openDetail(it) {
   }
   $('[data-bind="kind"]', d).textContent = it.tag;
   $('[data-bind="name"]', d).textContent = it.name;
-  $('[data-bind="meta"]', d).textContent = it.meta;
+  $('[data-bind="meta"]', d).textContent = `${it.role} · ${it.yearsAlive}`;
   $('[data-bind="epoch"]', d).textContent = epochLabel(it.epoch);
   $('[data-bind="tone-label"]', d).textContent = toneLabel(it.tone);
 
   const workSection = $('[data-bind="work-section"]', d);
-  if (it.work) {
+  if (it.keyWork) {
     workSection.hidden = false;
-    $('[data-bind="work"]', d).textContent = it.work;
+    $('[data-bind="work"]', d).textContent = `${it.keyWork} · ${it.year}`;
   } else {
     workSection.hidden = true;
   }
-  $('[data-bind="text"]', d).textContent = it.text;
-  $('[data-bind="source"]', d).textContent = it.source;
+  $('[data-bind="text"]', d).textContent = it.summary || "";
+
+  const quoteSection = $('[data-bind="quote-section"]', d);
+  if (it.quote) {
+    quoteSection.hidden = false;
+    $('[data-bind="quote-text"]', d).textContent = `«${it.quote.text}»`;
+    $('[data-bind="quote-source"]', d).textContent = it.quote.source;
+  } else {
+    quoteSection.hidden = true;
+  }
 
   const marker = $('[data-bind="tone-marker"]', d);
   marker.style.left = (((it.tone + 1) / 2) * 100).toFixed(1) + "%";
@@ -220,11 +211,11 @@ function bindUi() {
       render();
     });
   });
-  $$('.filter[data-kind]').forEach((btn) => {
+  $$('.filter[data-category]').forEach((btn) => {
     btn.addEventListener("click", () => {
-      $$('.filter[data-kind]').forEach((b) => b.classList.remove("is-active"));
+      $$('.filter[data-category]').forEach((b) => b.classList.remove("is-active"));
       btn.classList.add("is-active");
-      state.kind = btn.dataset.kind;
+      state.category = btn.dataset.category;
       render();
     });
   });
@@ -232,7 +223,6 @@ function bindUi() {
   const detail = $("#detail");
   $(".detail__close").addEventListener("click", closeDetail);
   detail.addEventListener("click", (e) => {
-    // close on click on backdrop (outside the inner dialog area)
     if (e.target === detail) closeDetail();
   });
   document.addEventListener("keydown", (e) => {

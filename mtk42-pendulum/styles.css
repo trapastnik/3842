@@ -332,8 +332,10 @@ html, body {
   transform: translate(-50%, -50%) scale(1.22);
   box-shadow: 0 0 0 4px rgba(210, 183, 115, 0.18), 0 10px 28px rgba(0, 0, 0, 0.6);
 }
-.dot--quote { border-color: var(--red); }
-.dot--research { border-color: var(--brass); }
+/* Dot colour by category — red politicians, brass researchers, paper-grey writers */
+.dot--politician { border-color: var(--red); }
+.dot--researcher { border-color: var(--brass); }
+.dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
 .dot__portrait {
   width: 100%;
   height: 100%;
@@ -359,7 +361,9 @@ html, body {
   border-radius: 999px;
   pointer-events: none;
 }
-.dot--research .dot__tag { background: var(--brass); color: var(--night); }
+.dot--politician .dot__tag { background: var(--red);    color: var(--paper); }
+.dot--researcher .dot__tag { background: var(--brass);  color: var(--night); }
+.dot--writers    .dot__tag { background: var(--paper);  color: var(--night); }
 
 /* ─── Detail card (overlay) ─── */
 .card {
@@ -457,6 +461,30 @@ html, body {
   font-size: 13px;
   letter-spacing: 0.06em;
   color: rgba(247, 249, 239, 0.55);
+}
+
+/* Quote block inside the detail card — red accent rule */
+.card__quote {
+  margin: 0 0 16px;
+  padding: 14px 18px 12px;
+  border-left: 2px solid var(--red);
+  background: rgba(160, 33, 40, 0.07);
+  border-radius: 4px;
+}
+.card__quote[hidden] { display: none; }
+.card__quote-text {
+  margin: 0 0 8px;
+  font-size: 17px;
+  line-height: 1.55;
+  color: rgba(247, 249, 239, 0.96);
+  font-style: italic;
+}
+.card__quote-source {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: rgba(247, 249, 239, 0.55);
+  font-style: normal;
 }
 
 .card__tone {
@@ -578,8 +606,9 @@ html, body {
   background: rgba(12, 16, 18, 0.85);
   border: 2px solid var(--brass);
 }
-.legend__dot--quote { border-color: var(--red); }
-.legend__dot--res { border-color: var(--brass); }
+.legend__dot--politician { border-color: var(--red); }
+.legend__dot--researcher { border-color: var(--brass); }
+.legend__dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
 .legend__line {
   width: 22px;
   height: 2px;
@@ -702,6 +731,9 @@ html, body {
   .card__meta  { font-size: 13px; letter-spacing: 0.14em; }
   .card__text  { font-size: 19px; line-height: 1.5; margin-bottom: 14px; }
   .card__source { font-size: 13px; margin-bottom: 16px; }
+  .card__quote { padding: 16px 20px 14px; margin-bottom: 14px; }
+  .card__quote-text { font-size: 19px; line-height: 1.55; }
+  .card__quote-source { font-size: 13px; }
   .card__tone-label { font-size: 12px; }
   .card__tone-track { height: 8px; }
   .card__tone-marker { width: 18px; height: 18px; }

@@ -145,38 +145,29 @@ function drawZeroLine(root) {
 }
 
 // ─── Collect items ──────────────────────────────────────────
+const CATEGORY_TAG = {
+  politician: "Политик",
+  researcher: "Исследователь",
+  writers: "Литература",
+};
+
 function collectItems(content, portraits) {
   const items = [];
-  for (const q of content.quotes) {
-    const p = portraits[q.id] || {};
+  for (const p of content.people) {
+    const portraitMeta = portraits[p.id] || {};
     items.push({
-      id: q.id,
-      kind: "quote",
-      name: q.author,
-      meta: `${q.role} · ${q.year}`,
-      year: q.year,
-      tone: q.tone,
-      text: q.text,
-      source: q.source,
-      portrait: p.image ? `../assets/mtk42/portraits/${p.image}` : null,
-      initials: initialsFromName(q.author),
-      tag: "Цитата",
-    });
-  }
-  for (const r of content.researchers) {
-    const p = portraits[r.id] || {};
-    items.push({
-      id: r.id,
-      kind: "research",
-      name: r.name,
-      meta: `${r.role} · ${r.years}`,
-      year: r.key_year,
-      tone: r.tone,
-      text: r.summary,
-      source: `«${r.key_work}» · ${r.key_year}`,
-      portrait: p.image ? `../assets/mtk42/portraits/${p.image}` : null,
-      initials: initialsFromName(r.short || r.name),
-      tag: "Исследователь",
+      id: p.id,
+      category: p.category,
+      name: p.name,
+      meta: `${p.role} · ${p.years}`,
+      year: p.year,
+      tone: p.tone,
+      text: p.summary || "",
+      source: p.key_work ? `«${p.key_work}»` : "",
+      quote: p.quote || null,
+      portrait: portraitMeta.image ? `../assets/mtk42/portraits/${portraitMeta.image}` : null,
+      initials: initialsFromName(p.short || p.name),
+      tag: CATEGORY_TAG[p.category] || p.category,
     });
   }
   return items;
@@ -281,7 +272,7 @@ function drawDots(root, items) {
 
   for (const it of placed) {
     const dot = document.createElement("button");
-    dot.className = `dot dot--${it.kind}`;
+    dot.className = `dot dot--${it.category}`;
     dot.type = "button";
     dot.style.left = it.xPct + "%";
     dot.style.top = it.yPx + "px";
@@ -332,6 +323,15 @@ function openCard(item, sourceDot) {
   $('[data-bind="meta"]', card).textContent = item.meta;
   $('[data-bind="text"]', card).textContent = item.text;
   $('[data-bind="source"]', card).textContent = item.source;
+
+  const quoteSection = $('[data-bind="quote-section"]', card);
+  if (item.quote) {
+    quoteSection.hidden = false;
+    $('[data-bind="quote-text"]', card).textContent = `«${item.quote.text}»`;
+    $('[data-bind="quote-source"]', card).textContent = item.quote.source;
+  } else {
+    quoteSection.hidden = true;
+  }
 
   const marker = $('[data-bind="tone-marker"]', card);
   const norm = (item.tone + 1) / 2;

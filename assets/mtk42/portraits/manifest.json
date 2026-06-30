@@ -1,159 +1,159 @@
 {
-  "q-krzhizhanovsky-1924": {
+  "krzhizhanovsky": {
     "title": "Кржижановский, Глеб Максимилианович",
     "lang": "ru",
     "image": "q-krzhizhanovsky-1924.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Gleb_Maksimilianovich_Krzhizhanovskiy.jpg"
   },
-  "q-bukharin-1924": {
+  "bukharin": {
     "title": "Бухарин, Николай Иванович",
     "lang": "ru",
     "image": "q-bukharin-1924.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/N.I._Bukharin_%281888-1938%29.jpg"
   },
-  "q-chernov-1924": {
+  "chernov": {
     "title": "Чернов, Виктор Михайлович",
     "lang": "ru",
     "image": "q-chernov-1924.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Portrait_of_Minister_VM_Chernov_Trim_Edit.jpg"
   },
-  "q-gorky-1934": {
+  "gorky": {
     "title": "Горький, Максим",
     "lang": "ru",
     "image": "q-gorky-1934.png",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Maxim_Gorky_1927_%28cropped%29.png"
   },
-  "q-putin-2019": {
+  "putin": {
     "title": "Путин, Владимир Владимирович",
     "lang": "ru",
     "image": "q-putin-2019.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%9F%D1%83%D1%82%D0%B8%D0%BD_%282025-09-30%29.jpg"
   },
-  "q-lebedev-2020": {
+  "lebedev": {
     "title": "Лебедев, Олег Александрович",
     "lang": "ru",
     "image": "q-lebedev-2020.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/%D0%9E%D0%BB%D0%B5%D0%B3_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87%2C_%D0%9B%D0%B5%D0%B1%D0%B5%D0%B4%D0%B5%D0%B2.jpg"
   },
-  "q-zyuganov-2022": {
+  "zyuganov": {
     "title": "Зюганов, Геннадий Андреевич",
     "lang": "ru",
     "image": "q-zyuganov-2022.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Gennady_Zyuganov_2022-09-20_%28cropped%29.jpg"
   },
-  "q-volobuev": {
+  "volobuev": {
     "title": "Волобуев, Павел Васильевич",
     "lang": "ru",
     "image": "q-volobuev.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/7/74/%D0%92%D0%BE%D0%BB%D0%BE%D0%B1%D1%83%D0%B5%D0%B2%2C_%D0%9F%D0%B0%D0%B2%D0%B5%D0%BB_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
   },
-  "q-afanasyev-1988": {
+  "afanasyev": {
     "title": "Афанасьев, Юрий Николаевич",
     "lang": "ru",
     "image": "q-afanasyev-1988.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/RIAN_archive_418402_People%27s_Deputy_of_USSR_Yury_Afanasyev_attends_Moscow_meeting_to_support_Boris_Yeltsin_and_Russian_presidential_referendum.jpg"
   },
-  "r-volkogonov": {
+  "volkogonov": {
     "title": "Волкогонов, Дмитрий Антонович",
     "lang": "ru",
     "image": "r-volkogonov.png",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/0a/%D0%94%D0%BC%D0%B8%D1%82%D1%80%D0%B8%D0%B9_%D0%92%D0%BE%D0%BB%D0%BA%D0%BE%D0%B3%D0%BE%D0%BD%D0%BE%D0%B2.png"
   },
-  "r-loginov": {
+  "loginov": {
     "title": "Логинов, Владлен Терентьевич",
     "lang": "ru",
     "image": "r-loginov.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cf/Vladlen_Loginov.jpg"
   },
-  "r-kotelenets": {
+  "kotelenets": {
     "title": "Котеленец, Елена Анатольевна",
     "lang": "ru",
     "image": null
   },
-  "r-subetto": {
+  "subetto": {
     "title": "Субетто, Александр Иванович",
     "lang": "ru",
     "image": null
   },
-  "r-potseluev": {
+  "potseluev": {
     "title": "Поцелуев, Владимир Алексеевич",
     "lang": "ru",
     "image": null
   },
-  "r-slavin": {
+  "slavin": {
     "title": "Славин, Борис Фёдорович",
     "lang": "ru",
     "image": null
   },
-  "r-sobolev": {
+  "sobolev": {
     "title": "Соболев, Геннадий Леонтьевич",
     "lang": "ru",
     "image": null
   },
-  "r-kolganov": {
+  "kolganov": {
     "title": "Колганов, Андрей Иванович",
     "lang": "ru",
     "image": "r-kolganov.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Kolganov_Andrey.jpg"
   },
-  "r-plimak": {
+  "plimak": {
     "title": "Плимак, Евгений Григорьевич",
     "lang": "ru",
     "image": "r-plimak.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c6/%D0%9F%D0%BB%D0%B8%D0%BC%D0%B0%D0%BA%2C_%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
   },
-  "r-bordyugov": {
+  "bordyugov": {
     "title": "Бордюгов, Геннадий Аркадьевич",
     "lang": "ru",
     "image": null
   },
-  "r-danilkin": {
+  "danilkin": {
     "title": "Данилкин, Лев Александрович",
     "lang": "ru",
     "image": "r-danilkin.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Lev_Danilkin_01.jpg"
   },
-  "r-valentinov": {
+  "valentinov": {
     "title": "Валентинов, Николай Владиславович",
     "lang": "ru",
     "image": "r-valentinov.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/90/%D0%92%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%9D.%D0%92._1901_%D0%B3.jpg"
   },
-  "r-ioffe": {
+  "ioffe": {
     "title": "Иоффе, Генрих Зиновьевич",
     "lang": "ru",
     "image": null
   },
-  "r-arutyunov": {
+  "arutyunov": {
     "title": "Арутюнов, Аким Арутюнович",
     "lang": "ru",
     "image": null
   },
-  "r-yerofeev": {
+  "yerofeev": {
     "title": "Ерофеев, Венедикт Васильевич",
     "lang": "ru",
     "image": "r-yerofeev.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f2/ErofeevV.jpg"
   },
-  "r-soloukhin": {
+  "soloukhin": {
     "title": "Солоухин, Владимир Алексеевич",
     "lang": "ru",
     "image": "r-soloukhin.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cb/%D0%A1%D0%BE%D0%BB%D0%BE%D1%83%D1%85%D0%B8%D0%BD%2C_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B5%D0%B2%D0%B8%D1%87.jpg"
   },
-  "r-shturman": {
+  "shturman": {
     "title": "Штурман, Дора Моисеевна",
     "lang": "ru",
     "image": "r-shturman.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Shturman%2C_Dora.jpg"
   },
-  "r-avtorkhanov": {
+  "avtorkhanov": {
     "title": "Авторханов, Абдурахман Геназович",
     "lang": "ru",
     "image": "r-avtorkhanov.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%90%D0%B2%D1%82%D0%BE%D1%80%D1%85%D0%B0%D0%BD%D0%BE%D0%B2%2C_%D0%90%D0%B1%D0%B4%D1%83%D1%80%D0%B0%D1%85%D0%BC%D0%B0%D0%BD_%D0%93%D0%B5%D0%BD%D0%B0%D0%B7%D0%BE%D0%B2%D0%B8%D1%87.jpg"
   },
-  "r-palamarchuk": {
+  "palamarchuk": {
     "title": "Паламарчук, Пётр Георгиевич",
     "lang": "ru",
     "image": "r-palamarchuk.jpg",

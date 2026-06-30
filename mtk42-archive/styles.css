@@ -215,7 +215,10 @@ html, body {
   z-index: 2;
 }
 .card:active { transform: translateY(2px); }
-.card.is-quote::before { background: var(--red); }
+/* Category pin (top-left dot) — colour by category */
+.card.is-researcher::before { background: var(--brass); }
+.card.is-politician::before { background: var(--red); }
+.card.is-writers::before    { background: var(--window); }
 
 .card__tag {
   position: absolute;
@@ -318,9 +321,17 @@ html, body {
   text-align: right;
 }
 
-.card.is-quote {
+/* Per-category card tint — subtle, holds the file-cabinet feel */
+.card.is-politician {
   border-color: rgba(160, 33, 40, 0.55);
   background: linear-gradient(180deg, rgba(160, 33, 40, 0.08), rgba(0, 0, 0, 0.4) 90%), rgba(12, 16, 18, 0.5);
+}
+.card.is-researcher {
+  border-color: rgba(210, 183, 115, 0.50);
+}
+.card.is-writers {
+  border-color: rgba(157, 163, 166, 0.50);
+  background: linear-gradient(180deg, rgba(157, 163, 166, 0.06), rgba(0, 0, 0, 0.4) 90%), rgba(12, 16, 18, 0.5);
 }
 
 /* ─── Detail overlay ─── */
@@ -470,6 +481,30 @@ html, body {
   font-size: 11px;
   letter-spacing: 0.04em;
   color: rgba(247, 249, 239, 0.5);
+}
+
+/* Quote block — visible accent, brass left rule like work-section but red */
+.detail__quote {
+  margin: 0;
+  padding: 14px 18px 12px;
+  border-left: 2px solid var(--red);
+  background: rgba(160, 33, 40, 0.06);
+  border-radius: 4px;
+}
+.detail__quote[hidden] { display: none; }
+.detail__quote-text {
+  margin: 0 0 8px;
+  font-size: 16px;
+  line-height: 1.55;
+  color: rgba(247, 249, 239, 0.94);
+  font-style: italic;
+}
+.detail__quote-source {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: rgba(247, 249, 239, 0.5);
+  font-style: normal;
 }
 
 .detail__tone-bar {
@@ -656,6 +691,9 @@ html, body {
   .detail__work-text { font-size: 22px; line-height: 1.45; }
   .detail__text { font-size: 26px; line-height: 1.55; }
   .detail__source { font-size: 18px; }
+  .detail__quote { padding: 20px 24px 16px; }
+  .detail__quote-text { font-size: 24px; line-height: 1.55; margin-bottom: 12px; }
+  .detail__quote-source { font-size: 16px; }
   .detail__tone-label { font-size: 18px; letter-spacing: 0.24em; }
   .detail__tone-track { height: 10px; }
   .detail__tone-marker { width: 22px; height: 22px; }
