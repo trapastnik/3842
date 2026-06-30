@@ -163,17 +163,18 @@
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Russia spans ~95° of latitude × ~170° of longitude. The "interesting"
-    // window is ~25..140°E, 40..72°N — about 115° × 32°. Pick a target lng
-    // span that fills the viewport: wide on landscape, narrower on portrait
-    // (so Russia stays prominent instead of becoming a thin strip).
+    // Ex-USSR span: lng ~16°E (Шпицберген) … ~163°E (Камчатка) = ~148°;
+    // 14 ex-USSR republics + Russia + outliers. Default view: cluster of
+    // European Russia + Восток Украина/Беларусь/Кавказ/Казахстан, with
+    // Дальний Восток reachable via pan or zoom-out.
     const isPortrait = height > width;
-    const targetLngSpan = isPortrait ? 75 : 110;
+    const targetLngSpan = isPortrait ? 95 : 135;
     map.worldW = (width / targetLngSpan) * 360;
     map.worldH = map.worldW / 2;
 
-    // Initial camera centered on ~lng 70°, ~lat 60° (central Russia)
-    const center = project(60, 70);
+    // Initial camera centered on ~lng 60°, ~lat 55° — covers most of
+    // Russia + Belarus/Украина/Прибалтика на западе, Казахстан/Каспий на юге.
+    const center = project(55, 60);
     map.camX = center.x - width * 0.5;
     map.camY = center.y - height * 0.5;
 
