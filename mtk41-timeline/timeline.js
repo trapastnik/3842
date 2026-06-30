@@ -12,7 +12,7 @@
   };
 
   const YEAR_MIN = 1918;
-  const YEAR_MAX = 1975;
+  const YEAR_MAX = 1995;
 
   let width = 0, height = 0, dpr = 1;
   let monuments = [];
@@ -144,7 +144,7 @@
     ctx.textBaseline = "top";
 
     const isPortrait = height > width;
-    for (let y = 1920; y <= 1975; y += 1) {
+    for (let y = 1920; y <= 1995; y += 1) {
       const isDecade = y % 10 === 0;
       const isHalfDecade = y % 5 === 0;
       const x = yearToX(y);
@@ -170,7 +170,7 @@
 
     // Decade backgrounds (very faint)
     ctx.save();
-    for (let dec = 1920; dec < 1980; dec += 20) {
+    for (let dec = 1920; dec < 2000; dec += 20) {
       const x = yearToX(dec);
       const w = yearToX(dec + 10) - x;
       ctx.fillStyle = "rgba(247, 249, 239, 0.02)";
