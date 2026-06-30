@@ -146,6 +146,7 @@ function drawZeroLine(root) {
 
 // ─── Collect items ──────────────────────────────────────────
 const CATEGORY_TAG = {
+  leaders: "Вождь",
   politician: "Политик",
   researcher: "Исследователь",
   writers: "Литература",

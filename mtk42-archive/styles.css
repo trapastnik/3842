@@ -216,6 +216,7 @@ html, body {
 }
 .card:active { transform: translateY(2px); }
 /* Category pin (top-left dot) — colour by category */
+.card.is-leaders::before    { background: var(--red); box-shadow: 0 0 0 2px var(--brass); }
 .card.is-researcher::before { background: var(--brass); }
 .card.is-politician::before { background: var(--red); }
 .card.is-writers::before    { background: var(--window); }
@@ -322,6 +323,11 @@ html, body {
 }
 
 /* Per-category card tint — subtle, holds the file-cabinet feel */
+.card.is-leaders {
+  border-color: rgba(160, 33, 40, 0.75);
+  background: linear-gradient(180deg, rgba(160, 33, 40, 0.14), rgba(0, 0, 0, 0.45) 90%), rgba(12, 16, 18, 0.5);
+  box-shadow: inset 0 0 0 1px rgba(210, 183, 115, 0.35);
+}
 .card.is-politician {
   border-color: rgba(160, 33, 40, 0.55);
   background: linear-gradient(180deg, rgba(160, 33, 40, 0.08), rgba(0, 0, 0, 0.4) 90%), rgba(12, 16, 18, 0.5);

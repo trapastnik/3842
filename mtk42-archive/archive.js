@@ -12,6 +12,7 @@ const state = {
 };
 
 const CATEGORY_TAG = {
+  leaders: "Вождь",
   politician: "Политик",
   researcher: "Исследователь",
   writers: "Литература",

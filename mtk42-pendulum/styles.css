@@ -332,7 +332,9 @@ html, body {
   transform: translate(-50%, -50%) scale(1.22);
   box-shadow: 0 0 0 4px rgba(210, 183, 115, 0.18), 0 10px 28px rgba(0, 0, 0, 0.6);
 }
-/* Dot colour by category — red politicians, brass researchers, paper-grey writers */
+/* Dot colour by category — red politicians, brass researchers, paper-grey writers.
+ * Leaders (party-state) get red border + brass inner ring for emphasis. */
+.dot--leaders    { border-color: var(--red); box-shadow: inset 0 0 0 3px var(--brass), 0 6px 18px rgba(0, 0, 0, 0.5); }
 .dot--politician { border-color: var(--red); }
 .dot--researcher { border-color: var(--brass); }
 .dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
@@ -361,6 +363,7 @@ html, body {
   border-radius: 999px;
   pointer-events: none;
 }
+.dot--leaders    .dot__tag { background: var(--red);    color: var(--paper); box-shadow: 0 0 0 1px var(--brass); }
 .dot--politician .dot__tag { background: var(--red);    color: var(--paper); }
 .dot--researcher .dot__tag { background: var(--brass);  color: var(--night); }
 .dot--writers    .dot__tag { background: var(--paper);  color: var(--night); }
@@ -606,6 +609,7 @@ html, body {
   background: rgba(12, 16, 18, 0.85);
   border: 2px solid var(--brass);
 }
+.legend__dot--leaders    { border-color: var(--red); box-shadow: inset 0 0 0 2px var(--brass); }
 .legend__dot--politician { border-color: var(--red); }
 .legend__dot--researcher { border-color: var(--brass); }
 .legend__dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
