@@ -294,18 +294,21 @@ html, body {
 .pendulum-path {
   fill: none;
   stroke: rgba(210, 183, 115, 0.62);
-  stroke-width: 6;
+  stroke-width: var(--pendulum-stroke, 6);
   stroke-linecap: round;
   stroke-linejoin: round;
   filter: drop-shadow(0 0 10px rgba(210, 183, 115, 0.32));
 }
+body.hide-pendulum .pendulum-svg { display: none; }
+body.hide-ruler .year-ruler { display: none; }
+body.hide-epochs .epoch-label { display: none; }
 
-/* Items (dots) */
+/* Items (dots) — size driven by --dot-size (settings panel) */
 .dot {
   position: absolute;
   transform: translate(-50%, -50%);
-  width: 112px;
-  height: 112px;
+  width: var(--dot-size, 112px);
+  height: var(--dot-size, 112px);
   padding: 0;
   border: 3px solid var(--brass);
   border-radius: 999px;
@@ -316,7 +319,7 @@ html, body {
   display: grid;
   place-items: center;
   font-family: var(--font-display);
-  font-size: 36px;
+  font-size: calc(var(--dot-size, 112px) * 0.32);
   line-height: 1;
   overflow: hidden;
   transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
@@ -346,7 +349,7 @@ html, body {
 }
 .dot__initials {
   font-family: var(--font-display);
-  font-size: 38px;
+  font-size: calc(var(--dot-size, 112px) * 0.34);
   letter-spacing: 0.02em;
 }
 .dot__tag {
@@ -531,112 +534,169 @@ html, body {
   text-align: right;
 }
 
-/* ─── Legend ─── */
-.legend-toggle {
+/* ─── Settings panel (mtk39 pattern) ─── */
+.settings-toggle {
   position: absolute;
   right: 28px;
   bottom: 28px;
   z-index: 6;
-  width: 48px;
-  height: 48px;
+  width: 56px;
+  height: 56px;
   border: 1px solid var(--brass-soft);
   border-radius: 999px;
   background: rgba(0, 0, 0, 0.55);
   color: var(--brass);
-  font-family: var(--font-display);
   font-size: 22px;
   cursor: pointer;
   display: grid;
   place-items: center;
   box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+  transition: transform 0.2s ease;
 }
-.legend {
+.settings-toggle:hover  { transform: rotate(30deg); }
+.settings-toggle:active { transform: scale(0.95) rotate(30deg); }
+
+.settings {
   position: absolute;
-  right: 28px;
-  bottom: 88px;
+  right: 0;
+  top: 0;
+  bottom: 0;
   z-index: 7;
-  width: min(360px, calc(100% - 56px));
-  padding: 18px 20px 18px;
-  border: 1px solid var(--brass-soft);
-  border-radius: 12px;
+  width: min(340px, 100%);
+  padding: 24px;
+  border-left: 1px solid var(--brass-soft);
   background: rgba(8, 12, 14, 0.94);
   backdrop-filter: blur(10px);
   color: var(--paper);
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  box-shadow: -22px 0 60px rgba(0, 0, 0, 0.4);
 }
-.legend[hidden] { display: none; }
-.legend__head {
+.settings.is-open { transform: translateX(0); }
+
+.settings__head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.28em;
   text-transform: uppercase;
   color: var(--brass);
-  margin-bottom: 10px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(210, 183, 115, 0.22);
 }
-.legend__close {
-  width: 28px;
-  height: 28px;
+.settings__close {
+  width: 32px;
+  height: 32px;
   border: none;
   border-radius: 999px;
   background: transparent;
   color: var(--paper);
   font-size: 14px;
   cursor: pointer;
-  opacity: 0.7;
+  opacity: 0.65;
 }
-.legend__row {
-  margin: 0 0 12px;
-  font-size: 13px;
-  line-height: 1.5;
-  color: rgba(247, 249, 239, 0.85);
+.settings__close:active { opacity: 1; }
+
+.settings__group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
-.legend__list {
-  list-style: none;
-  margin: 0 0 10px;
-  padding: 0;
+.settings__title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(210, 183, 115, 0.72);
+  margin-bottom: 4px;
+}
+.settings__row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 36px;
+  font-size: 14px;
+  color: rgba(247, 249, 239, 0.88);
+  cursor: pointer;
+}
+.settings__row--slider {
   display: grid;
-  gap: 8px;
-  font-size: 13px;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  cursor: default;
 }
-.legend__list li { display: flex; align-items: center; gap: 10px; }
-.legend__dot {
-  width: 16px;
-  height: 16px;
+.settings__row--slider input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--brass);
+}
+.settings__row input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--brass);
+  cursor: pointer;
+}
+.settings__num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--brass);
+  text-align: right;
+  min-width: 36px;
+}
+
+/* Per-category swatch shown next to the checkbox in Категории — same look
+ * as the old legend dots but inlined into the settings rows. */
+.settings__legend-dot {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: rgba(12, 16, 18, 0.85);
   border: 2px solid var(--brass);
+  flex: 0 0 auto;
 }
 .legend__dot--leaders    { border-color: var(--red); box-shadow: inset 0 0 0 2px var(--brass); }
 .legend__dot--politician { border-color: var(--red); }
 .legend__dot--researcher { border-color: var(--brass); }
 .legend__dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
-.legend__line {
-  width: 22px;
-  height: 2px;
-  background: var(--brass-soft);
-  border-radius: 999px;
+
+.settings__group--legend { gap: 6px; }
+.settings__legend-text {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(247, 249, 239, 0.74);
 }
-.legend__hint {
-  margin: 6px 0 0;
+
+.settings__reset {
+  margin-top: auto;
+  padding: 12px 16px;
+  border: 1px solid rgba(160, 33, 40, 0.45);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.82);
   font-family: var(--font-mono);
   font-size: 11px;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.22em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.55);
+  cursor: pointer;
 }
+.settings__reset:hover { background: rgba(160, 33, 40, 0.18); }
 
 @media (max-width: 760px) {
   .title { padding: 20px 22px 12px; }
   .axis-top { margin: 0 22px; }
   .epoch-label { left: 22px; font-size: 18px; }
   .card { top: 116px; right: 18px; width: calc(100% - 36px); }
-  .legend-toggle { right: 18px; bottom: 18px; }
-  .legend { right: 18px; bottom: 76px; width: calc(100% - 36px); }
-  .dot { width: 96px; height: 96px; font-size: 30px; }
-  .dot__initials { font-size: 32px; }
+  .settings-toggle { right: 18px; bottom: 18px; }
+  .settings { width: 100%; }
 }
 
 /* ─── Vertical (portrait) — 49" 4K kiosk preview ──────────────────
@@ -686,14 +746,7 @@ html, body {
     filter: drop-shadow(0 0 12px rgba(210, 183, 115, 0.32));
   }
 
-  /* Dots — keep base landscape size, no portrait blow-up */
-  .dot {
-    width: 112px;
-    height: 112px;
-    border-width: 3px;
-    font-size: 36px;
-  }
-  .dot__initials { font-size: 38px; }
+  /* Dots are size-driven by --dot-size (settings panel); no portrait override. */
   .dot__tag {
     font-size: 11px;
     padding: 3px 9px;
@@ -743,23 +796,21 @@ html, body {
   .card__tone-marker { width: 18px; height: 18px; }
   .card__tone-value { font-size: 13px; min-width: 44px; }
 
-  /* Legend popover & toggle */
-  .legend-toggle {
-    width: 52px;
-    height: 52px;
-    font-size: 22px;
+  /* Settings panel + toggle */
+  .settings-toggle {
+    width: 60px;
+    height: 60px;
+    font-size: 26px;
     right: 24px;
     bottom: 24px;
   }
-  .legend {
-    width: min(380px, calc(100% - 48px));
-    right: 24px;
-    bottom: 92px;
-    padding: 18px 20px;
+  .settings {
+    width: min(420px, 100%);
+    padding: 28px 26px;
   }
-  .legend__head { font-size: 12px; }
-  .legend__row, .legend__list { font-size: 14px; line-height: 1.5; }
-  .legend__dot { width: 18px; height: 18px; border-width: 2px; }
-  .legend__line { width: 22px; height: 2px; }
-  .legend__hint { font-size: 11px; }
+  .settings__head { font-size: 14px; }
+  .settings__title { font-size: 12px; }
+  .settings__row { font-size: 16px; min-height: 42px; }
+  .settings__num { font-size: 14px; }
+  .settings__legend-text { font-size: 14px; }
 }
