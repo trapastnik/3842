@@ -423,5 +423,277 @@
     "statue": 4.37,
     "pedestal": 7.63,
     "note": "Общая высота памятника 12 м., высота бронзовой скульптуры 4,37 м."
+  },
+  "vinnitsa-1972": {
+    "statue": 12.87,
+    "pedestal": 6.93
+  },
+  "dnipro-1957": {
+    "statue": 11.4,
+    "pedestal": 8.6
+  },
+  "donetsk-1967": {
+    "statue": 7.5,
+    "pedestal": 6.0
+  },
+  "zhitomir-1964": {
+    "statue": 12.87,
+    "pedestal": 6.93
+  },
+  "zaporozhe-1964": {
+    "statue": 12.87,
+    "pedestal": 6.93
+  },
+  "ivano-1975": {
+    "statue": 6.0,
+    "pedestal": 5.0
+  },
+  "kiev-1946": {
+    "statue": 3.45,
+    "pedestal": 8.55
+  },
+  "kropivnitskii-1925": {
+    "statue": 2.6,
+    "pedestal": 4.0
+  },
+  "kramatorsk-1970": {
+    "statue": 7.0,
+    "pedestal": 4.0
+  },
+  "lugansk-1967": {
+    "statue": 5.0,
+    "pedestal": 5.0
+  },
+  "lutsk-1967": {
+    "statue": 19.8,
+    "pedestal": 0.5
+  },
+  "lvov-1952": {
+    "statue": 4.55,
+    "pedestal": 2.45
+  },
+  "mariupol-1987": {
+    "statue": 5.2,
+    "pedestal": 2.8
+  },
+  "nikolaev-1957": {
+    "statue": 6.0,
+    "pedestal": 8.0
+  },
+  "odessa-1967": {
+    "statue": 6.3,
+    "pedestal": 3.7
+  },
+  "poltava-1960": {
+    "statue": 4.0,
+    "pedestal": 4.9
+  },
+  "rvne-1967": {
+    "statue": 5.0,
+    "pedestal": 4.0
+  },
+  "svrodonetsk-1958": {
+    "statue": 4.0,
+    "pedestal": 3.0
+  },
+  "sumy-1947": {
+    "statue": 5.53,
+    "pedestal": 2.97
+  },
+  "ternopol-1967": {
+    "statue": 9.1,
+    "pedestal": 4.9
+  },
+  "uzhgorod-1974": {
+    "statue": 6.0,
+    "pedestal": 13.8
+  },
+  "kharkov-1963": {
+    "statue": 8.5,
+    "pedestal": 11.7
+  },
+  "kherson-1965": {
+    "statue": 7.7,
+    "pedestal": 6.3
+  },
+  "khmelnitskii-1970": {
+    "statue": 7.5,
+    "pedestal": 6.0
+  },
+  "cherkassy-1969": {
+    "statue": 4.55,
+    "pedestal": 2.45
+  },
+  "chernigov-1967": {
+    "statue": 5.1,
+    "pedestal": 6.0
+  },
+  "chernovtsy-1951": {
+    "statue": 6.0,
+    "pedestal": 13.8
+  },
+  "brest-1958": {
+    "statue": 3.18,
+    "pedestal": 6.0
+  },
+  "vitebsk-1956": {
+    "statue": 4.4,
+    "pedestal": 5.2
+  },
+  "gomel-1958": {
+    "statue": 6.0,
+    "pedestal": 8.5
+  },
+  "grodno-1987": {
+    "statue": 5.0,
+    "pedestal": 6.0
+  },
+  "minsk-1933": {
+    "statue": 7.15,
+    "pedestal": 3.85
+  },
+  "mogilev-1957": {
+    "statue": 4.5,
+    "pedestal": 4.5
+  },
+  "mozyr-1947": {
+    "statue": 3.5,
+    "pedestal": 3.5
+  },
+  "molodechno-1958": {
+    "statue": 4.0,
+    "pedestal": 11.0
+  },
+  "aktau-1984": {
+    "statue": 4.0,
+    "pedestal": 4.7
+  },
+  "aktobe-1983": {
+    "statue": 4.5,
+    "pedestal": 2.0
+  },
+  "almaty-1957": {
+    "statue": 7.0,
+    "pedestal": 5.0
+  },
+  "baikonur-1970": {
+    "statue": 4.0,
+    "pedestal": 3.0
+  },
+  "astana-1975": {
+    "statue": 10.3,
+    "pedestal": 9.5
+  },
+  "atyrau-1981": {
+    "statue": 7.8,
+    "pedestal": 4.2
+  },
+  "zhezkazgan-1967": {
+    "statue": 5.0,
+    "pedestal": 3.0
+  },
+  "karaganda-1970": {
+    "statue": 6.83,
+    "pedestal": 3.67
+  },
+  "kokshetau-1963": {
+    "statue": 4.6,
+    "pedestal": 3.4
+  },
+  "kostanai-1967": {
+    "statue": 5.0,
+    "pedestal": 2.0
+  },
+  "pavlodar-1966": {
+    "statue": 6.3,
+    "pedestal": 2.52
+  },
+  "petropavlovsk-1962": {
+    "statue": 3.25,
+    "pedestal": 1.75
+  },
+  "semei-1977": {
+    "statue": 15.0,
+    "pedestal": 6.0
+  },
+  "taraz-1959": {
+    "statue": 3.0,
+    "pedestal": 3.0
+  },
+  "bishkek-1984": {
+    "statue": 6.5,
+    "pedestal": 11.0
+  },
+  "osh-1975": {
+    "statue": 15.0,
+    "pedestal": 10.0
+  },
+  "dushanbe-1961": {
+    "statue": 5.0,
+    "pedestal": 7.0
+  },
+  "khudzhand-1974": {
+    "statue": 12.0,
+    "pedestal": 12.0
+  },
+  "ashkhabad-1927": {
+    "statue": 6.0,
+    "pedestal": 15.0
+  },
+  "tashkent-nodate": {
+    "statue": 13.0,
+    "pedestal": 18.0
+  },
+  "baku-1955": {
+    "statue": 11.0,
+    "pedestal": 16.0
+  },
+  "mtskheta-1927": {
+    "statue": 14.0,
+    "pedestal": 11.0
+  },
+  "erevan-1940": {
+    "statue": 7.0,
+    "pedestal": 12.0
+  },
+  "kishinev-1949": {
+    "statue": 7.8,
+    "pedestal": 4.2
+  },
+  "tiraspol-1987": {
+    "statue": 16.0,
+    "pedestal": 21.0
+  },
+  "bendery-1951": {
+    "statue": 3.5,
+    "pedestal": 5.5
+  },
+  "tallinn-1950": {
+    "statue": 9.1,
+    "pedestal": 4.9
+  },
+  "narva-1957": {
+    "statue": 3.5,
+    "pedestal": 5.0
+  },
+  "tartu-1952": {
+    "statue": 3.5,
+    "pedestal": 5.5
+  },
+  "riga-1950": {
+    "statue": 6.0,
+    "pedestal": 8.0
+  },
+  "ventspils-1975": {
+    "statue": 6.4,
+    "pedestal": 13.2
+  },
+  "vilnius-1952": {
+    "statue": 6.0,
+    "pedestal": 14.0
+  },
+  "klaipeda-1976": {
+    "statue": 6.5,
+    "pedestal": 2.6
   }
 }
