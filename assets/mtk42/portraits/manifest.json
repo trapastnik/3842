@@ -351,5 +351,199 @@
     "title": "Гиндин, Яков Ильич",
     "lang": "ru",
     "image": null
+  },
+  "barbusse": {
+    "title": "Барбюс, Анри",
+    "lang": "ru",
+    "image": "barbusse.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/%D0%90%D0%BD%D1%80%D0%B8_%D0%91%D0%B0%D1%80%D0%B1%D1%8E%D1%81_%281928%29.jpg"
+  },
+  "kerzhentsev": {
+    "title": "Керженцев, Платон Михайлович",
+    "lang": "ru",
+    "image": "kerzhentsev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/%D0%9F%D0%BB%D0%B0%D1%82%D0%BE%D0%BD_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87_%D0%9A%D0%B5%D1%80%D0%B6%D0%B5%D0%BD%D1%86%D0%B5%D0%B2.jpg"
+  },
+  "feuchtwanger": {
+    "title": "Фейхтвангер, Лион",
+    "lang": "ru",
+    "image": "feuchtwanger.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Lion_Feuchtwanger.jpg"
+  },
+  "berdyaev": {
+    "title": "Бердяев, Николай Александрович",
+    "lang": "ru",
+    "image": "berdyaev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/NBerdyaev.jpg"
+  },
+  "andersen-nexo": {
+    "title": "Андерсен-Нексё, Мартин",
+    "lang": "ru",
+    "image": "andersen-nexo.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Martin_Andersen_Nex%C3%B82.jpg"
+  },
+  "selsam": {
+    "title": "Селзам, Говард",
+    "lang": "ru",
+    "image": "selsam.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/President_of_Jefferson_School_of_Social_Science_%28Howard_Selsam%29._Feb_1944_Slide_3_Crop_Alt.png"
+  },
+  "naumov-an": {
+    "title": "Наумов, Александр Николаевич",
+    "lang": "ru",
+    "image": "naumov-an.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Alexander_N._Naumov.jpeg"
+  },
+  "pospelov": {
+    "title": "Поспелов, Пётр Николаевич",
+    "lang": "ru",
+    "image": "pospelov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/%D0%9F%D0%BE%D1%87%D1%82%D0%BE%D0%B2%D0%B0%D1%8F_%D0%BC%D0%B0%D1%80%D0%BA%D0%B0_%D0%A1%D0%A1%D0%A1%D0%A0_%E2%84%96_5404._1983._85-%D0%BB%D0%B5%D1%82%D0%B8%D0%B5_%D1%81%D0%BE_%D0%B4%D0%BD%D1%8F_%D1%80%D0%BE%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D1%8F_%D0%9F._%D0%9D._%D0%9F%D0%BE%D1%81%D0%BF%D0%B5%D0%BB%D0%BE%D0%B2%D0%B0.jpg"
+  },
+  "bernal": {
+    "title": "Бернал, Джон Десмонд",
+    "lang": "ru",
+    "image": "bernal.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/b/b3/BERNAL_J_D.jpg"
+  },
+  "lindsay": {
+    "title": "Линдсей, Джек",
+    "lang": "ru",
+    "image": "lindsay.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/8f/%D0%94%D0%B6%D0%B5%D0%BA_%D0%9B%D0%B8%D0%BD%D0%B4%D1%81%D0%B5%D0%B9.jpeg"
+  },
+  "furtseva": {
+    "title": "Фурцева, Екатерина Алексеевна",
+    "lang": "ru",
+    "image": "furtseva.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Yekaterina_Furtseva_1964.jpg"
+  },
+  "dubina": {
+    "title": "Дубина, Кузьма Кондратьевич",
+    "lang": "ru",
+    "image": "dubina.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/83/%D0%94%D1%83%D0%B1%D0%B8%D0%BD%D0%B0%2C_%D0%9A%D1%83%D0%B7%D1%8C%D0%BC%D0%B0_%D0%9A%D0%BE%D0%BD%D0%B4%D1%80%D0%B0%D1%82%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+  },
+  "karpinsky": {
+    "title": "Карпинский, Вячеслав Алексеевич",
+    "lang": "ru",
+    "image": "karpinsky.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Vyacheslav_Alekseevich_Karpinskiy.png"
+  },
+  "kuusinen": {
+    "title": "Куусинен, Отто Вильгельмович",
+    "lang": "ru",
+    "image": "kuusinen.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Otto_Wille_Kuusinen.jpg"
+  },
+  "payne": {
+    "title": "Пэйн, Роберт",
+    "lang": "ru",
+    "image": null
+  },
+  "possony": {
+    "title": "Поссони, Стефан",
+    "lang": "ru",
+    "image": "possony.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/6e/Stefan_T._Possony.jpg"
+  },
+  "fischer": {
+    "title": "Фишер, Луис",
+    "lang": "ru",
+    "image": "fischer.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/50/%D0%9B%D1%83%D0%B8%D1%81_%D0%A4%D0%B8%D1%88%D0%B5%D1%80_%281896%E2%80%941970%29.png"
+  },
+  "schapiro": {
+    "title": "Leonard_Schapiro",
+    "lang": "en",
+    "image": "schapiro.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Leonard_Schapiro.jpg"
+  },
+  "pasternak": {
+    "title": "Пастернак, Борис Леонидович",
+    "lang": "ru",
+    "image": "pasternak.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/Boris_Pasternak_1958_photo.jpg"
+  },
+  "cassin": {
+    "title": "Кассен, Рене",
+    "lang": "ru",
+    "image": "cassin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Ren%C3%A9_Cassin_nobel.jpg"
+  },
+  "nechkina": {
+    "title": "Нечкина, Милица Васильевна",
+    "lang": "ru",
+    "image": "nechkina.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3d/%D0%9D%D0%B5%D1%87%D0%BA%D0%B8%D0%BD%D0%B0%2C_%D0%9C%D0%B8%D0%BB%D0%B8%D1%86%D0%B0_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%BD%D0%B0.jpg"
+  },
+  "zhukov-em": {
+    "title": "Жуков, Евгений Михайлович (историк)",
+    "lang": "ru",
+    "image": null
+  },
+  "shapko": {
+    "title": "Шапко, Виктор Михайлович",
+    "lang": "ru",
+    "image": null
+  },
+  "brezhnev": {
+    "title": "Брежнев, Леонид Ильич",
+    "lang": "ru",
+    "image": "brezhnev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Leonid_Brezjnev%2C_leider_van_de_Sovjet-Unie%2C_Bestanddeelnr_925-6564.jpg"
+  },
+  "gaponenko": {
+    "title": "Гапоненко, Лука Семёнович",
+    "lang": "ru",
+    "image": null
+  },
+  "keldysh": {
+    "title": "Келдыш, Мстислав Всеволодович",
+    "lang": "ru",
+    "image": "keldysh.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/02/MVKeldish.jpg"
+  },
+  "kedrov": {
+    "title": "Кедров, Бонифатий Михайлович",
+    "lang": "ru",
+    "image": "kedrov.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%9A%D0%B5%D0%B4%D1%80%D0%BE%D0%B2%2C_%D0%91%D0%BE%D0%BD%D0%B8%D1%84%D0%B0%D1%82%D0%B8%D0%B9_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87.png"
+  },
+  "solzhenitsyn": {
+    "title": "Солженицын, Александр Исаевич",
+    "lang": "ru",
+    "image": "solzhenitsyn.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Aleksandr_Solzhenitsyn_1974.jpg"
+  },
+  "iroshnikov": {
+    "title": "Ирошников, Михаил Павлович",
+    "lang": "ru",
+    "image": "iroshnikov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3b/Mikhail_Iroshnikov.jpg"
+  },
+  "chernenko": {
+    "title": "Черненко, Константин Устинович",
+    "lang": "ru",
+    "image": "chernenko.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Konstantin_Chernenko_official_portrait.jpg"
+  },
+  "ambartsumov": {
+    "title": "Амбарцумов, Евгений Аршакович",
+    "lang": "ru",
+    "image": "ambartsumov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%90%D1%80%D1%88%D0%B0%D0%BA%D0%BE%D0%B2%D0%B8%D1%87_%D0%90%D0%BC%D0%B1%D0%B0%D1%80%D1%86%D1%83%D0%BC%D0%BE%D0%B2.jpg"
+  },
+  "andropov": {
+    "title": "Андропов, Юрий Владимирович",
+    "lang": "ru",
+    "image": "andropov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Yuri_Andropov.jpg"
+  },
+  "yegorov-ag": {
+    "title": "Егоров, Анатолий Григорьевич",
+    "lang": "ru",
+    "image": "yegorov-ag.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/5b/%D0%95%D0%B3%D0%BE%D1%80%D0%BE%D0%B2%2C_%D0%90%D0%BD%D0%B0%D1%82%D0%BE%D0%BB%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
   }
 }
