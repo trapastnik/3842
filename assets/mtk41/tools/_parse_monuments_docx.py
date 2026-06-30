@@ -185,27 +185,54 @@ def parse_date(text):
 
 
 def parse_authors(text):
-    """Return (sculptors, architects) lists of names."""
+    """Return (sculptors, architects) lists of names.
+    Splits the line into segments by known role markers, since names contain
+    periods (initials like 'Ю.П. Поммер') so simple [^.]+ patterns break."""
     if not text:
         return [], []
+    # Find positions of role markers (case-insensitive). Each match yields
+    # (kind, start, header_end).
+    pattern = re.compile(
+        r"(скульптор[ыа]?|архитектор[ыа]?|консультировал[аи]?)\s*:?\s*",
+        re.IGNORECASE,
+    )
+    markers = []
+    for m in pattern.finditer(text):
+        head = m.group(1).lower()
+        if head.startswith("скульп"):
+            kind = "sculptor"
+        elif head.startswith("архит"):
+            kind = "architect"
+        else:
+            kind = "consultant"
+        markers.append((kind, m.start(), m.end()))
+
     sculptors = []
     architects = []
-    # Common patterns: "Скульптор Х", "Скульпторы: Х, Y", "Архитектор Х", "Архитекторы: Х, Y"
-    # Use indices to split between them
-    sc_m = re.search(r"скульптор[ыа]?\s*:?\s*([^.]+?)(?=(?:архитектор|консультировал|общая|$))", text, re.IGNORECASE)
-    if sc_m:
-        sculptors = split_names(sc_m.group(1))
-    ar_m = re.search(r"архитектор[ыа]?\s*:?\s*([^.]+?)(?=(?:скульптор|консультировал|общая|$))", text, re.IGNORECASE)
-    if ar_m:
-        architects = split_names(ar_m.group(1))
+    for i, (kind, _start, hend) in enumerate(markers):
+        seg_end = markers[i + 1][1] if i + 1 < len(markers) else len(text)
+        names_blob = text[hend:seg_end]
+        names = split_names(names_blob)
+        if kind == "sculptor":
+            sculptors.extend(names)
+        elif kind == "architect":
+            architects.extend(names)
+        # consultants ignored
     return sculptors, architects
 
 
 def split_names(s):
-    s = s.strip()
-    # Split by "," or " и "
+    s = s.strip().rstrip(".,;:")
+    if not s:
+        return []
+    # Split by comma or " и ". Don't split on "." since initials.
     parts = re.split(r"\s*,\s*|\s+и\s+", s)
-    return [p.strip().rstrip(".") for p in parts if p.strip()]
+    out = []
+    for p in parts:
+        p = p.strip().rstrip(".,;:").strip()
+        if p:
+            out.append(p)
+    return out
 
 
 def parse_heights(text):
@@ -257,8 +284,12 @@ def parse_status(note, sizes):
 
 def city_key(place_text, monument_id_hint=None):
     """Extract city name to look up coordinates. Handles two-monument-cities."""
-    # Get first token (before period)
-    first = re.split(r"[.,]", place_text)[0].strip()
+    # Strip "(район ...)" parenthetical and anything after it on the city line
+    # (curator's rows for second-monument-in-city sometimes glue district + title)
+    first_seg = re.split(r"[.,]", place_text)[0]
+    first = re.sub(r"\s*\([^)]*\)\s*.*$", "", first_seg).strip()
+    if not first:
+        first = first_seg.strip()
     # Strip "Поселок " etc.
     first = re.sub(r"^(посёлок|поселок|пос\.|г\.|город|село|с\.)\s+", "", first, flags=re.IGNORECASE).strip()
     # Special case: «Южно - Сахалинск» -> "Южно-Сахалинск"
