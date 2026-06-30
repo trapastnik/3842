@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Маятник</title>
-    <link rel="stylesheet" href="./styles.css?v=8" />
+    <link rel="stylesheet" href="./styles.css?v=9" />
   </head>
   <body>
     <main class="stage">
@@ -129,15 +129,27 @@
           </label>
         </section>
 
-        <section class="settings__group settings__group--legend">
-          <div class="settings__title">Легенда</div>
-          <p class="settings__legend-text">Каждая точка — голос об&nbsp;образе Ленина. По&nbsp;горизонтали — тон от&nbsp;резкой критики (слева) до&nbsp;почитания (справа). По&nbsp;вертикали — год высказывания или ключевой работы. Линия — скользящее среднее по&nbsp;десятилетию.</p>
-        </section>
-
         <button class="settings__reset" type="button">Сбросить настройки</button>
+      </aside>
+
+      <button id="legend-toggle" class="legend-toggle" type="button" aria-label="Легенда">i</button>
+      <aside id="legend" class="legend" hidden>
+        <header class="legend__head">
+          <span>Как читать</span>
+          <button class="legend__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+        <p class="legend__row">Каждая точка — голос об&nbsp;образе Ленина. По&nbsp;горизонтали — тон от&nbsp;резкой критики (слева) до&nbsp;почитания (справа). По&nbsp;вертикали — год высказывания или ключевой работы.</p>
+        <ul class="legend__list">
+          <li><span class="legend__dot legend__dot--leaders"></span>Вожди — генсеки ВКП(б) / КПСС</li>
+          <li><span class="legend__dot legend__dot--politician"></span>Политики — соратники, оппоненты, современные деятели</li>
+          <li><span class="legend__dot legend__dot--researcher"></span>Исследователи — академические историки, философы</li>
+          <li><span class="legend__dot legend__dot--writers"></span>Литература и&nbsp;публицистика — писатели, мемуаристы</li>
+          <li><span class="legend__line"></span>Маятник — скользящее среднее по&nbsp;десятилетию</li>
+        </ul>
+        <p class="legend__hint">Тап на&nbsp;точке — открыть карточку.</p>
       </aside>
     </main>
 
-    <script type="module" src="./pendulum.js?v=6"></script>
+    <script type="module" src="./pendulum.js?v=7"></script>
   </body>
 </html>
