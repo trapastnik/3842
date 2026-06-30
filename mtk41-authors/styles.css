@@ -210,9 +210,9 @@ html, body {
   flex: 0 0 auto;
   width: clamp(48px, 6vh, 72px);
   height: clamp(48px, 6vh, 72px);
-  background: var(--graphite);
-  background-size: cover;
-  background-position: center 30%;
+  background-color: var(--graphite);
+  background-size: contain;
+  background-position: center center;
   background-repeat: no-repeat;
   border-radius: 2px;
   border: 1px solid rgba(247, 249, 239, 0.08);

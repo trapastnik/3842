@@ -133,9 +133,9 @@ html, body {
 
 .tile {
   position: relative;
-  background: var(--graphite);
-  background-size: cover;
-  background-position: center 30%;
+  background-color: var(--graphite);
+  background-size: contain;
+  background-position: center center;
   background-repeat: no-repeat;
   cursor: pointer;
   overflow: hidden;
