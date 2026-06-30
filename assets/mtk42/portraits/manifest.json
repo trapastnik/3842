@@ -545,5 +545,141 @@
     "lang": "ru",
     "image": "yegorov-ag.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/5b/%D0%95%D0%B3%D0%BE%D1%80%D0%BE%D0%B2%2C_%D0%90%D0%BD%D0%B0%D1%82%D0%BE%D0%BB%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+  },
+  "yakovlev-ev": {
+    "title": "Яковлев, Егор Владимирович",
+    "lang": "ru",
+    "image": "yakovlev-ev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f8/%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%2C_%D0%95%D0%B3%D0%BE%D1%80_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg"
+  },
+  "sabanti": {
+    "title": "Сабанти, Борис Михайлович",
+    "lang": "ru",
+    "image": null
+  },
+  "resnick": {
+    "title": "Resnick, Abraham",
+    "lang": "ru",
+    "image": null
+  },
+  "clark": {
+    "title": "Кларк, Рональд",
+    "lang": "ru",
+    "image": null
+  },
+  "naumov-vp": {
+    "title": "Наумов, Владимир Павлович (историк)",
+    "lang": "ru",
+    "image": null
+  },
+  "gorbachev": {
+    "title": "Горбачёв, Михаил Сергеевич",
+    "lang": "ru",
+    "image": "gorbachev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/GorbachevMS.jpg"
+  },
+  "korotich": {
+    "title": "Коротич, Виталий Алексеевич",
+    "lang": "ru",
+    "image": "korotich.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/NovyVzglyadKorotich_cropped.jpg"
+  },
+  "vasyutin": {
+    "title": "Васютин, Юрий Семёнович",
+    "lang": "ru",
+    "image": null
+  },
+  "bobrov": {
+    "title": "Бобров, Александр Викторович",
+    "lang": "ru",
+    "image": null
+  },
+  "pipes": {
+    "title": "Пайпс, Ричард",
+    "lang": "ru",
+    "image": "pipes.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/85/Richard_Pipes_2004.JPG"
+  },
+  "gefter": {
+    "title": "Гефтер, Михаил Яковлевич",
+    "lang": "ru",
+    "image": "gefter.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/33/%D0%9C%D0%B8%D1%85%D0%B0%D0%B8%D0%BB_%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%D0%B8%D1%87_%D0%93%D0%B5%D1%84%D1%82%D0%B5%D1%80.jpg"
+  },
+  "harding": {
+    "title": "Harding, Neil",
+    "lang": "ru",
+    "image": null
+  },
+  "tumarkin": {
+    "title": "Тумаркин, Нина",
+    "lang": "ru",
+    "image": null
+  },
+  "ennker": {
+    "title": "Эннкер, Бенно",
+    "lang": "ru",
+    "image": null
+  },
+  "service": {
+    "title": "Сервис, Роберт",
+    "lang": "ru",
+    "image": "service.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Service%2C_Robert.IMG_1910.JPG"
+  },
+  "sakharov-va": {
+    "title": "Сахаров, Валентин Александрович",
+    "lang": "ru",
+    "image": null
+  },
+  "oizerman": {
+    "title": "Ойзерман, Теодор Ильич",
+    "lang": "ru",
+    "image": "oizerman.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/46/Teodor_Ojzerman_foto.png"
+  },
+  "stein": {
+    "title": "Штейн, Михаил Гиршевич",
+    "lang": "ru",
+    "image": null
+  },
+  "guslyarov": {
+    "title": "Гусляров, Евгений Николаевич",
+    "lang": "ru",
+    "image": null
+  },
+  "read-c": {
+    "title": "Read, Christopher (historian)",
+    "lang": "ru",
+    "image": null
+  },
+  "trofimov": {
+    "title": "Трофимов, Жорес Александрович",
+    "lang": "ru",
+    "image": "trofimov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/69/%D0%A2%D1%80%D0%BE%D1%84%D0%B8%D0%BC%D0%BE%D0%B2%2C_%D0%96%D0%BE%D1%80%D0%B5%D1%81_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg"
+  },
+  "krausz": {
+    "title": "Krausz, Tamás",
+    "lang": "ru",
+    "image": null
+  },
+  "carrere": {
+    "title": "Каррер д'Анкосс, Элен",
+    "lang": "ru",
+    "image": "carrere.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/H%C3%A9l%C3%A8ne_Carr%C3%A8re_d%E2%80%99Encausse_par_Claude_Truong-Ngoc_sept_2013.jpg"
+  },
+  "yesin": {
+    "title": "Есин, Сергей Николаевич",
+    "lang": "ru",
+    "image": "yesin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/MIBF2013_img_10_Sergey_Esin.jpg"
+  },
+  "wallerstein": {
+    "title": "Валлерстайн, Иммануил",
+    "lang": "ru",
+    "image": "wallerstein.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/Immanuel_Wallerstein.2008.jpg"
   }
 }
