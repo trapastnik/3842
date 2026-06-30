@@ -165,11 +165,12 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
     // Ex-USSR span: lng ~16°E (Шпицберген) … ~163°E (Камчатка) = ~148°;
-    // 14 ex-USSR republics + Russia + outliers. Default view: cluster of
+    // 14 ex-USSR республик + Россия + outliers. Default view: cluster of
     // European Russia + Восток Украина/Беларусь/Кавказ/Казахстан, with
-    // Дальний Восток reachable via pan or zoom-out.
+    // Дальний Восток reachable via pan or zoom-out. -30% от вчерашних
+    // 95/135 — точки 167 чтоб не размазывались по пустой Сибири.
     const isPortrait = height > width;
-    const targetLngSpan = isPortrait ? 95 : 135;
+    const targetLngSpan = isPortrait ? 67 : 95;
     map.worldW = (width / targetLngSpan) * 360;
     map.worldH = map.worldW / 2;
 
