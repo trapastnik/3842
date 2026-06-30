@@ -20,8 +20,15 @@
 
   let width = 0, height = 0, dpr = 1;
   let monuments = [];
-  let placed = [];                     // { i, x, baseY, w, statueH, pedestalH, totalH }
+  let placed = [];                     // { i, worldX, baseY, w, statueH, pedestalH, totalH }
   let selectedIndex = -1;
+
+  // Horizontal pan state — items keep `worldX` (absolute), `viewOffsetX` scrolls
+  let viewOffsetX = 0;
+  let contentLeft = 0;                 // first item's leftmost world-x
+  let contentRight = 0;                // last item's rightmost world-x
+  const PAD_LEFT = 0.13;               // viewport fraction reserved for height-guides + human ref
+  const MIN_SLOT_W = 84;               // touch-friendly minimum per monument
 
   // --- Card delegation ----------------------------------------------------
   // All card UI lives in assets/mtk41/lib/card.{css,js}. Delegate to it.
@@ -88,8 +95,9 @@
       return { m, i, year: y };
     }).sort((a, b) => a.year - b.year);
 
-    const left = width * 0.10;
-    const right = width * 0.96;
+    const left = width * PAD_LEFT;
+    const right = width * 0.98;
+    const viewportW = right - left;
     const baseY = height * 0.86;                     // ground line
     const skyTop = height * 0.20;                    // top reserved for title
     const usableHeight = baseY - skyTop;
@@ -100,30 +108,55 @@
     // 1 metre in pixels:
     const mPx = (usableHeight * 0.9) / maxTotal;
 
-    const slotW = (right - left) / items.length;
-    const figureW = Math.min(slotW * 0.55, 60);
+    // Slot width: either pack 94 into viewport, or use a touch-friendly minimum
+    // (whichever is larger). With min 84px and 94 items the lineup is 7896px
+    // wide → user pans horizontally.
+    const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
+    const figureW = Math.min(slotW * 0.55, 80);
 
     for (let k = 0; k < items.length; k += 1) {
       const it = items[k];
       const m = it.m;
       const h = HEIGHTS[m.id] || FALLBACK_HEIGHT;
-      const cx = left + slotW * (k + 0.5);
+      const worldX = left + slotW * (k + 0.5);
       const totalH = (h.statue + h.pedestal) * mPx;
       const statueH = h.statue * mPx;
       const pedestalH = h.pedestal * mPx;
       placed.push({
         i: it.i, year: it.year, m,
-        x: cx, baseY: baseY,
+        worldX, baseY,
         w: figureW,
         statueH, pedestalH, totalH,
         h_statue: h.statue, h_pedestal: h.pedestal,
       });
     }
 
+    contentLeft = left;
+    contentRight = left + slotW * items.length;
+    // Clamp pan to keep content within the viewport
+    clampPan();
+
     layout.mPx = mPx;
     layout.left = left;
     layout.right = right;
     layout.baseY = baseY;
+  }
+
+  function clampPan() {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width * 0.98) - (layout.left || width * PAD_LEFT);
+    if (contentW <= viewportW) {
+      viewOffsetX = 0;
+      return;
+    }
+    const min = viewportW - contentW;     // negative — most panned right
+    const max = 0;                         // not panned (showing start)
+    if (viewOffsetX > max) viewOffsetX = max;
+    if (viewOffsetX < min) viewOffsetX = min;
+  }
+
+  function screenX(worldX) {
+    return worldX + viewOffsetX;
   }
 
   function drawScene() {
@@ -197,7 +230,7 @@
     for (const pm of placed) {
       const m = pm.m;
       const isSelected = pm.i === selectedIndex;
-      const x = pm.x;
+      const x = screenX(pm.worldX);
       const bottomOfStatue = pm.baseY - pm.pedestalH;
 
       // Pedestal: graphite rectangle
@@ -281,7 +314,7 @@
       if (needRotate) {
         // Rotate labels -60° so a long city name doesn't collide with
         // the next slot. Year + height sit on parallel lines.
-        ctx.translate(pm.x, y);
+        ctx.translate(screenX(pm.worldX), y);
         ctx.rotate(-Math.PI / 3);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
@@ -295,11 +328,11 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-        ctx.fillText(city, pm.x, y);
+        ctx.fillText(city, screenX(pm.worldX), y);
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-        ctx.fillText(yearLabel, pm.x, y + fontSize * 1.4);
+        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4);
         ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, pm.x, y + fontSize * 2.8);
+        ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
       }
       ctx.restore();
     }
@@ -319,8 +352,8 @@
       const top = pm.baseY - pm.totalH;
       const bottom = pm.baseY;
       const hx = Math.max(pm.w, 24);
-      if (x >= pm.x - hx && x <= pm.x + hx && y >= top - 14 && y <= bottom + 30) {
-        const d = Math.abs(x - pm.x);
+      if (x >= screenX(pm.worldX) - hx && x <= screenX(pm.worldX) + hx && y >= top - 14 && y <= bottom + 30) {
+        const d = Math.abs(x - screenX(pm.worldX));
         if (d < bestDist) { bestDist = d; best = pm.i; }
       }
     }
@@ -328,21 +361,30 @@
   }
 
 
+  let lastPointerX = 0;
+
   canvas.addEventListener("pointerdown", event => {
     pointerDown = true;
     didDrag = false;
     pressStartX = event.clientX;
     pressStartY = event.clientY;
+    lastPointerX = event.clientX;
     if (canvas.setPointerCapture) {
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
     }
   });
 
   canvas.addEventListener("pointermove", event => {
-    if (!pointerDown || didDrag) return;
-    if (Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
+    if (!pointerDown) return;
+    if (!didDrag &&
+        Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
       didDrag = true;
     }
+    if (didDrag) {
+      viewOffsetX += event.clientX - lastPointerX;
+      clampPan();
+    }
+    lastPointerX = event.clientX;
   }, { passive: true });
 
   function endPointer(event) {

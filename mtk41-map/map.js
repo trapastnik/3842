@@ -24,7 +24,13 @@
     dragging: false,
     geojson: null,
     cached: null,
+    zoom: 1,                  // 1 = default; wheel/pinch updates it
   };
+  const MIN_ZOOM = 0.6;
+  const MAX_ZOOM = 5;
+  const ACTIVE_POINTERS = new Map();  // pointerId → {x, y} for pinch tracking
+  let pinchInitialDist = 0;
+  let pinchInitialZoom = 1;
 
   let width = 0, height = 0, dpr = 1;
   let geoLoaded = false;
@@ -295,11 +301,29 @@
     applyDynamics(dt);
 
     ctx.clearRect(0, 0, width, height);
+    ctx.save();
+    // Zoom centred on the viewport middle
+    ctx.translate(width * 0.5, height * 0.5);
+    ctx.scale(map.zoom, map.zoom);
+    ctx.translate(-width * 0.5, -height * 0.5);
     if (geoLoaded) drawBaseMap();
     if (monuments.length) drawMonuments();
-    else if (!geoLoaded) drawLoadingState();
+    ctx.restore();
+    if (!geoLoaded) drawLoadingState();
+    drawZoomHint();
 
     requestAnimationFrame(render);
+  }
+
+  function drawZoomHint() {
+    ctx.save();
+    ctx.font = `400 ${Math.max(11, Math.min(width, height) * 0.011)}px "20 Kopeek", "Courier New", monospace`;
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = cssColor(palette.brass, 0.55);
+    const zoomLabel = map.zoom === 1 ? "" : `×${map.zoom.toFixed(2)} · `;
+    ctx.fillText(zoomLabel + "PINCH/WHEEL = ZOOM · DRAG = PAN", width - 12, height - 10);
+    ctx.restore();
   }
 
   // --- Dynamics ------------------------------------------------------------
@@ -326,12 +350,23 @@
 
   // --- Hit test ------------------------------------------------------------
 
-  function findMonumentAt(x, y) {
+  // Convert raw client coords to the pre-transform space where placedMonuments live
+  function clientToWorld(cx, cy) {
+    return {
+      x: (cx - width * 0.5) / map.zoom + width * 0.5,
+      y: (cy - height * 0.5) / map.zoom + height * 0.5,
+    };
+  }
+
+  function findMonumentAt(cx, cy) {
+    const p = clientToWorld(cx, cy);
     let best = -1;
     let bestDist = Infinity;
     for (const pm of placedMonuments) {
-      const d = Math.hypot(x - pm.x, y - pm.y);
-      const hitR = Math.max(pm.r + 14, 22);  // generous touch target
+      const d = Math.hypot(p.x - pm.x, p.y - pm.y);
+      // Generous touch target — scales inversely with zoom so it stays
+      // ≥22 viewport px regardless of zoom level.
+      const hitR = Math.max(pm.r + 14, 22 / map.zoom);
       if (d <= hitR && d < bestDist) {
         bestDist = d;
         best = pm.i;
@@ -355,6 +390,14 @@
   // --- Pointer interactions ------------------------------------------------
 
   canvas.addEventListener("pointerdown", event => {
+    ACTIVE_POINTERS.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    if (ACTIVE_POINTERS.size === 2) {
+      // Pinch start: record initial finger distance
+      const pts = Array.from(ACTIVE_POINTERS.values());
+      pinchInitialDist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      pinchInitialZoom = map.zoom;
+      return;
+    }
     map.dragging = true;
     didDrag = false;
     pressStartX = event.clientX;
@@ -369,6 +412,20 @@
   });
 
   canvas.addEventListener("pointermove", event => {
+    if (ACTIVE_POINTERS.has(event.pointerId)) {
+      ACTIVE_POINTERS.set(event.pointerId, { x: event.clientX, y: event.clientY });
+    }
+    if (ACTIVE_POINTERS.size === 2) {
+      // Pinch zoom — recompute zoom from current finger distance
+      const pts = Array.from(ACTIVE_POINTERS.values());
+      const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
+      if (pinchInitialDist > 0) {
+        const target = pinchInitialZoom * (dist / pinchInitialDist);
+        map.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, target));
+      }
+      didDrag = true;   // pinch cancels tap intent
+      return;
+    }
     if (!map.dragging) return;
     const dx = event.clientX - lastPointerX;
     const dy = event.clientY - lastPointerY;
@@ -380,22 +437,33 @@
     if (didDrag) {
       const now = performance.now();
       const dt = Math.max(16, now - lastPointerTime) / 1000;
-      map.camX -= dx;
-      map.camY -= dy;
-      map.camVX = -dx / dt;
-      map.camVY = -dy / dt;
+      // Drag delta in viewport px → world px (zoom-aware)
+      map.camX -= dx / map.zoom;
+      map.camY -= dy / map.zoom;
+      map.camVX = -dx / dt / map.zoom;
+      map.camVY = -dy / dt / map.zoom;
       lastPointerX = event.clientX;
       lastPointerY = event.clientY;
       lastPointerTime = now;
     }
   }, { passive: true });
 
+  // Wheel = zoom toward cursor (desktop / trackpad)
+  canvas.addEventListener("wheel", event => {
+    event.preventDefault();
+    const factor = Math.exp(-event.deltaY * 0.0015);
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, map.zoom * factor));
+    if (newZoom === map.zoom) return;
+    map.zoom = newZoom;
+  }, { passive: false });
+
   function endPointer(event) {
+    ACTIVE_POINTERS.delete(event.pointerId);
+    if (ACTIVE_POINTERS.size < 2) pinchInitialDist = 0;
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
     if (map.dragging && !didDrag) {
-      // It was a tap
       const hit = findMonumentAt(event.clientX, event.clientY);
       if (hit >= 0) {
         showMonument(hit);
@@ -405,14 +473,15 @@
         hideMonument();
       }
     }
-    map.dragging = false;
+    if (ACTIVE_POINTERS.size === 0) map.dragging = false;
     pressIndex = -1;
   }
 
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", endPointer);
-  canvas.addEventListener("pointerleave", () => {
-    map.dragging = false;
+  canvas.addEventListener("pointerleave", event => {
+    ACTIVE_POINTERS.delete(event.pointerId);
+    if (ACTIVE_POINTERS.size === 0) map.dragging = false;
   });
 
   window.addEventListener("resize", resize);

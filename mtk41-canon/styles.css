@@ -122,7 +122,13 @@ html, body {
   grid-auto-rows: clamp(80px, 11vh, 180px);
   grid-auto-flow: dense;
   gap: clamp(4px, 0.6vh, 10px);
-  overflow: hidden;
+  /* With 94 tiles, content overflows the viewport — let it scroll vertically. */
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-right: 4px;
+  padding-bottom: 24px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(210, 183, 115, 0.4) transparent;
 }
 
 .tile {

@@ -21,8 +21,16 @@
 
   let width = 0, height = 0, dpr = 1;
   let monuments = [];
-  let placed = [];                     // { i, x, baseY, w, statueH, pedestalH, totalH }
+  let placed = [];                     // { i, worldX, baseY, w, statueH, pedestalH, totalH }
   let selectedIndex = -1;
+
+  // Horizontal pan state — items keep `worldX` (absolute), `viewOffsetX` scrolls
+  let viewOffsetX = 0;
+  let contentLeft = 0;
+  let contentRight = 0;
+  const PAD_LEFT = 0.13;
+  const MIN_SLOT_W = 84;
+
 
   // --- Card delegation ----------------------------------------------------
   // All card UI lives in assets/mtk41/lib/card.{css,js}. Delegate to it.
@@ -89,43 +97,58 @@
       return { m, i, year: y };
     }).sort((a, b) => a.year - b.year);
 
-    const left = width * 0.10;
-    const right = width * 0.96;
-    const baseY = height * 0.86;                     // ground line
-    const skyTop = height * 0.20;                    // top reserved for title
+    const left = width * PAD_LEFT;
+    const right = width * 0.98;
+    const viewportW = right - left;
+    const baseY = height * 0.86;
+    const skyTop = height * 0.20;
     const usableHeight = baseY - skyTop;
 
-    // Find the tallest monument → scale so it fills usableHeight × 0.9
     let maxTotal = 0;
     for (const it of items) maxTotal = Math.max(maxTotal, totalHeight(it.m.id));
-    // 1 metre in pixels:
     const mPx = (usableHeight * 0.9) / maxTotal;
 
-    const slotW = (right - left) / items.length;
-    const figureW = Math.min(slotW * 0.55, 60);
+    const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
+    const figureW = Math.min(slotW * 0.55, 80);
 
     for (let k = 0; k < items.length; k += 1) {
       const it = items[k];
       const m = it.m;
       const h = HEIGHTS[m.id] || FALLBACK_HEIGHT;
-      const cx = left + slotW * (k + 0.5);
+      const worldX = left + slotW * (k + 0.5);
       const totalH = (h.statue + h.pedestal) * mPx;
       const statueH = h.statue * mPx;
       const pedestalH = h.pedestal * mPx;
       placed.push({
         i: it.i, year: it.year, m,
-        x: cx, baseY: baseY,
+        worldX, baseY,
         w: figureW,
         statueH, pedestalH, totalH,
         h_statue: h.statue, h_pedestal: h.pedestal,
       });
     }
 
+    contentLeft = left;
+    contentRight = left + slotW * items.length;
+    clampPan();
+
     layout.mPx = mPx;
     layout.left = left;
     layout.right = right;
     layout.baseY = baseY;
   }
+
+  function clampPan() {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width * 0.98) - (layout.left || width * PAD_LEFT);
+    if (contentW <= viewportW) { viewOffsetX = 0; return; }
+    const min = viewportW - contentW;
+    const max = 0;
+    if (viewOffsetX > max) viewOffsetX = max;
+    if (viewOffsetX < min) viewOffsetX = min;
+  }
+
+  function screenX(worldX) { return worldX + viewOffsetX; }
 
   function drawScene() {
     const mPx = layout.mPx || 1;
@@ -198,7 +221,7 @@
     // Used when a monument has no silhouette (kaluga / москва-октябрьская / вознесенье)
     const m = pm.m;
     const isSelected = pm.i === selectedIndex;
-    const x = pm.x;
+    const x = screenX(pm.worldX);
     const bottomOfStatue = pm.baseY - pm.pedestalH;
 
     ctx.fillStyle = isSelected ? cssColor(palette.brass, 0.5) : cssColor(palette.graphite, 0.92);
@@ -239,7 +262,7 @@
     const targetH = pm.totalH;
     const aspect = img.naturalWidth / img.naturalHeight;
     const targetW = targetH * aspect;
-    const x = pm.x - targetW / 2;
+    const x = screenX(pm.worldX) - targetW / 2;
     const y = pm.baseY - targetH;
 
     // Coloured drop-shadow under the figure to encode status
@@ -276,7 +299,7 @@
     // Labels (city + year + height) below pedestal, rotated -60° in
     // portrait or any narrow viewport so long names don't collide.
     const isPortrait = height > width;
-    const slotW = placed.length > 1 ? (placed[1].x - placed[0].x) : 60;
+    const slotW = placed.length > 1 ? (placed[1].worldX - placed[0].worldX) : 60;
     const needRotate = isPortrait || slotW < 90;
 
     for (const pm of placed) {
@@ -295,7 +318,7 @@
         pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
 
       if (needRotate) {
-        ctx.translate(pm.x, y);
+        ctx.translate(screenX(pm.worldX), y);
         ctx.rotate(-Math.PI / 3);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
@@ -309,11 +332,11 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-        ctx.fillText(city, pm.x, y);
+        ctx.fillText(city, screenX(pm.worldX), y);
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-        ctx.fillText(yearLabel, pm.x, y + fontSize * 1.4);
+        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4);
         ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, pm.x, y + fontSize * 2.8);
+        ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
       }
       ctx.restore();
     }
@@ -333,8 +356,8 @@
       const top = pm.baseY - pm.totalH;
       const bottom = pm.baseY;
       const hx = Math.max(pm.w, 24);
-      if (x >= pm.x - hx && x <= pm.x + hx && y >= top - 14 && y <= bottom + 30) {
-        const d = Math.abs(x - pm.x);
+      if (x >= screenX(pm.worldX) - hx && x <= screenX(pm.worldX) + hx && y >= top - 14 && y <= bottom + 30) {
+        const d = Math.abs(x - screenX(pm.worldX));
         if (d < bestDist) { bestDist = d; best = pm.i; }
       }
     }
@@ -342,21 +365,30 @@
   }
 
 
+  let lastPointerX = 0;
+
   canvas.addEventListener("pointerdown", event => {
     pointerDown = true;
     didDrag = false;
     pressStartX = event.clientX;
     pressStartY = event.clientY;
+    lastPointerX = event.clientX;
     if (canvas.setPointerCapture) {
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
     }
   });
 
   canvas.addEventListener("pointermove", event => {
-    if (!pointerDown || didDrag) return;
-    if (Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
+    if (!pointerDown) return;
+    if (!didDrag &&
+        Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
       didDrag = true;
     }
+    if (didDrag) {
+      viewOffsetX += event.clientX - lastPointerX;
+      clampPan();
+    }
+    lastPointerX = event.clientX;
   }, { passive: true });
 
   function endPointer(event) {
