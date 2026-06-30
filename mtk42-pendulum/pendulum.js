@@ -246,8 +246,9 @@ function drawPendulum(root, items) {
 // ─── Dots ───────────────────────────────────────────────────
 function drawDots(root, items) {
   // Simple collision avoidance: sort by year, then iterate and bump x if too close.
-  // Direction is choosen to stay inside the plot area (away from whichever edge is closer);
-  // a hard final clamp guarantees no dot is pushed off-screen.
+  // Direction follows the sign of `tone` (outward from the centre), like before.
+  // After the loop we hard-clamp xPct inside the plot rectangle so a dot whose
+  // ideal position is at the extreme (±0.95) can't get pushed off-screen.
   const placed = [];
   const sorted = [...items].sort((a, b) => a.year - b.year || a.tone - b.tone);
   const MIN_DIST = 92;          // px horizontal (dots are 112 px wide)
@@ -268,11 +269,7 @@ function drawDots(root, items) {
         const xPx = (xPct / 100) * containerW;
         const pxPx = (p.xPct / 100) * containerW;
         if (Math.abs(xPx - pxPx) < MIN_DIST) {
-          // Pick a direction that steers AWAY from the nearest edge — so dots
-          // pile up toward the centre rather than escaping the plot.
-          const distLeft = xPct - MIN_X;
-          const distRight = MAX_X - xPct;
-          const direction = distRight < distLeft ? -1 : +1;
+          const direction = it.tone >= 0 ? +1 : -1;
           xPct += direction * 2.0;
           collided = true;
         }
