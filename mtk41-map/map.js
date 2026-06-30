@@ -257,20 +257,39 @@
       ctx.stroke();
     }
 
-    // City labels for selected + larger points
+    // City labels — with 94 points in a tight European-Russia cluster, drawing
+    // them all overlaps badly. Strategy:
+    //   * always show the selected one (brass, prominent)
+    //   * show others only when zoomed in (zoom > 1.6) OR very large dot
+    //   * never overlap: keep a list of drawn rects, skip a label that would
+    //     intersect one already drawn
     ctx.save();
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    for (const pm of placedMonuments) {
+    const drawnRects = [];                       // [[x0,y0,x1,y1], ...]
+    function rectsOverlap(a, b) {
+      return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
+    }
+    // Sort: selected first, then large dots before small (priority on screen)
+    const order = placedMonuments
+      .map((pm, idx) => ({ pm, idx, sel: pm.i === selectedIndex }))
+      .sort((a, b) => (b.sel - a.sel) || (b.pm.r - a.pm.r));
+
+    const zoomedIn = map.zoom > 1.6;
+    for (const { pm } of order) {
       const m = monuments[pm.i];
       const isSelected = pm.i === selectedIndex;
-      if (!isSelected && pm.r < width * 0.008) continue;
+      if (!isSelected && !zoomedIn && pm.r < width * 0.008) continue;
       const label = m.city || (m.country || "");
       if (!label) continue;
-      const size = Math.max(11, pm.r * (isSelected ? 2.2 : 1.6));
+      const size = Math.max(11, pm.r * (isSelected ? 2.2 : 1.6)) / map.zoom;
       ctx.font = `${isSelected ? 600 : 400} ${size}px "20 Kopeek", "Courier New", monospace`;
       const tx = pm.x + pm.r + 6;
       const ty = pm.y;
+      const labelW = ctx.measureText(label).width;
+      const rect = [tx - 2, ty - size * 0.6, tx + labelW + 2, ty + size * 0.6];
+      if (!isSelected && drawnRects.some(r => rectsOverlap(r, rect))) continue;
+      drawnRects.push(rect);
       // shadow
       ctx.fillStyle = cssColor(palette.black, 0.75);
       ctx.shadowColor = cssColor(palette.black, 0.6);
@@ -460,10 +479,18 @@
   function endPointer(event) {
     ACTIVE_POINTERS.delete(event.pointerId);
     if (ACTIVE_POINTERS.size < 2) pinchInitialDist = 0;
+    // If one finger of a pinch lifted but another remains, re-seed lastPointer
+    // to its current position so we don't apply a giant catch-up pan delta.
+    if (ACTIVE_POINTERS.size === 1) {
+      const remaining = Array.from(ACTIVE_POINTERS.values())[0];
+      lastPointerX = remaining.x;
+      lastPointerY = remaining.y;
+      didDrag = true;            // suppress tap intent — user was pinching
+    }
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
-    if (map.dragging && !didDrag) {
+    if (ACTIVE_POINTERS.size === 0 && map.dragging && !didDrag) {
       const hit = findMonumentAt(event.clientX, event.clientY);
       if (hit >= 0) {
         showMonument(hit);
