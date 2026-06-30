@@ -36,6 +36,7 @@
   let geoLoaded = false;
   let monuments = [];                // raw items from data/mtk41.json
   let placedMonuments = [];          // monuments with screen positions, computed each frame
+  let clusters = [];                 // grid-cluster results; rebuilt per frame
 
   let selectedIndex = -1;
   let pressIndex = -1;
@@ -207,91 +208,118 @@
       placedMonuments.push({ i, x: s.x, y: s.y, r });
     }
 
-    // Draw halo for selected first (under everything else)
-    for (const pm of placedMonuments) {
-      if (pm.i !== selectedIndex) continue;
+    rebuildClusters();
+
+    // Draw halo for selected (search by membership)
+    for (const cl of clusters) {
+      if (!cl.members.includes(selectedIndex)) continue;
       ctx.beginPath();
-      ctx.arc(pm.x, pm.y, pm.r * 3.2, 0, Math.PI * 2);
+      ctx.arc(cl.x, cl.y, cl.r * 3.2, 0, Math.PI * 2);
       ctx.fillStyle = cssColor(palette.brass, 0.18);
       ctx.fill();
       ctx.beginPath();
-      ctx.arc(pm.x, pm.y, pm.r * 2.0, 0, Math.PI * 2);
+      ctx.arc(cl.x, cl.y, cl.r * 2.0, 0, Math.PI * 2);
       ctx.fillStyle = cssColor(palette.brass, 0.32);
       ctx.fill();
     }
 
-    // Marker dots
-    for (const pm of placedMonuments) {
-      const m = monuments[pm.i];
-      const isSelected = pm.i === selectedIndex;
+    // Cluster markers
+    for (const cl of clusters) {
+      const isCluster = cl.members.length > 1;
+      const m = monuments[cl.members[0]];   // representative for N=1; for N>1 used only as colour fallback
+      const hasSelected = cl.members.includes(selectedIndex);
 
-      // Outer ring (brass on selected)
-      if (isSelected) {
+      // Compute fill colour: cluster → mixed (brass if any extant, graphite if all demolished)
+      let fill, alpha = 0.92;
+      if (isCluster) {
+        const extantCount = cl.members.reduce((acc, mi) =>
+          acc + (monuments[mi].status === "extant" ? 1 : 0), 0);
+        const demoCount = cl.members.reduce((acc, mi) =>
+          acc + (monuments[mi].status === "demolished" ? 1 : 0), 0);
+        if (extantCount === 0) fill = palette.graphite;
+        else if (demoCount === 0) fill = palette.red;
+        else fill = palette.brass;       // mixed
+      } else {
+        fill = statusColor(m.status);
+        alpha = m.status === "unknown" ? 0.55 : 0.92;
+      }
+
+      if (hasSelected) {
         ctx.beginPath();
-        ctx.arc(pm.x, pm.y, pm.r + 4, 0, Math.PI * 2);
+        ctx.arc(cl.x, cl.y, cl.r + 4, 0, Math.PI * 2);
         ctx.strokeStyle = palette.brass;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
 
-      // Body
       ctx.beginPath();
-      ctx.arc(pm.x, pm.y, pm.r, 0, Math.PI * 2);
-      ctx.fillStyle = statusColor(m.status);
-      ctx.globalAlpha = m.status === "unknown" ? 0.55 : 0.92;
+      ctx.arc(cl.x, cl.y, cl.r, 0, Math.PI * 2);
+      ctx.fillStyle = fill;
+      ctx.globalAlpha = alpha;
       ctx.fill();
       ctx.globalAlpha = 1;
 
-      // Inner highlight for extant
-      if (m.status === "extant") {
+      if (!isCluster && m.status === "extant") {
         ctx.beginPath();
-        ctx.arc(pm.x - pm.r * 0.3, pm.y - pm.r * 0.3, pm.r * 0.35, 0, Math.PI * 2);
+        ctx.arc(cl.x - cl.r * 0.3, cl.y - cl.r * 0.3, cl.r * 0.35, 0, Math.PI * 2);
         ctx.fillStyle = cssColor(palette.paper, 0.25);
         ctx.fill();
       }
 
-      // Outline
       ctx.beginPath();
-      ctx.arc(pm.x, pm.y, pm.r, 0, Math.PI * 2);
+      ctx.arc(cl.x, cl.y, cl.r, 0, Math.PI * 2);
       ctx.strokeStyle = cssColor(palette.paper, 0.55);
-      ctx.lineWidth = 1;
+      ctx.lineWidth = isCluster ? 1.5 : 1;
       ctx.stroke();
+
+      // Count label inside cluster (only for N≥2)
+      if (isCluster) {
+        const fontPx = Math.max(10, cl.r * 0.95) / map.zoom;
+        ctx.save();
+        ctx.font = `600 ${fontPx}px "20 Kopeek", "Courier New", monospace`;
+        ctx.textAlign = "center";
+        ctx.textBaseline = "middle";
+        ctx.fillStyle = cssColor(palette.black, 0.85);
+        ctx.fillText(String(cl.members.length), cl.x, cl.y);
+        ctx.restore();
+      }
     }
 
-    // City labels — with 94 points in a tight European-Russia cluster, drawing
-    // them all overlaps badly. Strategy:
-    //   * always show the selected one (brass, prominent)
-    //   * show others only when zoomed in (zoom > 1.6) OR very large dot
-    //   * never overlap: keep a list of drawn rects, skip a label that would
-    //     intersect one already drawn
+    // Labels — one per cluster (city of representative; clusters show N city).
+    // Skip if it would overlap an already-drawn label.
     ctx.save();
     ctx.textBaseline = "middle";
     ctx.textAlign = "left";
-    const drawnRects = [];                       // [[x0,y0,x1,y1], ...]
+    const drawnRects = [];
     function rectsOverlap(a, b) {
       return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
     }
-    // Sort: selected first, then large dots before small (priority on screen)
-    const order = placedMonuments
-      .map((pm, idx) => ({ pm, idx, sel: pm.i === selectedIndex }))
-      .sort((a, b) => (b.sel - a.sel) || (b.pm.r - a.pm.r));
+    // Sort: clusters w/ selected first, then by size descending
+    const order = clusters.slice().sort((a, b) => {
+      const aSel = a.members.includes(selectedIndex);
+      const bSel = b.members.includes(selectedIndex);
+      if (aSel !== bSel) return bSel - aSel;
+      return b.r - a.r;
+    });
 
     const zoomedIn = map.zoom > 1.6;
-    for (const { pm } of order) {
-      const m = monuments[pm.i];
-      const isSelected = pm.i === selectedIndex;
-      if (!isSelected && !zoomedIn && pm.r < width * 0.008) continue;
+    for (const cl of order) {
+      const isCluster = cl.members.length > 1;
+      const isSelected = cl.members.includes(selectedIndex);
+      if (!isSelected && !zoomedIn && cl.r < width * 0.008) continue;
+      // Cluster label: city of representative
+      const repIdx = cl.members[0];
+      const m = monuments[repIdx];
       const label = m.city || (m.country || "");
       if (!label) continue;
-      const size = Math.max(11, pm.r * (isSelected ? 2.2 : 1.6)) / map.zoom;
+      const size = Math.max(11, cl.r * (isSelected ? 2.2 : 1.4)) / map.zoom;
       ctx.font = `${isSelected ? 600 : 400} ${size}px "20 Kopeek", "Courier New", monospace`;
-      const tx = pm.x + pm.r + 6;
-      const ty = pm.y;
+      const tx = cl.x + cl.r + 6;
+      const ty = cl.y;
       const labelW = ctx.measureText(label).width;
       const rect = [tx - 2, ty - size * 0.6, tx + labelW + 2, ty + size * 0.6];
       if (!isSelected && drawnRects.some(r => rectsOverlap(r, rect))) continue;
       drawnRects.push(rect);
-      // shadow
       ctx.fillStyle = cssColor(palette.black, 0.75);
       ctx.shadowColor = cssColor(palette.black, 0.6);
       ctx.shadowBlur = 6;
@@ -301,6 +329,47 @@
       ctx.fillText(label, tx, ty);
     }
     ctx.restore();
+  }
+
+  // --- Clustering ----------------------------------------------------------
+  // Grid-bucket clustering at constant viewport-px cell size: as zoom grows
+  // the world-space cell shrinks → clusters break apart. At zoom = 1 a cell
+  // is ~42px; zoom = 3 → ~14px; so by zoom > 2 most cities are individual.
+  function rebuildClusters() {
+    clusters.length = 0;
+    if (!placedMonuments.length) return;
+    const CELL_VPX = 42;
+    const cellWorld = CELL_VPX / map.zoom;
+    const grid = new Map();
+    for (let i = 0; i < placedMonuments.length; i += 1) {
+      const pm = placedMonuments[i];
+      const cx = Math.floor(pm.x / cellWorld);
+      const cy = Math.floor(pm.y / cellWorld);
+      const key = cx + "," + cy;
+      let bucket = grid.get(key);
+      if (!bucket) { bucket = []; grid.set(key, bucket); }
+      bucket.push(i);
+    }
+    for (const bucket of grid.values()) {
+      let sx = 0, sy = 0;
+      const members = [];
+      for (const pmIdx of bucket) {
+        const pm = placedMonuments[pmIdx];
+        sx += pm.x;
+        sy += pm.y;
+        members.push(pm.i);
+      }
+      const x = sx / bucket.length;
+      const y = sy / bucket.length;
+      let r;
+      if (bucket.length === 1) {
+        r = placedMonuments[bucket[0]].r;
+      } else {
+        // Larger circle for higher member-count, capped so it doesn't dominate
+        r = Math.min(28, 9 + Math.sqrt(bucket.length) * 4.5);
+      }
+      clusters.push({ x, y, r, members });
+    }
   }
 
   function drawLoadingState() {
@@ -342,7 +411,7 @@
     ctx.textBaseline = "bottom";
     ctx.fillStyle = cssColor(palette.brass, 0.55);
     const zoomLabel = map.zoom === 1 ? "" : `×${map.zoom.toFixed(2)} · `;
-    ctx.fillText(zoomLabel + "PINCH/WHEEL = ZOOM · DRAG = PAN", width - 12, height - 10);
+    ctx.fillText(zoomLabel + "PINCH/WHEEL = ZOOM · DRAG = PAN · TAP N = ZOOM IN", width - 12, height - 10);
     ctx.restore();
   }
 
@@ -378,21 +447,62 @@
     };
   }
 
-  function findMonumentAt(cx, cy) {
+  // Returns the closest cluster to (cx, cy) within a generous touch target,
+  // or null if nothing nearby.
+  function findClusterAt(cx, cy) {
     const p = clientToWorld(cx, cy);
-    let best = -1;
+    let best = null;
     let bestDist = Infinity;
-    for (const pm of placedMonuments) {
-      const d = Math.hypot(p.x - pm.x, p.y - pm.y);
-      // Generous touch target — scales inversely with zoom so it stays
-      // ≥22 viewport px regardless of zoom level.
-      const hitR = Math.max(pm.r + 14, 22 / map.zoom);
+    for (const cl of clusters) {
+      const d = Math.hypot(p.x - cl.x, p.y - cl.y);
+      const hitR = Math.max(cl.r + 14, 22 / map.zoom);
       if (d <= hitR && d < bestDist) {
         bestDist = d;
-        best = pm.i;
+        best = cl;
       }
     }
     return best;
+  }
+
+  // Zoom in onto the screen-space bounding box of a cluster's members,
+  // aiming for the cluster to span ~55% of the viewport. Updates map.zoom
+  // and re-centres the camera so the cluster's centre lands at viewport
+  // middle.
+  function zoomToCluster(cl) {
+    if (!cl || cl.members.length < 2) return;
+    // Determine the world-space bbox of the member positions
+    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+    for (const mi of cl.members) {
+      const pm = placedMonuments.find(p => p.i === mi);
+      if (!pm) continue;
+      if (pm.x < minX) minX = pm.x;
+      if (pm.x > maxX) maxX = pm.x;
+      if (pm.y < minY) minY = pm.y;
+      if (pm.y > maxY) maxY = pm.y;
+    }
+    if (!isFinite(minX)) return;
+    const span = Math.max(60, Math.max(maxX - minX, maxY - minY) || 60);
+    // Target zoom: span × zoom = 0.55 × viewport (so we don't overshoot)
+    const targetSpanPx = Math.min(width, height) * 0.55;
+    const factor = targetSpanPx / span;
+    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, map.zoom * factor));
+    if (newZoom <= map.zoom * 1.05) {
+      // Already zoomed enough — bump 1.7× to break the cluster open
+      map.zoom = Math.min(MAX_ZOOM, map.zoom * 1.7);
+    } else {
+      map.zoom = newZoom;
+    }
+    // Re-center camera so cluster lands at viewport middle. cl.x/y are in
+    // world coords (pre-zoom). We want screenX(cl.x) === width/2.
+    // screenX = (cl.x + viewport adjustment by camX) post zoom transform.
+    // Actually the cluster is drawn at pre-transform (cl.x, cl.y), then
+    // scaled around viewport centre. To land at viewport centre we need
+    // cl.x === width/2 — adjust camX accordingly. cl.x is computed from
+    // pointToScreen which subtracts camX. So shift camX by (cl.x - width/2).
+    map.camX += cl.x - width * 0.5;
+    map.camY += cl.y - height * 0.5;
+    map.camVX = 0;
+    map.camVY = 0;
   }
 
   // --- Card delegation -----------------------------------------------------
@@ -425,7 +535,7 @@
     lastPointerX = event.clientX;
     lastPointerY = event.clientY;
     lastPointerTime = performance.now();
-    pressIndex = findMonumentAt(event.clientX, event.clientY);
+    pressIndex = -1;   // resolved on tap-end via findClusterAt
     if (canvas.setPointerCapture) {
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
     }
@@ -492,9 +602,12 @@
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
     if (ACTIVE_POINTERS.size === 0 && map.dragging && !didDrag) {
-      const hit = findMonumentAt(event.clientX, event.clientY);
-      if (hit >= 0) {
-        showMonument(hit);
+      const cl = findClusterAt(event.clientX, event.clientY);
+      if (cl && cl.members.length > 1) {
+        // Tap on a cluster — zoom in to break it open
+        zoomToCluster(cl);
+      } else if (cl && cl.members.length === 1) {
+        showMonument(cl.members[0]);
         map.camVX = 0;
         map.camVY = 0;
       } else {
