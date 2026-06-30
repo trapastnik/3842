@@ -27,8 +27,15 @@
 
   let width = 0, height = 0, dpr = 1;
   let monuments = [];
-  let placed = [];                   // { i, m, band, x, baseY, h_statue, h_pedestal, mPx, totalH }
+  let placed = [];                   // { i, m, band, worldX, baseY, h_statue, h_pedestal, mPx, totalH, bandTopY, bandBaseY }
   let selectedIndex = -1;
+
+  // Pan state — shared X offset; pointer drag in a band only pans that band.
+  const PAD_LEFT_PX = 0;               // bands already start at width*0.10
+  const MIN_SLOT_W = 84;
+  const viewOffsetX = { small: 0, medium: 0, large: 0 };
+  const contentBounds = { small: [0,0], medium: [0,0], large: [0,0] };
+
   const silhouetteImages = {};
 
   function cssColor(hex, alpha) {
@@ -115,15 +122,18 @@
     for (const b of layout.bands) {
       const items = byBand[b.id];
       if (!items.length) continue;
-      const slotW = (right - left) / items.length;
+      const viewportW = right - left;
+      // touch-friendly minimum slot width; if items fit naturally use that
+      const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
       const figW = Math.min(slotW * 0.75, 110);
+      contentBounds[b.id] = [left, left + slotW * items.length];
       for (let k = 0; k < items.length; k += 1) {
         const it = items[k];
         const h = HEIGHTS[it.m.id] || FALLBACK_HEIGHT;
-        const cx = left + slotW * (k + 0.5);
+        const worldX = left + slotW * (k + 0.5);
         placed.push({
           i: it.i, m: it.m, band: b.id,
-          x: cx, baseY: b.baseY,
+          worldX, baseY: b.baseY, bandTopY: b.topY, bandBaseY: b.baseY,
           w: figW,
           h_statue: h.statue, h_pedestal: h.pedestal,
           mPx: b.mPx,
@@ -134,6 +144,21 @@
   }
 
   // --- Drawing ------------------------------------------------------------
+
+  function clampPan(bandId) {
+    const [cl, cr] = contentBounds[bandId];
+    const contentW = cr - cl;
+    const viewportW = (layout.right || width * 0.97) - (layout.left || width * 0.10);
+    if (contentW <= viewportW) { viewOffsetX[bandId] = 0; return; }
+    const min = viewportW - contentW;
+    const max = 0;
+    if (viewOffsetX[bandId] > max) viewOffsetX[bandId] = max;
+    if (viewOffsetX[bandId] < min) viewOffsetX[bandId] = min;
+  }
+
+  function screenX(worldX, bandId) {
+    return worldX + (viewOffsetX[bandId] || 0);
+  }
 
   function drawBands() {
     for (const b of layout.bands || []) {
@@ -214,7 +239,7 @@
     const targetH = pm.totalH;
     const aspect = img.naturalWidth / img.naturalHeight;
     const targetW = targetH * aspect;
-    const x = pm.x - targetW / 2;
+    const x = screenX(pm.worldX, pm.band) - targetW / 2;
     const y = pm.baseY - targetH;
 
     // Status-coloured glow underneath
@@ -239,7 +264,7 @@
   function drawProceduralFallback(pm) {
     const m = pm.m;
     const isSelected = pm.i === selectedIndex;
-    const x = pm.x;
+    const x = screenX(pm.worldX, pm.band);
     const sH = pm.h_statue * pm.mPx;
     const pH = pm.h_pedestal * pm.mPx;
     const bottomStatue = pm.baseY - pH;
@@ -296,7 +321,7 @@
       const heightLabel = h < 10 ? `${h.toFixed(1)} м` : `${Math.round(h)} м`;
 
       if (isPortrait) {
-        ctx.translate(pm.x, y);
+        ctx.translate(screenX(pm.worldX, pm.band), y);
         ctx.rotate(-Math.PI / 3);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
@@ -310,11 +335,11 @@
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
         ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
-        ctx.fillText(city, pm.x, y);
+        ctx.fillText(city, screenX(pm.worldX, pm.band), y);
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.95 : 0.55);
-        ctx.fillText(yearLabel, pm.x, y + fontSize * 1.35);
+        ctx.fillText(yearLabel, screenX(pm.worldX, pm.band), y + fontSize * 1.35);
         ctx.fillStyle = cssColor(palette.paper, 0.5);
-        ctx.fillText(heightLabel, pm.x, y + fontSize * 2.7);
+        ctx.fillText(heightLabel, screenX(pm.worldX, pm.band), y + fontSize * 2.7);
       }
       ctx.restore();
     }
@@ -334,22 +359,42 @@
       const top = pm.baseY - pm.totalH;
       const bottom = pm.baseY + 30;
       const hx = Math.max(pm.w, 28);
-      if (x >= pm.x - hx && x <= pm.x + hx && y >= top - 14 && y <= bottom) {
-        const d = Math.abs(x - pm.x);
+      if (x >= screenX(pm.worldX, pm.band) - hx && x <= screenX(pm.worldX, pm.band) + hx && y >= top - 14 && y <= bottom) {
+        const d = Math.abs(x - screenX(pm.worldX, pm.band));
         if (d < bestDist) { bestDist = d; best = pm.i; }
       }
     }
     return best;
   }
 
+  let lastPointerX = 0;
+  let pressedBand = null;
+
+  function bandAt(y) {
+    for (const b of layout.bands || []) {
+      if (y >= b.topY && y <= b.baseY + 24) return b.id;
+    }
+    return null;
+  }
+
   canvas.addEventListener("pointerdown", e => {
     pointerDown = true; didDrag = false;
     pressStartX = e.clientX; pressStartY = e.clientY;
+    lastPointerX = e.clientX;
+    pressedBand = bandAt(e.clientY);
     if (canvas.setPointerCapture) { try { canvas.setPointerCapture(e.pointerId); } catch (err) {} }
   });
   canvas.addEventListener("pointermove", e => {
-    if (!pointerDown || didDrag) return;
-    if (Math.hypot(e.clientX - pressStartX, e.clientY - pressStartY) > TAP_THRESHOLD) didDrag = true;
+    if (!pointerDown) return;
+    if (!didDrag &&
+        Math.hypot(e.clientX - pressStartX, e.clientY - pressStartY) > TAP_THRESHOLD) {
+      didDrag = true;
+    }
+    if (didDrag && pressedBand) {
+      viewOffsetX[pressedBand] += e.clientX - lastPointerX;
+      clampPan(pressedBand);
+    }
+    lastPointerX = e.clientX;
   }, { passive: true });
   function endPointer(e) {
     if (canvas.releasePointerCapture) { try { canvas.releasePointerCapture(e.pointerId); } catch (err) {} }
