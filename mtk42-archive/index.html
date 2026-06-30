@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Картотека</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=5" />
   </head>
   <body>
     <main class="stage">
@@ -18,14 +18,17 @@
         <div class="filters__group" role="tablist" aria-label="Эпоха">
           <button class="filter is-active" type="button" data-epoch="all">Все&nbsp;эпохи</button>
           <button class="filter" type="button" data-epoch="1920s">1920-е</button>
+          <button class="filter" type="button" data-epoch="soviet">Канон</button>
+          <button class="filter" type="button" data-epoch="back-to-lenin">Назад&nbsp;к&nbsp;Ленину</button>
           <button class="filter" type="button" data-epoch="delen">Деленинизация</button>
           <button class="filter" type="button" data-epoch="renais">Ренессанс</button>
           <button class="filter" type="button" data-epoch="now">Сегодня</button>
         </div>
-        <div class="filters__group filters__group--kind" role="tablist" aria-label="Тип">
-          <button class="filter is-active" type="button" data-kind="all">Все</button>
-          <button class="filter" type="button" data-kind="research">Исследователи</button>
-          <button class="filter" type="button" data-kind="quote">Цитаты</button>
+        <div class="filters__group filters__group--kind" role="tablist" aria-label="Категория">
+          <button class="filter is-active" type="button" data-category="all">Все</button>
+          <button class="filter" type="button" data-category="politician">Политики</button>
+          <button class="filter" type="button" data-category="researcher">Исследователи</button>
+          <button class="filter" type="button" data-category="writers">Литература&nbsp;и&nbsp;публицистика</button>
         </div>
       </nav>
 
@@ -54,7 +57,10 @@
               <p class="detail__work-text" data-bind="work"></p>
             </div>
             <p class="detail__text" data-bind="text"></p>
-            <p class="detail__source" data-bind="source"></p>
+            <blockquote class="detail__quote" data-bind="quote-section">
+              <p class="detail__quote-text" data-bind="quote-text"></p>
+              <cite class="detail__quote-source" data-bind="quote-source"></cite>
+            </blockquote>
           </div>
 
           <div class="detail__tone-bar">
@@ -73,6 +79,6 @@
       </footer>
     </main>
 
-    <script type="module" src="./archive.js?v=1"></script>
+    <script type="module" src="./archive.js?v=2"></script>
   </body>
 </html>
