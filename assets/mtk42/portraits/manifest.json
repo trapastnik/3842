@@ -304,5 +304,52 @@
     "lang": "ru",
     "image": "herriot.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg/3840px-%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg"
+  },
+  "sukhanov": {
+    "title": "Суханов, Николай Николаевич",
+    "lang": "ru",
+    "image": "sukhanov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c1/Suhanov.jpg"
+  },
+  "lukacs": {
+    "title": "Лукач, Дьёрдь",
+    "lang": "ru",
+    "image": "lukacs.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Luk%C3%A1cs_Gy%C3%B6rgy.jpg"
+  },
+  "mann": {
+    "title": "Манн, Томас",
+    "lang": "ru",
+    "image": "mann.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Thomas_Mann_1937.jpg"
+  },
+  "kamenev": {
+    "title": "Каменев, Лев Борисович",
+    "lang": "ru",
+    "image": "kamenev.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Lev_Kamenev_1920s.jpg/3840px-Lev_Kamenev_1920s.jpg"
+  },
+  "skrypnyk": {
+    "title": "Скрыпник, Николай Алексеевич",
+    "lang": "ru",
+    "image": "skrypnyk.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Skrypnyk_Mykola.jpg"
+  },
+  "stalin": {
+    "title": "Сталин, Иосиф Виссарионович",
+    "lang": "ru",
+    "image": "stalin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Joseph_Stalin_official_portrait.jpg"
+  },
+  "stepun": {
+    "title": "Степун, Фёдор Августович",
+    "lang": "ru",
+    "image": "stepun.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c4/Fyodor_stepun.jpg"
+  },
+  "gindin": {
+    "title": "Гиндин, Яков Ильич",
+    "lang": "ru",
+    "image": null
   }
 }
