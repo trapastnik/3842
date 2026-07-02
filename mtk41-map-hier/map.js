@@ -530,11 +530,7 @@
   // map.zoom before drawing (context is scaled by zoom).
   function drawLevel(clustersScreen, layerAlpha) {
     const zoom = map.zoom;
-    const gapVpx = Math.max(0, Math.min(30, settings.gap));
-
-    // Relaxation (in screen-vpx space)
-    relaxNonOverlap(clustersScreen, gapVpx, 30);
-
+    // Caller has already run relaxNonOverlap.
     ctx.save();
     ctx.globalAlpha = layerAlpha;
 
@@ -641,6 +637,7 @@
       return b.rVpx - a.rVpx;
     });
     for (const cl of order) {
+      cl.labelRect = null;   // reset — set below only if actually drawn
       if (!cl.name) continue;
       const isSel = cl.memberIndices.includes(selectedIndex);
       const r = cl.rVpx / zoom;
@@ -668,6 +665,8 @@
       }
       if (!placed) continue;   // couldn't fit — drop label
       drawnRects.push(placed.rect);
+      // Persist rect in PRE-ZOOM screen space so findClusterAt can hit-test it
+      cl.labelRect = placed.rect;
       ctx.textAlign = "left";
       // shadow
       ctx.fillStyle = cssColor(palette.black, 0.75 * layerAlpha);
@@ -688,26 +687,25 @@
 
   function drawLevelsWithFade() {
     const z = map.zoom;
+    const gapVpx = Math.max(0, Math.min(30, settings.gap));
     const thrs = [
       { z: settings.thrMacro,   lower: "MACRO",   upper: "COUNTRY" },
       { z: settings.thrCountry, lower: "COUNTRY", upper: "CITY" },
       { z: settings.thrCity,    lower: "CITY",    upper: "LEAF" },
     ];
-    // Find the band we're in, if any
-    let currentLevel = levelFor(z);
+    const currentLevel = levelFor(z);
     let band = null;
     if (settings.crossfade) {
       for (const t of thrs) {
-        if (Math.abs(z - t.z) < FADE_HALF) {
-          band = t;
-          break;
-        }
+        if (Math.abs(z - t.z) < FADE_HALF) { band = t; break; }
       }
     }
     if (!band) {
-      const clsWorld = buildLevelClusters(currentLevel);
-      const clsScreen = materializeToScreen(clsWorld, settings.sizeMode);
-      drawLevel(clsScreen, 1.0);
+      const cls = materializeToScreen(buildLevelClusters(currentLevel), settings.sizeMode);
+      relaxNonOverlap(cls, gapVpx, 30);
+      drawLevel(cls, 1.0);
+      // Labels populated cl.labelRect during drawLevel — save for hit-test.
+      lastScreenClusters = cls;
       return;
     }
     const t = (z - (band.z - FADE_HALF)) / (2 * FADE_HALF);
@@ -715,9 +713,15 @@
     const lowerAlpha = 1 - t;
     const lowerCls = materializeToScreen(buildLevelClusters(band.lower), settings.sizeMode);
     const upperCls = materializeToScreen(buildLevelClusters(band.upper), settings.sizeMode);
-    // Draw lower first (fading out), upper on top
+    relaxNonOverlap(lowerCls, gapVpx, 30);
+    relaxNonOverlap(upperCls, gapVpx, 30);
     drawLevel(lowerCls, lowerAlpha);
     drawLevel(upperCls, upperAlpha);
+    // Hit priority: whichever alpha is dominant. Both arrays included so a
+    // stray click during the fade lands on something reasonable.
+    lastScreenClusters = upperAlpha >= lowerAlpha
+      ? upperCls.concat(lowerCls)
+      : lowerCls.concat(upperCls);
   }
 
   // ---------- Zoom / drilldown animation --------------------------------
@@ -801,14 +805,34 @@
   let lastScreenClusters = [];
 
   function findClusterAt(cx, cy) {
+    const zoom = map.zoom;
+    const hw = width * 0.5, hh = height * 0.5;
+    // Pass 1 — label rect hit (priority over dot proximity)
+    let bestLabel = null, bestLabelD = Infinity;
+    for (const cl of lastScreenClusters) {
+      const lr = cl.labelRect;
+      if (!lr) continue;
+      const rx0 = hw + (lr[0] - hw) * zoom;
+      const ry0 = hh + (lr[1] - hh) * zoom;
+      const rx1 = hw + (lr[2] - hw) * zoom;
+      const ry1 = hh + (lr[3] - hh) * zoom;
+      const pad = 6;
+      if (cx >= rx0 - pad && cx <= rx1 + pad &&
+          cy >= ry0 - pad && cy <= ry1 + pad) {
+        const screenX = hw + (cl.sx - hw) * zoom;
+        const screenY = hh + (cl.sy - hh) * zoom;
+        const d = Math.hypot(cx - screenX, cy - screenY);
+        if (d < bestLabelD) { bestLabelD = d; bestLabel = cl; }
+      }
+    }
+    if (bestLabel) return bestLabel;
+    // Pass 2 — dot proximity
     let best = null, bestD = Infinity;
     for (const cl of lastScreenClusters) {
-      // Screen coord for hit = post-transform: sx*zoom around centre
-      const screenX = width * 0.5 + (cl.sx - width * 0.5) * map.zoom;
-      const screenY = height * 0.5 + (cl.sy - height * 0.5) * map.zoom;
-      const screenR = cl.rVpx;
+      const screenX = hw + (cl.sx - hw) * zoom;
+      const screenY = hh + (cl.sy - hh) * zoom;
       const d = Math.hypot(cx - screenX, cy - screenY);
-      const hitR = Math.max(screenR + 12, 22);
+      const hitR = Math.max(cl.rVpx + 12, 22);
       if (d <= hitR && d < bestD) { bestD = d; best = cl; }
     }
     return best;
@@ -1083,15 +1107,9 @@
     ctx.translate(-width * 0.5, -height * 0.5);
     if (geoLoaded) drawBaseMap();
     if (monuments.length && tree.children.length) {
-      // Materialize the primary level. drawLevelsWithFade owns the details
-      // but we also want lastScreenClusters for hit-testing to reflect the
-      // FRONTMOST (fading-in) level.
-      const level = levelFor(map.zoom);
-      const primary = materializeToScreen(buildLevelClusters(level), settings.sizeMode);
-      // Relax primary here so hit-test coords match (drawLevel also relaxes
-      // but on a fresh copy — the visual will re-relax; that's fine).
-      relaxNonOverlap(primary, Math.max(0, Math.min(30, settings.gap)), 30);
-      lastScreenClusters = primary;
+      // drawLevelsWithFade materializes + relaxes + draws, then publishes
+      // the drawn cluster array into lastScreenClusters (with cl.labelRect
+      // populated) so findClusterAt can hit-test both dot and label.
       drawLevelsWithFade();
     }
     ctx.restore();

@@ -305,6 +305,7 @@
 
     const zoomedIn = map.zoom > 1.6;
     for (const cl of order) {
+      cl.labelRect = null;   // reset — set below only for actually-drawn labels
       const isCluster = cl.members.length > 1;
       const isSelected = cl.members.includes(selectedIndex);
       if (!isSelected && !zoomedIn && cl.r < width * 0.008) continue;
@@ -320,6 +321,7 @@
       const labelW = ctx.measureText(label).width;
       const rect = [tx - 2, ty - size * 0.6, tx + labelW + 2, ty + size * 0.6];
       if (!isSelected && drawnRects.some(r => rectsOverlap(r, rect))) continue;
+      cl.labelRect = rect;   // persist so findClusterAt can hit-test the label too
       drawnRects.push(rect);
       ctx.fillStyle = cssColor(palette.black, 0.75);
       ctx.shadowColor = cssColor(palette.black, 0.6);
@@ -448,19 +450,34 @@
     };
   }
 
-  // Returns the closest cluster to (cx, cy) within a generous touch target,
-  // or null if nothing nearby.
+  // Returns the closest cluster to (cx, cy) or null if nothing nearby.
+  // Two-pass: label rects win first (a click landing on the "Ижевск" text
+  // must open Ижевск, even if Уфа's dot is closer to the click). Only when
+  // no label rect contains the click do we fall back to dot proximity.
   function findClusterAt(cx, cy) {
     const p = clientToWorld(cx, cy);
+    // Pass 1 — label hit
+    let bestLabel = null;
+    let bestLabelDist = Infinity;
+    for (const cl of clusters) {
+      const lr = cl.labelRect;
+      if (!lr) continue;
+      const pad = 4 / map.zoom;
+      if (p.x >= lr[0] - pad && p.x <= lr[2] + pad &&
+          p.y >= lr[1] - pad && p.y <= lr[3] + pad) {
+        // Tie-break within overlapping labels: closer dot wins
+        const d = Math.hypot(p.x - cl.x, p.y - cl.y);
+        if (d < bestLabelDist) { bestLabelDist = d; bestLabel = cl; }
+      }
+    }
+    if (bestLabel) return bestLabel;
+    // Pass 2 — dot proximity
     let best = null;
     let bestDist = Infinity;
     for (const cl of clusters) {
       const d = Math.hypot(p.x - cl.x, p.y - cl.y);
       const hitR = Math.max(cl.r + 14, 22 / map.zoom);
-      if (d <= hitR && d < bestDist) {
-        bestDist = d;
-        best = cl;
-      }
+      if (d <= hitR && d < bestDist) { bestDist = d; best = cl; }
     }
     return best;
   }
