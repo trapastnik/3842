@@ -73,36 +73,23 @@ function applyNav() {
 }
 applyNav();
 
-/* ---- Настройка полос на фоне (каждая полоса отдельно) ----
- * Полосы живут ВНУТРИ прототипа (iframe), не в хабе. Хаб ставит переменные
+/* ---- Настройка полос на фоне (--stripe-opacity, 0..1) ----
+ * Полосы живут ВНУТРИ прототипа (iframe), не в хабе. Хаб ставит переменную
  * в документ iframe (same-origin) и переприменяет при каждой смене варианта.
- * Две брендовые диагонали управляются раздельно:
- *   --stripe-red-opacity   (0..1) — красная полоса
- *   --stripe-brass-opacity (0..1) — латунная полоса
- * Конвенция: если у прототипа есть фоновые полосы — заведи альфу каждой на
- * свою переменную (см. COORDINATION), и хаб сможет крутить их по отдельности.
- * Прототипы без полос переменные просто игнорируют. */
+ * Прототипы, у которых нет полос, переменную просто игнорируют.
+ * Конвенция: если у прототипа есть фоновые полосы — заведи их на
+ * `opacity: var(--stripe-opacity, 1)`, и хаб сможет ими управлять. */
 const STRIPE_KEY = "bmk-hub-stripe";
-const STRIPE_DEFAULTS = { red: 100, brass: 100 }; /* % → 1.0 */
-const STRIPE_SPEC = [
-  { key: "red",   label: "Полоса · красная",  cssVar: "--stripe-red-opacity" },
-  { key: "brass", label: "Полоса · латунная", cssVar: "--stripe-brass-opacity" },
-];
+const STRIPE_DEFAULT = 100; /* % → 1.0, как дефолт прототипа */
 function loadStripe() {
-  try {
-    const s = JSON.parse(localStorage.getItem(STRIPE_KEY) || "{}");
-    if (typeof s === "number") return { red: s, brass: s }; /* миграция старого формата */
-    return { ...STRIPE_DEFAULTS, ...s };
-  } catch { return { ...STRIPE_DEFAULTS }; }
+  const v = Number(localStorage.getItem(STRIPE_KEY));
+  return Number.isFinite(v) && v >= 0 ? v : STRIPE_DEFAULT;
 }
 let stripeCfg = loadStripe();
 function applyStripes() {
   try {
     const doc = frame.contentDocument;
-    if (!doc) return;
-    STRIPE_SPEC.forEach(s =>
-      doc.documentElement.style.setProperty(s.cssVar, (stripeCfg[s.key] / 100).toFixed(2))
-    );
+    if (doc) doc.documentElement.style.setProperty("--stripe-opacity", (stripeCfg / 100).toFixed(2));
   } catch { /* cross-origin — молча пропускаем */ }
 }
 /* Переприменяем после загрузки каждого варианта. */
@@ -129,13 +116,11 @@ settings.innerHTML =
     `<input type="range" data-key="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${navCfg[s.key]}">` +
     `</div>`
   ).join("") +
-  '<div class="hub__settings__group">Полосы на фоне</div>' +
-  STRIPE_SPEC.map(s =>
-    `<div class="hub__set-row">` +
-    `<label>${s.label}<span class="val" data-strval="${s.key}">${stripeCfg[s.key]}%</span></label>` +
-    `<input type="range" data-stripe="${s.key}" min="0" max="100" step="5" value="${stripeCfg[s.key]}">` +
-    `</div>`
-  ).join("") +
+  '<div class="hub__settings__group">Фон прототипа</div>' +
+  '<div class="hub__set-row">' +
+  `<label>Полосы на фоне<span class="val" data-val="stripe">${stripeCfg}%</span></label>` +
+  `<input type="range" data-stripe min="0" max="100" step="5" value="${stripeCfg}">` +
+  '</div>' +
   '<button type="button" class="hub__settings__reset">Сбросить</button>';
 document.body.appendChild(settings);
 
@@ -158,15 +143,13 @@ settings.querySelectorAll("input[data-key]").forEach(input => {
   });
 });
 
-/* Слайдеры полос (ставят переменные в документ прототипа = iframe), раздельно */
-settings.querySelectorAll("input[data-stripe]").forEach(input => {
-  input.addEventListener("input", () => {
-    const key = input.dataset.stripe;
-    stripeCfg[key] = Number(input.value);
-    settings.querySelector(`[data-strval="${key}"]`).textContent = stripeCfg[key] + "%";
-    applyStripes();
-    localStorage.setItem(STRIPE_KEY, JSON.stringify(stripeCfg));
-  });
+/* Слайдер полос (ставит переменную в документ прототипа = iframe) */
+const stripeInput = settings.querySelector("input[data-stripe]");
+stripeInput.addEventListener("input", () => {
+  stripeCfg = Number(stripeInput.value);
+  settings.querySelector('[data-val="stripe"]').textContent = stripeCfg + "%";
+  applyStripes();
+  localStorage.setItem(STRIPE_KEY, String(stripeCfg));
 });
 
 settings.querySelector(".hub__settings__reset").addEventListener("click", () => {
@@ -178,13 +161,11 @@ settings.querySelector(".hub__settings__reset").addEventListener("click", () => 
     input.value = navCfg[input.dataset.key];
     settings.querySelector(`[data-val="${input.dataset.key}"]`).textContent = navCfg[input.dataset.key] + spec.unit;
   });
-  stripeCfg = { ...STRIPE_DEFAULTS };
+  stripeCfg = STRIPE_DEFAULT;
   applyStripes();
-  localStorage.setItem(STRIPE_KEY, JSON.stringify(stripeCfg));
-  settings.querySelectorAll("input[data-stripe]").forEach(input => {
-    input.value = stripeCfg[input.dataset.stripe];
-    settings.querySelector(`[data-strval="${input.dataset.stripe}"]`).textContent = stripeCfg[input.dataset.stripe] + "%";
-  });
+  localStorage.setItem(STRIPE_KEY, String(stripeCfg));
+  stripeInput.value = stripeCfg;
+  settings.querySelector('[data-val="stripe"]').textContent = stripeCfg + "%";
 });
 
 /* Inject orientation switch (Гор / Верт) into the bar. The hub renders
