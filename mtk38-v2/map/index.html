@@ -137,15 +137,14 @@ cv.addEventListener('pointerleave',()=>{map.dragging=false;hoverI=-1;});
 const quotes=Quotes.create({quotes:[],on:false,mode:'center'});   // цитаты — переиспользуемый shared/quotes.js
 Panel.create({
   title:'Карта · параметры', open:false, handleLabel:'Настройки',
-  segments:[...quotes.panelSegments()],
   groups:[{title:'Отрисовка',params:[
     {key:'point',label:'Размер точек',min:.4,max:2,step:.05,value:P.point},
     {key:'glow',label:'Свечение',min:0,max:2,step:.05,value:P.glow},
     {key:'guides',label:'Сетка',min:0,max:1,step:.05,value:P.guides},
     {key:'grain',label:'Зерно',min:0,max:1,step:.05,value:P.grain},
     {key:'vign',label:'Виньетка',min:0,max:1,step:.05,value:P.vign},
-    {key:'bg',label:'Фон',min:26,max:58,step:1,value:P.bg}]}, ...quotes.panelGroups()],
-  toggles:[{key:'conn',label:'Идеологические маршруты',value:P.conn}, ...quotes.panelToggles()],
+    {key:'bg',label:'Фон',min:26,max:58,step:1,value:P.bg}]}, quotes.panelGroup()],
+  toggles:[{key:'conn',label:'Идеологические маршруты',value:P.conn}],
   onChange(k,v){ if(quotes.handle(k,v))return; if(k==='conn'){P.conn=v;return;} P[k]=v; if(k==='guides')buildCache(); }
 });
 mkGrain();resize();

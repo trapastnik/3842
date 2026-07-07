@@ -186,7 +186,6 @@ function boot(L, QUOTES, source){
     segments:[
       {key:'layout',label:'Композиция',value:P.layout,options:[
         ['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],['ticker','Лента'],['wall','Стена'],['map','Карта']]},
-      ...quotes.panelSegments(),
     ],
     groups:[
       {title:'Сцена',params:[
@@ -204,9 +203,8 @@ function boot(L, QUOTES, source){
         {key:'vign',label:'Виньетка',min:0,max:1,step:.02,value:P.vign},
         {key:'grain',label:'Зерно',min:0,max:1,step:.02,value:P.grain},
         {key:'bg',label:'Фон (светлота)',min:24,max:60,step:1,value:P.bg}]},
-      ...quotes.panelGroups(),
+      quotes.panelGroup(),
     ],
-    toggles:[...quotes.panelToggles()],
     onChange(key,val){
       if(quotes.handle(key,val))return;
       if(key==='layout'){setLayout(val);return;}

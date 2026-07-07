@@ -3,18 +3,16 @@
    (подхватываются автоматически рядом со скриптом). Включается и настраивается на любой странице
    МТК 38, интегрируется с единой панелью shared/panel.js.
 
-   Использование:
+   Использование (все настройки цитат — ОДНОЙ группой в панели):
      const q = Quotes.create({ quotes: [{ru,en,work,year}], on:false, mode:'center' });
      Panel.create({
-       toggles:  [ ...q.panelToggles() ],
-       segments: [ ...другие, ...q.panelSegments() ],
-       groups:   [ ...другие, ...q.panelGroups() ],
+       groups:   [ ...группы_страницы, q.panelGroup() ],   // блок «Цитаты»: тумблер+размещение+параметры
        onChange(key,val,state){ if (q.handle(key,val)) return;  // цитаты сами обрабатывают свои ключи
                                  ...остальное страницы... }
      });
-   Ключи панели: quotesOn (тумблер), quoteMode (сегмент), qGlow/qBlur/qScrim/qScale (параметры).
+   Ключи панели: quotesOn (тумблер), quoteMode (размещение), qGlow/qBlur/qScrim/qScale (параметры).
    API контроллера: setQuotes(list), setEnabled(bool), setMode(str), setParam(key,val),
-                    panelToggles(), panelSegments(), panelGroups(), handle(key,val).
+                    panelGroup(), handle(key,val).
 */
 (function () {
   (function ensureCss() {
@@ -78,15 +76,18 @@
     document.body.classList.toggle('q-on', enabled);
     if (enabled) setEnabled(true);
 
-    function panelToggles() { return [{ key: 'quotesOn', label: label, value: enabled }]; }
-    function panelSegments() { return [{ key: 'quoteMode', label: 'Размещение цитаты', when: function (s) { return s.quotesOn; }, value: mode, options: MODES.map(function (m) { return [m[0], m[1]]; }) }]; }
-    function panelGroups() {
-      return [{ title: 'Цитата', when: function (s) { return s.quotesOn; }, params: [
-        { key: 'qGlow', label: 'Свечение', min: 0, max: 2.5, step: .05, value: params.glow },
-        { key: 'qBlur', label: 'Разблюр фона', min: 0, max: 40, step: 1, value: params.blur },
-        { key: 'qScrim', label: 'Затемнение', min: 0, max: 1, step: .02, value: params.scrim },
-        { key: 'qScale', label: 'Размер', min: .6, max: 1.8, step: .02, value: params.scale },
-      ] }];
+    // Весь блок цитат — ОДНОЙ группой панели (тумблер + размещение + параметры вместе).
+    // Параметры и размещение показываются только когда цитаты включены (per-control when).
+    var onWhen = function (s) { return s.quotesOn; };
+    function panelGroup() {
+      return { title: 'Цитаты', params: [
+        { key: 'quotesOn', type: 'toggle', label: label, value: enabled },
+        { key: 'quoteMode', type: 'segment', label: 'Размещение', when: onWhen, value: mode, options: MODES.map(function (m) { return [m[0], m[1]]; }) },
+        { key: 'qGlow', label: 'Свечение', min: 0, max: 2.5, step: .05, value: params.glow, when: onWhen },
+        { key: 'qBlur', label: 'Разблюр фона', min: 0, max: 40, step: 1, value: params.blur, when: onWhen },
+        { key: 'qScrim', label: 'Затемнение', min: 0, max: 1, step: .02, value: params.scrim, when: onWhen },
+        { key: 'qScale', label: 'Размер', min: .6, max: 1.8, step: .02, value: params.scale, when: onWhen },
+      ] };
     }
     function handle(key, val) {
       if (key === 'quotesOn') { setEnabled(val); return true; }
@@ -98,7 +99,7 @@
     return {
       setQuotes: function (list) { quotes = (list || []).slice(); qi = -1; if (enabled) setEnabled(true); },
       setEnabled: setEnabled, setMode: setMode, setParam: setParam,
-      panelToggles: panelToggles, panelSegments: panelSegments, panelGroups: panelGroups, handle: handle,
+      panelGroup: panelGroup, handle: handle,
     };
   }
 
