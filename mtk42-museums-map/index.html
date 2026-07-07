@@ -130,7 +130,12 @@
         <section class="settings__group">
           <div class="settings__title">Навигация</div>
           <button class="settings__preset" type="button" id="reset-view">Сбросить масштаб</button>
-          <p class="settings__hint">Колёсиком мыши — зум. Перетаскивание — сдвиг карты.</p>
+          <label class="settings__row settings__row--slider">
+            <span>Чувствительность колёсика</span>
+            <input type="range" min="0.5" max="3.0" step="0.1" data-setting-num="zoomSensitivity" />
+            <span class="settings__num" data-bind-num="zoomSensitivity"></span>
+          </label>
+          <p class="settings__hint">Колёсиком мыши — плавный зум вокруг курсора. Перетаскивание — сдвиг карты.</p>
         </section>
 
         <section class="settings__group">
@@ -188,6 +193,6 @@
       </aside>
     </main>
     <script src="../assets/shared/lib/projection.js"></script>
-    <script type="module" src="./map.js?v=5"></script>
+    <script type="module" src="./map.js?v=6"></script>
   </body>
 </html>
