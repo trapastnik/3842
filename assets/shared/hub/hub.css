@@ -216,12 +216,15 @@ html, body {
   z-index: 1;
 }
 
-/* Большие угловые кнопки для киоска. Дублируют стрелки из бара —
+/* Большие боковые кнопки для киоска. Дублируют стрелки из бара —
  * посетитель видит их сразу, в зоне комфортного жеста большим
- * пальцем. Работают по кругу (mod N), как и верхняя навигация. */
+ * пальцем. Работают по кругу (mod N), как и верхняя навигация.
+ * Позиция — вертикальный центр боковых краёв (классическая карусель),
+ * чтобы не перекрывать нижнюю панель управления/настроек прототипа. */
 .hub__corner-nav {
   position: fixed;
-  bottom: 36px;
+  top: 50%;
+  transform: translateY(-50%);
   z-index: 90;
   width: 88px;
   height: 88px;
@@ -246,23 +249,22 @@ html, body {
   background: var(--brass);
   color: var(--graphite);
   border-color: var(--brass);
-  transform: scale(1.04);
+  transform: translateY(-50%) scale(1.04);
 }
 .hub__corner-nav:active {
-  transform: scale(0.97);
+  transform: translateY(-50%) scale(0.97);
 }
-.hub__corner-nav--prev { left: 36px; }
-.hub__corner-nav--next { right: 36px; }
+.hub__corner-nav--prev { left: 28px; }
+.hub__corner-nav--next { right: 28px; }
 
 @media (max-width: 720px) {
   .hub__corner-nav {
     width: 64px;
     height: 64px;
     font-size: 36px;
-    bottom: 24px;
   }
-  .hub__corner-nav--prev { left: 20px; }
-  .hub__corner-nav--next { right: 20px; }
+  .hub__corner-nav--prev { left: 16px; }
+  .hub__corner-nav--next { right: 16px; }
 }
 
 /* Vertical kiosk preview: iframe pinned to 9:16 portrait, centered,
