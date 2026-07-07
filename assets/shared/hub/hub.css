@@ -342,16 +342,6 @@ html, body {
   touch-action: manipulation;
 }
 .hub__settings__close:hover { background: rgba(210, 183, 115, 0.15); }
-.hub__settings__group {
-  font-family: "20 Kopeek", "Courier New", monospace;
-  font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(210, 183, 115, 0.7);
-  margin: 22px 0 14px;
-  padding-top: 16px;
-  border-top: 1px solid rgba(210, 183, 115, 0.18);
-}
 .hub__set-row { margin-bottom: 18px; }
 .hub__set-row label {
   display: flex;
