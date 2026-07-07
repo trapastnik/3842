@@ -1,0 +1,21 @@
+{
+  "mtk": 38,
+  "title": "Цитаты В. И. Ленина для арт-объекта МТК 38",
+  "note": "Короткие фразы самого Ленина (не «о Ленине» — это МТК 42). Провенанс — ПСС / Marxists Internet Archive. Спорное/misattributed не показываем (show:false). Единый источник для front-композиций (fetch в рантайме) и v3.",
+  "schema": ["ru", "en", "work", "year", "show"],
+  "quotes": [
+    {"ru": "Коммунизм есть Советская власть плюс электрификация всей страны.", "en": "Communism is Soviet power plus the electrification of the whole country.", "work": "Наши внешнее и внутреннее положение и задачи партии", "year": "1920", "show": true},
+    {"ru": "Без революционной теории не может быть и революционного движения.", "en": "Without revolutionary theory there can be no revolutionary movement.", "work": "Что делать?", "year": "1902", "show": true},
+    {"ru": "Учиться, учиться и учиться.", "en": "Learn, learn, and learn.", "work": "Лучше меньше, да лучше", "year": "1923", "show": true},
+    {"ru": "Задачи молодёжи… можно было бы выразить одним словом: учиться.", "en": "The tasks of the youth… might be summed up in a single word: learn.", "work": "Задачи союзов молодёжи", "year": "1920", "show": true},
+    {"ru": "Лучше меньше, да лучше.", "en": "Better fewer, but better.", "work": "Лучше меньше, да лучше", "year": "1923", "show": true},
+    {"ru": "Религия есть опиум народа.", "en": "Religion is opium for the people.", "work": "Социализм и религия", "year": "1905", "show": true},
+    {"ru": "Кто не работает, тот не ест.", "en": "He who does not work, neither shall he eat.", "work": "Государство и революция", "year": "1917", "show": true},
+    {"ru": "Истина всегда конкретна.", "en": "Truth is always concrete.", "work": "Шаг вперёд, два шага назад", "year": "1904", "show": true},
+    {"ru": "Жить в обществе и быть свободным от общества нельзя.", "en": "One cannot live in society and be free from society.", "work": "Партийная организация и партийная литература", "year": "1905", "show": true},
+    {"ru": "Учение Маркса всесильно, потому что оно верно.", "en": "The Marxist doctrine is omnipotent because it is true.", "work": "Три источника и три составных части марксизма", "year": "1913", "show": true},
+    {"ru": "Дайте нам организацию революционеров — и мы перевернём Россию!", "en": "Give us an organisation of revolutionaries, and we will overturn Russia!", "work": "Что делать?", "year": "1902", "show": true},
+    {"ru": "Государство есть машина для угнетения одного класса другим.", "en": "The state is a machine for the oppression of one class by another.", "work": "Государство и революция", "year": "1917", "show": true},
+    {"ru": "Мы не утописты. Мы знаем, что любой чернорабочий и любая кухарка не способны сейчас же вступить в управление государством.", "en": "We are not utopians. We know that an unskilled labourer or a cook cannot immediately get on with the job of state administration.", "work": "Удержат ли большевики государственную власть?", "year": "1917", "show": true}
+  ]
+}

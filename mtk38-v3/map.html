@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="ru"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v3 · Карта</title>
+<link rel="stylesheet" href="./fonts/faces.css">
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--red:#A02128;--window:#9DA3A8}
+  html,body{margin:0;height:100%;overflow:hidden;background:#0f1318;font-family:"20 Kopeek",ui-monospace,Menlo,monospace;color:var(--paper)}
+  #map{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+  #map:active{cursor:grabbing}
+  #vign{position:fixed;inset:0;z-index:6;pointer-events:none;background:radial-gradient(ellipse 75% 75% at 50% 50%,transparent 50%,rgba(5,7,10,.66) 100%)}
+  #grain{position:fixed;inset:0;z-index:7;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");background-size:158px 158px}
+  #hint{position:fixed;left:16px;bottom:12px;z-index:7;font-size:12px;color:var(--window);opacity:.62;pointer-events:none}#hint b{color:var(--brass)}
+  #err{position:fixed;left:16px;top:60px;z-index:9;max-width:60vw;color:#ff9a9a;font-size:13px;white-space:pre-wrap;display:none}
+</style>
+</head><body>
+<canvas id="map"></canvas>
+<div id="vign"></div>
+<div id="grain"></div>
+<div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>тап</b> → карточка · <b>T</b> параметры</div>
+<div id="err"></div>
+<script type="module">
+import { loadWords } from './engine/data.js';
+import { createCard } from './engine/card.js';
+import { createTuner } from './tuner.js';
+
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
+const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+const PAL = { paper: '#F7F9EF', brass: '#D2B773', red: '#A02128', window: '#9DA3A8', graphite: '#435059' };
+const cc = (hex, a) => { const v = hex.replace('#', ''); return `rgba(${parseInt(v.slice(0,2),16)},${parseInt(v.slice(2,4),16)},${parseInt(v.slice(4,6),16)},${a})`; };
+
+(async () => {
+try {
+  const canvas = document.getElementById('map');
+  const ctx = canvas.getContext('2d');
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+
+  const WORDS = (await loadWords()).filter((w) => w.lat != null && w.lng != null);
+  const P = { base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
+  const card = createCard();
+  let geojson = null, reliefImg = null, physicalImg = null;
+  try { geojson = await (await fetch('../data/ne_110m_countries.geojson')).json(); } catch (_) {}
+  const loadImg = (u) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = u; });
+  loadImg('../assets/mtk38/textures/earth-relief.jpg').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-physical.jpg').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
+
+  let W = 0, H = 0, dpr = 1;
+  const map = { worldW: 0, worldH: 0, baseW: 0, zoom: 1, camX: 0, camY: 0, camVX: 0, camVY: 0, camYAnchor: 0, dragging: false, cache: null };
+  const project = (lat, lng) => ({ x: ((lng + 180) / 360) * map.worldW, y: ((90 - lat) / 180) * map.worldH });
+
+  // подложка кэшируется в ФИКС. разрешении (масштабируется при зуме); текст векторный → чёткий
+  function rebuildCache() {
+    const CW = 4096, CH = 2048;
+    const off = document.createElement('canvas'); off.width = CW; off.height = CH;
+    const g = off.getContext('2d');
+    const s = Math.round(P.bg);
+    g.fillStyle = `rgb(${s},${s + 4},${s + 9})`; g.fillRect(0, 0, CW, CH);
+    if (P.base === 'relief' && reliefImg) { g.globalAlpha = 0.92; g.drawImage(reliefImg, 0, 0, CW, CH); g.globalAlpha = 1; }
+    else if (P.base === 'physical' && physicalImg) { g.globalAlpha = 0.94; g.drawImage(physicalImg, 0, 0, CW, CH); g.globalAlpha = 1; }
+    if (geojson && (P.base === 'countries' || P.borders)) {
+      g.strokeStyle = P.base === 'countries' ? cc(PAL.window, 0.34) : cc(PAL.brass, 0.5);
+      g.lineWidth = 1.4; g.lineJoin = 'round';
+      if (P.base === 'countries') g.fillStyle = cc(PAL.window, 0.05);
+      for (const f of geojson.features) {
+        const gm = f.geometry; if (!gm) continue;
+        const polys = gm.type === 'Polygon' ? [gm.coordinates] : gm.type === 'MultiPolygon' ? gm.coordinates : null;
+        if (!polys) continue;
+        for (const poly of polys) for (const ring of poly) {
+          if (!ring || ring.length < 2) continue;
+          g.beginPath(); let px = null;
+          for (let k = 0; k < ring.length; k++) {
+            const x = ((ring[k][0] + 180) / 360) * CW, y = ((90 - ring[k][1]) / 180) * CH;
+            if (px === null || Math.abs(x - px) > CW * 0.5) g.moveTo(x, y); else g.lineTo(x, y); px = x;
+          }
+          if (P.base === 'countries') { g.closePath(); g.fill(); }
+          g.stroke();
+        }
+      }
+    }
+    g.strokeStyle = cc(PAL.brass, 0.09); g.lineWidth = 1.4; g.setLineDash([4, 26]);
+    g.beginPath(); g.moveTo(0, CH * 0.5); g.lineTo(CW, CH * 0.5); g.stroke();
+    for (let lng = -180; lng <= 180; lng += 30) { const x = ((lng + 180) / 360) * CW; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, CH); g.stroke(); }
+    g.setLineDash([]);
+    map.cache = off;
+  }
+
+  // zoom=1 → весь мир по ширине вьюпорта; zoom>1 → крупнее (точки расходятся → деклаттер показывает больше подписей)
+  function applyWorld() { map.worldW = map.baseW * map.zoom; map.worldH = map.worldW / 2; }
+  function clampCamY() {
+    if (map.worldH < H) { map.camY = map.camYAnchor; }
+    else { const maxY = map.worldH - H + map.worldH * 0.04, minY = -map.worldH * 0.04; map.camY = Math.max(minY, Math.min(maxY, map.camY)); }
+  }
+  function resize() {
+    const oldW = map.worldW;
+    const r = canvas.getBoundingClientRect();
+    dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+    W = Math.max(1, Math.floor(r.width)); H = Math.max(1, Math.floor(r.height));
+    canvas.width = Math.floor(W * dpr); canvas.height = Math.floor(H * dpr); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    map.baseW = W; applyWorld();
+    map.camYAnchor = project(20, 0).y - H / 2;     // ВЕСЬ МИР: вертикаль сдвинута к северу (там масса языков)
+    if (oldW < 2) { map.camX = 0; map.camY = map.camYAnchor; }   // старт — нулевой меридиан в центре
+    else { map.camX *= map.worldW / oldW; map.camY = map.worldH < H ? map.camYAnchor : map.camY * map.worldW / oldW; }   // ресайз — сохранить позицию
+    clampCamY();
+  }
+  addEventListener('resize', resize);
+
+  function dynamics(dt) {
+    if (map.dragging) return;
+    map.camX += map.camVX * dt; map.camY += map.camVY * dt;
+    map.camVX *= Math.pow(0.91, dt * 60); map.camVY *= Math.pow(0.91, dt * 60);
+    if (Math.abs(map.camVX) < 0.5) map.camVX = 0; if (Math.abs(map.camVY) < 0.5) map.camVY = 0;
+    if (map.worldH < H) map.camVY = 0;
+    clampCamY();
+    if (map.camX < 0) map.camX += map.worldW; if (map.camX >= map.worldW) map.camX -= map.worldW;
+  }
+  function toScreen(lat, lng) {
+    const w = project(lat, lng); let x = w.x - map.camX;
+    // привести к копии, ближайшей к ЦЕНТРУ вьюпорта (W/2), а не к нулю — иначе точки
+    // восточнее центра улетали за левый край и отсекались (появлялись только при панораме).
+    const c = W / 2, hw = map.worldW / 2;
+    while (x < c - hw) x += map.worldW;
+    while (x > c + hw) x -= map.worldW;
+    return { x, y: w.y - map.camY };
+  }
+
+  function drawBase() {
+    if (!map.cache) return;
+    ctx.save(); ctx.globalAlpha = 0.9; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
+    for (const off of [-map.worldW, 0, map.worldW]) ctx.drawImage(map.cache, off - map.camX, -map.camY, map.worldW, map.worldH);
+    ctx.restore();
+  }
+  function drawRoutes() {
+    if (!P.routes) return;
+    const moscow = WORDS.find((w) => w.id === 'rus') || WORDS[0];
+    ctx.save(); ctx.strokeStyle = cc(PAL.brass, 0.14); ctx.lineWidth = 0.9; ctx.setLineDash([2, 8]);
+    const a = toScreen(moscow.lat, moscow.lng);
+    for (const p of WORDS) { if (p === moscow || p.wt < 2) continue; const b = toScreen(p.lat, p.lng); if (Math.abs(a.x - b.x) > W * 1.2) continue; ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(b.x, b.y); ctx.stroke(); }
+    ctx.setLineDash([]); ctx.restore();
+  }
+  // мини-эмблема ООН: глобус (азимутальная сетка) — для официальных языков ООН
+  function drawUNLogo(cx, cy, r, alpha) {
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = cc(PAL.brass, alpha * 0.12);
+    ctx.beginPath(); ctx.arc(0, 0, r, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = cc(PAL.brass, alpha);
+    ctx.lineWidth = Math.max(0.6, r * 0.10);
+    for (const rr of [r, r * 0.62, r * 0.3]) { ctx.beginPath(); ctx.arc(0, 0, rr, 0, Math.PI * 2); ctx.stroke(); }
+    for (let i = 0; i < 8; i++) { const a = i / 8 * Math.PI * 2; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(a) * r, Math.sin(a) * r); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(-r, 0); ctx.lineTo(r, 0); ctx.stroke();
+    ctx.restore();
+  }
+  let hits = [];
+  function drawPoints() {
+    hits = []; const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
+    const drawn = [];  // занятые прямоугольники подписей (деклаттер)
+    // приоритет: языки ООН → крупные → мелкие. Маркеры — всем; подписи — без наложения.
+    const order = WORDS.map((p, i) => i).sort((a, b) => (WORDS[b].un - WORDS[a].un) || (WORDS[b].wt - WORDS[a].wt));
+    for (const i of order) {
+      const p = WORDS[i], s = toScreen(p.lat, p.lng);
+      if (s.x < -30 || s.x > W + 30 || s.y < -30 || s.y > H + 30) continue;
+      const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));
+      // маркер + хит (всегда — тап даёт карточку, даже если подпись скрыта деклаттером)
+      ctx.beginPath(); ctx.arc(s.x, s.y, 2 + p.wt * 1.0 + prox * 1.6, 0, Math.PI * 2);
+      ctx.fillStyle = PAL.red; ctx.globalAlpha = 0.85; ctx.shadowBlur = 0; ctx.fill(); ctx.globalAlpha = 1;
+      const hit = { x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i, box: null };
+      hits.push(hit);
+      // подпись с проверкой наложения
+      const sz = (ss * (0.013 + p.wt * 0.006) + prox * ss * 0.006) * P.label;
+      const ox = sz * 0.5, oy = -sz * 0.08;
+      ctx.font = `${p.wt >= 2 ? 600 : 400} ${sz}px ${FAM(p.sc)}`;
+      const tw = ctx.measureText(p.w).width, lw = p.un ? sz : 0;
+      const box = { x: s.x + ox, y: s.y + oy - sz * 0.6, w: tw + lw + 4, h: sz * 1.6 };
+      const important = p.un || p.wt >= 2;
+      const overlap = drawn.some((d) => box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y);
+      if (!important && overlap) continue;   // мелкие не рисуем поверх соседних
+      drawn.push(box);
+      hit.box = box;   // подпись нарисована → тап по тексту тоже открывает карточку
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = cc('#000', 0.72); ctx.shadowBlur = 5 * (0.5 + P.glow);
+      let wordX = s.x + ox;
+      if (p.un) { const lr = sz * 0.36; drawUNLogo(wordX + lr, s.y + oy, lr, 0.9); wordX += lr * 2 + sz * 0.12; }
+      ctx.fillStyle = p.id === 'rus' ? PAL.brass : PAL.paper; ctx.globalAlpha = 0.8 + prox * 0.2;
+      ctx.fillText(p.w, wordX, s.y + oy);
+      ctx.font = `400 ${sz * 0.46}px "20 Kopeek",monospace`; ctx.shadowBlur = 3; ctx.fillStyle = cc(PAL.brass, 0.62);
+      ctx.fillText(p.n + (p.un ? ' · ООН' : ''), wordX, s.y + oy + sz * 0.58);
+      ctx.globalAlpha = 1;
+    }
+  }
+  // дешёвый bloom: даунскейл-блюр + lighter
+  const bl = document.createElement('canvas'), blx = bl.getContext('2d');
+  function bloom() {
+    if (P.glow <= 0) return;
+    const w = Math.max(1, W >> 2), h = Math.max(1, H >> 2); bl.width = w; bl.height = h;
+    blx.clearRect(0, 0, w, h); blx.filter = 'blur(3px)'; blx.drawImage(canvas, 0, 0, w, h); blx.filter = 'none';
+    ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.globalAlpha = 0.5 * P.glow; ctx.imageSmoothingEnabled = true; ctx.drawImage(bl, 0, 0, W, H); ctx.restore();
+  }
+
+  let prev = performance.now();
+  function draw() {
+    const now = performance.now(), dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000)); prev = now; dynamics(dt);
+    ctx.clearRect(0, 0, W, H);
+    drawBase(); drawRoutes(); drawPoints(); bloom();
+  }
+  function frame() { draw(); requestAnimationFrame(frame); }
+
+  // зум к точке (px,py): держим географ. точку под курсором/центром жеста на месте
+  function zoomAt(px, py, factor) {
+    const u = (px + map.camX) / map.worldW, v = (py + map.camY) / map.worldH;
+    map.zoom = Math.max(1, Math.min(16, map.zoom * factor));
+    applyWorld();
+    map.camX = u * map.worldW - px; map.camY = v * map.worldH - py;
+    map.camVX = map.camVY = 0; clampCamY();
+  }
+  canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
+  canvas.addEventListener('dblclick', (e) => { e.preventDefault(); map.zoom = 1; applyWorld(); map.camX = 0; map.camY = map.camYAnchor; clampCamY(); });
+
+  // pan (1 палец) + pinch-zoom (2 пальца) + тап
+  const ptrs = new Map(); let pinchD = 0, dx0 = 0, dy0 = 0, dt0 = 0, moved = false, lx = 0, ly = 0, lt = 0;
+  canvas.addEventListener('pointerdown', (e) => {
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+    if (ptrs.size === 1) { map.dragging = true; moved = false; dx0 = lx = e.clientX; dy0 = ly = e.clientY; dt0 = lt = performance.now(); }
+    else if (ptrs.size === 2) { map.dragging = false; const p = [...ptrs.values()]; pinchD = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y); }
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!ptrs.has(e.pointerId)) return;
+    ptrs.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    if (ptrs.size >= 2) {   // пинч: зум к середине между пальцами
+      const p = [...ptrs.values()], d = Math.hypot(p[0].x - p[1].x, p[0].y - p[1].y);
+      if (pinchD > 0 && d > 0) zoomAt((p[0].x + p[1].x) / 2, (p[0].y + p[1].y) / 2, d / pinchD);
+      pinchD = d; moved = true; return;
+    }
+    if (!map.dragging) return;
+    if (Math.hypot(e.clientX - dx0, e.clientY - dy0) > 10) moved = true;
+    const now = performance.now(), d = Math.max(16, now - lt) / 1000;
+    map.camX -= (e.clientX - lx); map.camY -= (e.clientY - ly);
+    map.camVX = -(e.clientX - lx) / d; map.camVY = -(e.clientY - ly) / d;
+    lx = e.clientX; ly = e.clientY; lt = now;
+  }, { passive: true });
+  const up = (e) => {
+    if (ptrs.size === 1 && !moved && (performance.now() - dt0) < 450) {   // тап → карточка (только один палец)
+      // ловим клик и по кружку-маркеру, и по прямоугольнику надписи; из кандидатов — ближайший к точке
+      let best = -1, bd = 1e9;
+      for (const h of hits) {
+        const dd = Math.hypot(e.clientX - h.x, e.clientY - h.y);
+        const inDot = dd < h.r + 12;
+        const b = h.box, inBox = b && e.clientX >= b.x - 4 && e.clientX <= b.x + b.w + 4 && e.clientY >= b.y - 4 && e.clientY <= b.y + b.h + 4;
+        if ((inDot || inBox) && dd < bd) { bd = dd; best = h.i; }
+      }
+      if (best >= 0) { card.open(WORDS[best]); map.camVX = 0; map.camVY = 0; } else card.close();
+    }
+    ptrs.delete(e.pointerId);
+    if (ptrs.size < 2) pinchD = 0;
+    if (ptrs.size === 0) { map.dragging = false; moved = false; }
+    else if (ptrs.size === 1) { const p = [...ptrs.values()][0]; map.dragging = true; dx0 = lx = p.x; dy0 = ly = p.y; lt = performance.now(); }   // палец снят с пинча → продолжаем pan оставшимся
+    if (canvas.releasePointerCapture && e.pointerId != null) { try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} }
+  };
+  canvas.addEventListener('pointerup', up);
+  canvas.addEventListener('pointercancel', (e) => { ptrs.delete(e.pointerId); if (ptrs.size < 2) pinchD = 0; if (ptrs.size === 0) map.dragging = false; });
+
+  // панель
+  function apply(k, v) {
+    if (k === 'base') { P.base = v; rebuildCache(); }
+    else if (k === 'borders') { P.borders = v; rebuildCache(); }
+    else if (k === 'bg') { P.bg = v; rebuildCache(); }
+    else if (k === 'grain') { P.grain = v; document.getElementById('grain').style.opacity = v; }
+    else if (k === 'vign') { P.vign = v; document.getElementById('vign').style.opacity = v; }
+    else P[k] = v;
+  }
+  createTuner({
+    title: 'карта v3',
+    segments: [
+      { key: 'base', label: 'подложка', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
+      { key: 'borders', label: 'границы на растре', options: [[0, 'выкл'], [1, 'вкл']], value: 1 },
+    ],
+    groups: [{ title: 'карта', params: [
+      { key: 'label', label: 'размер подписей', min: 0.5, max: 2.2, step: .05, value: 1 },
+      { key: 'glow', label: 'свечение', min: 0, max: 1.5, step: .05, value: 0.5 },
+      { key: 'routes', label: 'маршруты', min: 0, max: 1, step: 1, value: 1 },
+      { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.05 },
+      { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
+      { key: 'bg', label: 'фон', min: 8, max: 40, step: 1, value: 15 },
+    ] }],
+    onChange: (k, v) => apply(k, v),
+  });
+
+  rebuildCache();   // подложка фикс. разрешения (resize/zoom её больше не пересобирают — только variant)
+  resize();
+  draw();   // синхронный первый кадр — чтобы headless захватил 2D-canvas (rAF-кадры он не тянет)
+  if (!new URLSearchParams(location.search).has('static')) requestAnimationFrame(frame);
+  window.__map = { ready: true, n: WORDS.length };
+  document.title = 'map READY ' + WORDS.length;
+} catch (e) { showErr((e && e.stack) || e); document.title = 'map ERROR'; console.error(e); }
+})();
+</script>
+</body></html>

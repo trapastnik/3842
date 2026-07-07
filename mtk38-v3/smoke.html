@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v3 · smoke</title>
+<!-- ESM-импорты Three (вендорено локально, без CDN). Открывать ТОЛЬКО по http. -->
+<script type="importmap">
+{ "imports": {
+  "three":         "./vendor/three/build/three.webgpu.js",
+  "three/webgpu":  "./vendor/three/build/three.webgpu.js",
+  "three/tsl":     "./vendor/three/build/three.tsl.js",
+  "three/addons/": "./vendor/three/jsm/"
+}}
+</script>
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--red:#A02128;--window:#9DA3A8}
+  html,body{margin:0;height:100%;overflow:hidden;background:#20272d;
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;color:var(--paper)}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;display:block}
+  #hud{position:fixed;left:16px;top:14px;z-index:5;font-size:13px;line-height:1.5;
+    background:rgba(20,25,28,.62);border:1px solid rgba(210,183,115,.35);border-radius:10px;
+    padding:10px 13px;backdrop-filter:blur(6px);white-space:pre}
+  #hud b{color:var(--brass)} .ok{color:#9fe0a0} .err{color:#ff8a8a}
+  #badge{color:var(--brass);font-weight:700}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">МТК 38 v3 · smoke-тест Ф0
+бэкенд: <span id="badge">…</span>
+статус: <span id="st">инициализация…</span></div>
+<script type="module">
+import { createRenderer, fit } from './engine/renderer.js';
+
+const hud = { badge: document.getElementById('badge'), st: document.getElementById('st') };
+const report = (s, cls) => { hud.st.textContent = s; if (cls) hud.st.className = cls; };
+window.__smoke = { ready:false, backend:null, error:null };
+
+try {
+  const canvas = document.getElementById('c');
+  const { THREE, renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap:'agx' });
+  window.__smoke.backend = backend;
+  hud.badge.textContent = backend + (webgpuAvailable ? '' : ' (фоллбэк)');
+  document.title = 'smoke READY:' + backend;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x20272d);
+  scene.fog = new THREE.FogExp2(0x20272d, 0.035);
+
+  const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 100);
+  camera.position.set(0, 0, 8);
+
+  // Латунный тор-узел — проверка PBR + тонемапа + теней-света.
+  const knot = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(1.6, 0.52, 220, 36),
+    new THREE.MeshStandardMaterial({ color:0xD2B773, metalness:0.92, roughness:0.32 })
+  );
+  scene.add(knot);
+
+  scene.add(new THREE.AmbientLight(0x9DA3A8, 0.6));
+  const key = new THREE.DirectionalLight(0xF7F9EF, 2.4); key.position.set(4, 6, 5); scene.add(key);
+  const rim = new THREE.PointLight(0xA02128, 30, 40);   rim.position.set(-5,-3,-4); scene.add(rim);
+
+  const resize = () => fit(renderer, camera, document.body);
+  addEventListener('resize', resize); resize();
+
+  let frames = 0;
+  renderer.setAnimationLoop(() => {
+    knot.rotation.x += 0.006; knot.rotation.y += 0.009;
+    renderer.renderAsync(scene, camera);
+    if (++frames === 3) { window.__smoke.ready = true; report('рендер идёт ✓ ('+backend+')', 'ok'); }
+  });
+} catch (e) {
+  window.__smoke.error = String(e && e.stack || e);
+  hud.badge.textContent = '—';
+  report('ОШИБКА: ' + (e && e.message || e), 'err');
+  document.title = 'smoke ERROR';
+  console.error(e);
+}
+</script>
+</body>
+</html>

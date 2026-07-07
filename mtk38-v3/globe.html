@@ -1,0 +1,293 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 v3 · Глобус (WebGPU)</title>
+<link rel="stylesheet" href="./fonts/faces.css">
+<script type="importmap">
+{ "imports": {
+  "three":         "./vendor/three/build/three.webgpu.js",
+  "three/webgpu":  "./vendor/three/build/three.webgpu.js",
+  "three/tsl":     "./vendor/three/build/three.tsl.js",
+  "three/addons/": "./vendor/three/jsm/"
+}}
+</script>
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--graphite:#435059;--red:#A02128;--window:#9DA3A8}
+  html,body{margin:0;height:100%;overflow:hidden;background:#12161a;
+    font-family:"20 Kopeek",ui-monospace,Menlo,monospace;color:var(--paper)}
+  #c{position:fixed;inset:0;width:100%;height:100%;display:block;cursor:grab;touch-action:none}
+  #c:active{cursor:grabbing}
+  /* виньетка поверх (дёшево и кинематографично) */
+  #vign{position:fixed;inset:0;z-index:6;pointer-events:none;
+    background:radial-gradient(ellipse 64% 64% at 50% 46%,transparent 30%,rgba(6,8,10,.82) 100%)}
+  /* плёночное зерно — дробит бандинг градиентов (сфера + CSS-виньетка) + кинематографик */
+  #grain{position:fixed;inset:0;z-index:7;pointer-events:none;opacity:.07;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:158px 158px}
+  #hint{position:fixed;left:16px;bottom:12px;z-index:7;font-size:12px;color:var(--window);opacity:.6;pointer-events:none}
+  #hint b{color:var(--brass)}
+  #err{position:fixed;left:16px;top:60px;z-index:9;max-width:60vw;color:#ff9a9a;font-size:13px;white-space:pre-wrap;display:none}
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="vign"></div>
+<div id="grain"></div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
+<div id="err"></div>
+<script type="module">
+import * as THREE from 'three';
+import { pass, uniform, convertToTexture, normalView, positionViewDirection, float, vec3, vec2 } from 'three/tsl';
+import { bloom } from 'three/addons/tsl/display/BloomNode.js';
+import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
+import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
+import { createRenderer, fit } from './engine/renderer.js';
+import { createStats } from './engine/stats.js';
+import { createCard } from './engine/card.js';
+import { createTuner } from './tuner.js';
+import { createGlobe } from './scenes/globe-rings.js';
+import { createEarth } from './scenes/earth.js';
+import { loadWords } from './engine/data.js';
+
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
+window.__globe = { ready: false };
+
+try {
+  const canvas = document.getElementById('c');
+  const DEBUG = new URLSearchParams(location.search).has('debug');  // ?debug=1 — крестик-центр + цифры
+  // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
+  if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
+  const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+
+  const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x12161a);
+  scene.fog = new THREE.FogExp2(0x12161a, 0.021);
+
+  const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+  camera.position.set(0, 0, 8.2);
+  camera.lookAt(0, 0, 0);
+
+  // глобус слов (структура v1) — без плоского тела: под именами ляжет Земля
+  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
+  scene.add(globe.group);
+  let autoSpin = 0.06;
+
+  // географический глобус ПОД именами — своя группа → своя скорость (параллакс-глубина)
+  let earth = null, earthYaw = -0.25, earthSpin = 0.028, earthMode = 'countries', earthBorders = false;
+  try { earth = await createEarth(THREE, { radius: 2.5 * 0.965, mode: earthMode }); scene.add(earth.group); }
+  catch (e) { console.warn('[earth off]', e); }
+
+  // свет — лепит тело (слова unlit, остаются читаемыми)
+  scene.add(new THREE.AmbientLight(0x9DA3A8, 0.45));
+  const key = new THREE.DirectionalLight(0xF7F9EF, 1.7); key.position.set(-4, 5, 4); scene.add(key);
+  const warm = new THREE.PointLight(0xD2B773, 16, 32); warm.position.set(5, -2, 3); scene.add(warm);
+
+  // латунное гало за глобусом
+  scene.add(makeHalo());
+
+  function makeHalo() {
+    const s = 256, cv = document.createElement('canvas'); cv.width = cv.height = s;
+    const x = cv.getContext('2d');
+    const g = x.createRadialGradient(s / 2, s / 2, s * 0.16, s / 2, s / 2, s * 0.5);
+    g.addColorStop(0, 'rgba(210,183,115,0.34)');
+    g.addColorStop(0.45, 'rgba(210,183,115,0.10)');
+    g.addColorStop(1, 'rgba(210,183,115,0)');
+    x.fillStyle = g; x.fillRect(0, 0, s, s);
+    const t = new THREE.CanvasTexture(cv); t.colorSpace = THREE.SRGBColorSpace;
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: t, blending: THREE.AdditiveBlending, depthTest: false, depthWrite: false, transparent: true }));
+    sp.scale.set(7.4, 7.4, 1); sp.position.set(0, 0, -2); sp.renderOrder = -10;
+    return sp;
+  }
+
+  // живые юниформы пост-эффектов (крутятся из tuner)
+  const uDofFocus = uniform(8.2), uDofRange = uniform(6.0), uDofBokeh = uniform(0.0), uCa = uniform(0.4), uAtmo = uniform(1.0);
+  let bloomPass = null;
+
+  // fresnel-атмосфера (латунный лимб) — TSL-нода на оболочке-сфере, аддитивно
+  try {
+    const atmoMat = new THREE.MeshBasicNodeMaterial();
+    atmoMat.transparent = true; atmoMat.depthWrite = false; atmoMat.depthTest = false;
+    atmoMat.side = THREE.FrontSide; atmoMat.blending = THREE.AdditiveBlending;
+    const fres = float(1).sub(normalView.dot(positionViewDirection).max(0)).pow(2.6);
+    atmoMat.colorNode = vec3(0.823, 0.718, 0.451);     // латунь
+    atmoMat.opacityNode = fres.mul(uAtmo);
+    const atmo = new THREE.Mesh(new THREE.SphereGeometry(2.5 * 1.045, 64, 48), atmoMat);
+    atmo.renderOrder = 5; scene.add(atmo);
+  } catch (e) { console.warn('[atmo off]', e); }
+
+  // кино-пост: DOF (rack-focus) → bloom → хром. аберрация. Параметры живые (юниформы выше).
+  let post = null;
+  try {
+    post = new THREE.PostProcessing(renderer);
+    const scenePass = pass(scene, camera);
+    const colorTex = scenePass.getTextureNode('output');
+    let base = colorTex;
+    try { base = dof(colorTex, scenePass.getViewZNode(), uDofFocus, uDofRange, uDofBokeh); }
+    catch (e) { console.warn('[dof off]', e); base = colorTex; }
+    const baseTex = convertToTexture(base);
+    let out = baseTex;
+    try { bloomPass = bloom(baseTex, 0.5, 0.42, 0.82); out = baseTex.add(bloomPass); }
+    catch (e) { console.warn('[bloom off]', e); out = baseTex; }
+    try { out = chromaticAberration(out, uCa, vec2(0.5, 0.5), 1.1); }
+    catch (e) { console.warn('[ca off]', e); }
+    post.outputNode = out;
+  } catch (err) { console.warn('[post off]', err); post = null; }
+
+  // карточка языка Р2 (переиспользуемый модуль по образцу v2)
+  const card = createCard();
+  const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
+  function tapAt(cx, cy) {
+    ndc.set((cx / globalThis.innerWidth) * 2 - 1, -(cy / globalThis.innerHeight) * 2 + 1);
+    ray.setFromCamera(ndc, camera);
+    const hit = ray.intersectObjects(globe.meshes, false)[0];   // FrontSide → только видимые (передние) слова
+    if (hit && hit.object.userData.wi != null) card.open(WORDS[hit.object.userData.wi]);
+    else card.close();
+  }
+
+  // drag-вращение + инерция + авто-вращение; ТАП (без движения, быстро) → карточка
+  const R = { yaw: -0.25, pitch: -0.14, vy: 0.10, vp: 0, drag: false, lx: 0, ly: 0, lt: 0, dx0: 0, dy0: 0, dt0: 0, moved: false };
+  canvas.addEventListener('pointerdown', (e) => {
+    R.drag = true; R.moved = false; R.lx = e.clientX; R.ly = e.clientY; R.lt = performance.now();
+    R.dx0 = e.clientX; R.dy0 = e.clientY; R.dt0 = R.lt;
+    canvas.setPointerCapture && canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (!R.drag) return;
+    if (Math.hypot(e.clientX - R.dx0, e.clientY - R.dy0) > 6) R.moved = true;
+    const now = performance.now(), dt = Math.max(16, now - R.lt);
+    const dx = e.clientX - R.lx, dy = e.clientY - R.ly;
+    R.yaw += dx * 0.005; earthYaw += dx * 0.005; R.pitch = clamp(R.pitch + dy * 0.005, -1.15, 1.15);
+    R.vy = dx * 0.005 / (dt / 1000); R.vp = dy * 0.005 / (dt / 1000);
+    R.lx = e.clientX; R.ly = e.clientY; R.lt = now;
+  }, { passive: true });
+  const endDrag = (e) => {
+    if (R.drag && !R.moved && (performance.now() - R.dt0) < 400) tapAt(e.clientX, e.clientY);
+    R.drag = false;
+    if (canvas.releasePointerCapture && e && e.pointerId != null) { try { canvas.releasePointerCapture(e.pointerId); } catch (_) {} }
+  };
+  canvas.addEventListener('pointerup', endDrag);
+  canvas.addEventListener('pointercancel', () => { R.drag = false; });
+
+  if (DEBUG) {
+    const cr = document.createElement('div');
+    cr.style.cssText = 'position:fixed;inset:0;z-index:20;pointer-events:none';
+    cr.innerHTML = '<div style="position:absolute;left:50%;top:0;width:1px;height:100%;background:rgba(255,80,80,.7)"></div>'
+      + '<div style="position:absolute;top:50%;left:0;height:1px;width:100%;background:rgba(255,80,80,.7)"></div>';
+    document.body.appendChild(cr);
+  }
+  const stats = createStats(renderer, {
+    extra: () => {
+      let s = `слова     ${globe.count} (меш ${globe.drawWords})`;
+      if (DEBUG) {
+        const r = canvas.getBoundingClientRect();
+        s += `\n— debug —\nwin ${globalThis.innerWidth}×${globalThis.innerHeight} dpr ${globalThis.devicePixelRatio}`
+          + `\nbuf ${canvas.width}×${canvas.height}`
+          + `\nrect ${r.left | 0},${r.top | 0} ${r.width | 0}×${r.height | 0}`
+          + `\naspect ${camera.aspect.toFixed(3)}`;
+      }
+      return s;
+    },
+  });
+
+  // плотность — перестройка глобуса (debounce); масштабирует и число слов (стресс ×N)
+  let densityTimer = 0;
+  function setDensity(d) {
+    clearTimeout(densityTimer);
+    densityTimer = setTimeout(() => {
+      const old = globe;
+      scene.remove(old.group);
+      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
+      scene.add(globe.group);
+      old.dispose();
+    }, 180);
+  }
+
+  // живая панель параметров (переиспользуемый tuner.js)
+  function apply(k, v) {
+    switch (k) {
+      case 'spin': autoSpin = v; break;
+      case 'density': setDensity(v); break;
+      case 'exposure': renderer.toneMappingExposure = v; break;
+      case 'bloom': if (bloomPass) bloomPass.strength.value = v; break;
+      case 'bloomThr': if (bloomPass) bloomPass.threshold.value = v; break;
+      case 'atmo': uAtmo.value = v; break;
+      case 'dofBokeh': uDofBokeh.value = v; break;
+      case 'dofFocus': uDofFocus.value = v; break;
+      case 'ca': uCa.value = v; break;
+      case 'fog': scene.fog.density = v; break;
+      case 'grain': { const g = document.getElementById('grain'); if (g) g.style.opacity = v; break; }
+      case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
+      case 'earthSpin': earthSpin = v; break;
+      case 'earthGlow': if (earth) earth.setGlow(v); break;
+      case 'earthMap': earthMode = v; if (earth) earth.setMode(earthMode, earthBorders); break;
+      case 'earthBorders': earthBorders = !!v; if (earth) earth.setMode(earthMode, earthBorders); break;
+    }
+  }
+  createTuner({
+    title: 'глобус v3',
+    segments: [
+      { key: 'earthMap', label: 'карта Земли', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
+      { key: 'earthBorders', label: 'границы на карте', options: [[0, 'выкл'], [1, 'вкл']], value: 0 },
+    ],
+    groups: [
+      { title: 'сфера', params: [
+        { key: 'spin', label: 'вращение', min: 0, max: 1.2, step: .01, value: 0.06 },
+        { key: 'density', label: 'плотность', min: 0.5, max: 2.2, step: .05, value: 1 },
+      ] },
+      { title: 'свет / пост', params: [
+        { key: 'exposure', label: 'экспозиция', min: 0.4, max: 1.8, step: .02, value: 1.0 },
+        { key: 'bloom', label: 'свечение', min: 0, max: 2, step: .02, value: 0.5 },
+        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: 0.82 },
+        { key: 'atmo', label: 'атмосфера', min: 0, max: 3, step: .05, value: 1.0 },
+        { key: 'dofBokeh', label: 'DOF боке', min: 0, max: 3, step: .05, value: 0 },
+        { key: 'dofFocus', label: 'DOF фокус', min: 4, max: 13, step: .1, value: 8.2 },
+        { key: 'ca', label: 'аберрация', min: 0, max: 3, step: .05, value: 0.4 },
+        { key: 'fog', label: 'туман', min: 0, max: 0.06, step: .002, value: 0.021 },
+        { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.07 },
+        { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
+      ] },
+      { title: 'земля', params: [
+        { key: 'earthSpin', label: 'скорость Земли', min: 0, max: 0.5, step: .005, value: 0.028 },
+        { key: 'earthGlow', label: 'яркость линий', min: 0, max: 1.5, step: .05, value: 0.7 },
+      ] },
+    ],
+    onChange: (k, v) => apply(k, v),
+  });
+
+  const onResize = () => { fit(renderer, camera); if (post) post.needsUpdate = true; };
+  addEventListener('resize', onResize);
+  if (globalThis.ResizeObserver) new ResizeObserver(onResize).observe(document.documentElement);
+  onResize();
+  requestAnimationFrame(onResize);   // повторный фит после раскладки (Retina/позднее layout)
+
+  // ручной rAF-цикл: ждём завершения renderAsync → renderer.info заполнен → монитор честен
+  let prev = performance.now(), n = 0;
+  async function frame() {
+    const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
+    if (!R.drag) {
+      R.yaw += (R.vy + autoSpin) * dt;
+      R.pitch = clamp(R.pitch + R.vp * dt, -1.15, 1.15);
+      R.vy *= Math.pow(0.94, dt * 60); R.vp *= Math.pow(0.9, dt * 60);
+      earthYaw += earthSpin * dt;   // Земля дрейфует со своей скоростью (параллакс к именам)
+    }
+    globe.group.rotation.set(R.pitch, R.yaw, 0);
+    if (earth) earth.group.rotation.set(R.pitch, earthYaw, 0);
+    if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
+    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    if (++n === 3) { window.__globe = { ready: true, backend, count: globe.count }; document.title = 'globe READY:' + backend; }
+    requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+} catch (e) {
+  showErr((e && e.stack) || e);
+  document.title = 'globe ERROR';
+  console.error(e);
+}
+</script>
+</body>
+</html>

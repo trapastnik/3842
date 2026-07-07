@@ -41,9 +41,12 @@ def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
     return urllib.request.urlopen(req, timeout=40).read()
 
-def css_woff2_url(family, text):
-    q = urllib.parse.urlencode({"family": family, "text": text})
-    css = fetch("https://fonts.googleapis.com/css2?" + q).decode("utf-8")
+def css_woff2_url(family, text, weight=None):
+    fam = family.replace(" ", "+")
+    if weight:                       # axis-синтаксис :wght@N — двоеточие/собаку НЕ кодируем
+        fam += f":wght@{weight}"
+    url = "https://fonts.googleapis.com/css2?family=" + fam + "&text=" + urllib.parse.quote(text)
+    css = fetch(url).decode("utf-8")
     m = re.search(r"src:\s*url\(([^)]+)\)", css)
     return m.group(1) if m else None
 
@@ -57,22 +60,29 @@ for l in data["languages"]:
     s = chars.setdefault(iso, set())
     s.update(l["writing"]); s.update(l["endonym"])
 
-manifest, total = [], 0
+manifest, bold, total = [], [], 0
 for iso in sorted(chars):
     text = "".join(sorted(chars[iso]))
     try:
-        url = css_woff2_url(FAMILY[iso], text)
+        url = css_woff2_url(FAMILY[iso], text)              # обычный (400)
         if not url:
             print(f"  ✗ {iso} ({FAMILY[iso]}): нет url в CSS", file=sys.stderr); continue
-        woff2 = fetch(url)
-        with open(os.path.join(OUTDIR, f"{iso}.woff2"), "wb") as f:
-            f.write(woff2)
-        manifest.append(iso); total += len(woff2)
-        print(f"  ✓ {iso:5} {FAMILY[iso]:24} {len(woff2):>6} b  «{text[:14]}»")
+        w = fetch(url)
+        open(os.path.join(OUTDIR, f"{iso}.woff2"), "wb").write(w)
+        manifest.append(iso); total += len(w); nb = ""
+        try:                                                # жирный (700)
+            ub = css_woff2_url(FAMILY[iso], text, 700)
+            if ub:
+                wb = fetch(ub)
+                open(os.path.join(OUTDIR, f"{iso}-700.woff2"), "wb").write(wb)
+                bold.append(iso); total += len(wb); nb = f"+bold {len(wb)}b"
+        except Exception as e:
+            print(f"    (bold {iso}: {e})", file=sys.stderr)
+        print(f"  ✓ {iso:5} {FAMILY[iso]:22} 400:{len(w):>5}b  {nb}")
     except Exception as e:
         print(f"  ✗ {iso} ({FAMILY[iso]}): {e}", file=sys.stderr)
 
-json.dump({"scripts": manifest, "note": "subset-Noto только для валидатора"},
+json.dump({"scripts": manifest, "bold": bold, "note": "subset-Noto (400+700) только для валидатора"},
           open(os.path.join(OUTDIR, "manifest.json"), "w", encoding="utf-8"),
           ensure_ascii=False, indent=2)
-print(f"\nписьменностей: {len(manifest)} · суммарно {total/1024:.1f} КБ · {OUTDIR}")
+print(f"\nписьменностей: {len(manifest)} (+bold {len(bold)}) · суммарно {total/1024:.1f} КБ · {OUTDIR}")
