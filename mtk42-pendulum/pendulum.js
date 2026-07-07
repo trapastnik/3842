@@ -37,6 +37,11 @@ const DEFAULTS = {
   yearBold: false,
   // Card design
   cardDesign: "v1",
+  // Pendulum curve extras
+  smoothWindow: 7,
+  strokeOpacity: 62,
+  // Background diagonals
+  stripeOpacity: 100,
 };
 const CATEGORY_FLAG = {
   leaders: "catLeaders",
@@ -261,7 +266,7 @@ function drawPendulum(root, items) {
     buckets.get(it.year).push(it.tone);
   }
   const series = [];
-  const HALF_WIN = 7;
+  const HALF_WIN = Math.max(1, state.settings.smoothWindow || 7);
   for (let y = YEAR_MIN; y <= YEAR_MAX; y++) {
     let sum = 0;
     let count = 0;
@@ -433,6 +438,8 @@ function applyVisualSettings() {
   root.style.setProperty("--year-size",  s.yearSize  + "px");
   root.style.setProperty("--year-opacity", (s.yearOpacity / 100).toFixed(2));
   root.style.setProperty("--year-weight", s.yearBold ? 700 : 400);
+  root.style.setProperty("--stripe-opacity", (s.stripeOpacity / 100).toFixed(2));
+  root.style.setProperty("--pendulum-opacity", (s.strokeOpacity / 100).toFixed(2));
   document.body.classList.toggle("hide-pendulum", !s.showPendulum);
   document.body.classList.toggle("hide-ruler", !s.showRuler);
   document.body.classList.toggle("hide-epochs", !s.showEpochs);
@@ -474,7 +481,7 @@ function onSliderChange(el) {
   const num = $(`[data-bind-num="${key}"]`);
   if (num) num.textContent = v;
   saveSettings();
-  if (key === "pxPerYear") {
+  if (key === "pxPerYear" || key === "smoothWindow") {
     rebuildChart();
   } else if (key === "dotSize") {
     applyVisualSettings();

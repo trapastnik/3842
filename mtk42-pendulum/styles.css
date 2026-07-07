@@ -75,10 +75,21 @@ html, body {
   grid-template-rows: auto auto 1fr;
   isolation: isolate;
   background:
-    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
-    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%),
     radial-gradient(ellipse 120% 85% at 50% 32%, rgba(67, 80, 89, 0.40), rgba(12, 16, 18, 0.96)),
     var(--graphite);
+}
+/* Diagonal red + brass accents — separated onto ::after so their opacity
+ * is a single controllable variable (--stripe-opacity, 0..1). */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  background:
+    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
+    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%);
 }
 .stage::before {
   content: "";
@@ -296,10 +307,11 @@ html, body {
 }
 .pendulum-path {
   fill: none;
-  stroke: rgba(210, 183, 115, 0.62);
+  stroke: var(--brass);
   stroke-width: var(--pendulum-stroke, 6);
   stroke-linecap: round;
   stroke-linejoin: round;
+  opacity: var(--pendulum-opacity, 0.62);
   filter: drop-shadow(0 0 10px rgba(210, 183, 115, 0.32));
 }
 body.hide-pendulum .pendulum-svg { display: none; }
