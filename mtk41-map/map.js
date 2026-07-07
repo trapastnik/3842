@@ -221,11 +221,21 @@
 
   function drawMonuments() {
     placedMonuments.length = 0;
+    // Zoom-adjusted cull: at zoom<1 the viewport spans MORE pre-zoom units
+    // than [0..width]. Without the correction Америки/Австралия отваливались.
+    const zoom = Math.max(0.01, map.zoom);
+    const halfViewW = width / (2 * zoom);
+    const halfViewH = height / (2 * zoom);
+    const viewMinX = width * 0.5 - halfViewW;
+    const viewMaxX = width * 0.5 + halfViewW;
+    const viewMinY = height * 0.5 - halfViewH;
+    const viewMaxY = height * 0.5 + halfViewH;
     for (let i = 0; i < monuments.length; i += 1) {
       const m = monuments[i];
       if (typeof m.lat !== "number" || typeof m.lng !== "number") continue;
       const s = pointToScreen(m.lat, m.lng);
-      if (s.x < -50 || s.x > width + 50 || s.y < -50 || s.y > height + 50) continue;
+      if (s.x < viewMinX - 50 || s.x > viewMaxX + 50 ||
+          s.y < viewMinY - 50 || s.y > viewMaxY + 50) continue;
       const r = pointRadius(m);
       placedMonuments.push({ i, x: s.x, y: s.y, r });
     }
