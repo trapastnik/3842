@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Хронология (иерархия)</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — хронология">
+    <canvas id="timeline" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>Хронология Ленинианы</h1>
+      <div class="subtitle">236 памятников, 1921–2020. Тап на кружок — распадается на подкружки: декада → год → отдельные памятники. Верх — сохранились, низ — снесены.</div>
+    </header>
+    <aside id="card" class="card" data-mtk-card hidden></aside>
+    <button id="home-chip" class="home-chip" type="button" aria-label="Вся хронология" hidden>
+      ← вся хронология
+    </button>
+    <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+    <aside id="settings-panel" class="settings-panel" hidden>
+      <h2>Настройки</h2>
+
+      <fieldset class="settings-row">
+        <legend>Размер кружка</legend>
+        <div class="segmented" role="radiogroup" aria-label="Размер кружка">
+          <button type="button" data-size-mode="sqrt" class="active" role="radio" aria-checked="true">√N</button>
+          <button type="button" data-size-mode="linear" role="radio" aria-checked="false">N</button>
+          <button type="button" data-size-mode="log" role="radio" aria-checked="false">log N</button>
+        </div>
+      </fieldset>
+
+      <fieldset class="settings-row">
+        <legend>Порог DECADE → YEAR</legend>
+        <input type="range" id="thr-decade" min="1.2" max="3.0" step="0.05" value="1.8">
+        <span data-value-for="thr-decade">1.80×</span>
+      </fieldset>
+
+      <fieldset class="settings-row">
+        <legend>Порог YEAR → LEAF</legend>
+        <input type="range" id="thr-year" min="3.0" max="10.0" step="0.1" value="5.0">
+        <span data-value-for="thr-year">5.00×</span>
+      </fieldset>
+
+      <fieldset class="settings-row">
+        <legend>Размер названий</legend>
+        <input type="range" id="opt-label-scale" min="0.5" max="3.0" step="0.05" value="1.4">
+        <span data-value-for="opt-label-scale">1.40×</span>
+      </fieldset>
+
+      <fieldset class="settings-row settings-checks">
+        <label><input type="checkbox" id="opt-events" checked> исторические события на оси</label>
+        <label><input type="checkbox" id="opt-crossfade" checked> cross-fade между уровнями</label>
+        <label><input type="checkbox" id="opt-show3d" checked> 3D-модель в карточке</label>
+      </fieldset>
+
+      <button type="button" id="opt-reset" class="reset-btn">сбросить настройки</button>
+    </aside>
+
+    <div class="legend" aria-hidden="true">
+      <div class="legend-row"><span class="dot dot-extant"></span><span>сохранился · верхняя дорожка</span></div>
+      <div class="legend-row"><span class="dot dot-unknown"></span><span>судьба неизвестна · центр</span></div>
+      <div class="legend-row"><span class="dot dot-demolished"></span><span>снесён · нижняя дорожка</span></div>
+      <div class="legend-row legend-size"><span class="dot dot-small"></span>→<span class="dot dot-big"></span> размер ~ N памятников</div>
+    </div>
+  </main>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../assets/mtk41/lib/three/three.module.min.js",
+      "three/addons/": "../assets/mtk41/lib/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { initMtkCard } from "../assets/mtk41/lib/card.js";
+    initMtkCard();
+  </script>
+  <script src="./timeline.js"></script>
+</body>
+</html>
