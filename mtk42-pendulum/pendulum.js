@@ -40,8 +40,6 @@ const DEFAULTS = {
   // Pendulum curve extras
   smoothWindow: 7,
   strokeOpacity: 62,
-  // Background diagonals
-  stripeOpacity: 100,
 };
 const CATEGORY_FLAG = {
   leaders: "catLeaders",
@@ -438,7 +436,6 @@ function applyVisualSettings() {
   root.style.setProperty("--year-size",  s.yearSize  + "px");
   root.style.setProperty("--year-opacity", (s.yearOpacity / 100).toFixed(2));
   root.style.setProperty("--year-weight", s.yearBold ? 700 : 400);
-  root.style.setProperty("--stripe-opacity", (s.stripeOpacity / 100).toFixed(2));
   root.style.setProperty("--pendulum-opacity", (s.strokeOpacity / 100).toFixed(2));
   document.body.classList.toggle("hide-pendulum", !s.showPendulum);
   document.body.classList.toggle("hide-ruler", !s.showRuler);
