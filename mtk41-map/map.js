@@ -57,9 +57,30 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  // Winkel Tripel projection — used for the world view. Better than
+  // equirectangular for continents at high latitude (USA, Canada, Scandinavia)
+  // and avoids the "stretched Alaska" problem while still readable.
+  //   Reference: https://en.wikipedia.org/wiki/Winkel_tripel_projection
+  //   Standard parallel: φ₁ = arccos(2/π) ≈ 50.4657°
+  //   Output bounds: x ∈ [-(2+π)/2, (2+π)/2] ≈ ±2.5708, y ∈ [-π/2, π/2] ≈ ±1.5708
+  //   Aspect ratio (2+π)/π ≈ 1.637
+  const WT_COS_PHI1 = 2 / Math.PI;                    // cos(arccos(2/π)) = 2/π
+  const WT_X_HALF = (2 + Math.PI) / 2;
+  const WT_Y_HALF = Math.PI / 2;
+
   function project(lat, lng) {
-    const x = ((lng + 180) / 360) * map.worldW;
-    const y = ((90 - lat) / 180) * map.worldH;
+    // lat, lng in degrees → world-px coords in [0, worldW] × [0, worldH]
+    const phi = lat * Math.PI / 180;
+    const lambda = lng * Math.PI / 180;
+    const cosphi = Math.cos(phi);
+    const cosLambdaHalf = Math.cos(lambda / 2);
+    const alpha = Math.acos(cosphi * cosLambdaHalf);
+    const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
+    const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
+    const wy = 0.5 * (phi + Math.sin(phi) / sinc);
+    // Normalize to [0,1] then scale to worldW × worldH (north up → invert y)
+    const x = (wx + WT_X_HALF) / (2 * WT_X_HALF) * map.worldW;
+    const y = (WT_Y_HALF - wy) / (2 * WT_Y_HALF) * map.worldH;
     return { x, y };
   }
 
@@ -164,19 +185,19 @@
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
-    // Ex-USSR span: lng ~16°E (Шпицберген) … ~163°E (Камчатка) = ~148°;
-    // 14 ex-USSR республик + Россия + outliers. Default view: cluster of
-    // European Russia + Восток Украина/Беларусь/Кавказ/Казахстан, with
-    // Дальний Восток reachable via pan or zoom-out. -30% от вчерашних
-    // 95/135 — точки 167 чтоб не размазывались по пустой Сибири.
+    // World coordinates use Winkel Tripel projection. Range: full 360° lng
+    // covered by worldW; aspect ratio (2+π)/π ≈ 1.637.
+    // targetLngSpan = how many degrees of longitude fit the viewport at zoom=1.
+    // 236 памятников в 45 странах → удобно видеть большую часть мира разом.
     const isPortrait = height > width;
-    const targetLngSpan = isPortrait ? 67 : 95;
+    const targetLngSpan = isPortrait ? 130 : 180;
     map.worldW = (width / targetLngSpan) * 360;
-    map.worldH = map.worldW / 2;
+    map.worldH = map.worldW / 1.637;
 
-    // Initial camera centered on ~lng 60°, ~lat 55° — covers most of
-    // Russia + Belarus/Украина/Прибалтика на западе, Казахстан/Каспий на юге.
-    const center = project(55, 60);
+    // Initial camera centered on ~lng 30°, ~lat 40° — покрывает Европу,
+    // Северную Африку, Ближний Восток, ex-USSR западная половина.
+    // США/Австралия/Дальний Восток — pan или zoom-out.
+    const center = project(40, 30);
     map.camX = center.x - width * 0.5;
     map.camY = center.y - height * 0.5;
 
@@ -430,10 +451,12 @@
     if (Math.abs(map.camVY) < 0.4) map.camVY = 0;
 
     // Pan clamps — keep the interesting region visible
-    const minX = project(0, 10).x - width * 0.1;
+    // Worldwide pan clamps — allow the whole globe to be reached while
+    // keeping some slop so the map doesn't scroll into empty space.
+    const minX = project(0, -170).x - width * 0.1;
     const maxX = project(0, 170).x - width * 0.9;
-    const minY = project(80, 0).y - height * 0.1;
-    const maxY = project(30, 0).y - height * 0.9;
+    const minY = project(85, 0).y - height * 0.1;
+    const maxY = project(-60, 0).y - height * 0.9;
     if (map.camX < minX) map.camX = minX;
     if (map.camX > maxX) map.camX = maxX;
     if (map.camY < minY) map.camY = minY;

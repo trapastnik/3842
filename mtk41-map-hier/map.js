@@ -59,6 +59,7 @@
 
   const SETTINGS_KEY = "mtk41-map-hier-settings";
   const DEFAULT_SETTINGS = {
+    viewPreset: "eurasia",    // world | eurasia | ex-ussr
     sizeMode: "sqrt",         // sqrt | linear | log
     thrMacro: 1.0,            // z < thrMacro → LEVEL_MACRO
     thrCountry: 1.8,          // thrMacro..thrCountry → LEVEL_COUNTRY
@@ -67,6 +68,15 @@
     showConnectors: true,
     showOutliers: true,
     crossfade: true,
+    showMacroLabels: true,    // labels на LEVEL_MACRO кружках
+  };
+
+  // Preset view configurations (lat, lng of camera target, zoom level).
+  // Applied via applyViewPreset() at boot and when user picks in panel.
+  const VIEW_PRESETS = {
+    "world":   { lat: 15,  lng: 20,  zoom: 0.42 },  // Africa/Middle East centered, all continents visible
+    "eurasia": { lat: 42,  lng: 30,  zoom: 0.70 },  // Europe + ex-USSR in main view
+    "ex-ussr": { lat: 55,  lng: 55,  zoom: 1.15 },  // Original ex-USSR closeup
   };
   function loadSettings() {
     try {
@@ -90,9 +100,23 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
+  // Winkel Tripel projection — full-world aspect ratio (2+π)/π ≈ 1.637.
+  // Better for continents at high latitude than equirectangular.
+  const WT_COS_PHI1 = 2 / Math.PI;
+  const WT_X_HALF = (2 + Math.PI) / 2;
+  const WT_Y_HALF = Math.PI / 2;
+
   function project(lat, lng) {
-    const x = ((lng + 180) / 360) * map.worldW;
-    const y = ((90 - lat) / 180) * map.worldH;
+    const phi = lat * Math.PI / 180;
+    const lambda = lng * Math.PI / 180;
+    const cosphi = Math.cos(phi);
+    const cosLambdaHalf = Math.cos(lambda / 2);
+    const alpha = Math.acos(cosphi * cosLambdaHalf);
+    const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
+    const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
+    const wy = 0.5 * (phi + Math.sin(phi) / sinc);
+    const x = (wx + WT_X_HALF) / (2 * WT_X_HALF) * map.worldW;
+    const y = (WT_Y_HALF - wy) / (2 * WT_Y_HALF) * map.worldH;
     return { x, y };
   }
 
@@ -107,27 +131,75 @@
 
   // ---------- Macro regions + ISO → macro mapping ------------------------
 
-  // Test-order matters: outliers first (small bboxes), then narrow-range
-  // macros (Балтика, Кавказ) before broad ones (Европейская Россия).
+  // MACRO_REGIONS declares the FULL ordered list of macros (used for tree
+  // iteration + naming). Bbox fields are used only for RU items lacking
+  // country_iso (via RU_MACRO_BBOX_ORDER below); non-RU items are dispatched
+  // by ISO_TO_MACRO. World macros carry a "world" flag so RU never matches.
   const MACRO_REGIONS = [
-    { key: "antarctica",   name: "Антарктида",         minLat: -90, maxLat: -60, minLng: -180, maxLng: 180, isOutlier: true },
-    { key: "spitzbergen",  name: "Шпицберген",         minLat: 75,  maxLat: 82,  minLng: 5,    maxLng: 35,  isOutlier: true },
-    { key: "baltic",       name: "Балтика",            minLat: 54,  maxLat: 60,  minLng: 20,   maxLng: 29 },
-    { key: "caucasus",     name: "Кавказ",             minLat: 38,  maxLat: 45,  minLng: 36,   maxLng: 52 },
-    { key: "central_asia", name: "Средняя Азия",       minLat: 35,  maxLat: 50,  minLng: 50,   maxLng: 80 },
-    { key: "east_europe",  name: "Восточная Европа",   minLat: 44,  maxLat: 53,  minLng: 21,   maxLng: 40 },
-    { key: "urals",        name: "Урал",               minLat: 50,  maxLat: 66,  minLng: 60,   maxLng: 70 },
-    { key: "far_east",     name: "Дальний Восток",     minLat: 42,  maxLat: 75,  minLng: 130,  maxLng: 180 },
-    { key: "siberia",      name: "Сибирь",             minLat: 50,  maxLat: 73,  minLng: 70,   maxLng: 130 },
-    { key: "eur_russia",   name: "Европейская Россия", minLat: 44,  maxLat: 72,  minLng: 27,   maxLng: 60 },
-    { key: "other",        name: "Прочие",             minLat: -90, maxLat: 90,  minLng: -180, maxLng: 180 },  // catch-all
+    // Outliers first (small bboxes)
+    { key: "antarctica",       name: "Антарктида",         minLat: -90, maxLat: -60, minLng: -180, maxLng: 180, isOutlier: true },
+    { key: "spitzbergen",      name: "Шпицберген",         minLat: 75,  maxLat: 82,  minLng: 5,    maxLng: 35,  isOutlier: true },
+    // ex-USSR bbox-driven macros
+    { key: "baltic",           name: "Балтика",            minLat: 54,  maxLat: 60,  minLng: 20,   maxLng: 29 },
+    { key: "caucasus",         name: "Кавказ",             minLat: 38,  maxLat: 45,  minLng: 36,   maxLng: 52 },
+    { key: "central_asia",     name: "Средняя Азия",       minLat: 35,  maxLat: 50,  minLng: 50,   maxLng: 80 },
+    { key: "east_europe",      name: "Восточная Европа",   minLat: 44,  maxLat: 53,  minLng: 21,   maxLng: 40 },
+    { key: "urals",            name: "Урал",               minLat: 50,  maxLat: 66,  minLng: 60,   maxLng: 70 },
+    { key: "far_east",         name: "Дальний Восток",     minLat: 42,  maxLat: 75,  minLng: 130,  maxLng: 180 },
+    { key: "siberia",          name: "Сибирь",             minLat: 45,  maxLat: 73,  minLng: 70,   maxLng: 130 },
+    { key: "eur_russia",       name: "Европейская Россия", minLat: 44,  maxLat: 72,  minLng: 27,   maxLng: 60 },
+    // World macros — ISO-only, never fire bbox test for RU
+    { key: "western_europe",   name: "Западная Европа",    minLat: 43,  maxLat: 60,  minLng: -10,  maxLng: 15,  isWorld: true },
+    { key: "central_europe",   name: "Центральная Европа", minLat: 45,  maxLat: 55,  minLng: 14,   maxLng: 27,  isWorld: true },
+    { key: "northern_europe",  name: "Северная Европа",    minLat: 55,  maxLat: 72,  minLng: 4,    maxLng: 32,  isWorld: true },
+    { key: "southern_europe",  name: "Южная Европа",       minLat: 34,  maxLat: 46,  minLng: -10,  maxLng: 20,  isWorld: true },
+    { key: "balkans",          name: "Балканы",            minLat: 39,  maxLat: 48,  minLng: 18,   maxLng: 30,  isWorld: true },
+    { key: "north_america",    name: "Северная Америка",   minLat: 25,  maxLat: 70,  minLng: -170, maxLng: -50, isWorld: true },
+    { key: "latin_america",    name: "Латинская Америка",  minLat: -60, maxLat: 30,  minLng: -120, maxLng: -30, isWorld: true },
+    { key: "east_asia",        name: "Восточная Азия",     minLat: 10,  maxLat: 45,  minLng: 90,   maxLng: 145, isWorld: true },
+    { key: "south_asia",       name: "Южная Азия",         minLat: -25, maxLat: 40,  minLng: 55,   maxLng: 95,  isWorld: true },
+    { key: "africa",           name: "Африка",             minLat: -35, maxLat: 37,  minLng: -20,  maxLng: 55,  isWorld: true },
+    { key: "oceania",          name: "Океания",            minLat: -50, maxLat: -5,  minLng: 110,  maxLng: 180, isWorld: true },
+    { key: "other",            name: "Прочие",             minLat: -90, maxLat: 90,  minLng: -180, maxLng: 180 },
   ];
 
   const ISO_TO_MACRO = {
+    // ex-USSR
     UA: "east_europe", BY: "east_europe", MD: "east_europe",
     EE: "baltic", LV: "baltic", LT: "baltic",
     AM: "caucasus", AZ: "caucasus", GE: "caucasus",
     KZ: "central_asia", UZ: "central_asia", KG: "central_asia", TJ: "central_asia", TM: "central_asia",
+    // Western Europe
+    DE: "western_europe", FR: "western_europe", GB: "western_europe",
+    NL: "western_europe", CH: "western_europe", DK: "western_europe",
+    BE: "western_europe", IE: "western_europe", LU: "western_europe",
+    // Central Europe
+    PL: "central_europe", CZ: "central_europe", SK: "central_europe",
+    HU: "central_europe", RO: "central_europe", AT: "central_europe",
+    // Northern Europe (Scandinavia + Iceland, кроме прибалтики)
+    SE: "northern_europe", FI: "northern_europe",
+    NO: "northern_europe", IS: "northern_europe",
+    // Southern Europe
+    IT: "southern_europe", GR: "southern_europe",
+    ES: "southern_europe", PT: "southern_europe",
+    // Balkans
+    BG: "balkans", AL: "balkans",
+    RS: "balkans", HR: "balkans", SI: "balkans",
+    MK: "balkans", ME: "balkans", BA: "balkans",
+    // North America
+    US: "north_america", CA: "north_america",
+    // Latin America
+    CU: "latin_america",
+    // East Asia
+    CN: "east_asia", KP: "east_asia", KR: "east_asia", VN: "east_asia", JP: "east_asia",
+    // Siberia (per user's decision — Mongolia + RU Siberia together)
+    MN: "siberia",
+    // South Asia
+    IN: "south_asia", MU: "south_asia", PK: "south_asia", BD: "south_asia", LK: "south_asia",
+    // Africa
+    ET: "africa",
+    // Oceania
+    AU: "oceania", NZ: "oceania",
   };
 
   const COUNTRY_NAME_RU = {
@@ -135,6 +207,20 @@
     EE: "Эстония", LV: "Латвия", LT: "Литва", GE: "Грузия", AM: "Армения",
     AZ: "Азербайджан", KG: "Кыргызстан", TJ: "Таджикистан", UZ: "Узбекистан",
     TM: "Туркменистан",
+    // World (new)
+    DE: "Германия", FR: "Франция", GB: "Великобритания", NL: "Нидерланды",
+    CH: "Швейцария", DK: "Дания", BE: "Бельгия", IE: "Ирландия",
+    PL: "Польша", CZ: "Чехия", SK: "Словакия", HU: "Венгрия", RO: "Румыния",
+    AT: "Австрия", SE: "Швеция", FI: "Финляндия", NO: "Норвегия", IS: "Исландия",
+    IT: "Италия", GR: "Греция", ES: "Испания", PT: "Португалия",
+    BG: "Болгария", AL: "Албания", RS: "Сербия", HR: "Хорватия",
+    SI: "Словения", MK: "Северная Македония", ME: "Черногория", BA: "Босния",
+    US: "США", CA: "Канада", CU: "Куба",
+    CN: "Китай", KP: "КНДР", KR: "Южная Корея", VN: "Вьетнам", JP: "Япония",
+    MN: "Монголия",
+    IN: "Индия", MU: "Маврикий", PK: "Пакистан", BD: "Бангладеш", LK: "Шри-Ланка",
+    ET: "Эфиопия",
+    AU: "Австралия", NZ: "Новая Зеландия",
   };
 
   // RU-specific bbox order: skip macros that belong to other ex-USSR states
@@ -337,14 +423,18 @@
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 
+    // Worldwide default. Winkel Tripel aspect (2+π)/π ≈ 1.637.
+    // targetLngSpan = width of viewport in degrees of longitude at zoom=1.
+    // Default zoom 0.7 shows most of the world; user can zoom out further
+    // via panel preset or wheel to see antarctica/oceania.
     const isPortrait = height > width;
-    const targetLngSpan = isPortrait ? 80 : 115;  // чуть шире чтоб всё macro-view влезло на zoom 0.8
+    const targetLngSpan = isPortrait ? 130 : 180;
     map.worldW = (width / targetLngSpan) * 360;
-    map.worldH = map.worldW / 2;
+    map.worldH = map.worldW / 1.637;
 
-    // Центр на ~lng 55°, lat 55° — Восточная Европа + Кавказ + Средняя Азия
-    // в одном кадре при zoom 0.8.
-    const center = project(55, 55);
+    // Стартовый центр — задаётся через applyViewPreset(). Пока прописываем
+    // умолчание (Европа+ex-USSR) — reset после загрузки данных подстроит.
+    const center = project(40, 30);
     map.camX = center.x - width * 0.5;
     map.camY = center.y - height * 0.5;
 
@@ -528,9 +618,11 @@
   // Draw a single level onto the (already-zoom-transformed) context.
   // On-screen sizes are constant regardless of zoom because we divide by
   // map.zoom before drawing (context is scaled by zoom).
-  function drawLevel(clustersScreen, layerAlpha) {
+  function drawLevel(clustersScreen, layerAlpha, level) {
     const zoom = map.zoom;
     // Caller has already run relaxNonOverlap.
+    // Label rendering can be muted at LEVEL_MACRO via settings toggle.
+    const skipLabels = level === "MACRO" && !settings.showMacroLabels;
     ctx.save();
     ctx.globalAlpha = layerAlpha;
 
@@ -613,12 +705,14 @@
       }
     }
 
-    // 4) Labels (8-slot compass; never overlap circles or other labels)
+    // 4) Labels (8-slot compass; never overlap circles or other labels).
+    // Skipped entirely when at MACRO level with the toggle off.
     ctx.textBaseline = "middle";
     const drawnRects = [];
     function rectsOverlap(a, b) {
       return !(a[2] < b[0] || a[0] > b[2] || a[3] < b[1] || a[1] > b[3]);
     }
+    if (skipLabels) { ctx.restore(); return; }
     const SLOTS = [
       { dx: +1, dy:  0, align: "left"  },  // E
       { dx: +1, dy: -1, align: "left"  },  // NE
@@ -703,7 +797,7 @@
     if (!band) {
       const cls = materializeToScreen(buildLevelClusters(currentLevel), settings.sizeMode);
       relaxNonOverlap(cls, gapVpx, 30);
-      drawLevel(cls, 1.0);
+      drawLevel(cls, 1.0, currentLevel);
       // Labels populated cl.labelRect during drawLevel — save for hit-test.
       lastScreenClusters = cls;
       return;
@@ -715,8 +809,8 @@
     const upperCls = materializeToScreen(buildLevelClusters(band.upper), settings.sizeMode);
     relaxNonOverlap(lowerCls, gapVpx, 30);
     relaxNonOverlap(upperCls, gapVpx, 30);
-    drawLevel(lowerCls, lowerAlpha);
-    drawLevel(upperCls, upperAlpha);
+    drawLevel(lowerCls, lowerAlpha, band.lower);
+    drawLevel(upperCls, upperAlpha, band.upper);
     // Hit priority: whichever alpha is dominant. Both arrays included so a
     // stray click during the fade lands on something reasonable.
     lastScreenClusters = upperAlpha >= lowerAlpha
@@ -783,9 +877,27 @@
   }
 
   function goHome() {
-    // Animate to MACRO level, centred on data centroid
-    const center = project(55, 55);
-    animateTo(0.8, center.x - width * 0.5, center.y - height * 0.5, 480);
+    // "Home" = whatever the user's selected view preset is.
+    applyViewPreset(settings.viewPreset || "eurasia");
+  }
+
+  // Move the camera to a named preset. Animates smoothly.
+  function applyViewPreset(name) {
+    const preset = VIEW_PRESETS[name] || VIEW_PRESETS.eurasia;
+    const target = project(preset.lat, preset.lng);
+    animateTo(preset.zoom,
+              target.x - width * 0.5,
+              target.y - height * 0.5,
+              500);
+  }
+  // Same but no animation (used at boot before first render).
+  function applyViewPresetInstant(name) {
+    const preset = VIEW_PRESETS[name] || VIEW_PRESETS.eurasia;
+    const target = project(preset.lat, preset.lng);
+    map.zoom = preset.zoom;
+    map.camX = target.x - width * 0.5;
+    map.camY = target.y - height * 0.5;
+    map.camVX = 0; map.camVY = 0;
   }
 
   function zoomOutOneLevel() {
@@ -870,6 +982,26 @@
     settingsPanel.hidden = !settingsPanel.hidden;
   });
 
+  // View-preset segmented — animate camera + save default
+  settingsPanel.querySelectorAll("[data-view-preset]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      settings.viewPreset = btn.dataset.viewPreset;
+      settingsPanel.querySelectorAll("[data-view-preset]").forEach(b => {
+        b.classList.toggle("active", b.dataset.viewPreset === settings.viewPreset);
+        b.setAttribute("aria-checked", b.dataset.viewPreset === settings.viewPreset ? "true" : "false");
+      });
+      applyViewPreset(settings.viewPreset);
+      saveSettings();
+    });
+    if (btn.dataset.viewPreset === settings.viewPreset) {
+      btn.classList.add("active");
+      btn.setAttribute("aria-checked", "true");
+    } else {
+      btn.classList.remove("active");
+      btn.setAttribute("aria-checked", "false");
+    }
+  });
+
   // Size-mode segmented
   settingsPanel.querySelectorAll("[data-size-mode]").forEach(btn => {
     btn.addEventListener("click", () => {
@@ -911,6 +1043,7 @@
       saveSettings();
     });
   }
+  wireCheck("opt-macro-labels", "showMacroLabels");
   wireCheck("opt-connectors", "showConnectors");
   wireCheck("opt-outliers", "showOutliers");
   wireCheck("opt-crossfade", "crossfade");
@@ -923,12 +1056,17 @@
     document.getElementById("thr-country").value = settings.thrCountry;
     document.getElementById("thr-city").value = settings.thrCity;
     document.getElementById("opt-gap").value = settings.gap;
+    document.getElementById("opt-macro-labels").checked = settings.showMacroLabels;
     document.getElementById("opt-connectors").checked = settings.showConnectors;
     document.getElementById("opt-outliers").checked = settings.showOutliers;
     document.getElementById("opt-crossfade").checked = settings.crossfade;
     settingsPanel.querySelectorAll("[data-size-mode]").forEach(b => {
       b.classList.toggle("active", b.dataset.sizeMode === settings.sizeMode);
     });
+    settingsPanel.querySelectorAll("[data-view-preset]").forEach(b => {
+      b.classList.toggle("active", b.dataset.viewPreset === settings.viewPreset);
+    });
+    applyViewPreset(settings.viewPreset);
     settingsPanel.querySelectorAll("[data-value-for]").forEach(span => {
       const id = span.dataset.valueFor;
       if (id === "opt-gap") span.textContent = String(Math.round(settings.gap));
@@ -1056,10 +1194,11 @@
     if (Math.abs(map.camVX) < 0.4) map.camVX = 0;
     if (Math.abs(map.camVY) < 0.4) map.camVY = 0;
 
-    const minX = project(0, 5).x - width * 0.1;
-    const maxX = project(0, 175).x - width * 0.9;
+    // Worldwide pan clamps — allow reaching every continent.
+    const minX = project(0, -170).x - width * 0.1;
+    const maxX = project(0, 170).x - width * 0.9;
     const minY = project(85, 0).y - height * 0.1;
-    const maxY = project(0, 0).y - height * 0.9;
+    const maxY = project(-60, 0).y - height * 0.9;
     if (map.camX < minX) map.camX = minX;
     if (map.camX > maxX) map.camX = maxX;
     if (map.camY < minY) map.camY = minY;
@@ -1139,8 +1278,13 @@
   }
 
   resize();
+  // Apply saved view preset instantly so the first frame lands where the
+  // user last was (or on the default "eurasia" for a fresh session).
+  applyViewPresetInstant(settings.viewPreset);
   loadAll().then(() => {
     if (map.geojson && !map.cached) buildWorldCache();
+    // Re-apply preset in case tree building shifted things or viewport changed
+    applyViewPresetInstant(settings.viewPreset);
     requestAnimationFrame(render);
   }).catch(err => {
     console.warn("Load failed:", err);
