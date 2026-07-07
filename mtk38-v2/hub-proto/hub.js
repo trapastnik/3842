@@ -78,7 +78,9 @@ nav.parentNode.insertBefore(orientEl, nav);
 /* Служебная кнопка (инструменты приёмки). */
 let svcBtn = null, svcPop = null;
 if (TOOLS.length) {
-  const gateOn = new URLSearchParams(location.search).get("service") === "1";
+  // ВРЕМЕННО: кнопка видима по умолчанию (спрятать вручную — ?service=0).
+  // Вернуть прод-гейт «скрыта, пока не ?service=1» — поменять !== "0" на === "1".
+  const gateOn = new URLSearchParams(location.search).get("service") !== "0";
   svcBtn = el("button", "hub__service", "⚙");
   svcBtn.type = "button"; svcBtn.title = "Служебное · данные и приёмка";
   svcBtn.setAttribute("aria-label", "Служебное");

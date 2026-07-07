@@ -1,0 +1,53 @@
+/* МТК 38 v2 · shared/quotes.css — переиспользуемый слой цитат Ленина.
+   Пара к shared/quotes.js (window.Quotes). Всё в неймспейсе q-* / qm-* — не конфликтует
+   с классами/переменными страницы, поэтому включается на любой странице МТК 38.
+   Управление: body.q-on (вкл), body.qm-<mode> (размещение), --q-* (параметры). */
+
+.q-scrim {
+  position: fixed; inset: 0; z-index: 2; pointer-events: none;
+  opacity: 0; transition: opacity .5s, background .5s;
+}
+body.q-on .q-scrim { opacity: var(--q-scrim, 1); }
+
+.q-box {
+  position: fixed; z-index: 3; pointer-events: none;
+  opacity: 0; transition: opacity 1s ease, transform 1s ease;
+}
+.q-box.show { opacity: 1; }
+.q-box::before {
+  content: ""; position: absolute; inset: -16% -9%; z-index: -1;
+  -webkit-backdrop-filter: blur(calc(var(--q-blur, 16) * 1px));
+          backdrop-filter: blur(calc(var(--q-blur, 16) * 1px));
+  background: rgba(18, 22, 25, .15);
+  -webkit-mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0,0,0,0) 100%);
+          mask-image: radial-gradient(ellipse at center, #000 42%, rgba(0,0,0,0) 100%);
+}
+.q-ru {
+  font-family: "21 Cent", Georgia, serif; color: #F7F9EF; line-height: 1.24; margin: 0;
+  font-size: calc(var(--q-base, 32px) * var(--q-scale, 1));
+  text-shadow: 0 0 calc(var(--q-glow, 1) * 24px) rgba(247,249,239,.55),
+               0 0 calc(var(--q-glow, 1) * 60px) rgba(210,183,115,.30),
+               0 0 calc(var(--q-glow, 1) * 110px) rgba(210,183,115,.12);
+}
+.q-attr { margin-top: 22px; font-size: clamp(13px,1.4vw,18px); color: #D2B773; letter-spacing: .04em; }
+.q-attr .nm { color: #F7F9EF; }
+.q-en { margin-top: 12px; font-family: "21 Cent", Georgia, serif; font-style: italic; color: #9DA3A8; font-size: clamp(12px,1.2vw,16px); opacity: .85; }
+
+/* — режимы размещения — */
+body.qm-center .q-scrim { background: radial-gradient(ellipse at 50% 50%, rgba(20,25,28,.5) 0%, rgba(20,25,28,.1) 62%); }
+body.qm-center .q-box { --q-base: clamp(26px,3.4vw,52px); left:50%; top:50%; transform:translate(-50%,-50%); max-width:62vw; text-align:center; padding:5vh 5vw; }
+body.qm-center .q-box.show { transform: translate(-50%,-50%); }
+
+body.qm-lower .q-scrim { background: linear-gradient(to top, rgba(18,22,25,.85) 0%, rgba(18,22,25,.32) 24%, rgba(0,0,0,0) 44%); }
+body.qm-lower .q-box { --q-base: clamp(22px,2.6vw,40px); left:0; right:0; bottom:0; padding:5vh 8vw 7vh; text-align:center; border-radius:0; }
+
+body.qm-side .q-scrim { background: linear-gradient(to right, rgba(0,0,0,0) 38%, rgba(18,22,25,.88) 64%); }
+body.qm-side .q-box { --q-base: clamp(22px,2.4vw,38px); right:0; top:0; bottom:0; width:46vw; padding:0 5vw; display:flex; flex-direction:column; justify-content:center; text-align:left; border-radius:0; }
+
+body.qm-scene .q-scrim { background: rgba(20,24,27,.6); }
+body.qm-scene .q-box { --q-base: clamp(30px,4.4vw,72px); left:50%; top:50%; transform:translate(-50%,-50%); max-width:72vw; text-align:center; padding:6vh 5vw; }
+body.qm-scene .q-box.show { transform: translate(-50%,-50%); }
+
+body.qm-corner .q-scrim { background: linear-gradient(to top right, rgba(18,22,25,.6), rgba(0,0,0,0) 36%); }
+body.qm-corner .q-box { --q-base: clamp(17px,1.7vw,26px); left:3vw; bottom:5vh; max-width:40vw; text-align:left; padding:18px 22px; }
+body.qm-corner .q-en { display: none; }
