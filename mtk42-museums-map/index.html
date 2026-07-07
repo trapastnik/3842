@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Институции · Карта</title>
-    <link rel="stylesheet" href="./styles.css?v=5" />
+    <link rel="stylesheet" href="./styles.css?v=6" />
   </head>
   <body>
     <main class="stage">
@@ -55,6 +55,15 @@
           <span>Настройки</span>
           <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
         </header>
+
+        <section class="settings__group">
+          <div class="settings__title">Проекция</div>
+          <div class="settings__presets">
+            <button class="settings__preset" type="button" data-projection="wt">Winkel Tripel</button>
+            <button class="settings__preset" type="button" data-projection="flat">Плоская</button>
+          </div>
+          <p class="settings__hint">Winkel Tripel — как в МТК 41, компромисс между площадью и формой. Плоская — прямые долготные линии.</p>
+        </section>
 
         <section class="settings__group">
           <div class="settings__title">Кадр карты</div>
@@ -178,6 +187,6 @@
         </ul>
       </aside>
     </main>
-    <script type="module" src="./map.js?v=3"></script>
+    <script type="module" src="./map.js?v=4"></script>
   </body>
 </html>

@@ -43,6 +43,7 @@ const DEFAULTS = {
   filterSize: 11,
   filterOpacity: 78,
   filterBold: false,
+  projection: "wt", // "wt" (Winkel Tripel, как в МТК 41) | "flat" (equirectangular)
 };
 const LS_KEY = "mtk42-museums-map-settings-v1";
 
@@ -92,14 +93,60 @@ function saveSettings() {
 })();
 
 // ─── Projection ─────────────────────────────────────────────
+// Winkel Tripel — та же проекция что в mtk41-map, для единого вида карт.
+// Reference: en.wikipedia.org/wiki/Winkel_tripel_projection
+const WT_COS_PHI1 = 2 / Math.PI;
+const WT_X_HALF   = (2 + Math.PI) / 2;
+const WT_Y_HALF   = Math.PI / 2;
+
+function projectWT(lat, lon) {
+  const phi = lat * Math.PI / 180;
+  const lambda = lon * Math.PI / 180;
+  const cosphi = Math.cos(phi);
+  const cosLambdaHalf = Math.cos(lambda / 2);
+  const alpha = Math.acos(cosphi * cosLambdaHalf);
+  const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
+  const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
+  const wy = 0.5 * (phi + Math.sin(phi) / sinc);
+  return [wx, wy];
+}
+
+// Bounding box of the current state.view rectangle in WT space,
+// recomputed on each render (fast, ~80 samples).
+let wtBounds = null;
+function computeWTBounds() {
+  const v = state.view;
+  const N = 8;
+  let wxMin = +Infinity, wxMax = -Infinity, wyMin = +Infinity, wyMax = -Infinity;
+  for (let i = 0; i <= N; i++) {
+    for (let j = 0; j <= N; j++) {
+      const lat = v.latMin + (v.latMax - v.latMin) * (i / N);
+      const lon = v.lonMin + (v.lonMax - v.lonMin) * (j / N);
+      const [wx, wy] = projectWT(lat, lon);
+      if (wx < wxMin) wxMin = wx; if (wx > wxMax) wxMax = wx;
+      if (wy < wyMin) wyMin = wy; if (wy > wyMax) wyMax = wy;
+    }
+  }
+  wtBounds = { wxMin, wxMax, wyMin, wyMax };
+}
+
 function project(lon, lat, canvasW, canvasH) {
   const v = state.view;
-  const x = ((lon - v.lonMin) / (v.lonMax - v.lonMin)) * canvasW;
-  // Note: latitude increases NORTH; canvas y increases DOWN.
-  const y = ((v.latMax - lat) / (v.latMax - v.latMin)) * canvasH;
+  if (state.settings.projection === "flat") {
+    const x = ((lon - v.lonMin) / (v.lonMax - v.lonMin)) * canvasW;
+    const y = ((v.latMax - lat) / (v.latMax - v.latMin)) * canvasH;
+    return [x, y];
+  }
+  const [wx, wy] = projectWT(lat, lon);
+  const b = wtBounds;
+  const x = (wx - b.wxMin) / (b.wxMax - b.wxMin) * canvasW;
+  const y = (b.wyMax - wy) / (b.wyMax - b.wyMin) * canvasH;
   return [x, y];
 }
 
+// Inverse projection — used only for pan/zoom pixel→geo delta. Exact inverse
+// of WT is iterative; a linear approx via the view rectangle is enough
+// for interactive nudges (Newton would be overkill here).
 function unproject(px, py, canvasW, canvasH) {
   const v = state.view;
   const lon = v.lonMin + (px / canvasW) * (v.lonMax - v.lonMin);
@@ -129,6 +176,7 @@ function render() {
   const rect = canvas.getBoundingClientRect();
   const W = rect.width, H = rect.height;
   ctx.clearRect(0, 0, W, H);
+  if (state.settings.projection === "wt") computeWTBounds();
 
   // Background gradient tint
   const bg = ctx.createRadialGradient(W * 0.5, H * 0.35, 50, W * 0.5, H * 0.5, Math.max(W, H));
@@ -317,6 +365,9 @@ function syncControlsFromState() {
     const num = $(`[data-bind-num="${el.dataset.settingNum}"]`);
     if (num) num.textContent = el.value;
   });
+  $$('[data-projection]').forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.projection === state.settings.projection);
+  });
 }
 
 function applyPreset(name) {
@@ -458,6 +509,14 @@ function bindUi() {
   });
   $$('.settings__preset[data-view-preset]').forEach((btn) => {
     btn.addEventListener("click", () => applyPreset(btn.dataset.viewPreset));
+  });
+  $$('.settings__preset[data-projection]').forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.settings.projection = btn.dataset.projection;
+      saveSettings();
+      syncControlsFromState();
+      render();
+    });
   });
   const resetBtn = $("#reset-view");
   if (resetBtn) resetBtn.addEventListener("click", () => { resetViewFromSettings(); render(); });

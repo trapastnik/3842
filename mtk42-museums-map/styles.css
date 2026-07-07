@@ -326,6 +326,11 @@ html, body {
 }
 .settings__preset:hover { background: rgba(210, 183, 115, 0.14); }
 .settings__preset:active { transform: scale(0.98); }
+.settings__preset.is-active {
+  border-color: var(--brass);
+  background: var(--brass);
+  color: var(--night);
+}
 .settings__hint {
   margin: 0;
   font-family: var(--font-mono);
