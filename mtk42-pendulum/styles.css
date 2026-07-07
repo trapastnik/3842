@@ -138,14 +138,15 @@ html, body {
 }
 .axis-top__label {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--axis-size, 11px);
+  font-weight: var(--axis-weight, 400);
   letter-spacing: 0.28em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.72);
+  color: rgba(247, 249, 239, calc(var(--axis-opacity, 0.72) * 1));
 }
-.axis-top__label--neg { text-align: left;   color: rgba(247, 249, 239, 0.85); }
-.axis-top__label--neu { text-align: center; color: var(--brass); }
-.axis-top__label--pos { text-align: right;  color: rgba(247, 249, 239, 0.85); }
+.axis-top__label--neg { text-align: left; }
+.axis-top__label--neu { text-align: center; color: rgba(210, 183, 115, calc(var(--axis-opacity, 0.72) * 1)); }
+.axis-top__label--pos { text-align: right; }
 .axis-top__ticks {
   position: absolute;
   left: 0;
@@ -213,8 +214,9 @@ html, body {
   position: absolute;
   left: 44px;
   font-family: var(--font-display);
-  font-size: clamp(20px, 2.4vw, 32px);
-  color: rgba(247, 249, 239, 0.18);
+  font-size: var(--epoch-size, 28px);
+  font-weight: var(--epoch-weight, 400);
+  color: rgba(247, 249, 239, calc(var(--epoch-opacity, 0.18) * 1));
   pointer-events: none;
   user-select: none;
   letter-spacing: 0.02em;
@@ -224,9 +226,9 @@ html, body {
   display: block;
   margin-top: 4px;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: calc(var(--epoch-size, 28px) * 0.38);
   letter-spacing: 0.32em;
-  color: rgba(210, 183, 115, 0.35);
+  color: rgba(210, 183, 115, calc(var(--epoch-opacity, 0.18) * 1.8));
 }
 
 /* Compressed-band label: centred vertically inside the band, brighter so the
@@ -253,9 +255,10 @@ html, body {
   position: absolute;
   right: 0;
   font-family: var(--font-mono);
-  font-size: 22px;
+  font-size: var(--year-size, 22px);
+  font-weight: var(--year-weight, 400);
   letter-spacing: 0.14em;
-  color: rgba(210, 183, 115, 0.65);
+  color: rgba(210, 183, 115, calc(var(--year-opacity, 0.65) * 1));
   transform: translateY(-50%);
 }
 .year-tick::before {
@@ -778,7 +781,7 @@ body.hide-epochs .epoch-label { display: none; }
 @media (max-width: 760px) {
   .title { padding: 20px 22px 12px; }
   .axis-top { margin: 0 22px; }
-  .epoch-label { left: 22px; font-size: 18px; }
+  .epoch-label { left: 22px; }
   .card { top: 116px; right: 18px; width: calc(100% - 36px); }
   .settings-toggle { right: 18px; bottom: 18px; }
   .settings { width: 100%; }
@@ -805,27 +808,16 @@ body.hide-epochs .epoch-label { display: none; }
     margin: 0 36px;
     padding: 14px 0 16px;
   }
-  .axis-top__label { font-size: 13px; letter-spacing: 0.28em; }
+  .axis-top__label { letter-spacing: 0.28em; }
 
   /* Year ruler */
   .year-ruler { right: 14px; width: 110px; }
-  .year-tick {
-    font-size: 22px;
-    letter-spacing: 0.12em;
-  }
+  .year-tick { letter-spacing: 0.12em; }
   .year-tick::before { width: 14px; margin-right: 8px; }
 
-  /* Epoch labels — readable but quiet */
-  .epoch-label {
-    left: 36px;
-    font-size: clamp(22px, 3vw, 34px);
-  }
-  .epoch-label__years {
-    font-size: 12px;
-    letter-spacing: 0.30em;
-    margin-top: 6px;
-  }
-  .epoch-label--compressed { font-size: clamp(18px, 2.2vw, 24px); }
+  /* Epoch labels — position only; size is driven by settings */
+  .epoch-label { left: 36px; }
+  .epoch-label__years { letter-spacing: 0.30em; margin-top: 6px; }
 
   /* Pendulum line */
   .pendulum-path {
