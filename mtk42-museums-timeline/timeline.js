@@ -10,19 +10,43 @@ const STATUS_LABEL = {
   closed: "Ликвидирован",
 };
 
+const DEFAULTS = {
+  regionSize: 22, regionOpacity: 100, regionBold: false,
+  museumSize: 13, museumOpacity: 92,  museumBold: false,
+  citySize: 9,    cityOpacity: 50,    cityBold: false,
+  barLabelSize: 10, barLabelOpacity: 90, barLabelBold: false,
+  axisTickSize: 11, axisTickOpacity: 55, axisTickBold: false,
+  barHeight: 24,
+  rowHeight: 44,
+};
+const LS_KEY = "mtk42-museums-timeline-settings-v1";
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+  } catch { return { ...DEFAULTS }; }
+}
+function saveSettings() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state.settings)); } catch {}
+}
+
 const state = {
   data: null,
   yearMin: 1923,
   yearMax: 2026,
   status: "all",
+  settings: loadSettings(),
 };
 
 (async function init() {
   state.data = await fetch("../data/mtk42-museums.json").then((r) => r.json());
   state.yearMin = state.data.year_min || 1923;
   state.yearMax = state.data.year_max || 2026;
+  applyVisualSettings();
   render();
   bindUi();
+  syncControlsFromState();
 })();
 
 // px per year — depends on container width; recompute on layout
@@ -179,6 +203,57 @@ function openDetail(item) {
 function closeDetail() { $("#detail").hidden = true; }
 
 // ─── UI ─────────────────────────────────────────────────────
+// ─── Visual settings (CSS variables) ────────────────────────
+function applyVisualSettings() {
+  const root = document.documentElement;
+  const s = state.settings;
+  root.style.setProperty("--region-size",       s.regionSize + "px");
+  root.style.setProperty("--region-opacity",   (s.regionOpacity / 100).toFixed(2));
+  root.style.setProperty("--region-weight",     s.regionBold ? 700 : 400);
+  root.style.setProperty("--museum-size",       s.museumSize + "px");
+  root.style.setProperty("--museum-opacity",   (s.museumOpacity / 100).toFixed(2));
+  root.style.setProperty("--museum-weight",     s.museumBold ? 700 : 400);
+  root.style.setProperty("--city-size",         s.citySize + "px");
+  root.style.setProperty("--city-opacity",     (s.cityOpacity / 100).toFixed(2));
+  root.style.setProperty("--city-weight",       s.cityBold ? 700 : 400);
+  root.style.setProperty("--bar-label-size",    s.barLabelSize + "px");
+  root.style.setProperty("--bar-label-opacity",(s.barLabelOpacity / 100).toFixed(2));
+  root.style.setProperty("--bar-label-weight",  s.barLabelBold ? 700 : 400);
+  root.style.setProperty("--axis-tick-size",    s.axisTickSize + "px");
+  root.style.setProperty("--axis-tick-opacity",(s.axisTickOpacity / 100).toFixed(2));
+  root.style.setProperty("--axis-tick-weight",  s.axisTickBold ? 700 : 400);
+  root.style.setProperty("--bar-height",        s.barHeight + "px");
+  root.style.setProperty("--row-height",        s.rowHeight + "px");
+}
+
+function syncControlsFromState() {
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.checked = !!state.settings[el.dataset.setting];
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.value = state.settings[el.dataset.settingNum];
+    const num = $(`[data-bind-num="${el.dataset.settingNum}"]`);
+    if (num) num.textContent = el.value;
+  });
+}
+
+function onCheckboxChange(el) {
+  const key = el.dataset.setting;
+  state.settings[key] = !!el.checked;
+  saveSettings();
+  applyVisualSettings();
+}
+
+function onSliderChange(el) {
+  const key = el.dataset.settingNum;
+  const v = Number(el.value);
+  state.settings[key] = v;
+  const num = $(`[data-bind-num="${key}"]`);
+  if (num) num.textContent = v;
+  saveSettings();
+  applyVisualSettings();
+}
+
 function bindUi() {
   $$('.filter[data-status]').forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -199,6 +274,23 @@ function bindUi() {
   const legend = $("#legend");
   $("#legend-toggle").addEventListener("click", () => (legend.hidden = !legend.hidden));
   $(".legend__close").addEventListener("click", () => (legend.hidden = true));
+
+  // Settings panel
+  const settings = $("#settings");
+  $("#settings-toggle").addEventListener("click", () => settings.classList.toggle("is-open"));
+  $(".settings__close").addEventListener("click", () => settings.classList.remove("is-open"));
+  $(".settings__reset").addEventListener("click", () => {
+    state.settings = { ...DEFAULTS };
+    saveSettings();
+    applyVisualSettings();
+    syncControlsFromState();
+  });
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.addEventListener("change", () => onCheckboxChange(el));
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.addEventListener("input", () => onSliderChange(el));
+  });
 
   // Re-render on resize (bars are px-positioned by container width)
   let resizeTimer = null;

@@ -149,9 +149,10 @@ html, body {
   top: 0;
   height: 100%;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: var(--axis-tick-size, 11px);
+  font-weight: var(--axis-tick-weight, 400);
   letter-spacing: 0.14em;
-  color: rgba(210, 183, 115, 0.55);
+  color: rgba(210, 183, 115, calc(var(--axis-tick-opacity, 0.55) * 1));
   border-left: 1px solid rgba(210, 183, 115, 0.14);
   padding-left: 4px;
   padding-top: 4px;
@@ -186,8 +187,9 @@ html, body {
   margin: 22px 0 6px calc(var(--label-col) * -1);
   padding: 4px 0 4px 4px;
   font-family: var(--font-display);
-  font-size: 22px;
-  color: var(--brass);
+  font-size: var(--region-size, 22px);
+  font-weight: var(--region-weight, 400);
+  color: rgba(210, 183, 115, calc(var(--region-opacity, 1) * 1));
   border-top: 1px solid rgba(210, 183, 115, 0.28);
 }
 .region-header:first-child { margin-top: 4px; }
@@ -195,7 +197,7 @@ html, body {
 /* One row per museum: label + bar area */
 .row {
   position: relative;
-  height: 44px;
+  height: var(--row-height, 44px);
 }
 .row__label {
   position: absolute;
@@ -203,7 +205,7 @@ html, body {
   top: 0;
   width: calc(var(--label-col) - 12px);
   padding-right: 12px;
-  height: 44px;
+  height: var(--row-height, 44px);
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -212,9 +214,10 @@ html, body {
 }
 .row__short {
   font-family: var(--font-body);
-  font-size: 13px;
+  font-size: var(--museum-size, 13px);
+  font-weight: var(--museum-weight, 400);
   line-height: 1.15;
-  color: rgba(247, 249, 239, 0.92);
+  color: rgba(247, 249, 239, calc(var(--museum-opacity, 0.92) * 1));
   overflow: hidden;
   text-overflow: ellipsis;
   display: -webkit-box;
@@ -223,16 +226,17 @@ html, body {
 }
 .row__city {
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: var(--city-size, 9px);
+  font-weight: var(--city-weight, 400);
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.5);
+  color: rgba(247, 249, 239, calc(var(--city-opacity, 0.5) * 1));
 }
 
 .bar {
   position: absolute;
-  top: 10px;
-  height: 24px;
+  top: calc((var(--row-height, 44px) - var(--bar-height, 24px)) / 2);
+  height: var(--bar-height, 24px);
   border-radius: 4px;
   background: var(--brass);
   cursor: pointer;
@@ -255,14 +259,15 @@ html, body {
 .bar__cap--end { right: 0; background: rgba(0, 0, 0, 0.28); }
 .bar__label {
   padding: 0 8px;
-  line-height: 24px;
+  line-height: var(--bar-height, 24px);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--bar-label-size, 10px);
+  font-weight: var(--bar-label-weight, 400);
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--night);
   white-space: nowrap;
-  opacity: 0.9;
+  opacity: var(--bar-label-opacity, 0.9);
 }
 .bar--active      { background: var(--brass); }
 .bar--transformed { background: var(--window); }
@@ -378,6 +383,111 @@ html, body {
 }
 .detail__note:empty { display: none; }
 
+/* ─── Settings panel ─── */
+.settings-toggle {
+  position: absolute; right: 28px; bottom: 92px;
+  z-index: 6;
+  width: 56px; height: 56px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  color: var(--brass);
+  font-size: 22px;
+  cursor: pointer;
+  display: grid; place-items: center;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+  transition: transform 0.2s ease;
+}
+.settings-toggle:hover  { transform: rotate(30deg); }
+.settings-toggle:active { transform: scale(0.95) rotate(30deg); }
+
+.settings {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  z-index: 7;
+  width: min(360px, 100%);
+  padding: 24px;
+  border-left: 1px solid var(--brass-soft);
+  background: rgba(8, 12, 14, 0.94);
+  backdrop-filter: blur(10px);
+  color: var(--paper);
+  transform: translateX(100%);
+  transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  display: flex; flex-direction: column; gap: 18px;
+  box-shadow: -22px 0 60px rgba(0, 0, 0, 0.4);
+}
+.settings.is-open { transform: translateX(0); }
+.settings__head {
+  display: flex; align-items: center; justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: 12px; letter-spacing: 0.28em;
+  text-transform: uppercase; color: var(--brass);
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(210, 183, 115, 0.22);
+}
+.settings__close {
+  width: 32px; height: 32px;
+  border: none; border-radius: 999px;
+  background: transparent; color: var(--paper);
+  font-size: 14px; cursor: pointer;
+  opacity: 0.65;
+}
+.settings__close:active { opacity: 1; }
+.settings__group { display: flex; flex-direction: column; gap: 10px; }
+.settings__title {
+  font-family: var(--font-mono);
+  font-size: 10px; letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: rgba(210, 183, 115, 0.72);
+  margin-bottom: 4px;
+}
+.settings__row {
+  display: flex; align-items: center; gap: 10px;
+  min-height: 36px;
+  font-size: 14px;
+  color: rgba(247, 249, 239, 0.88);
+  cursor: pointer;
+}
+.settings__row--slider {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 8px 12px;
+  cursor: default;
+}
+.settings__row--slider input[type="range"] {
+  grid-column: 1 / -1;
+  width: 100%;
+  accent-color: var(--brass);
+}
+.settings__row input[type="checkbox"] {
+  width: 18px; height: 18px;
+  accent-color: var(--brass);
+  cursor: pointer;
+}
+.settings__num {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--brass);
+  text-align: right;
+  min-width: 40px;
+}
+.settings__reset {
+  margin-top: auto;
+  padding: 12px 16px;
+  border: 1px solid rgba(160, 33, 40, 0.45);
+  border-radius: 8px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.82);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.settings__reset:hover { background: rgba(160, 33, 40, 0.18); }
+
 /* ─── Legend popover ─── */
 .legend-toggle {
   position: absolute; right: 28px; bottom: 28px;
@@ -459,15 +569,11 @@ html, body {
   .filter { min-height: 48px; padding: 0 20px; font-size: 13px; }
   .filters__counter { font-size: 13px; }
   .year-axis { margin: 0 56px; height: 42px; }
-  .year-axis__tick { font-size: 14px; }
   .timeline { padding: 12px 56px 60px; }
-  .region-header { font-size: 30px; margin-top: 30px; }
-  .row { height: 56px; }
-  .row__label { height: 56px; }
-  .row__short { font-size: 16px; }
-  .row__city { font-size: 11px; }
-  .bar { top: 14px; height: 28px; }
-  .bar__label { line-height: 28px; font-size: 12px; }
+  .region-header { margin-top: 30px; }
+  /* row/bar/label sizes are driven by settings via CSS vars now. */
   .legend-toggle { width: 60px; height: 60px; font-size: 26px; right: 40px; bottom: 40px; }
   .legend { right: 40px; bottom: 110px; width: min(460px, calc(100% - 80px)); }
+  .settings-toggle { width: 60px; height: 60px; font-size: 26px; right: 40px; bottom: 110px; }
+  .settings { width: min(420px, 100%); padding: 28px 26px; }
 }
