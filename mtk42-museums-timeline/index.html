@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Институции · Таймлайн</title>
-    <link rel="stylesheet" href="./styles.css?v=1" />
+    <link rel="stylesheet" href="./styles.css?v=2" />
   </head>
   <body>
     <main class="stage">
@@ -59,6 +59,121 @@
         </div>
       </aside>
 
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+
+      <aside id="settings" class="settings">
+        <header class="settings__head">
+          <span>Настройки</span>
+          <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+
+        <section class="settings__group">
+          <div class="settings__title">Заголовки регионов</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="14" max="48" step="1" data-setting-num="regionSize" />
+            <span class="settings__num" data-bind-num="regionSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="30" max="100" step="5" data-setting-num="regionOpacity" />
+            <span class="settings__num" data-bind-num="regionOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="regionBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Название музея</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="10" max="26" step="1" data-setting-num="museumSize" />
+            <span class="settings__num" data-bind-num="museumSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="40" max="100" step="5" data-setting-num="museumOpacity" />
+            <span class="settings__num" data-bind-num="museumOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="museumBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Город (подпись)</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="8" max="20" step="1" data-setting-num="citySize" />
+            <span class="settings__num" data-bind-num="citySize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="20" max="100" step="5" data-setting-num="cityOpacity" />
+            <span class="settings__num" data-bind-num="cityOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="cityBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Год на бирке</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="8" max="20" step="1" data-setting-num="barLabelSize" />
+            <span class="settings__num" data-bind-num="barLabelSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="40" max="100" step="5" data-setting-num="barLabelOpacity" />
+            <span class="settings__num" data-bind-num="barLabelOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="barLabelBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Годы на оси</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="9" max="24" step="1" data-setting-num="axisTickSize" />
+            <span class="settings__num" data-bind-num="axisTickSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="20" max="100" step="5" data-setting-num="axisTickOpacity" />
+            <span class="settings__num" data-bind-num="axisTickOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="axisTickBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Полосы</div>
+          <label class="settings__row settings__row--slider">
+            <span>Высота полосы, px</span>
+            <input type="range" min="14" max="48" step="2" data-setting-num="barHeight" />
+            <span class="settings__num" data-bind-num="barHeight"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Высота строки, px</span>
+            <input type="range" min="32" max="80" step="2" data-setting-num="rowHeight" />
+            <span class="settings__num" data-bind-num="rowHeight"></span>
+          </label>
+        </section>
+
+        <button class="settings__reset" type="button">Сбросить настройки</button>
+      </aside>
+
       <button id="legend-toggle" class="legend-toggle" type="button" aria-label="Легенда">i</button>
       <aside id="legend" class="legend" hidden>
         <header class="legend__head">
@@ -75,6 +190,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./timeline.js?v=1"></script>
+    <script type="module" src="./timeline.js?v=2"></script>
   </body>
 </html>
