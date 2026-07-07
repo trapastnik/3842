@@ -1,0 +1,159 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 42 · Институции · Карта</title>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <main class="stage">
+      <canvas id="map"></canvas>
+
+      <header class="title">
+        <span class="title__num">МТК · 42</span>
+        <h1 class="title__h">Институции</h1>
+        <p class="title__sub">Ленинские музеи на&nbsp;карте · 1923–2026</p>
+      </header>
+
+      <nav class="filters" aria-label="Фильтры">
+        <div class="filters__group">
+          <button class="filter is-active" type="button" data-status="all">Все</button>
+          <button class="filter" type="button" data-status="active">Работают</button>
+          <button class="filter" type="button" data-status="transformed">Трансформированы</button>
+          <button class="filter" type="button" data-status="private">Частный</button>
+          <button class="filter" type="button" data-status="closed">Закрыты</button>
+        </div>
+      </nav>
+
+      <aside id="detail" class="detail" hidden>
+        <div class="detail__panel">
+          <button class="detail__close" type="button" aria-label="Закрыть">✕</button>
+          <div class="detail__head">
+            <div class="detail__region" data-bind="region"></div>
+            <h2 class="detail__name" data-bind="name"></h2>
+            <p class="detail__place" data-bind="place"></p>
+            <div class="detail__status-row">
+              <span class="detail__status" data-bind="status"></span>
+              <span class="detail__period" data-bind="period"></span>
+            </div>
+          </div>
+          <div class="detail__body">
+            <p class="detail__desc" data-bind="description"></p>
+            <div class="detail__aftermath" data-bind="aftermath-section">
+              <div class="detail__aftermath-title">Что сейчас</div>
+              <p class="detail__aftermath-text" data-bind="aftermath"></p>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+
+      <aside id="settings" class="settings">
+        <header class="settings__head">
+          <span>Настройки</span>
+          <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+
+        <section class="settings__group">
+          <div class="settings__title">Кадр карты</div>
+          <div class="settings__presets">
+            <button class="settings__preset" type="button" data-view-preset="full">Евразия</button>
+            <button class="settings__preset" type="button" data-view-preset="core">СССР+В.Европа</button>
+            <button class="settings__preset" type="button" data-view-preset="ussr">СССР</button>
+            <button class="settings__preset" type="button" data-view-preset="europe">Европа</button>
+          </div>
+          <label class="settings__row settings__row--slider">
+            <span>Запад (долгота, °)</span>
+            <input type="range" min="-15" max="60" step="1" data-setting-num="lonMin" />
+            <span class="settings__num" data-bind-num="lonMin"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Восток (долгота, °)</span>
+            <input type="range" min="30" max="145" step="1" data-setting-num="lonMax" />
+            <span class="settings__num" data-bind-num="lonMax"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Юг (широта, °)</span>
+            <input type="range" min="0" max="55" step="1" data-setting-num="latMin" />
+            <span class="settings__num" data-bind-num="latMin"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Север (широта, °)</span>
+            <input type="range" min="45" max="82" step="1" data-setting-num="latMax" />
+            <span class="settings__num" data-bind-num="latMax"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Точки</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="4" max="24" step="1" data-setting-num="dotRadius" />
+            <span class="settings__num" data-bind-num="dotRadius"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Толщина границ, px</span>
+            <input type="range" min="0" max="3" step="0.1" data-setting-num="borderWidth" />
+            <span class="settings__num" data-bind-num="borderWidth"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Заголовок</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="24" max="96" step="2" data-setting-num="titleSize" />
+            <span class="settings__num" data-bind-num="titleSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="30" max="100" step="5" data-setting-num="titleOpacity" />
+            <span class="settings__num" data-bind-num="titleOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="titleBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Кнопки-фильтры</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="10" max="20" step="1" data-setting-num="filterSize" />
+            <span class="settings__num" data-bind-num="filterSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="30" max="100" step="5" data-setting-num="filterOpacity" />
+            <span class="settings__num" data-bind-num="filterOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="filterBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <button class="settings__reset" type="button">Сбросить настройки</button>
+      </aside>
+
+      <button id="legend-toggle" class="legend-toggle" type="button" aria-label="Легенда">i</button>
+      <aside id="legend" class="legend" hidden>
+        <header class="legend__head">
+          <span>Как читать</span>
+          <button class="legend__close" type="button" aria-label="Закрыть">✕</button>
+        </header>
+        <p class="legend__row">Каждая точка — ленинский музей. Цвет — судьба. Размер точки не&nbsp;меняется; там&nbsp;где точки перекрываются — тап открывает ту, что&nbsp;наверху; повторный тап — соседнюю.</p>
+        <ul class="legend__list">
+          <li><span class="legend__dot legend__dot--active"></span>Работает</li>
+          <li><span class="legend__dot legend__dot--transformed"></span>Трансформирован</li>
+          <li><span class="legend__dot legend__dot--private"></span>Частный / восстановленный</li>
+          <li><span class="legend__dot legend__dot--closed"></span>Ликвидирован</li>
+        </ul>
+      </aside>
+    </main>
+    <script type="module" src="./map.js?v=2"></script>
+  </body>
+</html>

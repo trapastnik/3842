@@ -23,6 +23,18 @@ const DEFAULTS = {
   catPolitician: true,
   catResearcher: true,
   catWriters: true,
+  // Typography — axis (top labels)
+  axisSize: 11,
+  axisOpacity: 72,
+  axisBold: false,
+  // Typography — epoch labels
+  epochSize: 28,
+  epochOpacity: 20,
+  epochBold: false,
+  // Typography — year ticks
+  yearSize: 22,
+  yearOpacity: 65,
+  yearBold: false,
 };
 const CATEGORY_FLAG = {
   leaders: "catLeaders",
@@ -406,11 +418,21 @@ function closeCard() {
 // ─── Visual settings (CSS variables + body flags) ───────────
 function applyVisualSettings() {
   const root = document.documentElement;
-  root.style.setProperty("--dot-size", state.settings.dotSize + "px");
-  root.style.setProperty("--pendulum-stroke", state.settings.strokeWidth);
-  document.body.classList.toggle("hide-pendulum", !state.settings.showPendulum);
-  document.body.classList.toggle("hide-ruler", !state.settings.showRuler);
-  document.body.classList.toggle("hide-epochs", !state.settings.showEpochs);
+  const s = state.settings;
+  root.style.setProperty("--dot-size", s.dotSize + "px");
+  root.style.setProperty("--pendulum-stroke", s.strokeWidth);
+  root.style.setProperty("--axis-size",  s.axisSize  + "px");
+  root.style.setProperty("--axis-opacity", (s.axisOpacity / 100).toFixed(2));
+  root.style.setProperty("--axis-weight", s.axisBold ? 700 : 400);
+  root.style.setProperty("--epoch-size", s.epochSize + "px");
+  root.style.setProperty("--epoch-opacity", (s.epochOpacity / 100).toFixed(2));
+  root.style.setProperty("--epoch-weight", s.epochBold ? 700 : 400);
+  root.style.setProperty("--year-size",  s.yearSize  + "px");
+  root.style.setProperty("--year-opacity", (s.yearOpacity / 100).toFixed(2));
+  root.style.setProperty("--year-weight", s.yearBold ? 700 : 400);
+  document.body.classList.toggle("hide-pendulum", !s.showPendulum);
+  document.body.classList.toggle("hide-ruler", !s.showRuler);
+  document.body.classList.toggle("hide-epochs", !s.showEpochs);
 }
 
 // ─── Controls ───────────────────────────────────────────────
