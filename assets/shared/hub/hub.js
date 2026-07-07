@@ -80,7 +80,8 @@ applyNav();
  * Конвенция: если у прототипа есть фоновые полосы — заведи их на
  * `opacity: var(--stripe-opacity, 1)`, и хаб сможет ими управлять. */
 const STRIPE_KEY = "bmk-hub-stripe";
-const STRIPE_DEFAULT = 100; /* % → 1.0, как дефолт прототипа */
+const STRIPE_DEFAULT = 15; /* % → 0.15 — деликатный брендовый оттенок, не перекрывает контент.
+                              Полный (100%) накрывал карту/таймлайн. Оператор поднимает слайдером. */
 function loadStripe() {
   const v = Number(localStorage.getItem(STRIPE_KEY));
   return Number.isFinite(v) && v >= 0 ? v : STRIPE_DEFAULT;
