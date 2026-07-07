@@ -237,19 +237,14 @@
     ctx.save();
     ctx.fillStyle = isSelected ? palette.brass : statusColor(m.status);
     ctx.globalAlpha = m.status === "unknown" ? 0.4 : 0.6;
-    const bodyW = pm.w * 0.55;
-    const headR = Math.min(pm.statueH * 0.18, pm.w * 0.32);
-    const bodyTop = sTop + headR * 1.4;
-    ctx.beginPath();
-    ctx.moveTo(x - bodyW * 0.5, sBottom);
-    ctx.lineTo(x + bodyW * 0.5, sBottom);
-    ctx.lineTo(x + bodyW * 0.35, bodyTop);
-    ctx.lineTo(x - bodyW * 0.35, bodyTop);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-    ctx.fill();
+    // Прямоугольник корпуса + прямоугольник «головы» сверху —
+    // stacked-blocks вид, без cone+sphere ассоциаций.
+    const bodyW = pm.w * 0.5;
+    const headW = pm.w * 0.32;
+    const headH = pm.statueH * 0.22;
+    const bodyTop = sTop + headH;
+    ctx.fillRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+    ctx.fillRect(x - headW * 0.5, sTop, headW, headH);
     ctx.restore();
   }
 

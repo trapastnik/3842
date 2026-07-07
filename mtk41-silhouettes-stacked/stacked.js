@@ -281,18 +281,13 @@
     ctx.save();
     ctx.fillStyle = isSelected ? palette.brass : statusColor(m.status);
     ctx.globalAlpha = 0.55;
-    const bodyW = pm.w * 0.55;
-    const headR = Math.min(sH * 0.2, pm.w * 0.32);
-    ctx.beginPath();
-    ctx.moveTo(x - bodyW * 0.5, bottomStatue);
-    ctx.lineTo(x + bodyW * 0.5, bottomStatue);
-    ctx.lineTo(x + bodyW * 0.35, sTop + headR * 1.4);
-    ctx.lineTo(x - bodyW * 0.35, sTop + headR * 1.4);
-    ctx.closePath();
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-    ctx.fill();
+    // Прямоугольник + прямоугольник — stacked-blocks вид.
+    const bodyW = pm.w * 0.5;
+    const headW = pm.w * 0.32;
+    const headH = sH * 0.22;
+    const bodyTop = sTop + headH;
+    ctx.fillRect(x - bodyW * 0.5, bodyTop, bodyW, bottomStatue - bodyTop);
+    ctx.fillRect(x - headW * 0.5, sTop, headW, headH);
     ctx.restore();
   }
 

@@ -254,38 +254,24 @@
         : statusColor(m.status);
       const statueOpacity = m.status === "unknown" ? 0.55 : 0.92;
 
+      // Прямоугольник корпуса + прямоугольник «головы» — stacked blocks.
+      const bodyW = pm.w * 0.5;
+      const headW = pm.w * 0.32;
+      const headH = pm.statueH * 0.22;
+      const bodyTop = sTop + headH;
+
       ctx.save();
       ctx.fillStyle = statueFill;
       ctx.globalAlpha = statueOpacity;
-      const bodyW = pm.w * 0.55;
-      const headR = Math.min(pm.statueH * 0.18, pm.w * 0.32);
-      const bodyTop = sTop + headR * 1.4;
-      ctx.beginPath();
-      ctx.moveTo(x - bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.35, bodyTop);
-      ctx.lineTo(x - bodyW * 0.35, bodyTop);
-      ctx.closePath();
-      ctx.fill();
-      ctx.beginPath();
-      ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.fillRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+      ctx.fillRect(x - headW * 0.5, sTop, headW, headH);
       ctx.restore();
 
-      // Statue outline
       ctx.save();
       ctx.strokeStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.5);
       ctx.lineWidth = isSelected ? 2 : 0.8;
-      ctx.beginPath();
-      ctx.moveTo(x - bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.5, sBottom);
-      ctx.lineTo(x + bodyW * 0.35, bodyTop);
-      ctx.lineTo(x - bodyW * 0.35, bodyTop);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.beginPath();
-      ctx.arc(x, sTop + headR, headR, 0, Math.PI * 2);
-      ctx.stroke();
+      ctx.strokeRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+      ctx.strokeRect(x - headW * 0.5, sTop, headW, headH);
       ctx.restore();
     }
 
