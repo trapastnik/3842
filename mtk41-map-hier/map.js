@@ -117,25 +117,11 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  // Winkel Tripel projection — full-world aspect ratio (2+π)/π ≈ 1.637.
-  // Better for continents at high latitude than equirectangular.
-  const WT_COS_PHI1 = 2 / Math.PI;
-  const WT_X_HALF = (2 + Math.PI) / 2;
-  const WT_Y_HALF = Math.PI / 2;
-
-  function project(lat, lng) {
-    const phi = lat * Math.PI / 180;
-    const lambda = lng * Math.PI / 180;
-    const cosphi = Math.cos(phi);
-    const cosLambdaHalf = Math.cos(lambda / 2);
-    const alpha = Math.acos(cosphi * cosLambdaHalf);
-    const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
-    const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
-    const wy = 0.5 * (phi + Math.sin(phi) / sinc);
-    const x = (wx + WT_X_HALF) / (2 * WT_X_HALF) * map.worldW;
-    const y = (WT_Y_HALF - wy) / (2 * WT_Y_HALF) * map.worldH;
-    return { x, y };
-  }
+  // Winkel Tripel proj — импорт из shared, чтобы все МТК с картами
+  // использовали одну и ту же формулу. См. assets/shared/lib/projection.js.
+  // Аспект worldW / worldH = MtkProjection.WinkelTripel.ASPECT ≈ 1.637.
+  const WT = MtkProjection.WinkelTripel;
+  function project(lat, lng) { return WT.project(lat, lng, map.worldW, map.worldH); }
 
   function statusColor(status) {
     switch (status) {
@@ -465,7 +451,7 @@
     const isPortrait = height > width;
     const targetLngSpan = isPortrait ? 130 : 180;
     map.worldW = (width / targetLngSpan) * 360;
-    map.worldH = map.worldW / 1.637;
+    map.worldH = map.worldW / WT.ASPECT;
 
     // Стартовый центр — задаётся через applyViewPreset(). Пока прописываем
     // умолчание (Европа+ex-USSR) — reset после загрузки данных подстроит.

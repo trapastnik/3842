@@ -80,32 +80,9 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  // Winkel Tripel projection — used for the world view. Better than
-  // equirectangular for continents at high latitude (USA, Canada, Scandinavia)
-  // and avoids the "stretched Alaska" problem while still readable.
-  //   Reference: https://en.wikipedia.org/wiki/Winkel_tripel_projection
-  //   Standard parallel: φ₁ = arccos(2/π) ≈ 50.4657°
-  //   Output bounds: x ∈ [-(2+π)/2, (2+π)/2] ≈ ±2.5708, y ∈ [-π/2, π/2] ≈ ±1.5708
-  //   Aspect ratio (2+π)/π ≈ 1.637
-  const WT_COS_PHI1 = 2 / Math.PI;                    // cos(arccos(2/π)) = 2/π
-  const WT_X_HALF = (2 + Math.PI) / 2;
-  const WT_Y_HALF = Math.PI / 2;
-
-  function project(lat, lng) {
-    // lat, lng in degrees → world-px coords in [0, worldW] × [0, worldH]
-    const phi = lat * Math.PI / 180;
-    const lambda = lng * Math.PI / 180;
-    const cosphi = Math.cos(phi);
-    const cosLambdaHalf = Math.cos(lambda / 2);
-    const alpha = Math.acos(cosphi * cosLambdaHalf);
-    const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
-    const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
-    const wy = 0.5 * (phi + Math.sin(phi) / sinc);
-    // Normalize to [0,1] then scale to worldW × worldH (north up → invert y)
-    const x = (wx + WT_X_HALF) / (2 * WT_X_HALF) * map.worldW;
-    const y = (WT_Y_HALF - wy) / (2 * WT_Y_HALF) * map.worldH;
-    return { x, y };
-  }
+  // Winkel Tripel proj — импорт из shared, см. assets/shared/lib/projection.js.
+  const WT = MtkProjection.WinkelTripel;
+  function project(lat, lng) { return WT.project(lat, lng, map.worldW, map.worldH); }
 
   // --- Data-driven point styling -------------------------------------------
 
@@ -202,7 +179,7 @@
     const isPortrait = height > width;
     const targetLngSpan = isPortrait ? 130 : 180;
     map.worldW = (width / targetLngSpan) * 360;
-    map.worldH = map.worldW / 1.637;
+    map.worldH = map.worldW / WT.ASPECT;
 
     // Initial camera centered on ~lng 30°, ~lat 40° — покрывает Европу,
     // Северную Африку, Ближний Восток, ex-USSR западная половина.
