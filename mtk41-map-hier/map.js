@@ -36,8 +36,22 @@
     cached: null,
     zoom: 0.8,
   };
-  const MIN_ZOOM = 0.4;
+  const MIN_ZOOM_FLOOR = 0.4;         // hard-floor for safety
   const MAX_ZOOM = 8;
+  // Dynamic min-zoom computed in resize(): zoom at which the world exactly
+  // fills the viewport, so the user can't zoom out further and see empty
+  // canvas beyond the map's top/bottom or left/right edges.
+  function currentMinZoom() {
+    if (!map.worldW || !map.worldH) return MIN_ZOOM_FLOOR;
+    return Math.max(
+      MIN_ZOOM_FLOOR,
+      width / map.worldW,
+      height / map.worldH,
+    );
+  }
+  function clampZoom(z) {
+    return Math.max(currentMinZoom(), Math.min(MAX_ZOOM, z));
+  }
   const ACTIVE_POINTERS = new Map();
   let pinchInitialDist = 0;
   let pinchInitialZoom = 1;
@@ -76,9 +90,9 @@
   // Preset view configurations (lat, lng of camera target, zoom level).
   // Applied via applyViewPreset() at boot and when user picks in panel.
   const VIEW_PRESETS = {
-    "world":   { lat: 15,  lng: 20,  zoom: 0.42 },  // Africa/Middle East centered, all continents visible
-    "eurasia": { lat: 42,  lng: 30,  zoom: 0.70 },  // Europe + ex-USSR in main view
-    "ex-ussr": { lat: 55,  lng: 55,  zoom: 1.15 },  // Original ex-USSR closeup
+    "world":   { lat: 15,  lng: 20,  zoom: 0.50 },  // World fit — clamped to viewport-fill
+    "eurasia": { lat: 42,  lng: 30,  zoom: 0.75 },  // Europe + ex-USSR in main view
+    "ex-ussr": { lat: 55,  lng: 55,  zoom: 1.20 },  // Original ex-USSR closeup
   };
   function loadSettings() {
     try {
@@ -888,7 +902,7 @@
     else if (currentLevel === "REGION") targetZoom = settings.thrRegion + 0.15;
     else if (currentLevel === "CITY") targetZoom = settings.thrCity + 0.15;
     else return;
-    targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
+    targetZoom = clampZoom(targetZoom);
     // Bbox of cluster's members in world coords
     let mnx = Infinity, mny = Infinity, mxx = -Infinity, mxy = -Infinity;
     for (const mi of cluster.memberIndices) {
@@ -925,7 +939,7 @@
   function applyViewPreset(name) {
     const preset = VIEW_PRESETS[name] || VIEW_PRESETS.eurasia;
     const target = project(preset.lat, preset.lng);
-    animateTo(preset.zoom,
+    animateTo(clampZoom(preset.zoom),
               target.x - width * 0.5,
               target.y - height * 0.5,
               500);
@@ -934,10 +948,11 @@
   function applyViewPresetInstant(name) {
     const preset = VIEW_PRESETS[name] || VIEW_PRESETS.eurasia;
     const target = project(preset.lat, preset.lng);
-    map.zoom = preset.zoom;
+    map.zoom = clampZoom(preset.zoom);
     map.camX = target.x - width * 0.5;
     map.camY = target.y - height * 0.5;
     map.camVX = 0; map.camVY = 0;
+    clampCamera();
   }
 
   function zoomOutOneLevel() {
@@ -948,7 +963,7 @@
     else if (currentLevel === "REGION") target = settings.thrCountry - 0.1;
     else if (currentLevel === "COUNTRY") target = settings.thrMacro - 0.1;
     else target = 0.8;
-    target = Math.max(MIN_ZOOM, target);
+    target = clampZoom(target);
     animateTo(target, map.camX, map.camY, 380);
   }
 
@@ -1162,7 +1177,7 @@
       const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
       if (pinchInitialDist > 0) {
         const target = pinchInitialZoom * (dist / pinchInitialDist);
-        map.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, target));
+        map.zoom = clampZoom(target);
       }
       didDrag = true;
       return;
@@ -1191,7 +1206,7 @@
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.0015);
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, map.zoom * factor));
+    const newZoom = clampZoom(map.zoom * factor);
     if (newZoom === map.zoom) return;
     map.zoom = newZoom;
     anim = null;   // wheel interrupts anim
@@ -1235,24 +1250,38 @@
 
   // ---------- Dynamics + clamp ------------------------------------------
 
+  // Clamp the camera so no matter the zoom, the visible viewport stays
+  // inside the world [0..worldW] × [0..worldH]. Prevents any empty canvas
+  // above/below/beside the map.
+  function clampCamera() {
+    if (!map.worldW || !map.worldH) return;
+    const z = map.zoom || 1;
+    const halfW = width * 0.5 / z;
+    const halfH = height * 0.5 / z;
+    const cxMin = width * 0.5 - halfW;
+    const cxMax = map.worldW - width * 0.5 - halfW;
+    const cyMin = height * 0.5 - halfH;
+    const cyMax = map.worldH - height * 0.5 - halfH;
+    if (cxMax < cxMin) map.camX = (map.worldW - width) * 0.5;
+    else if (map.camX < cxMin) map.camX = cxMin;
+    else if (map.camX > cxMax) map.camX = cxMax;
+    if (cyMax < cyMin) map.camY = (map.worldH - height) * 0.5;
+    else if (map.camY < cyMin) map.camY = cyMin;
+    else if (map.camY > cyMax) map.camY = cyMax;
+  }
+
   function applyDynamics(dt) {
-    if (map.dragging || anim) return;
+    if (map.dragging || anim) {
+      clampCamera();
+      return;
+    }
     map.camX += map.camVX * dt;
     map.camY += map.camVY * dt;
     map.camVX *= Math.pow(0.88, dt * 60);
     map.camVY *= Math.pow(0.88, dt * 60);
     if (Math.abs(map.camVX) < 0.4) map.camVX = 0;
     if (Math.abs(map.camVY) < 0.4) map.camVY = 0;
-
-    // Worldwide pan clamps — allow reaching every continent.
-    const minX = project(0, -170).x - width * 0.1;
-    const maxX = project(0, 170).x - width * 0.9;
-    const minY = project(85, 0).y - height * 0.1;
-    const maxY = project(-60, 0).y - height * 0.9;
-    if (map.camX < minX) map.camX = minX;
-    if (map.camX > maxX) map.camX = maxX;
-    if (map.camY < minY) map.camY = minY;
-    if (map.camY > maxY) map.camY = maxY;
+    clampCamera();
   }
 
   function drawLoadingState() {

@@ -26,8 +26,31 @@
     cached: null,
     zoom: 1,                  // 1 = default; wheel/pinch updates it
   };
-  const MIN_ZOOM = 0.6;
+  const MIN_ZOOM_FLOOR = 0.4;
   const MAX_ZOOM = 5;
+  function currentMinZoom() {
+    if (!map.worldW || !map.worldH) return MIN_ZOOM_FLOOR;
+    return Math.max(MIN_ZOOM_FLOOR, width / map.worldW, height / map.worldH);
+  }
+  function clampZoom(z) {
+    return Math.max(currentMinZoom(), Math.min(MAX_ZOOM, z));
+  }
+  function clampCamera() {
+    if (!map.worldW || !map.worldH) return;
+    const z = map.zoom || 1;
+    const halfW = width * 0.5 / z;
+    const halfH = height * 0.5 / z;
+    const cxMin = width * 0.5 - halfW;
+    const cxMax = map.worldW - width * 0.5 - halfW;
+    const cyMin = height * 0.5 - halfH;
+    const cyMax = map.worldH - height * 0.5 - halfH;
+    if (cxMax < cxMin) map.camX = (map.worldW - width) * 0.5;
+    else if (map.camX < cxMin) map.camX = cxMin;
+    else if (map.camX > cxMax) map.camX = cxMax;
+    if (cyMax < cyMin) map.camY = (map.worldH - height) * 0.5;
+    else if (map.camY < cyMin) map.camY = cyMin;
+    else if (map.camY > cyMax) map.camY = cyMax;
+  }
   const ACTIVE_POINTERS = new Map();  // pointerId → {x, y} for pinch tracking
   let pinchInitialDist = 0;
   let pinchInitialZoom = 1;
@@ -452,25 +475,14 @@
   // --- Dynamics ------------------------------------------------------------
 
   function applyDynamics(dt) {
-    if (map.dragging) return;
+    if (map.dragging) { clampCamera(); return; }
     map.camX += map.camVX * dt;
     map.camY += map.camVY * dt;
     map.camVX *= Math.pow(0.88, dt * 60);
     map.camVY *= Math.pow(0.88, dt * 60);
     if (Math.abs(map.camVX) < 0.4) map.camVX = 0;
     if (Math.abs(map.camVY) < 0.4) map.camVY = 0;
-
-    // Pan clamps — keep the interesting region visible
-    // Worldwide pan clamps — allow the whole globe to be reached while
-    // keeping some slop so the map doesn't scroll into empty space.
-    const minX = project(0, -170).x - width * 0.1;
-    const maxX = project(0, 170).x - width * 0.9;
-    const minY = project(85, 0).y - height * 0.1;
-    const maxY = project(-60, 0).y - height * 0.9;
-    if (map.camX < minX) map.camX = minX;
-    if (map.camX > maxX) map.camX = maxX;
-    if (map.camY < minY) map.camY = minY;
-    if (map.camY > maxY) map.camY = maxY;
+    clampCamera();
   }
 
   // --- Hit test ------------------------------------------------------------
@@ -536,7 +548,7 @@
     // Target zoom: span × zoom = 0.55 × viewport (so we don't overshoot)
     const targetSpanPx = Math.min(width, height) * 0.55;
     const factor = targetSpanPx / span;
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, map.zoom * factor));
+    const newZoom = clampZoom(map.zoom * factor);
     if (newZoom <= map.zoom * 1.05) {
       // Already zoomed enough — bump 1.7× to break the cluster open
       map.zoom = Math.min(MAX_ZOOM, map.zoom * 1.7);
@@ -602,7 +614,7 @@
       const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
       if (pinchInitialDist > 0) {
         const target = pinchInitialZoom * (dist / pinchInitialDist);
-        map.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, target));
+        map.zoom = clampZoom(target);
       }
       didDrag = true;   // pinch cancels tap intent
       return;
@@ -633,7 +645,7 @@
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.0015);
-    const newZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, map.zoom * factor));
+    const newZoom = clampZoom(map.zoom * factor);
     if (newZoom === map.zoom) return;
     map.zoom = newZoom;
   }, { passive: false });
