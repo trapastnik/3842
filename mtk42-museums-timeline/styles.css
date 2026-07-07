@@ -60,10 +60,17 @@ html, body {
   grid-template-rows: auto auto auto 1fr;
   isolation: isolate;
   background:
-    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
-    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%),
     radial-gradient(ellipse 120% 85% at 50% 32%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.96)),
     var(--graphite);
+}
+/* Diagonal red + brass accents — dimmable via CSS var --stripe-opacity (0..1). */
+.stage::after {
+  content: "";
+  position: absolute; inset: 0; z-index: 0; pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  background:
+    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
+    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%);
 }
 .stage::before {
   content: "";
