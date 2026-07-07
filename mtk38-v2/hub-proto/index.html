@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>ПРОТОТИП · МТК 38 · версионный хаб + служебная кнопка</title>
+  <link rel="icon" href="data:," />
+  <!-- базовый вид — общий hub.css (координатора), поверх — новые правила прототипа -->
+  <link rel="stylesheet" href="../../assets/shared/hub/hub.css" />
+  <link rel="stylesheet" href="./hub-ext.css" />
+</head>
+<body>
+  <div class="hub">
+    <header class="hub__bar">
+      <a class="hub__back" href="../../">← Все МТК</a>
+      <div class="hub__title">
+        <span class="sub">МТК · 38</span>
+        <span class="name">Ленин на языках мира</span>
+      </div>
+      <div class="hub__nav">
+        <span class="hub__label" id="label"></span>
+        <button class="hub__arrow" id="prev" aria-label="Предыдущий вариант">‹</button>
+        <div class="hub__dots" id="dots" role="tablist"></div>
+        <button class="hub__arrow" id="next" aria-label="Следующий вариант">›</button>
+      </div>
+    </header>
+    <iframe class="hub__frame" id="frame" loading="eager"></iframe>
+  </div>
+
+  <script>
+    /* ДЕМО-набор МТК 38. В прод-хабе (/mtk38/) варианты обычно задаются через slug
+       (`../<slug>/`); здесь для независимости от расположения прототипа — через `url`
+       (корне-абсолютные пути; сервер раздаёт корень репозитория). Поле `version` — новое. */
+    window.HUB_VARIANTS = [
+      { slug: "mtk38-globe",   tag: "01 · Globe",   name: "Сфера",             version: "v1", url: "/mtk38-globe/" },
+      { slug: "mtk38-poster",  tag: "02 · Poster",  name: "Постер",            version: "v1", url: "/mtk38-poster/" },
+      { slug: "mtk38-cloud",   tag: "03 · Cloud",   name: "Облако",            version: "v1", url: "/mtk38-cloud/" },
+      { slug: "mtk38-mandala", tag: "04 · Mandala", name: "Мандала",           version: "v1", url: "/mtk38-mandala/" },
+      { slug: "mtk38-rain",    tag: "05 · Rain",    name: "Дождь",             version: "v1", url: "/mtk38-rain/" },
+      { slug: "mtk38-ticker",  tag: "06 · Ticker",  name: "Лента",             version: "v1", url: "/mtk38-ticker/" },
+      { slug: "mtk38-catalog", tag: "07 · Catalog", name: "Каталог",           version: "v1", url: "/mtk38-catalog/" },
+      { slug: "mtk38-map",     tag: "08 · Map",     name: "Карта",             version: "v1", url: "/mtk38-map/" },
+
+      { slug: "v2-studio",     tag: "Арт-объект",   name: "Ленин · арт-объект", version: "v2", url: "/mtk38-v2/front/studio.html" },
+      { slug: "v2-map",        tag: "Карта",        name: "Карта мира",         version: "v2", url: "/mtk38-v2/front/map.html" },
+
+      { slug: "v3-globe",      tag: "Глобус",       name: "Глобус (WebGPU)",    version: "v3", url: "/mtk38-v3/globe.html" },
+      { slug: "v3-rain",       tag: "Дождь",        name: "Дождь (WebGPU)",     version: "v3", url: "/mtk38-v3/rain.html" },
+      { slug: "v3-map",        tag: "Карта",        name: "Карта (WebGPU)",     version: "v3", url: "/mtk38-v3/map.html" },
+    ];
+
+    /* Инструменты приёмки — служебная кнопка (⚙). Гейт: ?service=1 или тройной тап по заголовку. */
+    window.HUB_TOOLS = [
+      { name: "Данные и приёмка", url: "/mtk38-v2/back/editor.html" },
+      { name: "Валидатор",        url: "/mtk38-v2/back/validate.html" },
+      { name: "Аналитика",        url: "/mtk38-v2/back/analysis.html" },
+    ];
+  </script>
+  <script src="./hub.js"></script>
+</body>
+</html>
