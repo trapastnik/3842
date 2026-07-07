@@ -715,5 +715,44 @@
     "source_url": "curator (2026-07)",
     "title": "sokolov",
     "lang": "ru"
+  },
+  "shalyapin": {
+    "title": "Шаляпин, Фёдор Иванович",
+    "lang": "ru",
+    "image": "shalyapin.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/49/Feodor_Chaliapin_signed.jpg"
+  },
+  "suslov": {
+    "title": "Суслов, Михаил Андреевич",
+    "lang": "ru",
+    "image": "suslov.png",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/1963_Press_Photo_Mikhail_Andreyevich_Suslov.png"
+  },
+  "zizek": {
+    "title": "Жижек, Славой",
+    "lang": "ru",
+    "image": "zizek.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Slavoj_%C5%BDi%C5%BEek_2015.jpg/3840px-Slavoj_%C5%BDi%C5%BEek_2015.jpg"
+  },
+  "novoselov": {
+    "title": "Новосёлов, Валерий Михайлович",
+    "lang": "ru",
+    "image": null
+  },
+  "devyatov": {
+    "title": "Девятов, Сергей Викторович",
+    "lang": "ru",
+    "image": null
+  },
+  "gasparyan": {
+    "title": "Гаспарян, Армен Сумбатович",
+    "lang": "ru",
+    "image": "gasparyan.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Armen_Gasparyan_07.jpg"
+  },
+  "vakhitov": {
+    "title": "Вахитов, Рустем Ринатович",
+    "lang": "ru",
+    "image": null
   }
 }
