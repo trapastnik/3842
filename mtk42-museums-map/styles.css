@@ -51,12 +51,12 @@ html, body {
     var(--graphite-deep);
 }
 /* Diagonal red + brass accents — dimmable via CSS var --stripe-opacity (0..1).
- * ::after sits above the canvas map (z-index 1) but under UI overlays (z-index 3+). */
+ * Background layer: sits under everything (canvas + UI). */
 .stage::after {
   content: "";
   position: absolute; inset: 0;
   pointer-events: none;
-  z-index: 1;
+  z-index: 0;
   opacity: var(--stripe-opacity, 1);
   background:
     linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
@@ -67,6 +67,7 @@ html, body {
   position: absolute; inset: 0;
   width: 100%; height: 100%;
   display: block;
+  z-index: 1; /* canvas above background stripes */
   touch-action: none; /* we handle pan + zoom via pointer/wheel events */
   cursor: grab;
 }
