@@ -93,41 +93,34 @@ function saveSettings() {
 })();
 
 // ─── Projection ─────────────────────────────────────────────
-// Winkel Tripel — та же проекция что в mtk41-map, для единого вида карт.
-// Reference: en.wikipedia.org/wiki/Winkel_tripel_projection
-const WT_COS_PHI1 = 2 / Math.PI;
-const WT_X_HALF   = (2 + Math.PI) / 2;
-const WT_Y_HALF   = Math.PI / 2;
+// Winkel Tripel из shared модуля assets/shared/lib/projection.js
+// (тег в index.html грузится ДО этого скрипта). Единый источник WT-математики
+// для МТК 41 и 42 — если что-то придётся править (Robinson, наклон и т.п.),
+// правится в одном месте.
+const WT = MtkProjection.WinkelTripel;
+// Абстрактный «world» — единичный; computeWTBounds потом нормализует
+// в canvas-пиксели по текущему view rectangle.
+const WT_WORLD_W = 1;
+const WT_WORLD_H = 1 / WT.ASPECT;
 
-function projectWT(lat, lon) {
-  const phi = lat * Math.PI / 180;
-  const lambda = lon * Math.PI / 180;
-  const cosphi = Math.cos(phi);
-  const cosLambdaHalf = Math.cos(lambda / 2);
-  const alpha = Math.acos(cosphi * cosLambdaHalf);
-  const sinc = alpha < 1e-9 ? 1 : Math.sin(alpha) / alpha;
-  const wx = 0.5 * (lambda * WT_COS_PHI1 + 2 * cosphi * Math.sin(lambda / 2) / sinc);
-  const wy = 0.5 * (phi + Math.sin(phi) / sinc);
-  return [wx, wy];
-}
-
-// Bounding box of the current state.view rectangle in WT space,
-// recomputed on each render (fast, ~80 samples).
+// Bounding box of the current state.view rectangle in shared-WT space,
+// recomputed on each render (~80 samples). Shared проекция возвращает y-down
+// (север = маленький y), поэтому mapping линеен без инверсии.
 let wtBounds = null;
 function computeWTBounds() {
   const v = state.view;
   const N = 8;
-  let wxMin = +Infinity, wxMax = -Infinity, wyMin = +Infinity, wyMax = -Infinity;
+  let xMin = +Infinity, xMax = -Infinity, yMin = +Infinity, yMax = -Infinity;
   for (let i = 0; i <= N; i++) {
     for (let j = 0; j <= N; j++) {
       const lat = v.latMin + (v.latMax - v.latMin) * (i / N);
       const lon = v.lonMin + (v.lonMax - v.lonMin) * (j / N);
-      const [wx, wy] = projectWT(lat, lon);
-      if (wx < wxMin) wxMin = wx; if (wx > wxMax) wxMax = wx;
-      if (wy < wyMin) wyMin = wy; if (wy > wyMax) wyMax = wy;
+      const p = WT.project(lat, lon, WT_WORLD_W, WT_WORLD_H);
+      if (p.x < xMin) xMin = p.x; if (p.x > xMax) xMax = p.x;
+      if (p.y < yMin) yMin = p.y; if (p.y > yMax) yMax = p.y;
     }
   }
-  wtBounds = { wxMin, wxMax, wyMin, wyMax };
+  wtBounds = { xMin, xMax, yMin, yMax };
 }
 
 function project(lon, lat, canvasW, canvasH) {
@@ -137,10 +130,10 @@ function project(lon, lat, canvasW, canvasH) {
     const y = ((v.latMax - lat) / (v.latMax - v.latMin)) * canvasH;
     return [x, y];
   }
-  const [wx, wy] = projectWT(lat, lon);
+  const p = WT.project(lat, lon, WT_WORLD_W, WT_WORLD_H);
   const b = wtBounds;
-  const x = (wx - b.wxMin) / (b.wxMax - b.wxMin) * canvasW;
-  const y = (b.wyMax - wy) / (b.wyMax - b.wyMin) * canvasH;
+  const x = (p.x - b.xMin) / (b.xMax - b.xMin) * canvasW;
+  const y = (p.y - b.yMin) / (b.yMax - b.yMin) * canvasH;
   return [x, y];
 }
 
