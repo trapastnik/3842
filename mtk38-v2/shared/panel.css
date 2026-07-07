@@ -1,0 +1,80 @@
+/* МТК 38 v2 · shared/panel.css — единая панель настроек, выезжающая СПРАВА.
+   Оверлей (position:fixed) — НЕ сдвигает контент. Одна на все страницы: общие параметры
+   и каждая композиция. JS-логика — shared/panel.js (window.Panel). Тема — бренд-палитра 2026-05-12. */
+
+.mtk-panel, .mtk-panel *, .mtk-handle { box-sizing: border-box; }
+
+/* — выезжающий ящик — */
+.mtk-panel {
+  position: fixed; top: 0; right: 0; z-index: 40;
+  width: min(320px, 86vw); height: 100vh; max-height: 100vh;
+  display: flex; flex-direction: column;
+  background: rgba(22, 27, 31, .92);
+  -webkit-backdrop-filter: blur(11px); backdrop-filter: blur(11px);
+  border-left: 1px solid rgba(210, 183, 115, .34);
+  box-shadow: -18px 0 46px rgba(6, 9, 11, .40);
+  color: #CFD0CF; font: 12px/1.4 "20 Kopeek", system-ui, sans-serif;
+  transform: translateX(100%); transition: transform .35s cubic-bezier(.22, .7, .2, 1);
+  will-change: transform;
+}
+.mtk-panel.open { transform: translateX(0); }
+
+.mtk-panel__head {
+  flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 15px 11px; border-bottom: 1px solid rgba(210, 183, 115, .18);
+  background: rgba(210, 183, 115, .06);
+}
+.mtk-panel__title { font-size: 12px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase; color: #D2B773; }
+.mtk-panel__close { cursor: pointer; background: none; border: 0; color: #9DA3A8; font-size: 20px; line-height: 1; padding: 0 2px; }
+.mtk-panel__close:hover { color: #F7F9EF; }
+
+.mtk-panel__body { flex: 1 1 auto; overflow-y: auto; overflow-x: hidden; padding: 6px 15px 16px; }
+
+/* — группы слайдеров — */
+.mtk-grp { margin: 11px 0 4px; border-top: 1px solid rgba(210, 183, 115, .12); padding-top: 9px; }
+.mtk-grp.first { border-top: 0; padding-top: 4px; }
+.mtk-grp__t { font-size: 10px; letter-spacing: .06em; text-transform: uppercase; color: #9DA3A8; margin: 0 0 6px; }
+.mtk-row { margin: 7px 0; }
+.mtk-row label { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 3px; gap: 10px; }
+.mtk-row label span { color: #CFD0CF; }
+.mtk-row label b { color: #F7F9EF; font-weight: 700; font-variant-numeric: tabular-nums; }
+.mtk-panel input[type=range] { width: 100%; accent-color: #D2B773; height: 16px; margin: 0; cursor: pointer; }
+
+/* — тумблеры — */
+.mtk-tog { display: flex; align-items: center; justify-content: space-between; margin: 11px 0; cursor: pointer; user-select: none; }
+.mtk-tog__sw { position: relative; width: 40px; height: 21px; border-radius: 11px; background: rgba(157, 163, 168, .35); transition: background .2s; flex: 0 0 auto; }
+.mtk-tog__sw::after { content: ""; position: absolute; top: 2px; left: 2px; width: 17px; height: 17px; border-radius: 50%; background: #F7F9EF; transition: left .2s; }
+.mtk-tog.on .mtk-tog__sw { background: #D2B773; }
+.mtk-tog.on .mtk-tog__sw::after { left: 21px; }
+
+/* — сегменты (кнопки-переключатели) — */
+.mtk-seg { margin: 11px 0; }
+.mtk-seg__lab { display: block; margin-bottom: 6px; color: #9DA3A8; font-size: 10px; letter-spacing: .06em; text-transform: uppercase; }
+.mtk-seg__btns { display: flex; flex-wrap: wrap; gap: 5px; }
+.mtk-seg__btns button {
+  flex: 1 1 auto; min-width: 44px; background: rgba(157, 163, 168, .12);
+  border: 1px solid rgba(210, 183, 115, .28); color: #CFD0CF;
+  font: 11px "20 Kopeek", system-ui, sans-serif; padding: 6px 8px; border-radius: 7px; cursor: pointer; white-space: nowrap;
+}
+.mtk-seg__btns button.on { background: #D2B773; color: #1a1f23; font-weight: 700; border-color: #D2B773; }
+
+/* — низ: копировать/сброс — */
+.mtk-foot { display: flex; gap: 7px; margin-top: 14px; }
+.mtk-foot button { flex: 1; border: 0; border-radius: 8px; padding: 8px; font: 700 12px "20 Kopeek", system-ui, sans-serif; cursor: pointer; }
+.mtk-foot .copy { background: #D2B773; color: #1a1f23; }
+.mtk-foot .reset { background: transparent; color: #D2B773; border: 1px solid #D2B773; }
+
+/* — язычок-ручка на правом краю (виден, когда ящик закрыт) — */
+.mtk-handle {
+  position: fixed; top: 50%; right: 0; z-index: 39; transform: translateY(-50%);
+  display: flex; align-items: center; gap: 7px;
+  background: rgba(22, 27, 31, .9); -webkit-backdrop-filter: blur(9px); backdrop-filter: blur(9px);
+  border: 1px solid rgba(210, 183, 115, .34); border-right: 0;
+  border-radius: 11px 0 0 11px; color: #D2B773;
+  font: 600 12px "20 Kopeek", system-ui, sans-serif; letter-spacing: .05em;
+  padding: 12px 11px; cursor: pointer; writing-mode: vertical-rl; text-orientation: mixed;
+  transition: background .15s, opacity .25s, transform .25s;
+}
+.mtk-handle .g { writing-mode: horizontal-tb; font-size: 15px; }
+.mtk-handle:hover { background: rgba(210, 183, 115, .16); }
+.mtk-handle.hidden { opacity: 0; transform: translateY(-50%) translateX(100%); pointer-events: none; }

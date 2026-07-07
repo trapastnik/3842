@@ -1,0 +1,41 @@
+/* МТК 38 v2 · faces.css — единый набор @font-face для всех страниц v2.
+   Пути относительны этому файлу (mtk38-v2/fonts/): ./noto/… — subset-Noto (29 письменностей),
+   ../../mtk38-globe/fonts/… — брендовые (20 Kopeek / 21 Cent / Nolde).
+   Раньше эти же ~30 деклараций дублировались в каждом .html — теперь один <link>. */
+
+/* — брендовые — */
+@font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+@font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+@font-face{font-family:"21 Cent";src:url("../../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
+@font-face{font-family:"Nolde";src:url("../../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
+
+/* — не-латиница: subset-Noto, регуляр (700 синтезируется браузером, как в оттюненных v2-рендерах) — */
+@font-face{font-family:"noto-Arab";src:url("./noto/Arab.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";src:url("./noto/Armn.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";src:url("./noto/Beng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";src:url("./noto/Deva.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";src:url("./noto/Ethi.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";src:url("./noto/Geor.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";src:url("./noto/Grek.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";src:url("./noto/Gujr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";src:url("./noto/Guru.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";src:url("./noto/Hans.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";src:url("./noto/Hant.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";src:url("./noto/Hebr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";src:url("./noto/Jpan.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";src:url("./noto/Khmr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";src:url("./noto/Knda.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";src:url("./noto/Kore.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";src:url("./noto/Laoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";src:url("./noto/Mlym.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";src:url("./noto/Mtei.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";src:url("./noto/Mymr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Nkoo";src:url("./noto/Nkoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";src:url("./noto/Olck.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";src:url("./noto/Orya.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";src:url("./noto/Sinh.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";src:url("./noto/Taml.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";src:url("./noto/Telu.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tfng";src:url("./noto/Tfng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";src:url("./noto/Thaa.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";src:url("./noto/Tibt.woff2") format("woff2");font-display:swap}

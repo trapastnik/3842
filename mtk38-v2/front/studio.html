@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 · «Ленин» на языках мира — арт-объект</title>
+<link rel="stylesheet" href="../fonts/faces.css">
+<style>
+  :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--red:#A02128;
+    --glow:1;--blur:16;--scrim:1;--qscale:1}
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:#222a30;font-family:"20 Kopeek",system-ui,sans-serif;color:var(--telegrey)}
+  #c{position:fixed;inset:0;width:100vw;height:100vh;z-index:0;cursor:grab;touch-action:none}#c:active{cursor:grabbing}
+  /* кинематографические оверлеи */
+  #grain{position:fixed;inset:0;z-index:1;pointer-events:none;opacity:.05;mix-blend-mode:soft-light;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size:158px 158px}
+  #vign{position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 42%,rgba(10,14,17,.92) 100%)}
+  /* — слой цитат — */
+  .scrim{position:fixed;inset:0;z-index:2;pointer-events:none;opacity:var(--scrim);transition:opacity .5s,background .5s}
+  .q-off .scrim{opacity:0!important}
+  .qbox{position:fixed;z-index:3;pointer-events:none;opacity:0;transition:opacity 1s ease,transform 1s ease}
+  .qbox.show{opacity:1}
+  .qbox::before{content:"";position:absolute;inset:-16% -9%;z-index:-1;
+    backdrop-filter:blur(calc(var(--blur)*1px));-webkit-backdrop-filter:blur(calc(var(--blur)*1px));background:rgba(18,22,25,.15);
+    -webkit-mask-image:radial-gradient(ellipse at center,#000 42%,rgba(0,0,0,0) 100%);
+            mask-image:radial-gradient(ellipse at center,#000 42%,rgba(0,0,0,0) 100%)}
+  .ru{font-family:"21 Cent",Georgia,serif;color:var(--paper);line-height:1.24;margin:0;
+    font-size:calc(var(--rubase,32px)*var(--qscale));
+    text-shadow:0 0 calc(var(--glow)*24px) rgba(247,249,239,.55),0 0 calc(var(--glow)*60px) rgba(210,183,115,.30),0 0 calc(var(--glow)*110px) rgba(210,183,115,.12)}
+  .attr{margin-top:22px;font-size:clamp(13px,1.4vw,18px);color:var(--brass);letter-spacing:.04em}.attr .nm{color:var(--paper)}
+  .en{margin-top:12px;font-family:"21 Cent",Georgia,serif;font-style:italic;color:var(--window);font-size:clamp(12px,1.2vw,16px);opacity:.85}
+  body.m-center .scrim{background:radial-gradient(ellipse at 50% 50%,rgba(20,25,28,.5) 0%,rgba(20,25,28,.1) 62%)}
+  body.m-center .qbox{--rubase:clamp(26px,3.4vw,52px);left:50%;top:50%;transform:translate(-50%,-50%);max-width:62vw;text-align:center;padding:5vh 5vw}
+  body.m-center .qbox.show{transform:translate(-50%,-50%)}
+  body.m-lower .scrim{background:linear-gradient(to top,rgba(18,22,25,.85) 0%,rgba(18,22,25,.32) 24%,rgba(0,0,0,0) 44%)}
+  body.m-lower .qbox{--rubase:clamp(22px,2.6vw,40px);left:0;right:0;bottom:0;padding:5vh 8vw 7vh;text-align:center;border-radius:0}
+  body.m-side .scrim{background:linear-gradient(to right,rgba(0,0,0,0) 38%,rgba(18,22,25,.88) 64%)}
+  body.m-side .qbox{--rubase:clamp(22px,2.4vw,38px);right:0;top:0;bottom:0;width:46vw;padding:0 5vw;display:flex;flex-direction:column;justify-content:center;text-align:left;border-radius:0}
+  body.m-scene .scrim{background:rgba(20,24,27,.6)}
+  body.m-scene .qbox{--rubase:clamp(30px,4.4vw,72px);left:50%;top:50%;transform:translate(-50%,-50%);max-width:72vw;text-align:center;padding:6vh 5vw}
+  body.m-scene .qbox.show{transform:translate(-50%,-50%)}
+  body.m-corner .scrim{background:linear-gradient(to top right,rgba(18,22,25,.6),rgba(0,0,0,0) 36%)}
+  body.m-corner .qbox{--rubase:clamp(17px,1.7vw,26px);left:3vw;bottom:5vh;max-width:40vw;text-align:left;padding:18px 22px}
+  body.m-corner .en{display:none}
+  /* — карточка языка Р2 — */
+  #card{position:fixed;left:50%;bottom:-360px;transform:translateX(-50%);z-index:6;width:min(540px,90vw);
+    background:rgba(20,25,28,.93);backdrop-filter:blur(14px);border:1px solid rgba(210,183,115,.4);border-radius:16px;
+    padding:18px 22px;color:var(--telegrey);transition:bottom .5s cubic-bezier(.2,.7,.2,1)}
+  #card.show{bottom:24px}
+  #card .x{position:absolute;top:12px;right:15px;cursor:pointer;color:var(--window);font-size:18px}
+  #card .w{font-size:clamp(34px,5vw,60px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
+  #card .n{font-size:19px;color:var(--paper);font-weight:600;margin-top:3px}#card .e{font-size:15px;color:var(--brass)}
+  #card .rows{margin-top:10px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}#card .rows b{color:var(--window);font-weight:600}
+  #card .ver{margin-top:9px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
+  .ver-ok{background:var(--brass);color:#1a1f23}.ver-warn{background:var(--red);color:#fff}
+  .hint{position:fixed;left:16px;bottom:11px;z-index:4;font-size:11px;color:var(--window);opacity:.55;pointer-events:none;max-width:70vw}
+  .hint b{color:var(--brass)}
+  #boot{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#222a30;color:var(--window);font-size:14px}
+  #boot.off{display:none}
+</style>
+</head>
+<body class="m-center q-off">
+<canvas id="c"></canvas>
+<div id="grain"></div>
+<div id="vign"></div>
+<div class="scrim"></div>
+<div class="qbox" id="qbox"><p class="ru" id="ru"></p>
+  <div class="attr"><span class="nm">В. И. Ленин</span> · <span id="qsrc"></span></div>
+  <div class="en" id="en"></div></div>
+<div id="card"><span class="x" id="cardx">✕</span>
+  <div class="w" id="c_w"></div><div class="n" id="c_n"></div><div class="e" id="c_e"></div>
+  <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
+<div class="hint">Арт-объект МТК 38 · тяни мышью — поворот · <b>тап по слову</b> → карточка языка · настройки и композиции — панель <b>справа</b> (клавиша <b>H</b>)</div>
+<div id="boot">Загрузка канона…</div>
+<script src="../vendor/three/three.min.js"></script>
+<script src="../vendor/three/js/shaders/CopyShader.js"></script>
+<script src="../vendor/three/js/shaders/LuminosityHighPassShader.js"></script>
+<script src="../vendor/three/js/postprocessing/EffectComposer.js"></script>
+<script src="../vendor/three/js/postprocessing/MaskPass.js"></script>
+<script src="../vendor/three/js/postprocessing/ShaderPass.js"></script>
+<script src="../vendor/three/js/postprocessing/RenderPass.js"></script>
+<script src="../vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
+<script src="../shared/data.js"></script>
+<script src="../shared/panel.js"></script>
+<script>
+const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
+const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-"+iso+"',sans-serif";
+
+(document.fonts?document.fonts.ready:Promise.resolve())
+  .then(()=>MTK38Data.load())
+  .then(({words,quotes,source})=>{ try{ boot(words,quotes,source); }catch(e){ document.getElementById('boot').textContent='Ошибка: '+((e&&e.message)||e); console.error(e);} })
+  .catch(e=>{ document.getElementById('boot').textContent='Ошибка загрузки данных: '+((e&&e.message)||e); console.error(e); });
+
+function boot(L, QUOTES, source){
+  const N=L.length;
+  let seed=1; const rng=()=>(seed=(seed*16807)%2147483647)/2147483647;
+  const RV=L.map(()=>({x:rng()*2-1,y:rng()*2-1,z:rng()*2-1,ph:rng()*Math.PI*2,sp:0.6+rng()*0.8}));
+
+  const cv=document.getElementById('c');
+  const renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  const MAXANISO=renderer.capabilities.getMaxAnisotropy();
+  const scene=new THREE.Scene();
+  const camera=new THREE.PerspectiveCamera(45,1,0.1,200);camera.position.z=16;
+  const group=new THREE.Group();scene.add(group);
+  const raycaster=new THREE.Raycaster();
+
+  // текстура слова — сайзим по РЕАЛЬНОМУ bounding box глифа (actualBoundingBox…), не по кеглю,
+  // иначе сложные письменности (тибетское/деванагари/арабское с огласовками) вылезают за коробку и режутся.
+  const texCache={};
+  function tex(text,iso,color){
+    const k=text+'|'+color; if(texCache[k])return texCache[k];
+    const fs=220,padX=Math.round(fs*0.20),padY=Math.round(fs*0.20);
+    const m=document.createElement('canvas'),x=m.getContext('2d');
+    x.font='700 '+fs+'px '+FF(iso);
+    const tm=x.measureText(text);
+    const left =Math.ceil(Math.max(0,tm.actualBoundingBoxLeft||0));
+    const right=Math.ceil(Math.max(tm.width||24,(tm.actualBoundingBoxRight!=null?tm.actualBoundingBoxRight:tm.width)));
+    const asc  =Math.ceil(tm.actualBoundingBoxAscent ||fs*0.9);
+    const desc =Math.ceil(tm.actualBoundingBoxDescent||fs*0.35);
+    m.width=left+right+padX*2; m.height=asc+desc+padY*2;
+    x.font='700 '+fs+'px '+FF(iso); x.textAlign='left'; x.textBaseline='alphabetic'; x.fillStyle=color;
+    x.fillText(text,padX+left,padY+asc);
+    const t=new THREE.CanvasTexture(m); t.minFilter=THREE.LinearFilter; t.anisotropy=MAXANISO;
+    const r={t,aspect:m.width/m.height}; texCache[k]=r; return r;
+  }
+
+  const sprites=[], targets=[];
+  function colorFor(i){const h=(i*131)%100;return h<P.red?RED:h<P.red+P.brass?BRASS:(i%2?PAPER:TELE);}
+  function buildSprites(){
+    L.forEach((d,i)=>{
+      const {t,aspect}=tex(d.w,d.sc,colorFor(i));
+      const baseOp=0.55+(d.wt-1)*0.2;
+      const sp=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthWrite:false,fog:true,opacity:baseOp}));
+      sp.userData={i,aspect,baseOp};group.add(sp);sprites.push(sp);targets.push(new THREE.Vector3());
+    });
+  }
+
+  const P={layout:'globe',speed:1.0,size:1.0,depth:0.55,brass:34,red:5,
+    bloom:0.85,radius:0.55,thresh:0.7,expo:1.1,fog:0.22,vign:0.5,grain:0.4,bg:44};
+  let quotesOn=false, mode='center';
+
+  function setScale(){sprites.forEach((sp,i)=>{const s=(0.9+L[i].wt*0.5)*P.size;sp.scale.set(s*sp.userData.aspect,s,1);});}
+  const R=6.4, gold=Math.PI*(3-Math.sqrt(5));
+  function computeTargets(){
+    for(let i=0;i<N;i++){const t=targets[i],d=L[i],rv=RV[i];
+      if(P.layout==='globe'){const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;t.set(Math.cos(th)*r*R,y*R,Math.sin(th)*r*R);}
+      else if(P.layout==='cloud'){t.set(rv.x*8,rv.y*5.5,rv.z*8);}
+      else if(P.layout==='mandala'){const ring=1+(i%5),a=gold*i,rr=ring*1.5;t.set(Math.cos(a)*rr,Math.sin(a)*rr,(d.wt-2)*0.6);}
+      else if(P.layout==='wall'){const cols=Math.ceil(Math.sqrt(N*1.7)),cx=i%cols,cy=Math.floor(i/cols),rows=Math.ceil(N/cols);
+        t.set((cx-(cols-1)/2)*2.4,((rows-1)/2-cy)*1.5,rv.z*0.6);}
+      else if(P.layout==='map'){if(d.lat==null){const a=gold*i;t.set(Math.cos(a)*8.5,5.2+Math.sin(a*3)*0.4,Math.sin(a)*8.5);}
+        else{const la=d.lat*Math.PI/180,lo=d.lng*Math.PI/180;t.set(R*Math.cos(la)*Math.cos(lo),R*Math.sin(la),R*Math.cos(la)*Math.sin(lo));}}
+      else if(P.layout==='rain'){t.set(rv.x*9,rv.y*6,rv.z*5);}
+      else if(P.layout==='ticker'){const rowN=7,row=i%rowN;t.set(rv.x*8.5,((rowN-1)/2-row)*1.6,rv.z*3);}
+    }
+  }
+
+  let composer,bloom;
+  function setup(){const W=innerWidth,H=innerHeight,dpr=Math.min(2,devicePixelRatio||1);
+    renderer.setPixelRatio(dpr);renderer.setSize(W,H);camera.aspect=W/H;camera.updateProjectionMatrix();
+    composer=new THREE.EffectComposer(renderer);composer.addPass(new THREE.RenderPass(scene,camera));
+    bloom=new THREE.UnrealBloomPass(new THREE.Vector2(W,H),P.bloom,P.radius,P.thresh);composer.addPass(bloom);
+    composer.setPixelRatio(dpr);composer.setSize(W,H);}
+  addEventListener('resize',setup);
+
+  function applyRender(){const s=Math.round(P.bg);const bg=new THREE.Color(`rgb(${s-6},${s+6},${s+13})`);
+    scene.background=bg;scene.fog=new THREE.FogExp2(bg.getHex(),P.fog*0.06);renderer.toneMappingExposure=P.expo;
+    if(bloom){bloom.strength=P.bloom;bloom.radius=P.radius;bloom.threshold=P.thresh;}}
+  function applyColors(){sprites.forEach((sp,i)=>{const {t,aspect}=tex(L[i].w,L[i].sc,colorFor(i));
+    sp.material.map=t;sp.userData.aspect=aspect;sp.material.needsUpdate=true;});setScale();}
+
+  // — drag + инерция + тап → карточка —
+  let drag=false,lx=0,ly=0,pdx=0,pdy=0,pdt=0,moved=false,velY=0,velX=0,spinDir=1;
+  cv.addEventListener('pointerdown',e=>{drag=true;moved=false;lx=pdx=e.clientX;ly=pdy=e.clientY;pdt=performance.now();velY=velX=0;});
+  addEventListener('pointerup',e=>{if(drag&&!moved&&performance.now()-pdt<450)pick(e.clientX,e.clientY);drag=false;});
+  addEventListener('pointermove',e=>{if(!drag)return;const dx=e.clientX-lx,dy=e.clientY-ly;lx=e.clientX;ly=e.clientY;
+    if(Math.hypot(e.clientX-pdx,e.clientY-pdy)>10)moved=true;
+    velY=dx*0.005;velX=dy*0.005;if(dx)spinDir=dx<0?-1:1;group.rotation.y+=velY;group.rotation.x+=velX;});
+  function pick(cx,cy){const r=cv.getBoundingClientRect();
+    const v=new THREE.Vector2(((cx-r.left)/r.width)*2-1,-((cy-r.top)/r.height)*2+1);
+    scene.updateMatrixWorld();raycaster.setFromCamera(v,camera);
+    const h=raycaster.intersectObjects(sprites,false)[0];
+    if(h&&h.object.userData.i!=null)openCard(L[h.object.userData.i]);}
+
+  // — карточка Р2 —
+  const card=document.getElementById('card');
+  function openCard(d){
+    document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
+    document.getElementById('c_n').textContent=d.n;
+    document.getElementById('c_e').textContent=d.e;document.getElementById('c_e').style.fontFamily=FF(d.sc);
+    document.getElementById('c_rows').innerHTML=
+      `<b>письмо</b><span>${d.scn} (${d.sc})</span><b>семья</b><span>${d.f}</span>`+
+      `<b>ареал</b><span>${d.r}</span><b>источник</b><span>${d.src}</span>`;
+    const ver=document.getElementById('c_ver'),warn=d.ver==='needs-verification';
+    ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+d.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');
+    card.classList.add('show');}
+  document.getElementById('cardx').onclick=()=>card.classList.remove('show');
+
+  // — слой цитат (RU + EN) —
+  const ru=document.getElementById('ru'),qsrc=document.getElementById('qsrc'),en=document.getElementById('en'),qbox=document.getElementById('qbox');
+  const Q=QUOTES.length?QUOTES:[{ru:'',en:'',work:'',year:''}];
+  let qi=-1,cyc=null;
+  function show(n){const q=Q[n];ru.textContent=q.ru;qsrc.textContent=q.work+(q.year?(', '+q.year):'');en.textContent=q.en||'';}
+  function cycle(){qbox.classList.remove('show');setTimeout(()=>{qi=(qi+1)%Q.length;show(qi);qbox.classList.add('show');},700);}
+  function startCycle(){stopCycle();cyc=setInterval(cycle,8000);}
+  function stopCycle(){if(cyc){clearInterval(cyc);cyc=null;}}
+  function applyBody(){document.body.className='m-'+mode+(quotesOn?'':' q-off');}
+  function setQuotes(on){if(on){if(qi<0)qi=0;show(qi);qbox.classList.add('show');startCycle();}else{stopCycle();qbox.classList.remove('show');}}
+
+  // — глубина: затухание дальних —
+  const _e=new THREE.Vector3();
+  function updateDepth(){const fade=P.depth,R2=2*R;
+    for(const sp of sprites){_e.copy(sp.position).applyEuler(group.rotation);
+      const tt=Math.max(0,Math.min(1,(_e.z+R)/R2));
+      sp.material.opacity=sp.userData.baseOp*((1-fade)+fade*Math.pow(tt,1.4));}}
+
+  function setLayout(k){P.layout=k;computeTargets();group.rotation.set(0,0,0);velY=velX=0;}
+
+  // — панель (единый компонент, выезжает справа) —
+  const panel=Panel.create({
+    title:'Арт-объект · параметры', open:false, hotkey:'h', handleLabel:'Настройки',
+    segments:[
+      {key:'layout',label:'Композиция',value:P.layout,options:[
+        ['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],['ticker','Лента'],['wall','Стена'],['map','Карта']]},
+      {key:'mode',label:'Размещение цитаты',when:s=>s.quotesOn,value:'center',options:[
+        ['center','Центр'],['lower','Низ'],['side','Сбоку'],['scene','Сцена'],['corner','Уголок']]},
+    ],
+    groups:[
+      {title:'Сцена',params:[
+        {key:'speed',label:'Скорость',min:0,max:4,step:.05,value:P.speed},
+        {key:'size',label:'Размер слов',min:.4,max:2.4,step:.05,value:P.size},
+        {key:'depth',label:'Затухание дальних',min:0,max:1,step:.02,value:P.depth},
+        {key:'brass',label:'Доля латуни',min:0,max:80,step:1,value:P.brass,unit:'%'},
+        {key:'red',label:'Доля красного',min:0,max:25,step:1,value:P.red,unit:'%'}]},
+      {title:'Пост-обработка',params:[
+        {key:'bloom',label:'Свечение (bloom)',min:0,max:2.5,step:.01,value:P.bloom},
+        {key:'radius',label:'Радиус bloom',min:0,max:1,step:.01,value:P.radius},
+        {key:'thresh',label:'Порог bloom',min:0,max:1,step:.01,value:P.thresh},
+        {key:'expo',label:'Экспозиция',min:.4,max:2,step:.01,value:P.expo},
+        {key:'fog',label:'Туман/глубина',min:0,max:1,step:.01,value:P.fog},
+        {key:'vign',label:'Виньетка',min:0,max:1,step:.02,value:P.vign},
+        {key:'grain',label:'Зерно',min:0,max:1,step:.02,value:P.grain},
+        {key:'bg',label:'Фон (светлота)',min:24,max:60,step:1,value:P.bg}]},
+      {title:'Цитата',when:s=>s.quotesOn,params:[
+        {key:'glow',label:'Свечение',min:0,max:2.5,step:.05,value:1},
+        {key:'blur',label:'Разблюр фона',min:0,max:40,step:1,value:16},
+        {key:'scrim',label:'Затемнение',min:0,max:1,step:.02,value:1},
+        {key:'qscale',label:'Размер',min:.6,max:1.8,step:.02,value:1}]},
+    ],
+    toggles:[{key:'quotesOn',label:'Цитаты Ленина',value:false}],
+    onChange(key,val){
+      if(key==='layout'){setLayout(val);return;}
+      if(key==='mode'){mode=val;applyBody();return;}
+      if(key==='quotesOn'){quotesOn=val;applyBody();setQuotes(val);return;}
+      if(['glow','blur','scrim','qscale'].includes(key)){document.documentElement.style.setProperty('--'+key,val);return;}
+      if(key==='vign'){document.getElementById('vign').style.opacity=val;return;}
+      if(key==='grain'){document.getElementById('grain').style.opacity=(val*0.14).toFixed(3);return;}
+      if(key in P){P[key]=val;
+        if(['brass','red'].includes(key))applyColors();
+        else if(key==='size')setScale();
+        else applyRender();}
+    }
+  });
+
+  // — цикл —
+  let last=0;
+  function animate(t){requestAnimationFrame(animate);const dt=Math.min(40,t-(last||t));last=t;
+    if(!drag){
+      group.rotation.y+=velY;velY*=0.95;
+      group.rotation.x+=velX;velX*=0.92;if(Math.abs(velX)<1e-4)velX=0;
+      const base=P.speed*0.0016;
+      if(P.layout==='globe'||P.layout==='cloud'||P.layout==='map'){if(velY>-base&&velY<base)velY=base*spinDir;}
+      else if(P.layout==='mandala'){group.rotation.z+=P.speed*0.0009;}
+      else{group.rotation.x*=0.95;}
+    }
+    if(P.layout==='rain'){for(let i=0;i<N;i++){targets[i].y+=RV[i].sp*P.speed*0.012*dt;if(targets[i].y>6.5)targets[i].y=-6.5;}}
+    else if(P.layout==='ticker'){for(let i=0;i<N;i++){const dir=(i%7)%2?1:-1;targets[i].x+=dir*RV[i].sp*P.speed*0.012*dt;if(targets[i].x>9)targets[i].x=-9;if(targets[i].x<-9)targets[i].x=9;}}
+    for(let i=0;i<N;i++)sprites[i].position.lerp(targets[i],0.06);
+    updateDepth();
+    composer.render();}
+
+  // — старт —
+  ['glow','blur','scrim','qscale'].forEach(k=>document.documentElement.style.setProperty('--'+k,panel.get(k)));
+  buildSprites();setScale();computeTargets();sprites.forEach((s,i)=>s.position.copy(targets[i]));
+  setup();applyRender();
+  document.getElementById('vign').style.opacity=P.vign;
+  document.getElementById('grain').style.opacity=(P.grain*0.14).toFixed(3);
+  applyBody();animate();
+  document.getElementById('boot').classList.add('off');
+
+  // — диплинк ?layout=globe&q=1 —
+  const sp=new URLSearchParams(location.search);
+  if(sp.get('layout'))panel.set('layout',sp.get('layout'));
+  if(sp.get('q')==='1')panel.set('quotesOn',true);
+  window.__art={ready:true,source,count:N};
+}
+</script>
+</body>
+</html>

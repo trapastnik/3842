@@ -4,55 +4,44 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Ленин на языках мира · v2</title>
+<link rel="stylesheet" href="./fonts/faces.css">
 <style>
-  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
-  @font-face{font-family:"20 Kopeek";src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"20 Kopeek";font-weight:600;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
-  :root{
-    --amber-black:#000;--white:#fff;--brass:#D2B773;--red:#A02128;
-    --blue-grey:#5D8970;--window:#9DA3A8;--graphite:#435059;
-    --telegrey:#CFD0CF;--paper:#F7F9EF;
-  }
+  :root{--amber-black:#000;--white:#fff;--brass:#D2B773;--red:#A02128;
+    --green:#5D8970;--window:#9DA3A8;--graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF}
   *{box-sizing:border-box}
   body{margin:0;min-height:100vh;background:var(--graphite);color:var(--paper);
-    font-family:"21 Cent",system-ui,sans-serif;line-height:1.5;
-    padding:clamp(24px,5vw,72px)}
-  .tag{font-family:"20 Kopeek",system-ui,sans-serif;font-size:13px;letter-spacing:.12em;
-    text-transform:uppercase;color:var(--brass)}
+    font-family:"21 Cent",system-ui,sans-serif;line-height:1.5;padding:clamp(24px,5vw,72px)}
+  .tag{font-family:"20 Kopeek",system-ui,sans-serif;font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--brass)}
   header{max-width:1200px;margin:0 auto 40px}
-  h1{font-family:"Nolde",Georgia,serif;font-weight:400;line-height:1;margin:.15em 0 .1em;
-    font-size:clamp(40px,7vw,96px);color:var(--paper)}
+  h1{font-family:"Nolde",Georgia,serif;font-weight:400;line-height:1;margin:.15em 0 .1em;font-size:clamp(40px,7vw,96px);color:var(--paper)}
   h1 b{color:var(--brass);font-weight:400}
-  .sub{font-size:clamp(15px,1.6vw,19px);color:var(--telegrey);max-width:62ch}
+  .sub{font-size:clamp(15px,1.6vw,19px);color:var(--telegrey);max-width:64ch}
   main{max-width:1200px;margin:0 auto}
   .cta{display:flex;gap:22px;align-items:center;flex-wrap:wrap;
-    background:linear-gradient(180deg,#4c5b65,#3c4850);
-    border:1px solid var(--brass);border-radius:16px;padding:26px 30px;margin-bottom:46px}
-  .cta .big{font-family:"Nolde",Georgia,serif;font-size:clamp(26px,3vw,40px);color:var(--brass);
-    line-height:1}
+    background:linear-gradient(180deg,#4c5b65,#3c4850);border:1px solid var(--brass);border-radius:16px;padding:26px 30px;margin-bottom:46px}
+  .cta .big{font-family:"Nolde",Georgia,serif;font-size:clamp(26px,3vw,40px);color:var(--brass);line-height:1}
   .cta .txt{flex:1;min-width:260px}
+  .cta .txt strong{font-size:20px}
   .cta .txt p{margin:.3em 0 0;color:var(--telegrey);font-size:15px}
-  .cta a.go{font-family:"20 Kopeek",sans-serif;font-weight:600;font-size:15px;
-    text-decoration:none;color:var(--amber-black);background:var(--brass);
-    padding:13px 24px;border-radius:9px;white-space:nowrap;border:1px solid var(--brass);
-    transition:.15s}
+  .cta a.go{font-family:"20 Kopeek",sans-serif;font-weight:600;font-size:15px;text-decoration:none;color:var(--amber-black);
+    background:var(--brass);padding:13px 24px;border-radius:9px;white-space:nowrap;border:1px solid var(--brass);transition:.15s}
   .cta a.go:hover{background:#e0ca87}
   .cta a.go.go2{background:transparent;color:var(--brass)}
   .cta a.go.go2:hover{background:rgba(210,183,115,.15)}
-  h2{font-family:"20 Kopeek",sans-serif;font-weight:600;font-size:14px;letter-spacing:.1em;
-    text-transform:uppercase;color:var(--window);margin:0 0 18px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px}
-  .v{background:#3b4751;border:1px solid #51606a;border-radius:12px;padding:18px 18px 16px;
-    position:relative;display:block;text-decoration:none;transition:.15s}
+  h2{font-family:"20 Kopeek",sans-serif;font-weight:600;font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--window);margin:0 0 8px}
+  h2 + .lead{color:var(--telegrey);font-size:14px;margin:0 0 18px;max-width:70ch}
+  .lead a{color:var(--brass);text-decoration:none;border-bottom:1px solid rgba(210,183,115,.4)}
+  .v.eng .st{color:var(--brass);border-color:var(--brass)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:14px;margin-bottom:40px}
+  .v{background:#3b4751;border:1px solid #51606a;border-radius:12px;padding:18px 18px 16px;position:relative;display:block;text-decoration:none;transition:.15s}
   .v:hover{background:#445360;border-color:var(--brass);transform:translateY(-2px)}
   .v .n{font-family:"Nolde",Georgia,serif;font-size:22px;color:var(--paper)}
   .v .d{font-size:13px;color:var(--telegrey);margin-top:4px}
-  .v .st{position:absolute;top:12px;right:12px;font-family:"20 Kopeek",sans-serif;
-    font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--brass);
-    border:1px solid var(--brass);border-radius:20px;padding:2px 9px}
-  footer{max-width:1200px;margin:54px auto 0;padding-top:20px;border-top:1px solid #51606a;
-    color:var(--window);font-size:13px;font-family:"20 Kopeek",sans-serif}
+  .v .st{position:absolute;top:12px;right:12px;font-family:"20 Kopeek",sans-serif;font-size:10px;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--brass);border:1px solid var(--brass);border-radius:20px;padding:2px 9px}
+  .v.tool{background:#38424b}
+  .v.tool .st{color:var(--green);border-color:var(--green)}
+  footer{max-width:1200px;margin:34px auto 0;padding-top:20px;border-top:1px solid #51606a;color:var(--window);font-size:13px;font-family:"20 Kopeek",sans-serif}
   footer .red{color:var(--red)}
 </style>
 </head>
@@ -60,42 +49,64 @@
 <header>
   <div class="tag">МТК 38 · версия 2 · в разработке</div>
   <h1>«<b>Ленин</b>» на языках мира</h1>
-  <p class="sub">Объёмная композиция из слова «Ленин» на 53 языках мира. Версия 2 — на
-    canonical-списке написаний (PDF-specimen музея), горизонтальный формат 3840×2160,
-    художественный рендер.</p>
+  <p class="sub">Объёмная композиция из слова «Ленин» на <b>53 языках</b> мира (canonical-список
+    написаний музея + испанский для полноты 6 языков ООН). Горизонтальный формат 3840×2160,
+    кинематографичный WebGL-рендер. Структура: <b>фронт</b> — то, что видит посетитель;
+    <b>бэк</b> — данные, генераторы и приёмка.</p>
 </header>
 
 <main>
   <div class="cta">
     <div class="big">✦</div>
     <div class="txt">
-      <div class="tag" style="color:var(--paper)">Арт-объект v2 · кинематографичный WebGL</div>
-      <strong style="font-size:20px">7 композиций · 53 языка · всё настраивается</strong>
+      <div class="tag" style="color:var(--paper)">Арт-объект · единый WebGL-движок</div>
+      <strong>7 композиций · 53 языка · всё настраивается</strong>
       <p>Глобус, облако, мандала, дождь, лента, стена, карта — переключаемые композиции слова «Ленин»
-        с bloom-свечением. Тап по слову → карточка языка. Цитаты Ленина отдельным слоем.</p>
+        с bloom-свечением. Тап по слову → карточка языка. Цитаты Ленина отдельным слоем.
+        Все параметры и композиции — в единой панели справа.</p>
     </div>
     <div style="display:flex;flex-direction:column;gap:8px;flex-shrink:0;">
-      <a class="go" href="./app.html">Открыть арт-объект →</a>
-      <a class="go go2" href="./editor.html">Данные и приёмка →</a>
-      <a class="go go2" href="./analysis.html">Аналитика и предложения →</a>
+      <a class="go" href="./front/studio.html">Открыть арт-объект →</a>
+      <a class="go go2" href="./back/editor.html">Данные и приёмка →</a>
+      <a class="go go2" href="./back/analysis.html">Аналитика →</a>
     </div>
   </div>
 
-  <h2>Композиции — 7 в одном движке</h2>
+  <h2>Фронт · композиции</h2>
+  <p class="lead">Всё в одном движке (<code>front/studio.html</code>) — ссылки открывают нужную композицию сразу.
+    Карта — отдельная Canvas-2D сцена с гео-привязкой.</p>
   <div class="grid">
-    <a class="v" href="./app.html?layout=globe"><div class="n">Глобус</div><div class="d">3D-сфера слов</div></a>
-    <a class="v" href="./app.html?layout=cloud"><div class="n">Облако</div><div class="d">слова в объёме</div></a>
-    <a class="v" href="./app.html?layout=mandala"><div class="n">Мандала</div><div class="d">радиальные кольца</div></a>
-    <a class="v" href="./app.html?layout=rain"><div class="n">Дождь</div><div class="d">слова восходят вверх</div></a>
-    <a class="v" href="./app.html?layout=ticker"><div class="n">Лента</div><div class="d">горизонтальные строки</div></a>
-    <a class="v" href="./app.html?layout=wall"><div class="n">Стена</div><div class="d">плотная сетка</div></a>
-    <a class="v" href="./app.html?layout=map"><div class="n">Карта</div><div class="d">гео по странам</div></a>
+    <a class="v" href="./front/studio.html?layout=globe"><span class="st">v2</span><div class="n">Глобус</div><div class="d">3D-сфера слов</div></a>
+    <a class="v" href="./front/studio.html?layout=cloud"><span class="st">v2</span><div class="n">Облако</div><div class="d">слова в объёме</div></a>
+    <a class="v" href="./front/studio.html?layout=mandala"><span class="st">v2</span><div class="n">Мандала</div><div class="d">радиальные кольца</div></a>
+    <a class="v" href="./front/studio.html?layout=rain"><span class="st">v2</span><div class="n">Дождь</div><div class="d">слова восходят вверх</div></a>
+    <a class="v" href="./front/studio.html?layout=ticker"><span class="st">v2</span><div class="n">Лента</div><div class="d">горизонтальные строки</div></a>
+    <a class="v" href="./front/studio.html?layout=wall"><span class="st">v2</span><div class="n">Стена</div><div class="d">плотная сетка</div></a>
+    <a class="v" href="./front/map.html"><span class="st">Canvas-2D</span><div class="n">Карта</div><div class="d">гео-привязка по странам, маршруты</div></a>
+  </div>
+
+  <h2>Движок v3 · WebGPU (эксперимент)</h2>
+  <p class="lead">Новый рендерер (Three r184, WebGPU + фоллбэк, кино-пост: DOF/аберрация/атмосфера).
+    Требует http и свежий Chromium.</p>
+  <div class="grid">
+    <a class="v eng" href="../mtk38-v3/globe.html"><span class="st">v3</span><div class="n">Глобус</div><div class="d">кольцевая сфера слов, кино-пост</div></a>
+    <a class="v eng" href="../mtk38-v3/rain.html"><span class="st">v3</span><div class="n">Дождь</div><div class="d">восходящие частицы-слова</div></a>
+    <a class="v eng" href="../mtk38-v3/map.html"><span class="st">v3</span><div class="n">Карта</div><div class="d">гео-точки, UN-эмблема</div></a>
+  </div>
+
+  <h2>Бэк · данные, генераторы, приёмка</h2>
+  <p class="lead">Единый источник — <code>data/mtk38.json</code> (+ <code>mtk38-quotes.json</code>). Фронт читает канон в рантайме.</p>
+  <div class="grid">
+    <a class="v tool" href="./back/editor.html"><span class="st">инструмент</span><div class="n">Данные и приёмка</div><div class="d">редактор полей + сверка написаний с листом музея</div></a>
+    <a class="v tool" href="./back/analysis.html"><span class="st">инструмент</span><div class="n">Аналитика</div><div class="d">репрезентативность, охват, предложения</div></a>
+    <a class="v tool" href="./back/validate.html"><span class="st">инструмент</span><div class="n">Валидатор</div><div class="d">сверка написаний → вкладка «Приёмка» редактора</div></a>
   </div>
 </main>
 
 <footer>
   Музей В.И. Ленина · МТК 38 «Ленин на языках мира» · версия 2 ·
-  <span class="red">●</span> прототип, не финальная редакция
+  <span class="red">●</span> прототип, не финальная редакция ·
+  панель настроек — единый модуль <code>shared/panel.js</code>
 </footer>
 </body>
 </html>
