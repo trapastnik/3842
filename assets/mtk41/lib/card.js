@@ -44,6 +44,7 @@ const FALLBACK_MODEL = {
 
 const LAYOUT_KEY = "mtk41-card-layout";
 const MODE_KEY = "mtk41-card-mode";
+const SHOW3D_KEY = "mtk41-card-show3d";
 
 const state = {
   heights: {},
@@ -51,6 +52,7 @@ const state = {
   models: {},
   layout: "stacked",        // stacked | overlay
   mode: "native",            // native | iframe
+  show3D: true,              // toggled from каждого prototype's settings panel
   current: null,             // active MonumentViewer
   lastMonument: null,        // most-recently shown monument (for mode switching)
   activeSketchfab: null,     // { sorted, index } for the iframe mode
@@ -162,6 +164,13 @@ function applyLayout() {
 function populateModels(monumentId) {
   const cont = $("[data-mtk-models]");
   if (!cont) return;
+  // Global toggle — cкрыть весь 3D-блок, если пользователь отключил его в панели
+  if (!state.show3D) {
+    cont.hidden = true;
+    disposeNative();
+    clearSketchfabIframe();
+    return;
+  }
   const own = state.models[monumentId] || [];
   let list = own;
   let isTest = false;
@@ -309,6 +318,8 @@ export function initMtkCard(target) {
   try {
     state.layout = sessionStorage.getItem(LAYOUT_KEY) === "overlay" ? "overlay" : "stacked";
     state.mode = sessionStorage.getItem(MODE_KEY) === "iframe" ? "iframe" : "native";
+    const s3 = sessionStorage.getItem(SHOW3D_KEY);
+    if (s3 === "false") state.show3D = false;
   } catch (e) {}
 
   applyLayout();
@@ -346,7 +357,17 @@ export function initMtkCard(target) {
     if (state.lastMonument && !host.hidden) show(state.lastMonument);
   });
 
+  // Public setter for global 3D toggle — prototype settings panels use this.
+  // Refreshes any open card so the change is visible immediately.
+  function setShow3D(on) {
+    const v = !!on;
+    if (v === state.show3D) return;
+    state.show3D = v;
+    try { sessionStorage.setItem(SHOW3D_KEY, v ? "true" : "false"); } catch (e) {}
+    if (state.lastMonument && !host.hidden) show(state.lastMonument);
+  }
+
   // Expose to non-module scripts
-  window.MtkCard = { show, hide };
-  return { show, hide };
+  window.MtkCard = { show, hide, setShow3D };
+  return { show, hide, setShow3D };
 }

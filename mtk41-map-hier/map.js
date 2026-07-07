@@ -85,6 +85,7 @@
     showOutliers: true,
     crossfade: true,
     showMacroLabels: true,    // labels на LEVEL_MACRO кружках
+    show3D: true,             // 3D-модель в карточке
   };
 
   // Preset view configurations (lat, lng of camera target, zoom level).
@@ -1105,6 +1106,17 @@
   wireCheck("opt-connectors", "showConnectors");
   wireCheck("opt-outliers", "showOutliers");
   wireCheck("opt-crossfade", "crossfade");
+  // 3D-модель — special: prox through MtkCard.setShow3D so open card refreshes
+  (function () {
+    const el = document.getElementById("opt-show3d");
+    el.checked = !!settings.show3D;
+    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
+    el.addEventListener("change", () => {
+      settings.show3D = !!el.checked;
+      saveSettings();
+      if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
+    });
+  })();
 
   document.getElementById("opt-reset").addEventListener("click", () => {
     Object.assign(settings, DEFAULT_SETTINGS);
@@ -1120,6 +1132,8 @@
     document.getElementById("opt-connectors").checked = settings.showConnectors;
     document.getElementById("opt-outliers").checked = settings.showOutliers;
     document.getElementById("opt-crossfade").checked = settings.crossfade;
+    document.getElementById("opt-show3d").checked = settings.show3D;
+    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
     settingsPanel.querySelectorAll("[data-size-mode]").forEach(b => {
       b.classList.toggle("active", b.dataset.sizeMode === settings.sizeMode);
     });
