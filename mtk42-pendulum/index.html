@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Маятник</title>
-    <link rel="stylesheet" href="./styles.css?v=9" />
+    <link rel="stylesheet" href="./styles.css?v=10" />
   </head>
   <body>
     <main class="stage">
@@ -129,6 +129,60 @@
           </label>
         </section>
 
+        <section class="settings__group">
+          <div class="settings__title">Ось «Отрицание — Почитание»</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="9" max="32" step="1" data-setting-num="axisSize" />
+            <span class="settings__num" data-bind-num="axisSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="20" max="100" step="5" data-setting-num="axisOpacity" />
+            <span class="settings__num" data-bind-num="axisOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="axisBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Подписи эпох</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="14" max="72" step="2" data-setting-num="epochSize" />
+            <span class="settings__num" data-bind-num="epochSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="10" max="100" step="5" data-setting-num="epochOpacity" />
+            <span class="settings__num" data-bind-num="epochOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="epochBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Годы (шкала справа)</div>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="10" max="42" step="1" data-setting-num="yearSize" />
+            <span class="settings__num" data-bind-num="yearSize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="20" max="100" step="5" data-setting-num="yearOpacity" />
+            <span class="settings__num" data-bind-num="yearOpacity"></span>
+          </label>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="yearBold" />
+            <span>Жирный</span>
+          </label>
+        </section>
+
         <button class="settings__reset" type="button">Сбросить настройки</button>
       </aside>
 
@@ -150,6 +204,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./pendulum.js?v=7"></script>
+    <script type="module" src="./pendulum.js?v=8"></script>
   </body>
 </html>
