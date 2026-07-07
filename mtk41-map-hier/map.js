@@ -554,15 +554,25 @@
 
   function materializeToScreen(clustersWorld, sizeMode) {
     const arr = [];
+    // Visible pre-zoom range accounts for the ctx.scale(zoom) transform:
+    // at zoom < 1 the viewport shows MORE than [0..width] in pre-zoom coords
+    // (it's centered on w/2 and spans width/zoom). Without this correction
+    // world-preset (zoom 0.42) culled Америки, Океанию и т.д.
+    const zoom = Math.max(0.01, map.zoom);
+    const halfViewW = width / (2 * zoom);
+    const halfViewH = height / (2 * zoom);
+    const viewMinX = width * 0.5 - halfViewW;
+    const viewMaxX = width * 0.5 + halfViewW;
+    const viewMinY = height * 0.5 - halfViewH;
+    const viewMaxY = height * 0.5 + halfViewH;
     for (const c of clustersWorld) {
       const s = pointToScreen(c.worldX, c.worldY);
       const rVpx = c.count > 1
         ? sizeFor(c.count, sizeMode)
         : shortSide() * LEAF_R_MULT;
-      // Cull to viewport with generous margin
-      const margin = 100 + rVpx;
-      if (s.x < -margin || s.x > width + margin ||
-          s.y < -margin || s.y > height + margin) continue;
+      const margin = 100 + rVpx / zoom;
+      if (s.x < viewMinX - margin || s.x > viewMaxX + margin ||
+          s.y < viewMinY - margin || s.y > viewMaxY + margin) continue;
       arr.push({
         // anchor = original world → screen point (undisplaced)
         anchorX: s.x, anchorY: s.y,
