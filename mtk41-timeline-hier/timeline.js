@@ -40,7 +40,8 @@
     velY: 0,               // пан-инерция по годам
   };
   const MIN_ZOOM_FLOOR = 1.0;
-  const MAX_ZOOM = 30;
+  const MAX_ZOOM = 20;      // ~5 лет в кадре — комфортный предел; ниже
+                            // всё уже слипается и не читается
 
   // ---------- State ----------
   let width = 0, height = 0, dpr = 1;
