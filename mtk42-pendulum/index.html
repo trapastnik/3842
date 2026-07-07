@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Маятник</title>
-    <link rel="stylesheet" href="./styles.css?v=11" />
+    <link rel="stylesheet" href="./styles.css?v=12" />
   </head>
   <body>
     <main class="stage">
@@ -108,14 +108,37 @@
             <span class="settings__num" data-bind-num="dotSize"></span>
           </label>
           <label class="settings__row settings__row--slider">
-            <span>Толщина кривой, px</span>
+            <span>Плотность лет, px/год</span>
+            <input type="range" min="22" max="60" step="2" data-setting-num="pxPerYear" />
+            <span class="settings__num" data-bind-num="pxPerYear"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Кривая маятника</div>
+          <label class="settings__row settings__row--slider">
+            <span>Толщина, px</span>
             <input type="range" min="2" max="16" step="1" data-setting-num="strokeWidth" />
             <span class="settings__num" data-bind-num="strokeWidth"></span>
           </label>
           <label class="settings__row settings__row--slider">
-            <span>Плотность лет, px/год</span>
-            <input type="range" min="22" max="60" step="2" data-setting-num="pxPerYear" />
-            <span class="settings__num" data-bind-num="pxPerYear"></span>
+            <span>Сглаживание (окно, ± лет)</span>
+            <input type="range" min="1" max="20" step="1" data-setting-num="smoothWindow" />
+            <span class="settings__num" data-bind-num="smoothWindow"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="20" max="100" step="5" data-setting-num="strokeOpacity" />
+            <span class="settings__num" data-bind-num="strokeOpacity"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Диагональные полосы фона</div>
+          <label class="settings__row settings__row--slider">
+            <span>Яркость, %</span>
+            <input type="range" min="0" max="100" step="5" data-setting-num="stripeOpacity" />
+            <span class="settings__num" data-bind-num="stripeOpacity"></span>
           </label>
         </section>
 
@@ -214,6 +237,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./pendulum.js?v=9"></script>
+    <script type="module" src="./pendulum.js?v=10"></script>
   </body>
 </html>
