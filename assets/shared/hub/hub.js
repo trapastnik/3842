@@ -48,6 +48,84 @@ nextCorner.textContent = "›";
 document.body.appendChild(prevCorner);
 document.body.appendChild(nextCorner);
 
+/* ---- Настройки стрелок (позиция/яркость/размер), общие для всех МТК ---- */
+const NAV_KEY = "bmk-hub-nav";
+const NAV_DEFAULTS = { y: 50, x: 28, opacity: 100, size: 88 };
+const NAV_SPEC = [
+  { key: "y",       label: "Положение · вертикаль", min: 5,  max: 95,  step: 1, unit: "%",  cssVar: "--nav-y",       toCss: v => v + "%" },
+  { key: "x",       label: "Положение · горизонталь", min: 0, max: 200, step: 2, unit: "px", cssVar: "--nav-x",       toCss: v => v + "px" },
+  { key: "opacity", label: "Яркость",              min: 20, max: 100, step: 5, unit: "%",  cssVar: "--nav-opacity", toCss: v => (v / 100).toFixed(2) },
+  { key: "size",    label: "Размер",               min: 44, max: 160, step: 4, unit: "px", cssVar: "--nav-size",    toCss: v => v + "px" },
+];
+
+function loadNav() {
+  try {
+    const s = JSON.parse(localStorage.getItem(NAV_KEY) || "{}");
+    return { ...NAV_DEFAULTS, ...s };
+  } catch { return { ...NAV_DEFAULTS }; }
+}
+let navCfg = loadNav();
+
+function applyNav() {
+  NAV_SPEC.forEach(s => {
+    document.documentElement.style.setProperty(s.cssVar, s.toCss(navCfg[s.key]));
+  });
+}
+applyNav();
+
+/* Шестерёнка в баре (перед .hub__nav) */
+const gear = document.createElement("button");
+gear.type = "button";
+gear.className = "hub__gear";
+gear.setAttribute("aria-label", "Настройки стрелок");
+gear.textContent = "⚙";
+
+/* Панель настроек справа */
+const settings = document.createElement("aside");
+settings.className = "hub__settings";
+settings.innerHTML =
+  '<div class="hub__settings__head">' +
+  '  <span class="hub__settings__title">Стрелки навигации</span>' +
+  '  <button type="button" class="hub__settings__close" aria-label="Закрыть">✕</button>' +
+  '</div>' +
+  NAV_SPEC.map(s =>
+    `<div class="hub__set-row">` +
+    `<label>${s.label}<span class="val" data-val="${s.key}">${navCfg[s.key]}${s.unit}</span></label>` +
+    `<input type="range" data-key="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${navCfg[s.key]}">` +
+    `</div>`
+  ).join("") +
+  '<button type="button" class="hub__settings__reset">Сбросить</button>';
+document.body.appendChild(settings);
+
+function openSettings(open) {
+  settings.classList.toggle("is-open", open);
+  gear.classList.toggle("is-open", open);
+}
+gear.addEventListener("click", () => openSettings(!settings.classList.contains("is-open")));
+settings.querySelector(".hub__settings__close").addEventListener("click", () => openSettings(false));
+
+settings.querySelectorAll('input[type="range"]').forEach(input => {
+  input.addEventListener("input", () => {
+    const key = input.dataset.key;
+    const spec = NAV_SPEC.find(s => s.key === key);
+    navCfg[key] = Number(input.value);
+    settings.querySelector(`[data-val="${key}"]`).textContent = navCfg[key] + spec.unit;
+    document.documentElement.style.setProperty(spec.cssVar, spec.toCss(navCfg[key]));
+    localStorage.setItem(NAV_KEY, JSON.stringify(navCfg));
+  });
+});
+
+settings.querySelector(".hub__settings__reset").addEventListener("click", () => {
+  navCfg = { ...NAV_DEFAULTS };
+  applyNav();
+  localStorage.setItem(NAV_KEY, JSON.stringify(navCfg));
+  settings.querySelectorAll('input[type="range"]').forEach(input => {
+    const spec = NAV_SPEC.find(s => s.key === input.dataset.key);
+    input.value = navCfg[input.dataset.key];
+    settings.querySelector(`[data-val="${input.dataset.key}"]`).textContent = navCfg[input.dataset.key] + spec.unit;
+  });
+});
+
 /* Inject orientation switch (Гор / Верт) into the bar. The hub renders
  * the iframe full-viewport for horizontal mode, or pinned to 9:16
  * portrait centered + scaled for vertical (kiosk) preview. */
@@ -59,6 +137,9 @@ orientEl.innerHTML =
   '<button type="button" data-o="h" aria-label="Горизонтально">Гор</button>' +
   '<button type="button" data-o="v" aria-label="Вертикально (киоск 2160×3840)">Верт</button>';
 nav.parentNode.insertBefore(orientEl, nav);
+
+/* Шестерёнка настроек стрелок — в бар, перед .hub__nav */
+nav.parentNode.insertBefore(gear, nav);
 
 let i = 0;
 
