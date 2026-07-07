@@ -62,8 +62,9 @@
     viewPreset: "eurasia",    // world | eurasia | ex-ussr
     sizeMode: "sqrt",         // sqrt | linear | log
     thrMacro: 1.0,            // z < thrMacro → LEVEL_MACRO
-    thrCountry: 1.8,          // thrMacro..thrCountry → LEVEL_COUNTRY
-    thrCity: 3.0,             // thrCountry..thrCity → LEVEL_CITY; ≥thrCity → LEVEL_LEAF
+    thrCountry: 1.7,          // thrMacro..thrCountry → LEVEL_COUNTRY
+    thrRegion: 2.3,           // thrCountry..thrRegion → LEVEL_REGION (sub-country)
+    thrCity: 3.2,             // thrRegion..thrCity → LEVEL_CITY; ≥thrCity → LEVEL_LEAF
     gap: 6,                   // vpx между кружками при relaxation
     labelScale: 1.4,          // multiplier для размера всех подписей
     showConnectors: true,
@@ -318,7 +319,17 @@
 
   const tree = { children: [] };   // filled by buildTree()
 
-  const THRESHOLDS = { country: 400, city: 120 };   // world-px
+  // Agglomerative thresholds — fractions of worldW so they scale with the
+  // projection. country ≈ 12% of world width (rough country-level grouping),
+  // region ≈ 3% (splits Россия into ~5 sub-clusters), city ≈ 1% (individual
+  // cities merged only when practically overlapping).
+  function computeThresholds() {
+    return {
+      country: map.worldW * 0.125,
+      region:  map.worldW * 0.030,
+      city:    map.worldW * 0.010,
+    };
+  }
 
   function buildTree() {
     // Bucket items by macro
@@ -341,10 +352,12 @@
       }
       const cx = sx / memberIndices.length;
       const cy = sy / memberIndices.length;
-      // Compute two agglomerative snapshots
+      // Three agglomerative snapshots — country / sub-country region / city
       const leafItems = memberIndices;
-      const countrySnap = agglomerativeSnapshot(leafItems, THRESHOLDS.country);
-      const citySnap    = agglomerativeSnapshot(leafItems, THRESHOLDS.city);
+      const T = computeThresholds();
+      const countrySnap = agglomerativeSnapshot(leafItems, T.country);
+      const regionSnap  = agglomerativeSnapshot(leafItems, T.region);
+      const citySnap    = agglomerativeSnapshot(leafItems, T.city);
       tree.children.push({
         key: macro.key,
         name: macro.name,
@@ -353,6 +366,7 @@
         macroY: cy,
         memberIndices,
         countrySnap,
+        regionSnap,
         citySnap,
       });
     }
@@ -482,6 +496,7 @@
   function levelFor(z) {
     if (z < settings.thrMacro) return "MACRO";
     if (z < settings.thrCountry) return "COUNTRY";
+    if (z < settings.thrRegion) return "REGION";
     if (z < settings.thrCity) return "CITY";
     return "LEAF";
   }
@@ -489,6 +504,7 @@
   function nextLevelThreshold(level) {
     if (level === "MACRO") return settings.thrMacro;
     if (level === "COUNTRY") return settings.thrCountry;
+    if (level === "REGION") return settings.thrRegion;
     if (level === "CITY") return settings.thrCity;
     return null;
   }
@@ -510,6 +526,15 @@
         });
       } else if (level === "COUNTRY") {
         for (const n of macroNode.countrySnap) {
+          out.push({
+            worldX: n.x, worldY: n.y, count: n.count,
+            memberIndices: n.memberIndices,
+            name: labelForNode(n, macroNode.name),
+            macroKey: macroNode.key,
+          });
+        }
+      } else if (level === "REGION") {
+        for (const n of macroNode.regionSnap) {
           out.push({
             worldX: n.x, worldY: n.y, count: n.count,
             memberIndices: n.memberIndices,
@@ -797,7 +822,8 @@
     const gapVpx = Math.max(0, Math.min(30, settings.gap));
     const thrs = [
       { z: settings.thrMacro,   lower: "MACRO",   upper: "COUNTRY" },
-      { z: settings.thrCountry, lower: "COUNTRY", upper: "CITY" },
+      { z: settings.thrCountry, lower: "COUNTRY", upper: "REGION" },
+      { z: settings.thrRegion,  lower: "REGION",  upper: "CITY" },
       { z: settings.thrCity,    lower: "CITY",    upper: "LEAF" },
     ];
     const currentLevel = levelFor(z);
@@ -859,6 +885,7 @@
     let targetZoom;
     if (currentLevel === "MACRO") targetZoom = settings.thrMacro + 0.15;
     else if (currentLevel === "COUNTRY") targetZoom = settings.thrCountry + 0.15;
+    else if (currentLevel === "REGION") targetZoom = settings.thrRegion + 0.15;
     else if (currentLevel === "CITY") targetZoom = settings.thrCity + 0.15;
     else return;
     targetZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, targetZoom));
@@ -917,7 +944,8 @@
     const currentLevel = levelFor(map.zoom);
     let target;
     if (currentLevel === "LEAF") target = settings.thrCity - 0.1;
-    else if (currentLevel === "CITY") target = settings.thrCountry - 0.1;
+    else if (currentLevel === "CITY") target = settings.thrRegion - 0.1;
+    else if (currentLevel === "REGION") target = settings.thrCountry - 0.1;
     else if (currentLevel === "COUNTRY") target = settings.thrMacro - 0.1;
     else target = 0.8;
     target = Math.max(MIN_ZOOM, target);
@@ -1045,6 +1073,7 @@
   }
   wireRange("thr-macro", "thrMacro", v => v.toFixed(2) + "×");
   wireRange("thr-country", "thrCountry", v => v.toFixed(2) + "×");
+  wireRange("thr-region", "thrRegion", v => v.toFixed(2) + "×");
   wireRange("thr-city", "thrCity", v => v.toFixed(2) + "×");
   wireRange("opt-gap", "gap", v => String(Math.round(v)));
   wireRange("opt-label-scale", "labelScale", v => v.toFixed(2) + "×");
@@ -1068,6 +1097,7 @@
     // Re-sync inputs
     document.getElementById("thr-macro").value = settings.thrMacro;
     document.getElementById("thr-country").value = settings.thrCountry;
+    document.getElementById("thr-region").value = settings.thrRegion;
     document.getElementById("thr-city").value = settings.thrCity;
     document.getElementById("opt-gap").value = settings.gap;
     document.getElementById("opt-label-scale").value = settings.labelScale;
@@ -1087,7 +1117,11 @@
       if (id === "opt-gap") span.textContent = String(Math.round(settings.gap));
       else if (id === "opt-label-scale") span.textContent = settings.labelScale.toFixed(2) + "×";
       else if (id.startsWith("thr-")) {
-        const key = id === "thr-macro" ? "thrMacro" : id === "thr-country" ? "thrCountry" : "thrCity";
+        const key =
+          id === "thr-macro"   ? "thrMacro" :
+          id === "thr-country" ? "thrCountry" :
+          id === "thr-region"  ? "thrRegion" :
+          "thrCity";
         span.textContent = settings[key].toFixed(2) + "×";
       }
     });
