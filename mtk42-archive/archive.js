@@ -9,7 +9,16 @@ const state = {
   items: [],
   epochs: [],
   byId: new Map(),
+  cardDesign: loadCardDesign(),
 };
+const LS_KEY = "mtk42-archive-settings-v1";
+function loadCardDesign() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY))?.cardDesign || "v1"; }
+  catch { return "v1"; }
+}
+function saveCardDesign() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify({ cardDesign: state.cardDesign })); } catch {}
+}
 
 const CATEGORY_TAG = {
   leaders: "Вождь",
@@ -26,9 +35,18 @@ const CATEGORY_TAG = {
   state.epochs = content.epochs;
   state.items = buildItems(content, portraits);
   for (const it of state.items) state.byId.set(it.id, it);
+  applyDesign();
   render();
   bindUi();
 })();
+
+function applyDesign() {
+  const detail = $("#detail");
+  if (detail) detail.dataset.design = state.cardDesign;
+  $$('[data-card-design]').forEach((btn) => {
+    btn.classList.toggle("is-active", btn.dataset.cardDesign === state.cardDesign);
+  });
+}
 
 function buildItems(content, portraits) {
   const items = [];
@@ -195,7 +213,8 @@ function openDetail(it) {
 
   const marker = $('[data-bind="tone-marker"]', d);
   marker.style.left = (((it.tone + 1) / 2) * 100).toFixed(1) + "%";
-  $('[data-bind="tone-value"]', d).textContent = (it.tone >= 0 ? "+" : "") + it.tone.toFixed(2);
+  const pct = Math.round(it.tone * 100);
+  $('[data-bind="tone-value"]', d).textContent = (pct >= 0 ? "+" : "") + pct + "%";
 }
 
 function closeDetail() {
@@ -228,5 +247,13 @@ function bindUi() {
   });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !detail.hidden) closeDetail();
+  });
+
+  $$('[data-card-design]').forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.cardDesign = btn.dataset.cardDesign;
+      saveCardDesign();
+      applyDesign();
+    });
   });
 }

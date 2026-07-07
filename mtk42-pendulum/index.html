@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Маятник</title>
-    <link rel="stylesheet" href="./styles.css?v=10" />
+    <link rel="stylesheet" href="./styles.css?v=11" />
   </head>
   <body>
     <main class="stage">
@@ -33,7 +33,7 @@
         </div>
       </section>
 
-      <aside id="card" class="card" hidden>
+      <aside id="card" class="card" data-design="v1" hidden>
         <button class="card__close" type="button" aria-label="Закрыть">✕</button>
         <div class="card__head">
           <div class="card__portrait" data-bind="portrait"></div>
@@ -50,8 +50,10 @@
           <cite class="card__quote-source" data-bind="quote-source"></cite>
         </blockquote>
         <div class="card__tone">
-          <span class="card__tone-label">Координата оценки:</span>
+          <span class="card__tone-label">Оценка:</span>
           <span class="card__tone-track" aria-hidden="true">
+            <span class="card__tone-axis card__tone-axis--neg" aria-hidden="true">−</span>
+            <span class="card__tone-axis card__tone-axis--pos" aria-hidden="true">+</span>
             <span class="card__tone-marker" data-bind="tone-marker"></span>
           </span>
           <span class="card__tone-value" data-bind="tone-value"></span>
@@ -65,6 +67,14 @@
           <span>Настройки</span>
           <button class="settings__close" type="button" aria-label="Закрыть">✕</button>
         </header>
+
+        <section class="settings__group">
+          <div class="settings__title">Дизайн карточки героя</div>
+          <div class="settings__presets">
+            <button class="settings__preset" type="button" data-card-design="v1">Классика</button>
+            <button class="settings__preset" type="button" data-card-design="v2">Больше воздуха</button>
+          </div>
+        </section>
 
         <section class="settings__group">
           <div class="settings__title">Категории</div>
@@ -204,6 +214,6 @@
       </aside>
     </main>
 
-    <script type="module" src="./pendulum.js?v=8"></script>
+    <script type="module" src="./pendulum.js?v=9"></script>
   </body>
 </html>
