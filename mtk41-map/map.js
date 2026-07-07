@@ -157,10 +157,10 @@
           if (!ring || ring.length < 2) continue;
           for (let k = 0; k < ring.length; k += 1) {
             const [lng, lat] = ring[k];
-            const x = ((lng + 180) / 360) * map.worldW;
-            const y = ((90 - lat) / 180) * map.worldH;
-            if (k === 0) path.moveTo(x, y);
-            else path.lineTo(x, y);
+            // Winkel Tripel — та же проекция что для points.
+            const p = project(lat, lng);
+            if (k === 0) path.moveTo(p.x, p.y);
+            else path.lineTo(p.x, p.y);
           }
           path.closePath();
         }
@@ -174,9 +174,12 @@
     }
     const par = new Path2D();
     for (let lat = -80; lat <= 80; lat += 10) {
-      const y = ((90 - lat) / 180) * map.worldH;
-      par.moveTo(0, y);
-      par.lineTo(map.worldW, y);
+      let first = true;
+      for (let lng = -180; lng <= 180; lng += 5) {
+        const p = project(lat, lng);
+        if (first) { par.moveTo(p.x, p.y); first = false; }
+        else par.lineTo(p.x, p.y);
+      }
     }
     map.worldPaths = paths;
     map.parallelsPath = par;
