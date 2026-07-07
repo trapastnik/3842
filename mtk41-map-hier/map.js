@@ -411,16 +411,8 @@
       if (!polys) continue;
       const props = f.properties || {};
       const isRussia = (props.ADMIN === "Russia") || (props.NAME === "Russia") || (props.ISO_A2 === "RU");
-      // Аннексионный overlay — сильнее заливка + ярче обводка, чтобы
-      // визуально забить оставшийся под ним контур Украины (границы РФ
-      // на 2026: Крым + Херсонская + Запорожская + Донецкая + Луганская).
-      const isAnnex = !!props._ru_annex_2026;
-      const fillColor = isAnnex ? "rgba(210, 183, 115, 0.22)"
-                       : isRussia ? "rgba(210, 183, 115, 0.10)"
-                                  : "rgba(157, 163, 166, 0.05)";
-      const strokeColor = isAnnex ? cssColor(palette.brass, 0.85)
-                        : isRussia ? cssColor(palette.brass, 0.55)
-                                   : cssColor(palette.window, 0.40);
+      const fillColor = isRussia ? "rgba(210, 183, 115, 0.10)" : "rgba(157, 163, 166, 0.05)";
+      const strokeColor = isRussia ? cssColor(palette.brass, 0.55) : cssColor(palette.window, 0.40);
       for (const poly of polys) {
         const ring = poly[0];
         if (!ring || ring.length < 2) continue;
@@ -435,7 +427,7 @@
         g.closePath();
         g.fillStyle = fillColor;
         g.strokeStyle = strokeColor;
-        g.lineWidth = isAnnex ? 1.4 : (isRussia ? 1.1 : 0.7);
+        g.lineWidth = isRussia ? 1.1 : 0.7;
         g.fill();
         g.stroke();
       }
