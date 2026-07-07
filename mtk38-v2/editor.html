@@ -1,0 +1,423 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>МТК 38 · данные и приёмка</title>
+<style>
+@font-face{font-family:"noto-Arab";src:url("./fonts/noto/Arab.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Armn";src:url("./fonts/noto/Armn.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Beng";src:url("./fonts/noto/Beng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Deva";src:url("./fonts/noto/Deva.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Ethi";src:url("./fonts/noto/Ethi.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Geor";src:url("./fonts/noto/Geor.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Grek";src:url("./fonts/noto/Grek.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Gujr";src:url("./fonts/noto/Gujr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Guru";src:url("./fonts/noto/Guru.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hans";src:url("./fonts/noto/Hans.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hant";src:url("./fonts/noto/Hant.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Hebr";src:url("./fonts/noto/Hebr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Jpan";src:url("./fonts/noto/Jpan.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Khmr";src:url("./fonts/noto/Khmr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Knda";src:url("./fonts/noto/Knda.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Kore";src:url("./fonts/noto/Kore.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Laoo";src:url("./fonts/noto/Laoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mlym";src:url("./fonts/noto/Mlym.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mtei";src:url("./fonts/noto/Mtei.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Mymr";src:url("./fonts/noto/Mymr.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Nkoo";src:url("./fonts/noto/Nkoo.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Olck";src:url("./fonts/noto/Olck.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Orya";src:url("./fonts/noto/Orya.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Sinh";src:url("./fonts/noto/Sinh.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Taml";src:url("./fonts/noto/Taml.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Telu";src:url("./fonts/noto/Telu.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tfng";src:url("./fonts/noto/Tfng.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thaa";src:url("./fonts/noto/Thaa.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Tibt";src:url("./fonts/noto/Tibt.woff2") format("woff2");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+  :root{--brass:#D2B773;--red:#A02128;--green:#5D8970;--window:#9DA3A8;--graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--graphite);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
+  header{flex:0 0 auto;z-index:5;background:var(--graphite);color:var(--paper);padding:12px 22px 13px;box-shadow:0 2px 14px rgba(0,0,0,.25)}
+  header nav{display:flex;gap:6px;margin-bottom:9px}
+  header nav a{font-size:13px;color:var(--telegrey);text-decoration:none;padding:5px 12px;border-radius:8px 8px 0 0;background:rgba(255,255,255,.06)}
+  header nav a.active{background:var(--paper);color:var(--graphite);font-weight:600}
+  header h1{margin:0 0 5px;font-size:19px}header h1 b{color:var(--brass)}
+  .intro{font-size:12.5px;max-width:1100px;color:var(--telegrey);margin:0 0 10px}.intro b{color:var(--brass)}
+  .toolbar{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+  .toolbar input[type=text]{padding:6px 10px;border-radius:6px;border:1px solid var(--window);background:var(--paper);color:var(--graphite);font-size:13px}
+  .modesw{display:flex;background:rgba(255,255,255,.07);border-radius:8px;padding:3px;margin-right:4px}
+  .modesw button{background:transparent;border:0;color:var(--telegrey);font:600 13px "20 Kopeek",sans-serif;padding:6px 16px;border-radius:6px;cursor:pointer}
+  .modesw button.on{background:var(--brass);color:#1a1f23}
+  .act{padding:7px 15px;border-radius:6px;border:1px solid var(--brass);background:var(--brass);color:#000;font-weight:700;cursor:pointer;font-size:13px}
+  .ghost{padding:7px 13px;border-radius:6px;border:1px solid var(--window);background:transparent;color:var(--paper);cursor:pointer;font-size:13px}
+  .filters button{padding:6px 11px;border-radius:6px;border:1px solid var(--window);background:transparent;color:var(--paper);cursor:pointer;font-size:13px}
+  .filters button.on{background:var(--brass);color:#000;border-color:var(--brass)}
+  .prog{margin-left:auto;font-size:13px;color:var(--telegrey)}.prog b{color:var(--brass)}
+  .draft{font-size:12px;color:var(--brass)}
+  /* === вкладка Данные === */
+  #mode-data{flex:1 1 auto;min-height:0;display:flex;flex-direction:column}
+  .wrap{display:flex;gap:0;align-items:stretch;flex:1 1 auto;min-height:0;overflow:hidden}
+  .list{width:320px;flex:0 0 320px;border-right:1px solid var(--telegrey);overflow:auto;background:var(--white)}
+  .litem{display:flex;align-items:center;gap:7px;padding:9px 14px;border-bottom:1px solid #eef0ee;cursor:pointer;border-left:4px solid transparent}
+  .litem:hover{background:#f3f5f3}
+  .litem.sel{background:#eef3ef;border-left-color:var(--brass)}
+  .litem.flag{border-left-color:var(--red)}
+  .litem b{font-size:13px;font-weight:600;flex:0 0 auto;max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .litem .w{font-size:18px;color:var(--graphite);margin-left:auto;max-width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .litem .wt{font-size:11px;color:var(--window);flex:0 0 auto}
+  .litem .un{background:var(--green);color:#fff;border-radius:4px;padding:1px 5px;font-size:10px;flex:0 0 auto}
+  .litem .rv{font-size:12px;flex:0 0 auto}
+  .detail{flex:1;overflow:auto;padding:18px 24px 40px}
+  .preview{background:var(--white);border:1px solid var(--telegrey);border-radius:12px;padding:14px 18px;margin-bottom:16px;text-align:center}
+  .preview .pw{font-size:clamp(34px,5vw,58px);line-height:1.15;color:var(--graphite);min-height:54px;display:flex;align-items:center;justify-content:center}
+  .preview .cp{font-family:ui-monospace,Menlo,monospace;font-size:11px;color:var(--window);word-break:break-all;user-select:all;margin-top:4px}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  .fld{display:flex;flex-direction:column;gap:3px}
+  .fld.wide{grid-column:1 / -1}
+  .fld>span{font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--window);font-weight:600}
+  .fld input,.fld select,.fld textarea{padding:7px 9px;border-radius:6px;border:1px solid var(--telegrey);background:var(--white);color:var(--graphite);font-size:14px;font-family:inherit}
+  .fld input.big{font-size:22px}
+  .fld input:focus,.fld select:focus,.fld textarea:focus{outline:2px solid var(--brass);border-color:var(--brass)}
+  .fld .chk{display:inline-flex;align-items:center;gap:7px;font-size:14px;color:var(--graphite);padding:6px 0}
+  .warn{display:block;font-size:11px;color:var(--red);margin-top:3px}
+  .rvbox{margin-top:6px;font-size:12px;padding:7px 10px;border-radius:8px;background:#eef2ec}
+  .rvbox.bad{background:#fbf3f3}
+  .rvbox b{color:var(--graphite)}
+  fieldset.geo{margin:16px 0 0;border:1px solid var(--telegrey);border-radius:10px;padding:12px 14px}
+  fieldset.geo legend{font-size:12px;font-weight:700;color:var(--graphite);padding:0 6px}
+  .chkrow{margin-bottom:6px}
+  .chkrow label{display:inline-flex;align-items:center;gap:6px;margin-right:18px;font-size:13px}
+  .primary{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:10px}
+  .primary.hide{display:none}
+  .also{margin-top:12px}
+  .also-h{font-size:12px;font-weight:700;color:var(--graphite);display:flex;align-items:center;gap:10px;margin-bottom:6px}
+  .also-h button{font-size:12px;padding:3px 9px;border-radius:5px;border:1px solid var(--window);background:var(--paper);cursor:pointer}
+  .also-row{display:flex;gap:7px;margin:5px 0}
+  .also-row input{padding:5px 8px;border:1px solid var(--telegrey);border-radius:5px;font-size:13px;flex:1}
+  .also-row .rm{border:1px solid var(--window);background:var(--paper);border-radius:5px;cursor:pointer;padding:0 9px}
+  .detail-actions{margin-top:20px}
+  .danger{padding:8px 14px;border-radius:6px;border:1px solid var(--red);background:var(--white);color:var(--red);font-weight:600;cursor:pointer}
+  .empty{color:var(--window);padding:30px;text-align:center}
+  /* === вкладка Приёмка === */
+  #mode-review{flex:1 1 auto;min-height:0;overflow:auto;padding:18px 22px 40px}
+  .rgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:14px}
+  .rcard{background:var(--white);border:1px solid var(--telegrey);border-radius:12px;padding:12px 16px;display:flex;flex-direction:column;gap:6px;border-left:5px solid var(--telegrey)}
+  .rcard.flag{border-left-color:var(--red)}
+  .rcard.v-ok{border-left-color:var(--green);background:#f3f7f3}
+  .rcard.v-bad{border-left-color:var(--red);background:#fbf3f3}
+  .rlbl{font-size:10px;letter-spacing:.07em;text-transform:uppercase;color:var(--window);text-align:center}
+  .rlbl.canon{color:var(--graphite);font-weight:700}
+  .specimen{background:#fff;border:1px solid var(--telegrey);border-radius:8px;min-height:72px;display:flex;align-items:center;justify-content:center;padding:6px}
+  .specimen img{max-width:100%;max-height:78px;object-fit:contain;display:block}
+  .specimen .nofile{font-size:12px;color:var(--window)}
+  .mine{font-size:clamp(28px,3.6vw,42px);line-height:1.15;text-align:center;color:var(--graphite);min-height:46px;display:flex;align-items:center;justify-content:center}
+  .rcp{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:var(--window);text-align:center;word-break:break-all;user-select:all}
+  .rname{font-size:15px;font-weight:700;margin-top:2px}.rendo{font-size:13px;color:var(--green);font-weight:400}
+  .rrows{font-size:12px;color:var(--graphite);display:grid;gap:1px}.rrows b{color:var(--window);font-weight:600}
+  .review-ctl{margin-top:auto;display:flex;flex-direction:column;gap:6px;border-top:1px dashed var(--telegrey);padding-top:8px}
+  .vbtns{display:flex;gap:8px}
+  .vbtns button{flex:1;padding:7px;border-radius:6px;border:1px solid var(--window);background:var(--paper);cursor:pointer;font-size:14px;font-weight:600}
+  .vbtns button.sel-ok{background:var(--green);color:#fff;border-color:var(--green)}
+  .vbtns button.sel-bad{background:var(--red);color:#fff;border-color:var(--red)}
+  .corrwrap{display:none;gap:6px}.rcard.v-bad .corrwrap{display:flex}
+  .corrwrap input{flex:1;padding:6px 8px;border-radius:6px;border:1px solid var(--window);font-size:16px}
+  .corrwrap .apply{flex:0 0 auto;border:1px solid var(--brass);background:var(--brass);color:#000;border-radius:6px;cursor:pointer;font-size:12px;font-weight:600;padding:0 9px}
+  .review-ctl .cmt{padding:6px 8px;border-radius:6px;border:1px solid var(--window);font-size:13px}
+  .vw{display:inline-flex;align-items:center;gap:5px;font-size:13px;color:var(--paper)}
+  .vw button{padding:6px 11px;border-radius:6px;border:1px solid var(--window);background:transparent;color:var(--paper);cursor:pointer;font-size:13px}
+  .vw button.on{background:var(--brass);color:#000;border-color:var(--brass)}
+  .r2{background:rgba(20,25,28,.96);border:1px solid rgba(210,183,115,.4);border-radius:14px;padding:15px 17px;color:var(--telegrey)}
+  .r2w{font-size:clamp(28px,3.6vw,44px);color:var(--paper);line-height:1.1;text-shadow:0 0 18px rgba(247,249,239,.2)}
+  .r2n{font-size:16px;color:var(--paper);font-weight:600;margin-top:3px}
+  .r2e{font-size:13px;color:var(--brass)}
+  .r2rows{margin-top:9px;font-size:12.5px;display:grid;grid-template-columns:auto 1fr;gap:2px 12px}
+  .r2rows b{color:var(--window);font-weight:600}
+  .r2ver{margin-top:9px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
+  .r2ver.ok{background:var(--brass);color:#1a1f23}.r2ver.warn{background:var(--red);color:#fff}
+  .rcard.rcard-clean{background:transparent;border:0;padding:0;gap:0}
+  .hidec{display:none}
+</style>
+</head>
+<body>
+<header>
+  <nav>
+    <a href="./index.html">Главная</a>
+    <a href="./studio.html">Студия</a>
+    <a href="./editor.html" class="active">Данные и приёмка</a>
+    <a href="./analysis.html">Аналитика</a>
+  </nav>
+  <h1>Данные и приёмка «<b>Ленин</b> на языках мира»</h1>
+  <p class="intro">Единый источник <b>data/mtk38.json</b>. Вкладка <b>Данные</b> — авторская правка полей;
+    <b>Приёмка</b> — сверка написаний с листом музея (✓/✗, правка, коммент). Оба пишут в один файл —
+    кнопка <b>«Экспорт mtk38.json»</b> → в <b>data/</b> → пересборка вариантов.</p>
+  <div class="toolbar">
+    <div class="modesw"><button data-mode="data" class="on">Данные</button><button data-mode="review">Приёмка</button></div>
+    <span class="t-data"><input type="text" id="search" placeholder="Поиск: название / id / написание"><button class="ghost" id="addLang">+ Добавить язык</button></span>
+    <span class="t-review hidec"><input type="text" id="reviewer" placeholder="Проверяющий (имя / организация)">
+      <span class="filters"><button data-f="all" class="on">Все</button><button data-f="flag">Спорные ⚠</button><button data-f="todo">Непроверенные</button><button data-f="bad">Отмеченные ✗</button></span><span class="vw">Вид <button data-vw="compare" class="on">техническая</button><button data-vw="card">чистовая</button></span></span>
+    <button class="act" id="export">⬇ Экспорт mtk38.json</button>
+    <button class="ghost" id="reset">↺ Сброс к файлу</button>
+    <span class="draft" id="draft"></span>
+    <span class="prog">Языков <b id="count">0</b> · ООН <b id="uncount">0</b> · принято <b id="okcount">0</b></span>
+  </div>
+</header>
+<div id="mode-data"><div class="wrap"><div class="list" id="list"></div><div class="detail" id="detail"></div></div></div>
+<div id="mode-review" style="display:none"><div class="rgrid" id="rgrid"></div></div>
+<datalist id="dl_family"></datalist>
+<datalist id="dl_country"></datalist>
+<script type="application/json" id="data">{"mtk": 38, "title": "Ленин на языках мира", "status": "v2-canonical-draft", "version": 2, "note": "Canonical-список v2: 53 языка = 52 с листа музея (50 подписанных с PDF-specimen ~/Downloads/LENIN_Languages_MTK_38.pdf + русская и латинская опоры) + испанский (добавлен для полноты 6 рабочих языков ООН, на листе музея отсутствует). Написания считаны поглифно с image-PDF; латиница/кириллица надёжны, не-латиница подлежит native-валидации (см. verifier/note). Метаданные (эндоним/семья/гео/носители) — черновые, точечная сверка. Схема и решения — mtk38-handoff/PLAN-v2.md и HANDOFF.md.", "schema": {"id": "kebab/iso639-3", "name_ru": "название по-русски", "endonym": "самоназвание языка его письмом", "writing": "написание слова «Ленин»", "script": {"iso15924": "код ISO 15924", "name_ru": "название письменности"}, "family": "языковая семья → ветвь", "geo": {"territorial": "bool", "diaspora": "bool (Р4)", "primary": "{country_iso,region_ru,lat,lng} | null (Р3)", "also": "[{country_iso,region_ru}] приглушённая подсветка"}, "writing_source": "pdf-specimen | wiki-interwiki | wikidata-q1394 | triangulated", "verifier": "machine-triangulated | needs-verification | native:<имя> | unverified", "speakers_mln": "оценка носителей, млн (native+L2)", "weight": "1-3 (3 = рабочие языки ООН)", "un": "bool — официальный рабочий язык ООН (6: ar/zh/en/fr/ru/es); опускается = не ООН", "review": "{verdict:ok|bad, correction, comment, reviewer} | отсутствует — приёмка не делалась (вкладка «Приёмка» в editor.html)"}, "languages": [{"id": "rus", "name_ru": "Русский", "endonym": "русский", "writing": "Ленин", "script": {"iso15924": "Cyrl", "name_ru": "Кириллица"}, "family": "индоевропейская → славянская → восточнославянская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "RU", "region_ru": "Россия", "lat": 55.75, "lng": 37.62}, "also": [{"country_iso": "BY", "region_ru": "Беларусь"}, {"country_iso": "KZ", "region_ru": "Казахстан"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 255, "un": true, "weight": 3, "note": "опорная форма на листе (без подписи); язык-источник"}, {"id": "eng", "name_ru": "Английский", "endonym": "English", "writing": "Lenin", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → германская → западногерманская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "GB", "region_ru": "Великобритания", "lat": 51.51, "lng": -0.13}, "also": [{"country_iso": "US", "region_ru": "США"}, {"country_iso": "IN", "region_ru": "Индия"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 1500, "un": true, "weight": 3, "note": "опорная латинская форма на листе (без подписи)"}, {"id": "zho", "name_ru": "Китайский (упрощ.)", "endonym": "中文", "writing": "列宁", "script": {"iso15924": "Hans", "name_ru": "Китайская (упрощённая)"}, "family": "сино-тибетская → синитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "CN", "region_ru": "Китай", "lat": 39.9, "lng": 116.4}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 1100, "un": true, "weight": 3}, {"id": "awa", "name_ru": "Авадхи", "endonym": "अवधी", "writing": "लेनिन", "script": {"iso15924": "Deva", "name_ru": "Деванагари"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Уттар-Прадеш", "lat": 26.85, "lng": 80.95}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 38, "weight": 1}, {"id": "sqi", "name_ru": "Албанский", "endonym": "shqip", "writing": "LENINI", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → албанская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "AL", "region_ru": "Албания", "lat": 41.33, "lng": 19.82}, "also": [{"country_iso": "XK", "region_ru": "Косово"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 7.5, "weight": 1}, {"id": "amh", "name_ru": "Амхарский", "endonym": "አማርኛ", "writing": "ሌኒን", "script": {"iso15924": "Ethi", "name_ru": "Эфиопская (геэз)"}, "family": "афразийская → семитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "ET", "region_ru": "Эфиопия", "lat": 9.03, "lng": 38.74}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 57, "weight": 1}, {"id": "ara", "name_ru": "Арабский", "endonym": "العربية", "writing": "لينين", "script": {"iso15924": "Arab", "name_ru": "Арабица"}, "family": "афразийская → семитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "EG", "region_ru": "Египет", "lat": 30.04, "lng": 31.24}, "also": [{"country_iso": "SA", "region_ru": "Сауд. Аравия"}, {"country_iso": "IQ", "region_ru": "Ирак"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 370, "un": true, "weight": 3}, {"id": "hye", "name_ru": "Армянский", "endonym": "հայերեն", "writing": "Լենին", "script": {"iso15924": "Armn", "name_ru": "Армянская"}, "family": "индоевропейская → армянская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "AM", "region_ru": "Армения", "lat": 40.18, "lng": 44.51}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 6.7, "weight": 1}, {"id": "asm", "name_ru": "Ассамский", "endonym": "অসমীয়া", "writing": "লেনিন", "script": {"iso15924": "Beng", "name_ru": "Бенгальская (восточный нагари)"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Ассам", "lat": 26.14, "lng": 91.74}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 15, "weight": 1}, {"id": "bel", "name_ru": "Белорусский", "endonym": "беларуская", "writing": "Ленін", "script": {"iso15924": "Cyrl", "name_ru": "Кириллица"}, "family": "индоевропейская → славянская → восточнославянская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "BY", "region_ru": "Беларусь", "lat": 53.9, "lng": 27.57}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 5, "weight": 1}, {"id": "bal", "name_ru": "Белуджский", "endonym": "بلۏچی", "writing": "لينن", "script": {"iso15924": "Arab", "name_ru": "Арабица"}, "family": "индоевропейская → иранская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "PK", "region_ru": "Белуджистан", "lat": 30.18, "lng": 66.97}, "also": [{"country_iso": "IR", "region_ru": "Иран"}, {"country_iso": "AF", "region_ru": "Афганистан"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 8, "weight": 1}, {"id": "ben", "name_ru": "Бенгальский", "endonym": "বাংলা", "writing": "লেনিন", "script": {"iso15924": "Beng", "name_ru": "Бенгальская (восточный нагари)"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "BD", "region_ru": "Бангладеш", "lat": 23.81, "lng": 90.41}, "also": [{"country_iso": "IN", "region_ru": "Зап. Бенгалия"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 270, "weight": 2}, {"id": "mya", "name_ru": "Бирманский", "endonym": "မြန်မာဘာသာ", "writing": "လီနင်", "script": {"iso15924": "Mymr", "name_ru": "Мьянманская"}, "family": "сино-тибетская → лоло-бирманская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "MM", "region_ru": "Мьянма", "lat": 16.87, "lng": 96.2}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 43, "weight": 1}, {"id": "bos", "name_ru": "Боснийский", "endonym": "bosanski", "writing": "LENJIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → славянская → южнославянская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "BA", "region_ru": "Босния и Герцеговина", "lat": 43.86, "lng": 18.41}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 2.5, "weight": 1}, {"id": "haw", "name_ru": "Гавайский", "endonym": "ʻŌlelo Hawaiʻi", "writing": "ʻO LENIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "австронезийская → полинезийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "US", "region_ru": "Гавайи", "lat": 21.31, "lng": -157.86}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 0.024, "weight": 1}, {"id": "ell", "name_ru": "Греческий", "endonym": "ελληνικά", "writing": "Λένιν", "script": {"iso15924": "Grek", "name_ru": "Греческая"}, "family": "индоевропейская → эллинская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "GR", "region_ru": "Греция", "lat": 37.98, "lng": 23.73}, "also": [{"country_iso": "CY", "region_ru": "Кипр"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 13, "weight": 1}, {"id": "kat", "name_ru": "Грузинский", "endonym": "ქართული", "writing": "ლენინი", "script": {"iso15924": "Geor", "name_ru": "Грузинская (мхедрули)"}, "family": "картвельская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "GE", "region_ru": "Грузия", "lat": 41.72, "lng": 44.83}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 3.7, "weight": 1}, {"id": "grn", "name_ru": "Гуарани", "endonym": "avañeʼẽ", "writing": "LÉNIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "тупийская → тупи-гуарани", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "PY", "region_ru": "Парагвай", "lat": -25.3, "lng": -57.64}, "also": [{"country_iso": "AR", "region_ru": "Аргентина"}, {"country_iso": "BO", "region_ru": "Боливия"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 6.5, "weight": 1}, {"id": "guj", "name_ru": "Гуджарати", "endonym": "ગુજરાતી", "writing": "લેનિન", "script": {"iso15924": "Gujr", "name_ru": "Гуджарати"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Гуджарат", "lat": 23.03, "lng": 72.58}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 56, "weight": 1}, {"id": "prs", "name_ru": "Дари", "endonym": "دری", "writing": "لنین", "script": {"iso15924": "Arab", "name_ru": "Арабица"}, "family": "индоевропейская → иранская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "AF", "region_ru": "Афганистан", "lat": 34.53, "lng": 69.17}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 15, "weight": 1}, {"id": "dzo", "name_ru": "Дзонгкха", "endonym": "རྫོང་ཁ", "writing": "LËNIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "сино-тибетская → бодская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "BT", "region_ru": "Бутан", "lat": 27.47, "lng": 89.64}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 0.6, "weight": 1, "note": "подпись «дзинка» + латинский глиф подозрительны: дзонгкха пишется тибетицей. Сверить язык и письмо."}, {"id": "heb", "name_ru": "Иврит", "endonym": "עברית", "writing": "לנין", "script": {"iso15924": "Hebr", "name_ru": "Еврейская"}, "family": "афразийская → семитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IL", "region_ru": "Израиль", "lat": 31.78, "lng": 35.22}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 9, "weight": 1}, {"id": "yid", "name_ru": "Идиш", "endonym": "ייִדיש", "writing": "לענין", "script": {"iso15924": "Hebr", "name_ru": "Еврейская"}, "family": "индоевропейская → германская → западногерманская", "geo": {"territorial": false, "diaspora": true, "primary": null, "also": []}, "writing_source": "wiki-interwiki", "verifier": "machine-triangulated", "speakers_mln": 1.5, "weight": 1, "note": "диаспоральный язык без своей территории (Р4)"}, {"id": "spa", "name_ru": "Испанский", "endonym": "español", "writing": "Lenin", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → романская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "ES", "region_ru": "Испания", "lat": 40.42, "lng": -3.7}, "also": [{"country_iso": "MX", "region_ru": "Мексика"}, {"country_iso": "AR", "region_ru": "Аргентина"}]}, "writing_source": "wiki-interwiki", "verifier": "machine-triangulated", "speakers_mln": 560, "un": true, "weight": 3, "note": "добавлен для полноты 6 рабочих языков ООН; на листе музея отсутствует. Написание «Lenin» по исп. Википедии."}, {"id": "kan", "name_ru": "Каннада", "endonym": "ಕನ್ನಡ", "writing": "ಲೆನಿನ್", "script": {"iso15924": "Knda", "name_ru": "Каннада"}, "family": "дравидийская → южнодравидийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Карнатака", "lat": 12.97, "lng": 77.59}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 44, "weight": 1}, {"id": "yue", "name_ru": "Кантонский", "endonym": "粵語", "writing": "列寧", "script": {"iso15924": "Hant", "name_ru": "Китайская (традиционная)"}, "family": "сино-тибетская → синитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "HK", "region_ru": "Гонконг", "lat": 22.32, "lng": 114.17}, "also": [{"country_iso": "CN", "region_ru": "Гуандун"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 85, "weight": 2}, {"id": "mal", "name_ru": "Малаялам", "endonym": "മലയാളം", "writing": "ലെനിൻ", "script": {"iso15924": "Mlym", "name_ru": "Малаялам"}, "family": "дравидийская → южнодравидийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Керала", "lat": 9.93, "lng": 76.27}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 38, "weight": 1}, {"id": "lav", "name_ru": "Латышский", "endonym": "latviešu", "writing": "Ļeņins", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → балтийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "LV", "region_ru": "Латвия", "lat": 56.95, "lng": 24.11}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 1.5, "weight": 1}, {"id": "lit", "name_ru": "Литовский", "endonym": "lietuvių", "writing": "LENINAS", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → балтийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "LT", "region_ru": "Литва", "lat": 54.69, "lng": 25.28}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 3.0, "weight": 1}, {"id": "lao", "name_ru": "Лаосский", "endonym": "ລາວ", "writing": "ເລນິນ", "script": {"iso15924": "Laoo", "name_ru": "Лаосская"}, "family": "тай-кадайская → тайская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "LA", "region_ru": "Лаос", "lat": 17.97, "lng": 102.63}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 30, "weight": 1, "note": "глиф на листе похож на тайское письмо, не лаосское — сверить написание носителем."}, {"id": "khm", "name_ru": "Кхмерский", "endonym": "ខ្មែរ", "writing": "លេនីន", "script": {"iso15924": "Khmr", "name_ru": "Кхмерская"}, "family": "австроазиатская → кхмерская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "KH", "region_ru": "Камбоджа", "lat": 11.56, "lng": 104.92}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 18, "weight": 1}, {"id": "kor", "name_ru": "Корейский", "endonym": "한국어", "writing": "레닌", "script": {"iso15924": "Kore", "name_ru": "Корейская (хангыль)"}, "family": "корейская (изолят)", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "KR", "region_ru": "Респ. Корея", "lat": 37.57, "lng": 126.98}, "also": [{"country_iso": "KP", "region_ru": "КНДР"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 82, "weight": 2}, {"id": "mni", "name_ru": "Манипури (мейтейлон)", "endonym": "ꯃꯩꯇꯩꯂꯣꯟ", "writing": "ꯂꯦꯅꯤꯟ", "script": {"iso15924": "Mtei", "name_ru": "Мейтей-маєк"}, "family": "сино-тибетская → куки-чин-нага", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Манипур", "lat": 24.66, "lng": 93.91}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 1.8, "weight": 1, "note": "глиф на specimen-листе не читается уверенно как «Ленин» в мейтей-маєк — перепроверить."}, {"id": "nus", "name_ru": "Нуэр", "endonym": "Thok Nath", "writing": "LƐNIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "нило-сахарская → западнонилотская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "SS", "region_ru": "Южный Судан", "lat": 9.55, "lng": 31.66}, "also": [{"country_iso": "ET", "region_ru": "Эфиопия"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 2.0, "weight": 1}, {"id": "ory", "name_ru": "Ория", "endonym": "ଓଡ଼ିଆ", "writing": "ଲେନିନ୍", "script": {"iso15924": "Orya", "name_ru": "Ория"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Одиша", "lat": 20.3, "lng": 85.82}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 38, "weight": 1}, {"id": "orm", "name_ru": "Оромо", "endonym": "Afaan Oromoo", "writing": "LEENINII", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "афразийская → кушитская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "ET", "region_ru": "Оромия", "lat": 8.54, "lng": 39.27}, "also": [{"country_iso": "KE", "region_ru": "Кения"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 37, "weight": 1}, {"id": "pan", "name_ru": "Панджаби", "endonym": "ਪੰਜਾਬੀ", "writing": "ਲੈਨਿਨ", "script": {"iso15924": "Guru", "name_ru": "Гурмукхи"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Пенджаб", "lat": 30.73, "lng": 76.78}, "also": [{"country_iso": "PK", "region_ru": "Пакистан"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 113, "weight": 2}, {"id": "por", "name_ru": "Португальский", "endonym": "português", "writing": "LÊNIN", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → романская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "BR", "region_ru": "Бразилия", "lat": -15.79, "lng": -47.88}, "also": [{"country_iso": "PT", "region_ru": "Португалия"}, {"country_iso": "AO", "region_ru": "Ангола"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 260, "weight": 2, "note": "хранится КАПСОМ как на листе музея; IDML подтвердил слово (строчная форма Lênin/Lénine — стиль)"}, {"id": "sat", "name_ru": "Сантали", "endonym": "ᱥᱟᱱᱛᱟᱲᱤ", "writing": "ᱞᱮᱱᱤᱱ", "script": {"iso15924": "Olck", "name_ru": "Ол-чики"}, "family": "австроазиатская → мунда", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Джаркханд", "lat": 23.61, "lng": 85.28}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 7.6, "weight": 1}, {"id": "urd", "name_ru": "Урду", "endonym": "اردو", "writing": "لینین", "script": {"iso15924": "Arab", "name_ru": "Арабица"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "PK", "region_ru": "Пакистан", "lat": 33.69, "lng": 73.06}, "also": [{"country_iso": "IN", "region_ru": "Индия"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 230, "weight": 2}, {"id": "uig", "name_ru": "Уйгурский", "endonym": "ئۇيغۇرچە", "writing": "لىنىن", "script": {"iso15924": "Arab", "name_ru": "Арабица"}, "family": "тюркская → карлукская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "CN", "region_ru": "Синьцзян", "lat": 43.83, "lng": 87.62}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 11, "weight": 1}, {"id": "ton", "name_ru": "Тонганский", "endonym": "lea faka-Tonga", "writing": "LĒNINI", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "австронезийская → полинезийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "TO", "region_ru": "Тонга", "lat": -21.14, "lng": -175.2}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 0.19, "weight": 1}, {"id": "tel", "name_ru": "Телугу", "endonym": "తెలుగు", "writing": "లెనిన్", "script": {"iso15924": "Telu", "name_ru": "Телугу"}, "family": "дравидийская → южно-центральная", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Телангана / Андхра", "lat": 17.39, "lng": 78.49}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 83, "weight": 1}, {"id": "tam", "name_ru": "Тамильский", "endonym": "தமிழ்", "writing": "லெனின்", "script": {"iso15924": "Taml", "name_ru": "Тамильская"}, "family": "дравидийская → южнодравидийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "IN", "region_ru": "Тамилнад", "lat": 13.08, "lng": 80.27}, "also": [{"country_iso": "LK", "region_ru": "Шри-Ланка"}, {"country_iso": "SG", "region_ru": "Сингапур"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 86, "weight": 2}, {"id": "sin", "name_ru": "Сингальский", "endonym": "සිංහල", "writing": "ලෙනින්", "script": {"iso15924": "Sinh", "name_ru": "Сингальская"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "LK", "region_ru": "Шри-Ланка", "lat": 6.93, "lng": 79.86}, "also": []}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 17, "weight": 1}, {"id": "srp", "name_ru": "Сербский", "endonym": "српски", "writing": "Лењин", "script": {"iso15924": "Cyrl", "name_ru": "Кириллица"}, "family": "индоевропейская → славянская → южнославянская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "RS", "region_ru": "Сербия", "lat": 44.79, "lng": 20.45}, "also": [{"country_iso": "BA", "region_ru": "Босния"}, {"country_iso": "ME", "region_ru": "Черногория"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 9, "weight": 1}, {"id": "fra", "name_ru": "Французский", "endonym": "français", "writing": "LÉNINE", "script": {"iso15924": "Latn", "name_ru": "Латиница"}, "family": "индоевропейская → романская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "FR", "region_ru": "Франция", "lat": 48.85, "lng": 2.35}, "also": [{"country_iso": "BE", "region_ru": "Бельгия"}, {"country_iso": "CH", "region_ru": "Швейцария"}, {"country_iso": "CA", "region_ru": "Канада"}]}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 280, "un": true, "weight": 3, "note": "хранится КАПСОМ как на листе музея; IDML подтвердил слово (строчная форма Lênin/Lénine — стиль)"}, {"id": "shn", "name_ru": "Шанский", "endonym": "လိၵ်ႈတႆး", "writing": "လီၢ်ခ့ၣ်ႇ", "script": {"iso15924": "Mymr", "name_ru": "Мьянманская"}, "family": "тай-кадайская → тайская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "MM", "region_ru": "Шан", "lat": 21.5, "lng": 98.0}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 4.7, "weight": 1, "note": "глиф на листе требует сверки носителем шанского."}, {"id": "jpn", "name_ru": "Японский", "endonym": "日本語", "writing": "レーニン", "script": {"iso15924": "Jpan", "name_ru": "Японская (кандзи + кана)"}, "family": "японская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "JP", "region_ru": "Япония", "lat": 35.68, "lng": 139.76}, "also": []}, "writing_source": "idml-source", "verifier": "idml-source", "speakers_mln": 125, "weight": 2}, {"id": "bod", "name_ru": "Тибетский", "endonym": "བོད་སྐད", "writing": "ལེ་ནིན", "script": {"iso15924": "Tibt", "name_ru": "Тибетская"}, "family": "сино-тибетская → бодская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "CN", "region_ru": "Тибет", "lat": 29.65, "lng": 91.13}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 6, "weight": 1, "note": "первый глиф на листе нетипичен — сверить тибетское написание."}, {"id": "div", "name_ru": "Мальдивский (дивехи)", "endonym": "ދިވެހި", "writing": "ލެނިން", "script": {"iso15924": "Thaa", "name_ru": "Тхана"}, "family": "индоевропейская → индоарийская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "MV", "region_ru": "Мальдивы", "lat": 4.17, "lng": 73.51}, "also": []}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 0.34, "weight": 1, "note": "письмо тхана пишется справа налево; глиф на листе сверить носителем."}, {"id": "nqo", "name_ru": "Нко", "endonym": "ߒߞߏ", "writing": "ߟߋߣߌ߲", "script": {"iso15924": "Nkoo", "name_ru": "Нко"}, "family": "нигеро-конголезская → манде", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "GN", "region_ru": "Гвинея", "lat": 9.64, "lng": -13.58}, "also": [{"country_iso": "ML", "region_ru": "Мали"}, {"country_iso": "CI", "region_ru": "Кот-д’Ивуар"}]}, "writing_source": "pdf-specimen", "verifier": "needs-verification", "speakers_mln": 4, "weight": 1, "note": "письмо нко справа налево; сверить написание."}, {"id": "tzm", "name_ru": "Тамазигхт", "endonym": "ⵜⴰⵎⴰⵣⵉⵖⵜ", "writing": "ⵍⵉⵏⵉⵏ", "script": {"iso15924": "Tfng", "name_ru": "Тифинаг"}, "family": "афразийская → берберская", "geo": {"territorial": true, "diaspora": false, "primary": {"country_iso": "MA", "region_ru": "Марокко", "lat": 31.79, "lng": -7.09}, "also": [{"country_iso": "DZ", "region_ru": "Алжир"}]}, "writing_source": "pdf-specimen", "verifier": "machine-triangulated", "speakers_mln": 5, "weight": 1}], "fonts_source": {"brand": "20 Kopeek (латиница/кириллица)", "fallback": "Arial Unicode MS (прочие письменности)", "note": "из IDML Lenin_words.idml; НЕ Noto. Текст строчный, КАПС на листе = стиль All-Caps. На киоске не-латиница — bundled Noto (Arial Unicode MS проприетарный)."}}</script>
+<script>
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const SCRIPT_MAP = {"Cyrl": "Кириллица", "Latn": "Латиница", "Hans": "Китайская (упрощённая)", "Deva": "Деванагари", "Ethi": "Эфиопская (геэз)", "Arab": "Арабица", "Armn": "Армянская", "Beng": "Бенгальская (восточный нагари)", "Mymr": "Мьянманская", "Grek": "Греческая", "Geor": "Грузинская (мхедрули)", "Gujr": "Гуджарати", "Hebr": "Еврейская", "Knda": "Каннада", "Hant": "Китайская (традиционная)", "Mlym": "Малаялам", "Laoo": "Лаосская", "Khmr": "Кхмерская", "Kore": "Корейская (хангыль)", "Mtei": "Мейтей-маєк", "Orya": "Ория", "Guru": "Гурмукхи", "Olck": "Ол-чики", "Telu": "Телугу", "Taml": "Тамильская", "Sinh": "Сингальская", "Jpan": "Японская (кандзи + кана)", "Tibt": "Тибетская", "Thaa": "Тхана", "Nkoo": "Нко", "Tfng": "Тифинаг"};
+const EMBED = new Set(["Arab", "Armn", "Beng", "Deva", "Ethi", "Geor", "Grek", "Gujr", "Guru", "Hans", "Hant", "Hebr", "Jpan", "Khmr", "Knda", "Kore", "Laoo", "Mlym", "Mtei", "Mymr", "Nkoo", "Olck", "Orya", "Sinh", "Taml", "Telu", "Tfng", "Thaa", "Tibt"]);
+const FAMILIES = ["австроазиатская → кхмерская", "австроазиатская → мунда", "австронезийская → полинезийская", "афразийская → берберская", "афразийская → кушитская", "афразийская → семитская", "дравидийская → южно-центральная", "дравидийская → южнодравидийская", "индоевропейская → албанская", "индоевропейская → армянская", "индоевропейская → балтийская", "индоевропейская → германская → западногерманская", "индоевропейская → индоарийская", "индоевропейская → иранская", "индоевропейская → романская", "индоевропейская → славянская → восточнославянская", "индоевропейская → славянская → южнославянская", "индоевропейская → эллинская", "картвельская", "корейская (изолят)", "нигеро-конголезская → манде", "нило-сахарская → западнонилотская", "сино-тибетская → бодская", "сино-тибетская → куки-чин-нага", "сино-тибетская → лоло-бирманская", "сино-тибетская → синитская", "тай-кадайская → тайская", "тупийская → тупи-гуарани", "тюркская → карлукская", "японская"];
+const COUNTRIES = ["AF", "AL", "AM", "AO", "AR", "BA", "BD", "BE", "BO", "BR", "BT", "BY", "CA", "CH", "CI", "CN", "CY", "DZ", "EG", "ES", "ET", "FR", "GB", "GE", "GN", "GR", "HK", "IL", "IN", "IQ", "IR", "JP", "KE", "KH", "KP", "KR", "KZ", "LA", "LK", "LT", "LV", "MA", "ME", "ML", "MM", "MV", "MX", "PK", "PT", "PY", "RS", "RU", "SA", "SG", "SS", "TO", "US", "XK"];
+const SPEC = new Set(["amh", "ara", "asm", "awa", "bal", "bel", "ben", "bod", "bos", "div", "dzo", "ell", "eng", "fra", "grn", "guj", "haw", "heb", "hye", "jpn", "kan", "kat", "khm", "kor", "lao", "lav", "lit", "mal", "mni", "mya", "nqo", "nus", "orm", "ory", "pan", "por", "prs", "rus", "sat", "shn", "sin", "sqi", "srp", "tam", "tel", "ton", "tzm", "uig", "urd", "yid", "yue", "zho"]);
+const HASH = "51d8b6d18ef1";
+const SRC = ['idml-source','pdf-specimen','wiki-interwiki','wikidata-q1394','triangulated'];
+const VER = ['idml-source','machine-triangulated','needs-verification','unverified','native'];
+const WEIGHTS = [[1,'1 — прочий'],[2,'2 — крупный региональный'],[3,'3 — мировой / ООН']];
+const KEY = 'mtk38-data-v1', RKEY='mtk38-reviewer';
+const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
+const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',system-ui,sans-serif"
+                                               : "'Arial Unicode MS','noto-"+iso+"',system-ui,sans-serif";
+const cps = s => [...String(s||'')].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
+const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const clone = o => JSON.parse(JSON.stringify(o));
+function setPath(o,path,val){const ks=path.split('.');let t=o;for(let i=0;i<ks.length-1;i++){if(t[ks[i]]==null)t[ks[i]]={};t=t[ks[i]];}t[ks[ks.length-1]]=val;}
+function fillDL(id,arr){const e=document.getElementById(id);if(e)e.innerHTML=arr.map(v=>'<option value="'+esc(v)+'">').join('');}
+fillDL('dl_family',FAMILIES); fillDL('dl_country',COUNTRIES);
+
+// --- загрузка с хеш-стопом: устаревший черновик (другой источник) сбрасывается сам ---
+let hadDraft=false, D;
+try{const raw=localStorage.getItem(KEY); if(raw){const o=JSON.parse(raw); if(o&&o.__hash===HASH&&o.data){D=o.data;hadDraft=true;}}}catch(e){}
+if(!D) D=clone(DATA);
+let sel=0, mode='data', reviewFilter='all', reviewView='compare';
+const listEl=document.getElementById('list'), detailEl=document.getElementById('detail'), searchEl=document.getElementById('search'), rgridEl=document.getElementById('rgrid');
+const reviewerEl=document.getElementById('reviewer'); reviewerEl.value=localStorage.getItem(RKEY)||'';
+document.getElementById('draft').textContent = hadDraft ? '● черновик из браузера' : '';
+function save(){try{localStorage.setItem(KEY,JSON.stringify({__hash:HASH,data:D}));document.getElementById('draft').textContent='● черновик из браузера';}catch(e){}updateCounts();}
+function updateCounts(){
+  document.getElementById('count').textContent=D.languages.length;
+  document.getElementById('uncount').textContent=D.languages.filter(l=>l.un).length;
+  document.getElementById('okcount').textContent=D.languages.filter(l=>l.review&&l.review.verdict==='ok').length;
+}
+
+// ====================== ВКЛАДКА ДАННЫЕ ======================
+function rvMark(l){const v=l.review&&l.review.verdict;return v==='ok'?'<span class="rv" title="приёмка: верно">✓</span>':v==='bad'?'<span class="rv" title="приёмка: неверно">✗</span>':'';}
+function renderList(){
+  const q=(searchEl.value||'').toLowerCase().trim();
+  listEl.innerHTML='';
+  D.languages.forEach((l,i)=>{
+    if(q && !((l.name_ru||'').toLowerCase().includes(q)||(l.id||'').toLowerCase().includes(q)||(l.writing||'').toLowerCase().includes(q))) return;
+    const it=document.createElement('div');
+    it.className='litem'+(i===sel?' sel':'')+(l.verifier==='needs-verification'?' flag':'');
+    it.innerHTML='<b>'+esc(l.name_ru||'—')+'</b><span class="w" style="font-family:'+ff(l.script&&l.script.iso15924)+'">'+esc(l.writing||'')+'</span>'+rvMark(l)+'<span class="wt">★'+(l.weight||1)+'</span>'+(l.un?'<span class="un">ООН</span>':'');
+    it.onclick=()=>{sel=i;renderList();renderDetail();};
+    listEl.appendChild(it);
+  });
+  updateCounts();
+}
+function renderDetail(){
+  const l=D.languages[sel];
+  if(!l){detailEl.innerHTML='<p class="empty">Нет языков. Нажмите «+ Добавить язык».</p>';return;}
+  if(!l.script)l.script={iso15924:'Latn',name_ru:''}; if(!l.geo)l.geo={territorial:true,diaspora:false,primary:null,also:[]};
+  const iso=l.script.iso15924, dir=RTL.has(iso)?'rtl':'ltr', p=l.geo.primary;
+  let scriptOpts=Object.keys(SCRIPT_MAP).sort().map(c=>'<option value="'+c+'"'+(c===iso?' selected':'')+'>'+c+(SCRIPT_MAP[c]?' — '+esc(SCRIPT_MAP[c]):'')+'</option>').join('');
+  if(!Object.prototype.hasOwnProperty.call(SCRIPT_MAP,iso)) scriptOpts='<option value="'+esc(iso)+'" selected>'+esc(iso)+' (?)</option>'+scriptOpts;
+  const fontWarn=(iso==='Latn'||iso==='Cyrl'||EMBED.has(iso))?'':'<span class="warn">⚠ Noto-шрифт для '+esc(iso)+' не вшит — глиф может не отрисоваться</span>';
+  const isNative=(l.verifier||'').indexOf('native:')===0, verPreset=isNative?'native':(l.verifier||''), nativeName=isNative?l.verifier.slice(7):'';
+  let verOpts=VER.map(v=>'<option value="'+v+'"'+(v===verPreset?' selected':'')+'>'+v+'</option>').join('');
+  if(VER.indexOf(verPreset)<0 && verPreset) verOpts='<option value="'+esc(verPreset)+'" selected>'+esc(verPreset)+'</option>'+verOpts;
+  const wOpts=WEIGHTS.map(w=>'<option value="'+w[0]+'"'+(l.weight===w[0]?' selected':'')+'>'+esc(w[1])+'</option>').join('');
+  let srcOpts=SRC.map(v=>'<option value="'+v+'"'+(v===l.writing_source?' selected':'')+'>'+v+'</option>').join('');
+  if(SRC.indexOf(l.writing_source)<0 && l.writing_source) srcOpts='<option value="'+esc(l.writing_source)+'" selected>'+esc(l.writing_source)+'</option>'+srcOpts;
+  const rv=l.review||{};
+  const rvBox = rv.verdict ? '<div class="rvbox'+(rv.verdict==='bad'?' bad':'')+'"><b>приёмка:</b> '+(rv.verdict==='ok'?'✓ верно':'✗ неверно')
+      +(rv.correction?' · предложено: <b style="font-family:'+ff(iso)+'">'+esc(rv.correction)+'</b> <button id="applyCorr">применить → написание</button>':'')
+      +(rv.comment?' · «'+esc(rv.comment)+'»':'')+(rv.reviewer?' · '+esc(rv.reviewer):'')+'</div>' : '';
+
+  detailEl.innerHTML=
+   '<div class="preview"><div class="pw" dir="'+dir+'" style="font-family:'+ff(iso)+'">'+esc(l.writing)+'</div><div class="cp">'+cps(l.writing)+'</div></div>'
+   +rvBox
+   +'<div class="grid2">'
+   +'<label class="fld"><span>id (ключ)</span><input data-k="id" value="'+esc(l.id)+'"></label>'
+   +'<label class="fld"><span>Название (рус.)</span><input data-k="name_ru" value="'+esc(l.name_ru)+'"></label>'
+   +'<label class="fld wide"><span>Написание «Ленин»</span><input data-k="writing" class="big" dir="'+dir+'" style="font-family:'+ff(iso)+'" value="'+esc(l.writing)+'"></label>'
+   +'<label class="fld"><span>Эндоним</span><input data-k="endonym" dir="'+dir+'" style="font-family:'+ff(iso)+'" value="'+esc(l.endonym)+'"></label>'
+   +'<label class="fld"><span>Письмо ISO 15924</span><select data-sciso>'+scriptOpts+'</select>'+fontWarn+'</label>'
+   +'<label class="fld"><span>Письмо (рус.)</span><input data-k="script.name_ru" value="'+esc(l.script.name_ru)+'"></label>'
+   +'<label class="fld"><span>Вес</span><select data-k="weight">'+wOpts+'</select></label>'
+   +'<label class="fld wide"><span>Семья</span><input data-k="family" list="dl_family" value="'+esc(l.family)+'"></label>'
+   +'<label class="fld"><span>Носителей, млн</span><input data-k="speakers_mln" type="number" step="0.1" value="'+esc(l.speakers_mln)+'"></label>'
+   +'<div class="fld"><span>Категория</span><label class="chk"><input type="checkbox" data-k="un" '+(l.un?'checked':'')+'> официальный язык ООН</label></div>'
+   +'<label class="fld"><span>Источник написания</span><select data-k="writing_source">'+srcOpts+'</select></label>'
+   +'<label class="fld"><span>Верификатор</span><select data-vsel>'+verOpts+'</select></label>'
+   +'<label class="fld" id="nativeFld" style="'+(verPreset==='native'?'':'display:none')+'"><span>Имя носителя (native:)</span><input id="nativeName" value="'+esc(nativeName)+'"></label>'
+   +'<label class="fld wide"><span>Заметка</span><textarea data-k="note" rows="2">'+esc(l.note||'')+'</textarea></label>'
+   +'</div>'
+   +'<fieldset class="geo"><legend>География</legend>'
+   +'<div class="chkrow">'
+   +'<label><input type="checkbox" data-k="geo.territorial" '+(l.geo.territorial?'checked':'')+'> территориальный</label>'
+   +'<label><input type="checkbox" data-k="geo.diaspora" '+(l.geo.diaspora?'checked':'')+'> диаспора</label>'
+   +'<label><input type="checkbox" id="hasPrimary" '+(p?'checked':'')+'> точка на карте (primary)</label>'
+   +'</div>'
+   +'<div class="primary '+(p?'':'hide')+'" id="primaryBox">'
+   +'<label class="fld"><span>Страна ISO</span><input data-k="geo.primary.country_iso" list="dl_country" value="'+esc(p?p.country_iso:'')+'"></label>'
+   +'<label class="fld"><span>Регион (рус.)</span><input data-k="geo.primary.region_ru" value="'+esc(p?p.region_ru:'')+'"></label>'
+   +'<label class="fld"><span>Широта</span><input data-k="geo.primary.lat" type="number" step="0.01" value="'+esc(p?p.lat:'')+'"></label>'
+   +'<label class="fld"><span>Долгота</span><input data-k="geo.primary.lng" type="number" step="0.01" value="'+esc(p?p.lng:'')+'"></label>'
+   +'</div>'
+   +'<div class="also"><div class="also-h">Также (also[]) <button id="addAlso">+ добавить</button></div><div id="alsoList"></div></div>'
+   +'</fieldset>'
+   +'<div class="detail-actions"><button id="delLang" class="danger">🗑 Удалить язык</button></div>';
+  bindDetail(); renderAlso();
+  const ac=detailEl.querySelector('#applyCorr');
+  if(ac)ac.addEventListener('click',()=>{ l.writing=l.review.correction; save(); renderList(); renderDetail(); });
+}
+function bindDetail(){
+  const l=D.languages[sel];
+  detailEl.querySelectorAll('[data-k]').forEach(el=>{
+    const k=el.dataset.k;
+    const handler=()=>{
+      let v;
+      if(el.type==='checkbox')v=el.checked;
+      else if(el.type==='number')v=(el.value===''?null:parseFloat(el.value));
+      else v=el.value;
+      if(k==='weight')v=parseInt(el.value,10);
+      setPath(l,k,v);
+      if(k==='un' && !v) delete l.un;
+      if(k==='writing'){const pw=detailEl.querySelector('.pw');pw.textContent=l.writing||'';detailEl.querySelector('.cp').textContent=cps(l.writing);}
+      if(['name_ru','writing','weight','un'].includes(k))renderList();
+      save();
+    };
+    el.addEventListener('input',handler); el.addEventListener('change',handler);
+  });
+  const ss=detailEl.querySelector('[data-sciso]');
+  if(ss)ss.addEventListener('change',()=>{ l.script.iso15924=ss.value; if(SCRIPT_MAP[ss.value])l.script.name_ru=SCRIPT_MAP[ss.value]; save(); renderList(); renderDetail(); });
+  const vs=detailEl.querySelector('[data-vsel]');
+  if(vs)vs.addEventListener('change',()=>{ const v=vs.value; if(v==='native'){const nn=detailEl.querySelector('#nativeName'); l.verifier='native:'+(nn?nn.value:'');} else l.verifier=v; save(); renderList(); renderDetail(); });
+  const nn=detailEl.querySelector('#nativeName');
+  if(nn)nn.addEventListener('input',()=>{ l.verifier='native:'+nn.value; save(); renderList(); });
+  detailEl.querySelector('#hasPrimary').addEventListener('change',e=>{
+    if(e.target.checked){ if(!l.geo.primary)l.geo.primary={country_iso:'',region_ru:'',lat:0,lng:0}; } else l.geo.primary=null;
+    save(); renderDetail();
+  });
+  detailEl.querySelector('#addAlso').addEventListener('click',()=>{ if(!l.geo.also)l.geo.also=[]; l.geo.also.push({country_iso:'',region_ru:''}); save(); renderAlso(); });
+  detailEl.querySelector('#delLang').addEventListener('click',()=>{
+    if(!confirm('Удалить язык «'+(l.name_ru||l.id)+'»?'))return;
+    D.languages.splice(sel,1); if(sel>=D.languages.length)sel=Math.max(0,D.languages.length-1);
+    save(); renderList(); renderDetail();
+  });
+}
+function renderAlso(){
+  const l=D.languages[sel], box=detailEl.querySelector('#alsoList'); if(!box)return; box.innerHTML='';
+  (l.geo.also||[]).forEach((a,j)=>{
+    const row=document.createElement('div'); row.className='also-row';
+    row.innerHTML='<input placeholder="ISO" list="dl_country" value="'+esc(a.country_iso)+'" data-f="country_iso" style="max-width:90px">'
+      +'<input placeholder="регион (рус.)" value="'+esc(a.region_ru)+'" data-f="region_ru"><button class="rm">✕</button>';
+    row.querySelectorAll('input').forEach(inp=>inp.addEventListener('input',()=>{a[inp.dataset.f]=inp.value;save();}));
+    row.querySelector('.rm').addEventListener('click',()=>{l.geo.also.splice(j,1);save();renderAlso();});
+    box.appendChild(row);
+  });
+}
+
+// ====================== ВКЛАДКА ПРИЁМКА ======================
+function renderReview(){
+  rgridEl.innerHTML='';
+  const langs=D.languages.map((l,idx)=>({l,idx})).sort((a,b)=>b.l.weight-a.l.weight||a.l.name_ru.localeCompare(b.l.name_ru,'ru'));
+  langs.forEach(({l,idx})=>{
+    const rv=l.review||{};
+    if(reviewFilter==='flag' && l.verifier!=='needs-verification') return;
+    if(reviewFilter==='todo' && rv.verdict) return;
+    if(reviewFilter==='bad' && rv.verdict!=='bad') return;
+    const iso=l.script.iso15924, dir=RTL.has(iso)?'rtl':'ltr';
+    const region=(l.geo&&l.geo.primary)?l.geo.primary.region_ru:((l.geo&&l.geo.diaspora)?'диаспора':'—');
+    const warn=l.verifier==='needs-verification';
+    const card=document.createElement('div');
+    if(reviewView==='card'){
+      // ЧИСТОВАЯ — ровно то, что в производственной карточке Р2; без контролов/вердиктов
+      card.className='rcard rcard-clean';
+      card.innerHTML=
+        '<div class="r2"><div class="r2w" dir="'+dir+'" style="font-family:'+ff(iso)+'">'+esc(l.writing)+'</div>'
+        +'<div class="r2n">'+esc(l.name_ru)+'</div>'
+        +'<div class="r2e" dir="'+dir+'" style="font-family:'+ff(iso)+'">'+esc(l.endonym)+'</div>'
+        +'<div class="r2rows"><b>письмо</b><span>'+esc(l.script.name_ru)+' ('+esc(iso)+')</span><b>семья</b><span>'+esc(l.family)+'</span><b>ареал</b><span>'+esc(region)+'</span><b>источник</b><span>'+esc(l.writing_source)+'</span></div>'
+        +'<span class="r2ver '+(warn?'warn':'ok')+'">'+(warn?'⚠ требует проверки носителем':'✓ '+esc(l.verifier))+'</span></div>';
+      rgridEl.appendChild(card);
+      return;
+    }
+    // ТЕХНИЧЕСКАЯ — сверка с листом музея + вердикты/контролы
+    const spec=SPEC.has(l.id)?'<img src="../assets/mtk38/specimen/'+l.id+'.png" alt="'+esc(l.name_ru)+'">':'<span class="nofile">нет вырезки с листа</span>';
+    card.className='rcard'+(l.verifier==='needs-verification'?' flag':'')+(rv.verdict==='ok'?' v-ok':'')+(rv.verdict==='bad'?' v-bad':'');
+    card.innerHTML=
+      '<div class="rlbl canon">лист музея · контуры (канон)</div>'
+      +'<div class="specimen">'+spec+'</div>'
+      +'<div class="rlbl">моя расшифровка</div>'
+      +'<div class="mine" dir="'+dir+'" style="font-family:'+ff(iso)+'">'+esc(l.writing)+'</div>'
+      +'<div class="rcp">'+cps(l.writing)+'</div>'
+      +'<div class="rname">'+esc(l.name_ru)+' <span class="rendo" dir="'+dir+'" style="font-family:'+ff(iso)+'">· '+esc(l.endonym)+'</span></div>'
+      +'<div class="rrows"><span><b>письмо:</b> '+esc(iso)+' · '+esc(l.script.name_ru)+'</span><span><b>семья:</b> '+esc(l.family)+'</span></div>'
+      +'<div class="review-ctl">'
+      +'<div class="vbtns"><button class="vok'+(rv.verdict==='ok'?' sel-ok':'')+'">✓ верно</button><button class="vbad'+(rv.verdict==='bad'?' sel-bad':'')+'">✗ неверно</button></div>'
+      +'<div class="corrwrap"><input class="corr" dir="'+dir+'" style="font-family:'+ff(iso)+'" placeholder="правильное написание" value="'+esc(rv.correction||'')+'"><button class="apply" title="скопировать в поле «Написание»">→ в написание</button></div>'
+      +'<input class="cmt" placeholder="комментарий (необязательно)" value="'+esc(rv.comment||'')+'">'
+      +'</div>';
+    rgridEl.appendChild(card);
+    const ok=card.querySelector('.vok'), bad=card.querySelector('.vbad'), corr=card.querySelector('.corr'), cmt=card.querySelector('.cmt'), apply=card.querySelector('.apply');
+    function patch(o){ l.review=Object.assign({},l.review,o,{reviewer:reviewerEl.value||''}); save(); }
+    function paint(){ const v=l.review&&l.review.verdict; card.classList.toggle('v-ok',v==='ok'); card.classList.toggle('v-bad',v==='bad');
+      ok.classList.toggle('sel-ok',v==='ok'); bad.classList.toggle('sel-bad',v==='bad'); }
+    ok.onclick=()=>{ patch({verdict:'ok'}); paint(); };
+    bad.onclick=()=>{ patch({verdict:'bad'}); paint(); corr.focus(); };
+    corr.oninput=()=>patch({correction:corr.value});
+    cmt.oninput=()=>patch({comment:cmt.value});
+    apply.onclick=()=>{ if(corr.value){ l.writing=corr.value; save(); renderReview(); } };
+  });
+}
+
+// ====================== ПЕРЕКЛЮЧЕНИЕ ВКЛАДОК + ОБЩЕЕ ======================
+function setMode(m){
+  mode=m;
+  document.getElementById('mode-data').style.display = m==='data'?'flex':'none';
+  document.getElementById('mode-review').style.display = m==='review'?'block':'none';
+  document.querySelector('.t-data').classList.toggle('hidec',m!=='data');
+  document.querySelector('.t-review').classList.toggle('hidec',m!=='review');
+  document.querySelectorAll('.modesw button').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));
+  if(m==='data'){ renderList(); renderDetail(); } else renderReview();
+}
+document.querySelectorAll('.modesw button').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
+reviewerEl.oninput=()=>localStorage.setItem(RKEY,reviewerEl.value);
+document.querySelectorAll('.filters button[data-f]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.filters button[data-f]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  reviewFilter=b.dataset.f; renderReview();
+});
+document.querySelectorAll('.vw button[data-vw]').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('.vw button[data-vw]').forEach(x=>x.classList.remove('on')); b.classList.add('on');
+  reviewView=b.dataset.vw; renderReview();
+});
+document.getElementById('addLang').onclick=()=>{
+  D.languages.push({id:'new-'+(D.languages.length+1),name_ru:'Новый язык',endonym:'',writing:'Ленин',
+    script:{iso15924:'Latn',name_ru:'Латиница'},family:'',
+    geo:{territorial:true,diaspora:false,primary:{country_iso:'',region_ru:'',lat:0,lng:0},also:[]},
+    writing_source:'pdf-specimen',verifier:'needs-verification',speakers_mln:0,weight:1,note:''});
+  sel=D.languages.length-1; searchEl.value=''; save(); renderList(); renderDetail(); detailEl.scrollTop=0;
+};
+document.getElementById('export').onclick=()=>{
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(new Blob([JSON.stringify(D,null,2)],{type:'application/json'}));
+  a.download='mtk38.json'; a.click();
+};
+document.getElementById('reset').onclick=()=>{
+  if(!confirm('Сбросить все правки (данные и приёмку) к версии из сборки?'))return;
+  localStorage.removeItem(KEY); D=clone(DATA); sel=0; document.getElementById('draft').textContent='';
+  setMode(mode);
+};
+searchEl.oninput=renderList;
+
+setMode(location.hash==='#review'?'review':'data');
+addEventListener('hashchange',()=>setMode(location.hash==='#review'?'review':'data'));
+</script>
+</body>
+</html>
