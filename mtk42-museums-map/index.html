@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Институции · Карта</title>
-    <link rel="stylesheet" href="./styles.css?v=2" />
+    <link rel="stylesheet" href="./styles.css?v=3" />
   </head>
   <body>
     <main class="stage">
@@ -101,6 +101,30 @@
         </section>
 
         <section class="settings__group">
+          <div class="settings__title">Названия городов</div>
+          <label class="settings__row">
+            <input type="checkbox" data-setting="showCities" checked />
+            <span>Показывать</span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Размер, px</span>
+            <input type="range" min="9" max="22" step="1" data-setting-num="citySize" />
+            <span class="settings__num" data-bind-num="citySize"></span>
+          </label>
+          <label class="settings__row settings__row--slider">
+            <span>Непрозрачность, %</span>
+            <input type="range" min="30" max="100" step="5" data-setting-num="cityOpacity" />
+            <span class="settings__num" data-bind-num="cityOpacity"></span>
+          </label>
+        </section>
+
+        <section class="settings__group">
+          <div class="settings__title">Навигация</div>
+          <button class="settings__preset" type="button" id="reset-view">Сбросить масштаб</button>
+          <p class="settings__hint">Колёсиком мыши — зум. Перетаскивание — сдвиг карты.</p>
+        </section>
+
+        <section class="settings__group">
           <div class="settings__title">Заголовок</div>
           <label class="settings__row settings__row--slider">
             <span>Размер, px</span>
@@ -154,6 +178,6 @@
         </ul>
       </aside>
     </main>
-    <script type="module" src="./map.js?v=2"></script>
+    <script type="module" src="./map.js?v=3"></script>
   </body>
 </html>
