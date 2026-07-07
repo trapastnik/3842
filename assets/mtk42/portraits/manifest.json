@@ -84,12 +84,14 @@
   "slavin": {
     "title": "Славин, Борис Фёдорович",
     "lang": "ru",
-    "image": null
+    "image": "slavin.jpg",
+    "source_url": "curator (2026-07)"
   },
   "sobolev": {
     "title": "Соболев, Геннадий Леонтьевич",
     "lang": "ru",
-    "image": null
+    "image": "sobolev.jpg",
+    "source_url": "curator (2026-07)"
   },
   "kolganov": {
     "title": "Колганов, Андрей Иванович",
@@ -129,7 +131,8 @@
   "arutyunov": {
     "title": "Арутюнов, Аким Арутюнович",
     "lang": "ru",
-    "image": null
+    "image": "arutyunov.jpg",
+    "source_url": "curator (2026-07)"
   },
   "yerofeev": {
     "title": "Ерофеев, Венедикт Васильевич",
@@ -439,7 +442,8 @@
   "payne": {
     "title": "Пэйн, Роберт",
     "lang": "ru",
-    "image": null
+    "image": "payne.jpg",
+    "source_url": "curator (2026-07)"
   },
   "possony": {
     "title": "Поссони, Стефан",
@@ -480,12 +484,14 @@
   "zhukov-em": {
     "title": "Жуков, Евгений Михайлович (историк)",
     "lang": "ru",
-    "image": null
+    "image": "zhukov-em.jpg",
+    "source_url": "curator (2026-07)"
   },
   "shapko": {
     "title": "Шапко, Виктор Михайлович",
     "lang": "ru",
-    "image": null
+    "image": "shapko.jpg",
+    "source_url": "curator (2026-07)"
   },
   "brezhnev": {
     "title": "Брежнев, Леонид Ильич",
@@ -496,7 +502,8 @@
   "gaponenko": {
     "title": "Гапоненко, Лука Семёнович",
     "lang": "ru",
-    "image": null
+    "image": "gaponenko.jpg",
+    "source_url": "curator (2026-07)"
   },
   "keldysh": {
     "title": "Келдыш, Мстислав Всеволодович",
@@ -555,7 +562,8 @@
   "sabanti": {
     "title": "Сабанти, Борис Михайлович",
     "lang": "ru",
-    "image": null
+    "image": "sabanti.png",
+    "source_url": "curator (2026-07)"
   },
   "resnick": {
     "title": "Resnick, Abraham",
@@ -570,7 +578,8 @@
   "naumov-vp": {
     "title": "Наумов, Владимир Павлович (историк)",
     "lang": "ru",
-    "image": null
+    "image": "naumov-vp.png",
+    "source_url": "curator (2026-07)"
   },
   "gorbachev": {
     "title": "Горбачёв, Михаил Сергеевич",
@@ -587,7 +596,8 @@
   "vasyutin": {
     "title": "Васютин, Юрий Семёнович",
     "lang": "ru",
-    "image": null
+    "image": "vasyutin.jpg",
+    "source_url": "curator (2026-07)"
   },
   "bobrov": {
     "title": "Бобров, Александр Викторович",
@@ -614,7 +624,8 @@
   "tumarkin": {
     "title": "Тумаркин, Нина",
     "lang": "ru",
-    "image": null
+    "image": "tumarkin.jpg",
+    "source_url": "curator (2026-07)"
   },
   "ennker": {
     "title": "Эннкер, Бенно",
@@ -630,7 +641,8 @@
   "sakharov-va": {
     "title": "Сахаров, Валентин Александрович",
     "lang": "ru",
-    "image": null
+    "image": "sakharov-va.png",
+    "source_url": "curator (2026-07)"
   },
   "oizerman": {
     "title": "Ойзерман, Теодор Ильич",
@@ -641,17 +653,20 @@
   "stein": {
     "title": "Штейн, Михаил Гиршевич",
     "lang": "ru",
-    "image": null
+    "image": "stein.jpg",
+    "source_url": "curator (2026-07)"
   },
   "guslyarov": {
     "title": "Гусляров, Евгений Николаевич",
     "lang": "ru",
-    "image": null
+    "image": "guslyarov.jpg",
+    "source_url": "curator (2026-07)"
   },
   "read-c": {
     "title": "Read, Christopher (historian)",
     "lang": "ru",
-    "image": null
+    "image": "read-c.jpg",
+    "source_url": "curator (2026-07)"
   },
   "trofimov": {
     "title": "Трофимов, Жорес Александрович",
@@ -662,7 +677,8 @@
   "krausz": {
     "title": "Krausz, Tamás",
     "lang": "ru",
-    "image": null
+    "image": "krausz.jpg",
+    "source_url": "curator (2026-07)"
   },
   "carrere": {
     "title": "Каррер д'Анкосс, Элен",
@@ -681,5 +697,23 @@
     "lang": "ru",
     "image": "wallerstein.jpg",
     "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/Immanuel_Wallerstein.2008.jpg"
+  },
+  "yaroslavsky": {
+    "image": "yaroslavsky.jpg",
+    "source_url": "curator (2026-07)",
+    "title": "yaroslavsky",
+    "lang": "ru"
+  },
+  "yeremenko": {
+    "image": "yeremenko.jpg",
+    "source_url": "curator (2026-07)",
+    "title": "yeremenko",
+    "lang": "ru"
+  },
+  "sokolov": {
+    "image": "sokolov.jpg",
+    "source_url": "curator (2026-07)",
+    "title": "sokolov",
+    "lang": "ru"
   }
 }
