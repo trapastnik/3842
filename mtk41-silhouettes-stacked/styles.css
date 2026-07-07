@@ -25,9 +25,14 @@ html, body {
 .stage {
   position: fixed; inset: 0; isolation: isolate;
   background:
-    linear-gradient(255deg, transparent 0, transparent 91%, var(--red) 91%, var(--red) 96%, transparent 96.2%),
     radial-gradient(ellipse 110% 100% at 50% 50%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.96)),
     var(--ink);
+}
+/* Diagonal red accent — hub controls dim via --stripe-opacity (0..1). */
+.stage::after {
+  content: ""; position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  opacity: var(--stripe-opacity, 1);
+  background: linear-gradient(255deg, transparent 0, transparent 91%, var(--red) 91%, var(--red) 96%, transparent 96.2%);
 }
 .stage::before {
   content: ""; position: absolute; inset: 0; z-index: 0; pointer-events: none;

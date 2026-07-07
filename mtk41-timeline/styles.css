@@ -47,10 +47,21 @@ html, body {
   inset: 0;
   isolation: isolate;
   background:
-    linear-gradient(15deg, transparent 0, transparent 88%, var(--red) 88%, var(--red) 94%, transparent 94.2%),
-    linear-gradient(15deg, transparent 0, transparent 70%, var(--brass) 70%, var(--brass) 70.18%, transparent 70.36%),
     radial-gradient(ellipse 130% 95% at 35% 50%, rgba(67, 80, 89, 0.45), rgba(12, 16, 18, 0.95)),
     var(--graphite);
+}
+
+/* Diagonal red + brass accents — hub controls dim via --stripe-opacity (0..1). */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  opacity: var(--stripe-opacity, 1);
+  background:
+    linear-gradient(15deg, transparent 0, transparent 88%, var(--red) 88%, var(--red) 94%, transparent 94.2%),
+    linear-gradient(15deg, transparent 0, transparent 70%, var(--brass) 70%, var(--brass) 70.18%, transparent 70.36%);
 }
 
 .stage::before {
