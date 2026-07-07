@@ -18,20 +18,48 @@ const STATUS_COLOR = {
   closed: "#a02128",
 };
 
-// Focus window: Russia + Europe + Central Asia + Middle East + Mongolia.
-// Extended east to cover Ulaanbaatar / Aden; a bit of Atlantic on the west.
-const VIEW = {
-  lonMin: -15, lonMax: 145,
-  latMin: 5,   latMax: 72,
+// Preset views. "core" is the default — Ленинская сеть от Парижа до
+// Улан-Батора; Аден выпадает, но получаем плотный кадр по СССР+В.Европе.
+const VIEW_PRESETS = {
+  full:   { lonMin: -10, lonMax: 115, latMin: 10, latMax: 70 },
+  core:   { lonMin:   0, lonMax: 110, latMin: 30, latMax: 68 },
+  ussr:   { lonMin:  20, lonMax: 110, latMin: 38, latMax: 68 },
+  europe: { lonMin:  -5, lonMax:  50, latMin: 40, latMax: 68 },
 };
+
+const DEFAULTS = {
+  lonMin: VIEW_PRESETS.core.lonMin,
+  lonMax: VIEW_PRESETS.core.lonMax,
+  latMin: VIEW_PRESETS.core.latMin,
+  latMax: VIEW_PRESETS.core.latMax,
+  dotRadius: 10,
+  borderWidth: 0.8,
+  titleSize: 48,
+  titleOpacity: 100,
+  titleBold: false,
+  filterSize: 11,
+  filterOpacity: 78,
+  filterBold: false,
+};
+const LS_KEY = "mtk42-museums-map-settings-v1";
 
 const state = {
   data: null,
   countries: null,
   status: "all",
-  view: { ...VIEW },
+  settings: loadSettings(),
   hoverId: null,
 };
+
+function loadSettings() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? { ...DEFAULTS, ...JSON.parse(raw) } : { ...DEFAULTS };
+  } catch { return { ...DEFAULTS }; }
+}
+function saveSettings() {
+  try { localStorage.setItem(LS_KEY, JSON.stringify(state.settings)); } catch {}
+}
 
 (async function init() {
   const [museums, geo] = await Promise.all([
@@ -40,18 +68,20 @@ const state = {
   ]);
   state.data = museums;
   state.countries = geo;
+  applyVisualSettings();
   setupCanvas();
   render();
   bindUi();
+  syncControlsFromState();
   window.addEventListener("resize", () => { setupCanvas(); render(); });
 })();
 
 // ─── Projection ─────────────────────────────────────────────
 function project(lon, lat, canvasW, canvasH) {
-  const v = state.view;
-  const x = ((lon - v.lonMin) / (v.lonMax - v.lonMin)) * canvasW;
+  const s = state.settings;
+  const x = ((lon - s.lonMin) / (s.lonMax - s.lonMin)) * canvasW;
   // Note: latitude increases NORTH; canvas y increases DOWN.
-  const y = ((v.latMax - lat) / (v.latMax - v.latMin)) * canvasH;
+  const y = ((s.latMax - lat) / (s.latMax - s.latMin)) * canvasH;
   return [x, y];
 }
 
@@ -91,9 +121,10 @@ function render() {
 }
 
 function drawCountries(W, H) {
+  const bw = state.settings.borderWidth;
   ctx.save();
   ctx.strokeStyle = "rgba(210, 183, 115, 0.28)";
-  ctx.lineWidth = 0.8;
+  ctx.lineWidth = bw;
   ctx.fillStyle = "rgba(67, 80, 89, 0.35)";
   for (const feat of state.countries.features) {
     const g = feat.geometry;
@@ -105,8 +136,8 @@ function drawCountries(W, H) {
         if (!ring || ring.length === 0) continue;
         let started = false;
         for (const [lon, lat] of ring) {
-          if (lon < state.view.lonMin - 5 || lon > state.view.lonMax + 5) continue;
-          if (lat < state.view.latMin - 5 || lat > state.view.latMax + 5) continue;
+          if (lon < state.settings.lonMin - 5 || lon > state.settings.lonMax + 5) continue;
+          if (lat < state.settings.latMin - 5 || lat > state.settings.latMax + 5) continue;
           const [px, py] = project(lon, lat, W, H);
           if (!started) { ctx.moveTo(px, py); started = true; }
           else ctx.lineTo(px, py);
@@ -114,7 +145,7 @@ function drawCountries(W, H) {
         ctx.closePath();
       }
       ctx.fill();
-      ctx.stroke();
+      if (bw > 0) ctx.stroke();
     }
   }
   ctx.restore();
@@ -144,11 +175,11 @@ function drawGraticule(W, H) {
 function drawDots(W, H) {
   const items = filteredItems();
   ctx.save();
-  const R = 8;
+  const R = state.settings.dotRadius;
   for (const it of items) {
     if (typeof it.lat !== "number" || typeof it.lng !== "number") continue;
     const [x, y] = project(it.lng, it.lat, W, H);
-    if (x < -20 || x > W + 20 || y < -20 || y > H + 20) continue;
+    if (x < -R - 4 || x > W + R + 4 || y < -R - 4 || y > H + R + 4) continue;
 
     ctx.beginPath();
     ctx.arc(x, y, R + 2, 0, Math.PI * 2);
@@ -176,8 +207,7 @@ function hitTest(px, py) {
   const rect = canvas.getBoundingClientRect();
   const W = rect.width, H = rect.height;
   const items = filteredItems();
-  // Reverse iterate so top-most (later) dots win.
-  const HIT_R = 22;
+  const HIT_R = Math.max(22, state.settings.dotRadius + 10);
   for (let i = items.length - 1; i >= 0; i--) {
     const it = items[i];
     if (typeof it.lat !== "number") continue;
@@ -215,6 +245,60 @@ function openDetail(item) {
 }
 function closeDetail() { $("#detail").hidden = true; }
 
+// ─── Visual settings (CSS variables) ────────────────────────
+function applyVisualSettings() {
+  const root = document.documentElement;
+  const s = state.settings;
+  root.style.setProperty("--title-size", s.titleSize + "px");
+  root.style.setProperty("--title-opacity", (s.titleOpacity / 100).toFixed(2));
+  root.style.setProperty("--title-weight", s.titleBold ? 700 : 400);
+  root.style.setProperty("--filter-size", s.filterSize + "px");
+  root.style.setProperty("--filter-opacity", (s.filterOpacity / 100).toFixed(2));
+  root.style.setProperty("--filter-weight", s.filterBold ? 700 : 400);
+}
+
+function syncControlsFromState() {
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.checked = !!state.settings[el.dataset.setting];
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.value = state.settings[el.dataset.settingNum];
+    const num = $(`[data-bind-num="${el.dataset.settingNum}"]`);
+    if (num) num.textContent = el.value;
+  });
+}
+
+function applyPreset(name) {
+  const p = VIEW_PRESETS[name];
+  if (!p) return;
+  Object.assign(state.settings, p);
+  saveSettings();
+  syncControlsFromState();
+  render();
+}
+
+function onCheckboxChange(el) {
+  const key = el.dataset.setting;
+  state.settings[key] = !!el.checked;
+  saveSettings();
+  applyVisualSettings();
+}
+
+function onSliderChange(el) {
+  const key = el.dataset.settingNum;
+  const v = Number(el.value);
+  state.settings[key] = v;
+  const num = $(`[data-bind-num="${key}"]`);
+  if (num) num.textContent = v;
+  saveSettings();
+  if (key === "titleSize" || key === "titleOpacity" || key === "filterSize" || key === "filterOpacity") {
+    applyVisualSettings();
+  } else {
+    // view bounds, dot radius, border width — need redraw
+    render();
+  }
+}
+
 function bindUi() {
   canvas.addEventListener("click", (e) => {
     const rect = canvas.getBoundingClientRect();
@@ -238,6 +322,27 @@ function bindUi() {
   detail.addEventListener("click", (e) => { if (e.target === detail) closeDetail(); });
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape" && !detail.hidden) closeDetail();
+  });
+
+  // Settings panel
+  const settings = $("#settings");
+  $("#settings-toggle").addEventListener("click", () => settings.classList.toggle("is-open"));
+  $(".settings__close").addEventListener("click", () => settings.classList.remove("is-open"));
+  $(".settings__reset").addEventListener("click", () => {
+    state.settings = { ...DEFAULTS };
+    saveSettings();
+    applyVisualSettings();
+    render();
+    syncControlsFromState();
+  });
+  $$('.settings__preset').forEach((btn) => {
+    btn.addEventListener("click", () => applyPreset(btn.dataset.viewPreset));
+  });
+  $$('input[type="checkbox"][data-setting]').forEach((el) => {
+    el.addEventListener("change", () => onCheckboxChange(el));
+  });
+  $$('input[type="range"][data-setting-num]').forEach((el) => {
+    el.addEventListener("input", () => onSliderChange(el));
   });
 
   const legend = $("#legend");
