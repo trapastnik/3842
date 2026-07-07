@@ -47,10 +47,20 @@ html, body {
   position: fixed; inset: 0;
   isolation: isolate;
   background:
-    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
-    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%),
     radial-gradient(ellipse 120% 85% at 50% 32%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.98)),
     var(--graphite-deep);
+}
+/* Diagonal red + brass accents — dimmable via CSS var --stripe-opacity (0..1).
+ * ::after sits above the canvas map (z-index 1) but under UI overlays (z-index 3+). */
+.stage::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  opacity: var(--stripe-opacity, 1);
+  background:
+    linear-gradient(105deg, transparent 0, transparent 72%, var(--red) 72%, var(--red) 86%, transparent 86.2%),
+    linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%);
 }
 
 #map {
