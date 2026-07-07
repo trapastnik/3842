@@ -168,6 +168,7 @@ html, body {
 /* ─── Timeline scroller ─── */
 .timeline {
   position: relative;
+  z-index: 2; /* keep bars/labels above .stage::after stripes */
   overflow-y: auto;
   overflow-x: hidden;
   scrollbar-width: thin;
