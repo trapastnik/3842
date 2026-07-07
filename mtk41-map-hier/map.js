@@ -387,21 +387,19 @@
     }
   }
 
-  // ---------- World cache (country outlines) ----------------------------
+  // ---------- Base map — vector paths, redrawn each frame ---------------
+  //
+  // Раньше рендерили в offscreen bitmap на worldW×worldH и потом drawImage
+  // масштабировали bitmap с зумом → на большом зуме муть. Теперь строим
+  // Path2D для каждого фичи (once на resize/geojson-load) и рисуем их
+  // каждый кадр — при любом зуме контуры остаются векторно-чёткими.
 
-  function buildWorldCache() {
+  function buildWorldPaths() {
+    map.worldPaths = null;
     if (!map.geojson) return;
-    const off = document.createElement("canvas");
-    off.width = Math.max(1, Math.floor(map.worldW));
-    off.height = Math.max(1, Math.floor(map.worldH));
-    const g = off.getContext("2d");
-
-    g.fillStyle = "rgba(247, 249, 239, 0.02)";
-    g.fillRect(0, 0, off.width, off.height);
-
+    const paths = [];
     const features = map.geojson.features || [];
-    for (let i = 0; i < features.length; i += 1) {
-      const f = features[i];
+    for (const f of features) {
       const geom = f.geometry;
       if (!geom) continue;
       const polys =
@@ -411,38 +409,40 @@
       if (!polys) continue;
       const props = f.properties || {};
       const isRussia = (props.ADMIN === "Russia") || (props.NAME === "Russia") || (props.ISO_A2 === "RU");
-      const fillColor = isRussia ? "rgba(210, 183, 115, 0.10)" : "rgba(157, 163, 166, 0.05)";
-      const strokeColor = isRussia ? cssColor(palette.brass, 0.55) : cssColor(palette.window, 0.40);
+      const path = new Path2D();
       for (const poly of polys) {
-        const ring = poly[0];
-        if (!ring || ring.length < 2) continue;
-        g.beginPath();
-        for (let k = 0; k < ring.length; k += 1) {
-          const [lng, lat] = ring[k];
-          const x = ((lng + 180) / 360) * map.worldW;
-          const y = ((90 - lat) / 180) * map.worldH;
-          if (k === 0) g.moveTo(x, y);
-          else g.lineTo(x, y);
+        for (let r = 0; r < poly.length; r += 1) {
+          const ring = poly[r];
+          if (!ring || ring.length < 2) continue;
+          for (let k = 0; k < ring.length; k += 1) {
+            const [lng, lat] = ring[k];
+            const x = ((lng + 180) / 360) * map.worldW;
+            const y = ((90 - lat) / 180) * map.worldH;
+            if (k === 0) path.moveTo(x, y);
+            else path.lineTo(x, y);
+          }
+          path.closePath();
         }
-        g.closePath();
-        g.fillStyle = fillColor;
-        g.strokeStyle = strokeColor;
-        g.lineWidth = isRussia ? 1.1 : 0.7;
-        g.fill();
-        g.stroke();
       }
+      paths.push({
+        path,
+        fillColor: isRussia ? "rgba(210, 183, 115, 0.10)" : "rgba(157, 163, 166, 0.05)",
+        strokeColor: isRussia ? cssColor(palette.brass, 0.55) : cssColor(palette.window, 0.40),
+        lineWidthBase: isRussia ? 1.1 : 0.7,
+      });
     }
-    // Parallels
-    g.strokeStyle = cssColor(palette.brass, 0.08);
-    g.lineWidth = 0.5;
-    g.setLineDash([2, 12]);
+    // Parallel guides — dashed, faint brass
+    const par = new Path2D();
     for (let lat = -80; lat <= 80; lat += 10) {
       const y = ((90 - lat) / 180) * map.worldH;
-      g.beginPath(); g.moveTo(0, y); g.lineTo(map.worldW, y); g.stroke();
+      par.moveTo(0, y);
+      par.lineTo(map.worldW, y);
     }
-    g.setLineDash([]);
-    map.cached = off;
+    map.worldPaths = paths;
+    map.parallelsPath = par;
   }
+  // Legacy alias — resize/loadAll code still calls buildWorldCache
+  function buildWorldCache() { buildWorldPaths(); }
 
   function resize() {
     const rect = canvas.getBoundingClientRect();
@@ -659,10 +659,29 @@
   // ---------- Drawing ---------------------------------------------------
 
   function drawBaseMap() {
-    if (!map.cached) return;
+    if (!map.worldPaths) return;
     ctx.save();
     ctx.globalAlpha = 0.9;
-    ctx.drawImage(map.cached, -map.camX, -map.camY);
+    ctx.translate(-map.camX, -map.camY);
+    // Countries — fill then stroke; stroke width normalized by zoom так
+    // чтобы визуально держать ~1px на экране (иначе на большом зуме
+    // получается жирная кисть, на маленьком — исчезает).
+    const invZ = 1 / map.zoom;
+    for (const p of map.worldPaths) {
+      ctx.fillStyle = p.fillColor;
+      ctx.fill(p.path);
+      ctx.strokeStyle = p.strokeColor;
+      ctx.lineWidth = p.lineWidthBase * invZ;
+      ctx.stroke(p.path);
+    }
+    // Parallels — dashed guides
+    if (map.parallelsPath) {
+      ctx.strokeStyle = cssColor(palette.brass, 0.08);
+      ctx.lineWidth = 0.5 * invZ;
+      ctx.setLineDash([2 * invZ, 12 * invZ]);
+      ctx.stroke(map.parallelsPath);
+      ctx.setLineDash([]);
+    }
     ctx.restore();
   }
 
@@ -1381,7 +1400,7 @@
   // user last was (or on the default "eurasia" for a fresh session).
   applyViewPresetInstant(settings.viewPreset);
   loadAll().then(() => {
-    if (map.geojson && !map.cached) buildWorldCache();
+    if (map.geojson && !map.worldPaths) buildWorldCache();
     // Re-apply preset in case tree building shifted things or viewport changed
     applyViewPresetInstant(settings.viewPreset);
     requestAnimationFrame(render);

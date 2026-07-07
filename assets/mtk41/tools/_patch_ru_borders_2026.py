@@ -1,17 +1,12 @@
 #!/usr/bin/env python3
-"""Патчит data/ne_110m_countries.geojson: добавляет РЕАЛЬНЫЕ векторные
-полигоны 4 украинских областей (Донецкая, Луганская, Херсонская,
-Запорожская) как отдельную feature с ADMIN='Russia' в конце списка.
+"""Патчит data/ne_110m_countries.geojson: объединяет полигоны РФ с 4
+украинскими областями (Донецкая, Луганская, Херсонская, Запорожская)
+через shapely.unary_union → одна непрерывная внешняя граница РФ
+без внутренних швов между областями.
 
-Крым уже показан в Russia's MultiPolygon (наследие ne_110m post-2014),
-поэтому его отдельно не добавляем.
+Крым уже в Russia's MultiPolygon (наследие ne_110m post-2014).
 
-Полигоны берутся из geoBoundaries UKR ADM1 simplified (OSM данные,
-Open Data Commons ODbL 1.0). Кэшируется локально в
-assets/mtk41/sources/geoBoundaries-UKR-ADM1_simplified.geojson.
-
-Feature добавляется в конец geojson → рендерится ПОСЛЕ Украины →
-визуально перекрывает UA-полигон в этих регионах, показывая цвет РФ.
+Полигоны берутся из geoBoundaries UKR ADM1 simplified (OSM, ODbL 1.0).
 
 Запуск: /usr/bin/python3 assets/mtk41/tools/_patch_ru_borders_2026.py
 """
@@ -20,6 +15,9 @@ import shutil
 import urllib.request
 from pathlib import Path
 
+from shapely.geometry import shape, mapping
+from shapely.ops import unary_union
+
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 GEOJSON = ROOT / "data/ne_110m_countries.geojson"
 UKR_CACHE = ROOT / "assets/mtk41/sources/geoBoundaries-UKR-ADM1_simplified.geojson"
@@ -27,7 +25,6 @@ UKR_CACHE = ROOT / "assets/mtk41/sources/geoBoundaries-UKR-ADM1_simplified.geojs
 UKR_URL = ("https://github.com/wmgeolab/geoBoundaries/raw/9469f09/"
            "releaseData/gbOpen/UKR/ADM1/geoBoundaries-UKR-ADM1_simplified.geojson")
 
-# Названия областей в geoBoundaries (English)
 TARGET_OBLASTS = [
     "Donetsk Oblast",
     "Luhansk Oblast",
@@ -44,69 +41,62 @@ def download_ukr():
     urllib.request.urlretrieve(UKR_URL, UKR_CACHE)
 
 
-def load_oblast_polygons():
+def load_oblast_shapes():
     with open(UKR_CACHE, encoding="utf-8") as f:
         ukr = json.load(f)
-    polys = []
+    out = {}
     for name in TARGET_OBLASTS:
         feat = next((f for f in ukr["features"]
                      if f["properties"].get("shapeName") == name), None)
         if not feat:
-            raise RuntimeError(f"no {name} in {UKR_CACHE}")
-        g = feat["geometry"]
-        # Convert Polygon → single-poly list; MultiPolygon → its polys
-        if g["type"] == "Polygon":
-            polys.append(g["coordinates"])
-        elif g["type"] == "MultiPolygon":
-            polys.extend(g["coordinates"])
-        else:
-            raise RuntimeError(f"unexpected geom {g['type']} for {name}")
-        print(f"  + {name}: {g['type']}, "
-              f"outer pts {sum(len(p[0]) for p in ([g['coordinates']] if g['type']=='Polygon' else g['coordinates']))}")
-    return polys
+            raise RuntimeError(f"no {name}")
+        out[name] = shape(feat["geometry"])
+    return out
 
 
 def main():
     download_ukr()
-    polys = load_oblast_polygons()
+    oblasts = load_oblast_shapes()
 
     with open(GEOJSON, encoding="utf-8") as f:
         gj = json.load(f)
-
-    # Idempotent — remove any prior patch feature
-    gj["features"] = [ft for ft in gj["features"]
-                      if ft.get("properties", {}).get("_ru_annex_2026") is not True]
 
     # Backup once
     bak = GEOJSON.with_suffix(".geojson.bak")
     if not bak.exists():
         shutil.copy(GEOJSON, bak)
 
-    new_feature = {
-        "type": "Feature",
-        "properties": {
-            "ADMIN": "Russia",
-            "NAME": "Russia",
-            "ISO_A2": "RU",
-            "_ru_annex_2026": True,
-            "note": ("РФ по состоянию на 2026: 4 украинские области "
-                     "(Донецкая, Луганская, Херсонская, Запорожская) "
-                     "по итогам 2022. Крым учтён отдельно в основном "
-                     "полигоне Russia в ne_110m."),
-            "source": "geoBoundaries UKR ADM1 (ODbL 1.0)",
-        },
-        "geometry": {
-            "type": "MultiPolygon",
-            "coordinates": polys,
-        },
-    }
+    # Idempotent — drop any prior standalone annex feature (previous versions)
+    gj["features"] = [ft for ft in gj["features"]
+                      if ft.get("properties", {}).get("_ru_annex_2026") is not True]
 
-    gj["features"].append(new_feature)
+    ru = next(f for f in gj["features"] if f["properties"].get("ADMIN") == "Russia")
+    ua = next(f for f in gj["features"] if f["properties"].get("ADMIN") == "Ukraine")
+
+    ru_shape = shape(ru["geometry"])
+    ua_shape = shape(ua["geometry"])
+
+    # Union of Russia + 4 oblasts → new Russia's border
+    ru_new = unary_union([ru_shape] + list(oblasts.values()))
+
+    # Subtract those 4 oblasts from Ukraine so Ukraine loses them
+    ua_new = ua_shape
+    for ob in oblasts.values():
+        ua_new = ua_new.difference(ob)
+
+    print(f"Russia: {ru_shape.geom_type} → {ru_new.geom_type}")
+    print(f"  area: {ru_shape.area:.2f} → {ru_new.area:.2f}")
+    print(f"Ukraine: {ua_shape.geom_type} → {ua_new.geom_type}")
+    print(f"  area: {ua_shape.area:.2f} → {ua_new.area:.2f}")
+
+    ru["geometry"] = mapping(ru_new)
+    ua["geometry"] = mapping(ua_new)
+    # Mark для audita
+    ru["properties"]["_ru_2026_borders"] = True
+
     GEOJSON.write_text(json.dumps(gj, ensure_ascii=False), encoding="utf-8")
-
     print(f"patched {GEOJSON}")
-    print(f"  polygons added: {len(polys)}")
-    print(f"  total features: {len(gj['features'])}")
+    print(f"  features: {len(gj['features'])}")
     print(f"  file size: {GEOJSON.stat().st_size} bytes")
 
 
