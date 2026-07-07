@@ -15,14 +15,26 @@
  */
 
 const VARIANTS = window.HUB_VARIANTS || [];
+const TOOLS    = window.HUB_TOOLS || [];
 const hub    = document.querySelector(".hub");
 const frame  = document.getElementById("frame");
 const bar    = document.querySelector(".hub__bar");
 const nav    = document.querySelector(".hub__nav");
+const title  = document.querySelector(".hub__title");
 const label  = document.getElementById("label");
 const dotsEl = document.getElementById("dots");
 const prev   = document.getElementById("prev");
 const next   = document.getElementById("next");
+
+/* ---- Версии (опц. поле variant.version) — обратно-совместимо ----
+ * Если хотя бы у одного варианта есть `version`, в баре появляется сегмент
+ * версий, а стрелки/точки/свайп листают ВНУТРИ активной версии. Нет `version`
+ * ни у кого → одноуровневая карусель как раньше (МТК 39–42 не затронуты).
+ * Точка входа варианта: `url` (произвольный путь/файл) или `../<slug>/` (папка). */
+const versions = [...new Set(VARIANTS.map(v => v.version).filter(Boolean))];
+let activeVersion = versions.length ? versions[versions.length - 1] : null; // по умолчанию — новейшая
+function vis() { return activeVersion ? VARIANTS.filter(v => v.version === activeVersion) : VARIANTS.slice(); }
+function entryUrl(v) { return v.url || `../${v.slug}/`; }
 
 /* Inject top-edge hotspot once. */
 const edge = document.createElement("div");
@@ -151,30 +163,125 @@ nav.parentNode.insertBefore(orientEl, nav);
 /* Шестерёнка настроек стрелок — в бар, перед .hub__nav */
 nav.parentNode.insertBefore(gear, nav);
 
+/* Сегмент версий (только если версий >1) — визуально как .hub__orient, рядом с заголовком. */
+let verEl = null;
+if (versions.length > 1) {
+  verEl = document.createElement("div");
+  verEl.className = "hub__ver";
+  verEl.setAttribute("role", "group");
+  verEl.setAttribute("aria-label", "Версия");
+  versions.forEach(ver => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.dataset.ver = ver;
+    b.textContent = ver.toUpperCase();
+    b.addEventListener("click", () => setVersion(ver));
+    verEl.appendChild(b);
+  });
+  if (title) title.parentNode.insertBefore(verEl, title.nextSibling);
+  else nav.parentNode.insertBefore(verEl, nav);
+}
+
+/* ---- Служебная кнопка (HUB_TOOLS): бэк-инструменты приёмки, НЕ витрина ----
+ * Скрыта от посетителя: показывается только при ?service=1 в URL хаба ИЛИ по
+ * тройному тапу по заголовку МТК (escape-hatch для персонала без правки URL).
+ * Открывает инструмент оверлеем поверх хаба. Нет HUB_TOOLS → кнопки нет
+ * (МТК без бэк-инструментов не затронуты). Глиф ⚒ — отличать от nav-⚙. */
+let svcBtn = null, svcPop = null;
+if (TOOLS.length) {
+  const gateOn = new URLSearchParams(location.search).get("service") === "1";
+  svcBtn = document.createElement("button");
+  svcBtn.type = "button";
+  svcBtn.className = "hub__service";
+  svcBtn.textContent = "⚒";
+  svcBtn.title = "Служебное · данные и приёмка";
+  svcBtn.setAttribute("aria-label", "Служебное");
+  svcBtn.style.display = gateOn ? "" : "none";
+
+  svcPop = document.createElement("div");
+  svcPop.className = "hub__service-pop";
+  svcPop.hidden = true;
+  TOOLS.forEach(t => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = t.name;
+    b.addEventListener("click", () => { svcPop.hidden = true; openTool(t); });
+    svcPop.appendChild(b);
+  });
+  svcBtn.addEventListener("click", () => { svcPop.hidden = !svcPop.hidden; });
+  bar.appendChild(svcBtn);
+  document.body.appendChild(svcPop);
+
+  /* Скрытый жест: 3 тапа по заголовку за 800 мс раскрывают кнопку. */
+  if (title) {
+    let taps = [];
+    title.addEventListener("click", () => {
+      const now = performance.now();
+      taps = taps.filter(x => now - x < 800);
+      taps.push(now);
+      if (taps.length >= 3) { svcBtn.style.display = ""; taps = []; }
+    });
+  }
+}
+function openTool(t) {
+  const ov = document.createElement("div");
+  ov.className = "hub__tool-overlay";
+  ov.innerHTML =
+    '<div class="hub__tool-head"><span></span>' +
+    '<button type="button" class="hub__tool-close" aria-label="Закрыть">✕</button></div>' +
+    '<iframe class="hub__tool-frame"></iframe>';
+  ov.querySelector(".hub__tool-head span").textContent = t.name;
+  ov.querySelector(".hub__tool-frame").src = t.url;
+  ov.querySelector(".hub__tool-close").addEventListener("click", () => ov.remove());
+  document.body.appendChild(ov);
+}
+
 let i = 0;
 
-VARIANTS.forEach((v, idx) => {
-  const b = document.createElement("button");
-  b.className = "hub__dot";
-  b.setAttribute("role", "tab");
-  b.setAttribute("aria-label", v.name);
-  b.addEventListener("click", () => goto(idx));
-  dotsEl.appendChild(b);
-});
+function buildDots() {
+  dotsEl.innerHTML = "";
+  vis().forEach((v, idx) => {
+    const b = document.createElement("button");
+    b.className = "hub__dot";
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-label", v.name);
+    b.addEventListener("click", () => goto(idx));
+    dotsEl.appendChild(b);
+  });
+}
 
 function goto(idx) {
-  if (!VARIANTS.length) return;
-  i = (idx + VARIANTS.length) % VARIANTS.length;
-  const v = VARIANTS[i];
-  frame.src = `../${v.slug}/`;
+  const list = vis();
+  if (!list.length) return;
+  i = (idx + list.length) % list.length;
+  const v = list[i];
+  frame.src = entryUrl(v);
   label.innerHTML =
     `<span class="tag">${v.tag}</span> · ${v.name}` +
-    `<span class="counter">${i + 1} / ${VARIANTS.length}</span>`;
+    `<span class="counter">${i + 1} / ${list.length}</span>`;
   dotsEl.querySelectorAll(".hub__dot").forEach((d, j) => {
     d.classList.toggle("active", j === i);
     d.setAttribute("aria-selected", j === i ? "true" : "false");
   });
   history.replaceState(null, "", `#${v.slug}`);
+  updateNavVisibility();
+}
+
+/* Переключение версии → пересобрать точки, встать на первый вариант версии. */
+function setVersion(ver) {
+  activeVersion = ver;
+  if (verEl) verEl.querySelectorAll("button").forEach(b => {
+    b.classList.toggle("is-active", b.dataset.ver === ver);
+    b.setAttribute("aria-pressed", b.dataset.ver === ver ? "true" : "false");
+  });
+  buildDots();
+  goto(0);
+}
+
+/* Стрелки/точки/угловые кнопки прячутся, когда в активной версии один вариант. */
+function updateNavVisibility() {
+  const single = vis().length <= 1;
+  [prev, next, dotsEl, prevCorner, nextCorner].forEach(e => { if (e) e.style.display = single ? "none" : ""; });
 }
 
 prev.addEventListener("click", () => goto(i - 1));
@@ -198,17 +305,17 @@ window.addEventListener("touchend", (e) => {
   touchStartX = null;
 }, { passive: true });
 
+/* Deep-link: #slug → активировать его версию + встать на его индекс внутри версии. */
 const initSlug = decodeURIComponent(location.hash.replace("#", ""));
-const initIdx  = VARIANTS.findIndex(v => v.slug === initSlug);
-goto(initIdx >= 0 ? initIdx : 0);
-
-if (VARIANTS.length <= 1) {
-  prev.style.display       = "none";
-  next.style.display       = "none";
-  dotsEl.style.display     = "none";
-  prevCorner.style.display = "none";
-  nextCorner.style.display = "none";
-}
+const initVariant = VARIANTS.find(v => v.slug === initSlug);
+if (initVariant && initVariant.version) activeVersion = initVariant.version;
+if (verEl) verEl.querySelectorAll("button").forEach(b => {
+  b.classList.toggle("is-active", b.dataset.ver === activeVersion);
+  b.setAttribute("aria-pressed", b.dataset.ver === activeVersion ? "true" : "false");
+});
+buildDots();
+const startIdx = vis().findIndex(v => v.slug === initSlug);
+goto(startIdx >= 0 ? startIdx : 0);
 
 /* Orientation persistence: query ?o=v|h beats localStorage beats default 'h'. */
 const STORAGE_KEY = "bmk-hub-orient";

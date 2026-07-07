@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>МТК 38 · Ленин на языках мира</title>
   <link rel="icon" href="data:," />
-  <link rel="stylesheet" href="../assets/shared/hub/hub.css?v=20260708" />
+  <link rel="stylesheet" href="../assets/shared/hub/hub.css?v=20260708b" />
 </head>
 <body>
   <div class="hub">
@@ -26,17 +26,35 @@
   </div>
 
   <script>
+    /* Три поколения решений МТК 38 переключаются сегментом версий в баре
+     * (v1 canvas · v2 WebGL · v3 WebGPU). По умолчанию активна новейшая — v3.
+     * v1 — через slug-папку `../<slug>/`; v2/v3 — через `url` (v3 = файлы .html). */
     window.HUB_VARIANTS = [
-      { slug: "mtk38-globe",   tag: "01 · Globe",   name: "Сфера" },
-      { slug: "mtk38-poster",  tag: "02 · Poster",  name: "Постер" },
-      { slug: "mtk38-cloud",   tag: "03 · Cloud",   name: "Облако" },
-      { slug: "mtk38-mandala", tag: "04 · Mandala", name: "Мандала" },
-      { slug: "mtk38-rain",    tag: "05 · Rain",    name: "Дождь" },
-      { slug: "mtk38-ticker",  tag: "06 · Ticker",  name: "Лента" },
-      { slug: "mtk38-catalog", tag: "07 · Catalog", name: "Каталог" },
-      { slug: "mtk38-map",     tag: "08 · Map",     name: "Карта" },
+      { slug: "mtk38-globe",   tag: "01 · Globe",   name: "Сфера",   version: "v1" },
+      { slug: "mtk38-poster",  tag: "02 · Poster",  name: "Постер",  version: "v1" },
+      { slug: "mtk38-cloud",   tag: "03 · Cloud",   name: "Облако",  version: "v1" },
+      { slug: "mtk38-mandala", tag: "04 · Mandala", name: "Мандала", version: "v1" },
+      { slug: "mtk38-rain",    tag: "05 · Rain",    name: "Дождь",   version: "v1" },
+      { slug: "mtk38-ticker",  tag: "06 · Ticker",  name: "Лента",   version: "v1" },
+      { slug: "mtk38-catalog", tag: "07 · Catalog", name: "Каталог", version: "v1" },
+      { slug: "mtk38-map",     tag: "08 · Map",     name: "Карта",   version: "v1" },
+
+      { slug: "mtk38-v2-studio", tag: "Арт-объект", name: "Ленин · арт-объект", version: "v2", url: "../mtk38-v2/studio/" },
+      { slug: "mtk38-v2-map",    tag: "Карта",      name: "Карта мира",         version: "v2", url: "../mtk38-v2/map/" },
+
+      { slug: "mtk38-v3-globe", tag: "Глобус", name: "Глобус (WebGPU)", version: "v3", url: "../mtk38-v3/globe.html" },
+      { slug: "mtk38-v3-rain",  tag: "Дождь",  name: "Дождь (WebGPU)",  version: "v3", url: "../mtk38-v3/rain.html" },
+      { slug: "mtk38-v3-map",   tag: "Карта",  name: "Карта (WebGPU)",  version: "v3", url: "../mtk38-v3/map.html" },
+    ];
+
+    /* Бэк-инструменты (не витрина) — служебная кнопка ⚒ в баре, гейт ?service=1
+     * или тройной тап по заголовку. Открываются оверлеем поверх хаба. */
+    window.HUB_TOOLS = [
+      { name: "Данные и приёмка", url: "../mtk38-v2/back/editor.html" },
+      { name: "Валидатор",        url: "../mtk38-v2/back/validate.html" },
+      { name: "Аналитика",        url: "../mtk38-v2/back/analysis.html" },
     ];
   </script>
-  <script src="../assets/shared/hub/hub.js?v=20260708"></script>
+  <script src="../assets/shared/hub/hub.js?v=20260708b"></script>
 </body>
 </html>
