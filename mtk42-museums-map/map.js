@@ -21,10 +21,10 @@ const STATUS_COLOR = {
 // Preset views. "core" is the default — Ленинская сеть от Парижа до
 // Улан-Батора; Аден выпадает, но получаем плотный кадр по СССР+В.Европе.
 const VIEW_PRESETS = {
-  full:   { lonMin: -10, lonMax: 115, latMin: 10, latMax: 70 },
-  core:   { lonMin:   0, lonMax: 110, latMin: 30, latMax: 68 },
-  ussr:   { lonMin:  20, lonMax: 110, latMin: 38, latMax: 68 },
-  europe: { lonMin:  -5, lonMax:  50, latMin: 40, latMax: 68 },
+  full:   { lonMin: -12, lonMax: 120, latMin:  8, latMax: 72 },
+  core:   { lonMin:  -8, lonMax: 118, latMin: 22, latMax: 72 },
+  ussr:   { lonMin:  20, lonMax: 115, latMin: 36, latMax: 70 },
+  europe: { lonMin:  -6, lonMax:  56, latMin: 38, latMax: 70 },
 };
 
 const DEFAULTS = {
@@ -34,6 +34,9 @@ const DEFAULTS = {
   latMax: VIEW_PRESETS.core.latMax,
   dotRadius: 10,
   borderWidth: 0.8,
+  showCities: true,
+  citySize: 11,
+  cityOpacity: 70,
   titleSize: 48,
   titleOpacity: 100,
   titleBold: false,
@@ -49,7 +52,18 @@ const state = {
   status: "all",
   settings: loadSettings(),
   hoverId: null,
+  // Live view (mutated by zoom / pan); starts from settings bounds.
+  view: null,
 };
+
+function resetViewFromSettings() {
+  state.view = {
+    lonMin: state.settings.lonMin,
+    lonMax: state.settings.lonMax,
+    latMin: state.settings.latMin,
+    latMax: state.settings.latMax,
+  };
+}
 
 function loadSettings() {
   try {
@@ -69,6 +83,7 @@ function saveSettings() {
   state.data = museums;
   state.countries = geo;
   applyVisualSettings();
+  resetViewFromSettings();
   setupCanvas();
   render();
   bindUi();
@@ -78,11 +93,18 @@ function saveSettings() {
 
 // ─── Projection ─────────────────────────────────────────────
 function project(lon, lat, canvasW, canvasH) {
-  const s = state.settings;
-  const x = ((lon - s.lonMin) / (s.lonMax - s.lonMin)) * canvasW;
+  const v = state.view;
+  const x = ((lon - v.lonMin) / (v.lonMax - v.lonMin)) * canvasW;
   // Note: latitude increases NORTH; canvas y increases DOWN.
-  const y = ((s.latMax - lat) / (s.latMax - s.latMin)) * canvasH;
+  const y = ((v.latMax - lat) / (v.latMax - v.latMin)) * canvasH;
   return [x, y];
+}
+
+function unproject(px, py, canvasW, canvasH) {
+  const v = state.view;
+  const lon = v.lonMin + (px / canvasW) * (v.lonMax - v.lonMin);
+  const lat = v.latMax - (py / canvasH) * (v.latMax - v.latMin);
+  return [lon, lat];
 }
 
 // ─── Canvas ─────────────────────────────────────────────────
@@ -118,6 +140,35 @@ function render() {
   drawCountries(W, H);
   drawGraticule(W, H);
   drawDots(W, H);
+  if (state.settings.showCities) drawCityLabels(W, H);
+}
+
+function drawCityLabels(W, H) {
+  const items = filteredItems();
+  const seen = new Set();
+  const R = state.settings.dotRadius;
+  const size = state.settings.citySize;
+  const alpha = state.settings.cityOpacity / 100;
+  ctx.save();
+  ctx.font = `600 ${size}px "20 Kopeek", "Courier New", monospace`;
+  ctx.textAlign = "left";
+  ctx.textBaseline = "middle";
+  for (const it of items) {
+    if (typeof it.lat !== "number" || typeof it.lng !== "number") continue;
+    if (seen.has(it.city)) continue;
+    seen.add(it.city);
+    const [x, y] = project(it.lng, it.lat, W, H);
+    if (x < -80 || x > W + 40 || y < -20 || y > H + 20) continue;
+    const label = it.city;
+    const tx = x + R + 6;
+    const ty = y;
+    // Soft dark backdrop for readability
+    ctx.fillStyle = `rgba(0, 0, 0, ${(alpha * 0.65).toFixed(2)})`;
+    ctx.fillText(label, tx + 1, ty + 1);
+    ctx.fillStyle = `rgba(247, 249, 239, ${alpha.toFixed(2)})`;
+    ctx.fillText(label, tx, ty);
+  }
+  ctx.restore();
 }
 
 function drawCountries(W, H) {
@@ -136,8 +187,8 @@ function drawCountries(W, H) {
         if (!ring || ring.length === 0) continue;
         let started = false;
         for (const [lon, lat] of ring) {
-          if (lon < state.settings.lonMin - 5 || lon > state.settings.lonMax + 5) continue;
-          if (lat < state.settings.latMin - 5 || lat > state.settings.latMax + 5) continue;
+          if (lon < state.view.lonMin - 10 || lon > state.view.lonMax + 10) continue;
+          if (lat < state.view.latMin - 10 || lat > state.view.latMax + 10) continue;
           const [px, py] = project(lon, lat, W, H);
           if (!started) { ctx.moveTo(px, py); started = true; }
           else ctx.lineTo(px, py);
@@ -273,6 +324,7 @@ function applyPreset(name) {
   if (!p) return;
   Object.assign(state.settings, p);
   saveSettings();
+  resetViewFromSettings();
   syncControlsFromState();
   render();
 }
@@ -293,20 +345,88 @@ function onSliderChange(el) {
   saveSettings();
   if (key === "titleSize" || key === "titleOpacity" || key === "filterSize" || key === "filterOpacity") {
     applyVisualSettings();
+  } else if (key === "lonMin" || key === "lonMax" || key === "latMin" || key === "latMax") {
+    resetViewFromSettings();
+    render();
   } else {
-    // view bounds, dot radius, border width — need redraw
     render();
   }
 }
 
-function bindUi() {
-  canvas.addEventListener("click", (e) => {
+// ─── Zoom / pan ─────────────────────────────────────────────
+function zoomAt(px, py, factor) {
+  const rect = canvas.getBoundingClientRect();
+  const [lonBefore, latBefore] = unproject(px, py, rect.width, rect.height);
+  const v = state.view;
+  const cx = (v.lonMin + v.lonMax) / 2;
+  const cy = (v.latMin + v.latMax) / 2;
+  let halfLon = (v.lonMax - v.lonMin) / 2 / factor;
+  let halfLat = (v.latMax - v.latMin) / 2 / factor;
+  // clamp span
+  halfLon = Math.max(0.5, Math.min(180, halfLon));
+  halfLat = Math.max(0.3, Math.min(60, halfLat));
+  v.lonMin = cx - halfLon; v.lonMax = cx + halfLon;
+  v.latMin = cy - halfLat; v.latMax = cy + halfLat;
+  const [lonAfter, latAfter] = unproject(px, py, rect.width, rect.height);
+  v.lonMin += lonBefore - lonAfter; v.lonMax += lonBefore - lonAfter;
+  v.latMin += latBefore - latAfter; v.latMax += latBefore - latAfter;
+  render();
+}
+
+function bindZoomAndPan() {
+  let dragging = false;
+  let start = null;
+  let moved = 0;
+
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
     const rect = canvas.getBoundingClientRect();
     const px = e.clientX - rect.left;
     const py = e.clientY - rect.top;
-    const it = hitTest(px, py);
-    if (it) openDetail(it);
+    const factor = e.deltaY > 0 ? 1 / 1.18 : 1.18;
+    zoomAt(px, py, factor);
+  }, { passive: false });
+
+  canvas.addEventListener("pointerdown", (e) => {
+    dragging = true; moved = 0;
+    start = {
+      x: e.clientX, y: e.clientY,
+      view: { ...state.view },
+    };
+    try { canvas.setPointerCapture(e.pointerId); } catch {}
   });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const rect = canvas.getBoundingClientRect();
+    const dx = e.clientX - start.x;
+    const dy = e.clientY - start.y;
+    moved = Math.max(moved, Math.hypot(dx, dy));
+    const lonSpan = start.view.lonMax - start.view.lonMin;
+    const latSpan = start.view.latMax - start.view.latMin;
+    const dlon = -dx / rect.width * lonSpan;
+    const dlat = dy / rect.height * latSpan; // y-down → lat-down
+    state.view.lonMin = start.view.lonMin + dlon;
+    state.view.lonMax = start.view.lonMax + dlon;
+    state.view.latMin = start.view.latMin + dlat;
+    state.view.latMax = start.view.latMax + dlat;
+    render();
+  });
+  const endDrag = (e) => {
+    if (!dragging) return;
+    dragging = false;
+    try { canvas.releasePointerCapture(e.pointerId); } catch {}
+    if (moved < 4) {
+      const rect = canvas.getBoundingClientRect();
+      const it = hitTest(e.clientX - rect.left, e.clientY - rect.top);
+      if (it) openDetail(it);
+    }
+  };
+  canvas.addEventListener("pointerup", endDrag);
+  canvas.addEventListener("pointercancel", endDrag);
+}
+
+function bindUi() {
+  bindZoomAndPan();
 
   $$('.filter[data-status]').forEach((btn) => {
     btn.addEventListener("click", () => {
@@ -332,12 +452,15 @@ function bindUi() {
     state.settings = { ...DEFAULTS };
     saveSettings();
     applyVisualSettings();
+    resetViewFromSettings();
     render();
     syncControlsFromState();
   });
-  $$('.settings__preset').forEach((btn) => {
+  $$('.settings__preset[data-view-preset]').forEach((btn) => {
     btn.addEventListener("click", () => applyPreset(btn.dataset.viewPreset));
   });
+  const resetBtn = $("#reset-view");
+  if (resetBtn) resetBtn.addEventListener("click", () => { resetViewFromSettings(); render(); });
   $$('input[type="checkbox"][data-setting]').forEach((el) => {
     el.addEventListener("change", () => onCheckboxChange(el));
   });
