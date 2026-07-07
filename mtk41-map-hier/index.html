@@ -14,7 +14,7 @@
     <header class="title-block" aria-hidden="true">
       <div class="kicker">МТК 41 · Скульптуры · v2</div>
       <h1>Лениниана: регион → страна → город</h1>
-      <div class="subtitle">167 памятников. Тап на кружок — распадается на подкружки. Размер ~ число памятников.</div>
+      <div class="subtitle">236 памятников на 5 континентах, от Женевы 1921 до Гельзенкирхена 2020. Тап на кружок — распадается. Размер ~ число памятников.</div>
     </header>
     <aside id="card" class="card" data-mtk-card hidden></aside>
     <button id="home-chip" class="home-chip" type="button" aria-label="Вернуться ко всему СССР" hidden>
@@ -23,6 +23,15 @@
     <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
     <aside id="settings-panel" class="settings-panel" hidden>
       <h2>Настройки</h2>
+
+      <fieldset class="settings-row">
+        <legend>Стартовый вид</legend>
+        <div class="segmented" role="radiogroup" aria-label="Стартовый вид">
+          <button type="button" data-view-preset="world" role="radio" aria-checked="false">Мир</button>
+          <button type="button" data-view-preset="eurasia" class="active" role="radio" aria-checked="true">Европа + СССР</button>
+          <button type="button" data-view-preset="ex-ussr" role="radio" aria-checked="false">ex-USSR</button>
+        </div>
+      </fieldset>
 
       <fieldset class="settings-row">
         <legend>Размер кружка</legend>
@@ -58,6 +67,7 @@
       </fieldset>
 
       <fieldset class="settings-row settings-checks">
+        <label><input type="checkbox" id="opt-macro-labels" checked> лейблы макро-регионов</label>
         <label><input type="checkbox" id="opt-connectors" checked> connectors от смещённых</label>
         <label><input type="checkbox" id="opt-outliers" checked> Антарктида + Шпицберген</label>
         <label><input type="checkbox" id="opt-crossfade" checked> cross-fade между уровнями</label>
