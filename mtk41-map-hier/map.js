@@ -65,6 +65,7 @@
     thrCountry: 1.8,          // thrMacro..thrCountry → LEVEL_COUNTRY
     thrCity: 3.0,             // thrCountry..thrCity → LEVEL_CITY; ≥thrCity → LEVEL_LEAF
     gap: 6,                   // vpx между кружками при relaxation
+    labelScale: 1.4,          // multiplier для размера всех подписей
     showConnectors: true,
     showOutliers: true,
     crossfade: true,
@@ -746,7 +747,9 @@
       const isSel = cl.memberIndices.includes(selectedIndex);
       const r = cl.rVpx / zoom;
       // Font (in pre-zoom units so on-screen size = fontVpx)
-      const fontVpxRaw = Math.max(14, Math.min(34, cl.rVpx * 0.42));
+      // Base font in vpx, then user multiplier from settings.
+      const scale = Math.max(0.4, Math.min(4, settings.labelScale || 1));
+      const fontVpxRaw = Math.max(14, Math.min(34, cl.rVpx * 0.42)) * scale;
       const fontVpx = isSel ? fontVpxRaw * 1.15 : fontVpxRaw;
       const font = fontVpx / zoom;
       ctx.font = `${isSel ? 600 : 400} ${font}px "20 Kopeek", "Courier New", monospace`;
@@ -1044,6 +1047,7 @@
   wireRange("thr-country", "thrCountry", v => v.toFixed(2) + "×");
   wireRange("thr-city", "thrCity", v => v.toFixed(2) + "×");
   wireRange("opt-gap", "gap", v => String(Math.round(v)));
+  wireRange("opt-label-scale", "labelScale", v => v.toFixed(2) + "×");
 
   function wireCheck(id, key) {
     const el = document.getElementById(id);
@@ -1066,6 +1070,7 @@
     document.getElementById("thr-country").value = settings.thrCountry;
     document.getElementById("thr-city").value = settings.thrCity;
     document.getElementById("opt-gap").value = settings.gap;
+    document.getElementById("opt-label-scale").value = settings.labelScale;
     document.getElementById("opt-macro-labels").checked = settings.showMacroLabels;
     document.getElementById("opt-connectors").checked = settings.showConnectors;
     document.getElementById("opt-outliers").checked = settings.showOutliers;
@@ -1080,6 +1085,7 @@
     settingsPanel.querySelectorAll("[data-value-for]").forEach(span => {
       const id = span.dataset.valueFor;
       if (id === "opt-gap") span.textContent = String(Math.round(settings.gap));
+      else if (id === "opt-label-scale") span.textContent = settings.labelScale.toFixed(2) + "×";
       else if (id.startsWith("thr-")) {
         const key = id === "thr-macro" ? "thrMacro" : id === "thr-country" ? "thrCountry" : "thrCity";
         span.textContent = settings[key].toFixed(2) + "×";
