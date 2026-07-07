@@ -76,17 +76,16 @@
     document.body.classList.toggle('q-on', enabled);
     if (enabled) setEnabled(true);
 
-    // Весь блок цитат — ОДНОЙ группой панели (тумблер + размещение + параметры вместе).
-    // Параметры и размещение показываются только когда цитаты включены (per-control when).
-    var onWhen = function (s) { return s.quotesOn; };
+    // Весь блок цитат — ОДНОЙ группой панели: те же элементы, что были (тумблер + размещение +
+    // параметры), просто собраны вместе. Ничего не прячем и не переименовываем.
     function panelGroup() {
       return { title: 'Цитаты', params: [
         { key: 'quotesOn', type: 'toggle', label: label, value: enabled },
-        { key: 'quoteMode', type: 'segment', label: 'Размещение', when: onWhen, value: mode, options: MODES.map(function (m) { return [m[0], m[1]]; }) },
-        { key: 'qGlow', label: 'Свечение', min: 0, max: 2.5, step: .05, value: params.glow, when: onWhen },
-        { key: 'qBlur', label: 'Разблюр фона', min: 0, max: 40, step: 1, value: params.blur, when: onWhen },
-        { key: 'qScrim', label: 'Затемнение', min: 0, max: 1, step: .02, value: params.scrim, when: onWhen },
-        { key: 'qScale', label: 'Размер', min: .6, max: 1.8, step: .02, value: params.scale, when: onWhen },
+        { key: 'quoteMode', type: 'segment', label: 'Размещение цитаты', value: mode, options: MODES.map(function (m) { return [m[0], m[1]]; }) },
+        { key: 'qGlow', label: 'Свечение', min: 0, max: 2.5, step: .05, value: params.glow },
+        { key: 'qBlur', label: 'Разблюр фона', min: 0, max: 40, step: 1, value: params.blur },
+        { key: 'qScrim', label: 'Затемнение', min: 0, max: 1, step: .02, value: params.scrim },
+        { key: 'qScale', label: 'Размер', min: .6, max: 1.8, step: .02, value: params.scale },
       ] };
     }
     function handle(key, val) {
