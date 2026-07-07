@@ -1253,14 +1253,20 @@
   // Clamp the camera so no matter the zoom, the visible viewport stays
   // inside the world [0..worldW] × [0..worldH]. Prevents any empty canvas
   // above/below/beside the map.
+  // Clamp cam so that at any zoom no empty canvas appears beyond the world's
+  // top/bottom/left/right edges. Derivation:
+  //   world x=0 at screen x=0 → camX = w/(2z) - w/2
+  //   world x=worldW at screen x=w → camX = worldW - w/2 - w/(2z)
+  //   For "no empty space on left" the world must extend at or beyond the
+  //   left edge → camX ≥ w/(2z) - w/2. Analogously for other sides.
   function clampCamera() {
     if (!map.worldW || !map.worldH) return;
     const z = map.zoom || 1;
     const halfW = width * 0.5 / z;
     const halfH = height * 0.5 / z;
-    const cxMin = width * 0.5 - halfW;
+    const cxMin = halfW - width * 0.5;
     const cxMax = map.worldW - width * 0.5 - halfW;
-    const cyMin = height * 0.5 - halfH;
+    const cyMin = halfH - height * 0.5;
     const cyMax = map.worldH - height * 0.5 - halfH;
     if (cxMax < cxMin) map.camX = (map.worldW - width) * 0.5;
     else if (map.camX < cxMin) map.camX = cxMin;

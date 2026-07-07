@@ -40,9 +40,9 @@
     const z = map.zoom || 1;
     const halfW = width * 0.5 / z;
     const halfH = height * 0.5 / z;
-    const cxMin = width * 0.5 - halfW;
+    const cxMin = halfW - width * 0.5;
     const cxMax = map.worldW - width * 0.5 - halfW;
-    const cyMin = height * 0.5 - halfH;
+    const cyMin = halfH - height * 0.5;
     const cyMax = map.worldH - height * 0.5 - halfH;
     if (cxMax < cxMin) map.camX = (map.worldW - width) * 0.5;
     else if (map.camX < cxMin) map.camX = cxMin;
