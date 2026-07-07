@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42 · Картотека</title>
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
   </head>
   <body>
     <main class="stage">
@@ -35,7 +35,7 @@
 
       <section id="grid" class="grid" aria-label="Карточки"></section>
 
-      <aside id="detail" class="detail" hidden>
+      <aside id="detail" class="detail" data-design="v1" hidden>
         <div class="detail__panel">
           <button class="detail__close" type="button" aria-label="Закрыть">✕</button>
 
@@ -67,6 +67,8 @@
           <div class="detail__tone-bar">
             <span class="detail__tone-label">Оценка:</span>
             <span class="detail__tone-track" aria-hidden="true">
+              <span class="detail__tone-axis detail__tone-axis--neg" aria-hidden="true">−</span>
+              <span class="detail__tone-axis detail__tone-axis--pos" aria-hidden="true">+</span>
               <span class="detail__tone-marker" data-bind="tone-marker"></span>
             </span>
             <span class="detail__tone-value" data-bind="tone-value"></span>
@@ -74,12 +76,18 @@
         </div>
       </aside>
 
+      <div class="design-toggle" aria-label="Дизайн карточки">
+        <span class="design-toggle__label">Карточка героя:</span>
+        <button class="design-toggle__btn is-active" type="button" data-card-design="v1">Классика</button>
+        <button class="design-toggle__btn" type="button" data-card-design="v2">Больше воздуха</button>
+      </div>
+
       <footer class="counter">
         <span class="counter__shown" data-bind="counter-shown">0</span><span class="counter__sep"> / </span><span class="counter__total" data-bind="counter-total">0</span>
         <span class="counter__label">карточек</span>
       </footer>
     </main>
 
-    <script type="module" src="./archive.js?v=3"></script>
+    <script type="module" src="./archive.js?v=4"></script>
   </body>
 </html>

@@ -374,7 +374,64 @@ body.hide-epochs .epoch-label { display: none; }
 .dot--researcher .dot__tag { background: var(--brass);  color: var(--night); }
 .dot--writers    .dot__tag { background: var(--paper);  color: var(--night); }
 
-/* ─── Detail card (overlay) ─── */
+/* ─── Detail card (overlay) — v1 (default) and v2 (airier redesign) ─── */
+.card[data-design="v2"] {
+  padding: 44px 48px 40px;
+  border-radius: 22px;
+  width: min(760px, calc(100% - 64px));
+  display: grid;
+  gap: 28px;
+}
+.card[data-design="v2"] .card__head {
+  grid-template-columns: 200px 1fr;
+  gap: 30px;
+  align-items: start;
+  margin-bottom: 0;
+}
+.card[data-design="v2"] .card__portrait {
+  width: 200px;
+  height: 200px;
+  border-radius: 12px;
+  font-size: 72px;
+}
+.card[data-design="v2"] .card__kind  { font-size: 13px; letter-spacing: 0.30em; margin-bottom: 10px; }
+.card[data-design="v2"] .card__name  { font-size: 34px; line-height: 1.1; margin-bottom: 12px; }
+.card[data-design="v2"] .card__meta  { font-size: 14px; letter-spacing: 0.15em; line-height: 1.55; }
+.card[data-design="v2"] .card__text  { font-size: 21px; line-height: 1.6; margin: 0; }
+.card[data-design="v2"] .card__source {
+  padding: 14px 18px;
+  border-left: 2px solid var(--brass);
+  background: rgba(210, 183, 115, 0.06);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  color: rgba(247, 249, 239, 0.75);
+  margin: 0;
+}
+.card[data-design="v2"] .card__quote { padding: 22px 26px 20px; margin: 0; }
+.card[data-design="v2"] .card__quote-text { font-size: 22px; line-height: 1.55; margin-bottom: 12px; }
+.card[data-design="v2"] .card__quote-source { font-size: 14px; }
+.card[data-design="v2"] .card__tone {
+  padding-top: 20px;
+  border-top: 1px solid rgba(210, 183, 115, 0.22);
+  grid-template-columns: auto 1fr auto;
+  gap: 16px;
+  align-items: center;
+}
+.card[data-design="v2"] .card__tone-label { font-size: 14px; letter-spacing: 0.28em; }
+.card[data-design="v2"] .card__tone-track { height: 10px; margin: 0 22px; }
+.card[data-design="v2"] .card__tone-marker { width: 22px; height: 22px; }
+.card[data-design="v2"] .card__tone-value {
+  font-size: 20px;
+  min-width: 76px;
+  font-weight: 600;
+  color: var(--paper);
+}
+.card[data-design="v2"] .card__tone-axis { font-size: 18px; color: rgba(247, 249, 239, 0.85); }
+.card[data-design="v2"] .card__tone-axis--neg { left: -18px; }
+.card[data-design="v2"] .card__tone-axis--pos { right: -18px; }
+
 .card {
   position: absolute;
   right: 32px;
@@ -495,6 +552,19 @@ body.hide-epochs .epoch-label { display: none; }
   color: rgba(247, 249, 239, 0.55);
   font-style: normal;
 }
+
+.card__tone-axis {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(247, 249, 239, 0.65);
+  pointer-events: none;
+}
+.card__tone-axis--neg { left: -14px; }
+.card__tone-axis--pos { right: -14px; }
 
 .card__tone {
   display: grid;
@@ -669,6 +739,31 @@ body.hide-epochs .epoch-label { display: none; }
 .legend__dot--politician { border-color: var(--red); }
 .legend__dot--researcher { border-color: var(--brass); }
 .legend__dot--writers    { border-color: rgba(247, 249, 239, 0.65); }
+
+.settings__presets {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.settings__preset {
+  padding: 10px 12px;
+  border: 1px solid rgba(210, 183, 115, 0.32);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(247, 249, 239, 0.82);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.settings__preset:hover  { background: rgba(210, 183, 115, 0.14); }
+.settings__preset:active { transform: scale(0.98); }
+.settings__preset.is-active {
+  border-color: var(--brass);
+  color: var(--night);
+  background: var(--brass);
+}
 
 .settings__reset {
   margin-top: auto;

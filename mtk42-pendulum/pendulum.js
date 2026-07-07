@@ -35,6 +35,8 @@ const DEFAULTS = {
   yearSize: 22,
   yearOpacity: 65,
   yearBold: false,
+  // Card design
+  cardDesign: "v1",
 };
 const CATEGORY_FLAG = {
   leaders: "catLeaders",
@@ -398,7 +400,8 @@ function openCard(item, sourceDot) {
   const marker = $('[data-bind="tone-marker"]', card);
   const norm = (item.tone + 1) / 2;
   marker.style.left = (norm * 100).toFixed(1) + "%";
-  $('[data-bind="tone-value"]', card).textContent = (item.tone >= 0 ? "+" : "") + item.tone.toFixed(2);
+  const pct = Math.round(item.tone * 100);
+  $('[data-bind="tone-value"]', card).textContent = (pct >= 0 ? "+" : "") + pct + "%";
 
   const chart = $("#chart");
   const dotRect = sourceDot.getBoundingClientRect();
@@ -433,6 +436,12 @@ function applyVisualSettings() {
   document.body.classList.toggle("hide-pendulum", !s.showPendulum);
   document.body.classList.toggle("hide-ruler", !s.showRuler);
   document.body.classList.toggle("hide-epochs", !s.showEpochs);
+  const card = $("#card");
+  if (card) card.dataset.design = s.cardDesign || "v1";
+  // Highlight active design preset
+  document.querySelectorAll('[data-card-design]').forEach((b) => {
+    b.classList.toggle("is-active", b.dataset.cardDesign === (s.cardDesign || "v1"));
+  });
 }
 
 // ─── Controls ───────────────────────────────────────────────
@@ -495,6 +504,13 @@ function bindUi() {
   });
   $$('input[type="range"][data-setting-num]').forEach((el) => {
     el.addEventListener("input", () => onSliderChange(el));
+  });
+  $$('[data-card-design]').forEach((btn) => {
+    btn.addEventListener("click", () => {
+      state.settings.cardDesign = btn.dataset.cardDesign;
+      saveSettings();
+      applyVisualSettings();
+    });
   });
 
   // Legend popover (independent of settings)
