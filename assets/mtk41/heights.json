@@ -695,5 +695,185 @@
   "klaipeda-1976": {
     "statue": 6.5,
     "pedestal": 2.6
+  },
+  "leura-2001": {
+    "statue": 0.4,
+    "pedestal": 0.24
+  },
+  "tirana-1954": {
+    "statue": 4.0,
+    "pedestal": 1.6
+  },
+  "novgrad-1975": {
+    "statue": 5.0,
+    "pedestal": 3.0
+  },
+  "sofiia-1975": {
+    "statue": 5.0,
+    "pedestal": 3.0
+  },
+  "pernik-1957": {
+    "statue": 4.55,
+    "pedestal": 2.45
+  },
+  "belfast-1999": {
+    "statue": 2.0,
+    "pedestal": 0.8
+  },
+  "dunauivarosh-1970": {
+    "statue": 3.3,
+    "pedestal": 1.32
+  },
+  "khanoi-1982": {
+    "statue": 5.0,
+    "pedestal": 6.3
+  },
+  "berlin-1970": {
+    "statue": 12.35,
+    "pedestal": 6.65
+  },
+  "viunsdorf-1985": {
+    "statue": 3.0,
+    "pedestal": 2.0
+  },
+  "liutershtadt-1948": {
+    "statue": 3.2,
+    "pedestal": 1.28
+  },
+  "merzeburg-1971": {
+    "statue": 9.0,
+    "pedestal": 3.6
+  },
+  "drezden-1974": {
+    "statue": 7.0,
+    "pedestal": 2.8
+  },
+  "shverin-1985": {
+    "statue": 3.2,
+    "pedestal": 0.8
+  },
+  "ebersvalde-1975": {
+    "statue": 3.5,
+    "pedestal": 1.4
+  },
+  "gelzenkirkhen-2020": {
+    "statue": 2.15,
+    "pedestal": 0.86
+  },
+  "kopengagen-1986": {
+    "statue": 3.0,
+    "pedestal": 1.2
+  },
+  "vidzhaiavada-1987": {
+    "statue": 7.8,
+    "pedestal": 4.2
+  },
+  "deli-1987": {
+    "statue": 2.93,
+    "pedestal": 1.57
+  },
+  "kalkutta-1970": {
+    "statue": 3.25,
+    "pedestal": 4.25
+  },
+  "vankuver-2009": {
+    "statue": 5.18,
+    "pedestal": 2.07
+  },
+  "port-1972": {
+    "statue": 2.08,
+    "pedestal": 1.12
+  },
+  "ulan-1954": {
+    "statue": 5.2,
+    "pedestal": 2.7
+  },
+  "ulan-1987": {
+    "statue": 2.93,
+    "pedestal": 1.57
+  },
+  "tiukhem-1971": {
+    "statue": 9.0,
+    "pedestal": 3.6
+  },
+  "krakov-1973": {
+    "statue": 5.2,
+    "pedestal": 3.8
+  },
+  "poronin-1950": {
+    "statue": 3.0,
+    "pedestal": 1.2
+  },
+  "bukharest-1960": {
+    "statue": 7.0,
+    "pedestal": 2.8
+  },
+  "sietl-1988": {
+    "statue": 5.0,
+    "pedestal": 2.0
+  },
+  "niu-1994": {
+    "statue": 5.5,
+    "pedestal": 2.2
+  },
+  "dallas-2001": {
+    "statue": 2.0,
+    "pedestal": 0.8
+  },
+  "arlington-1996": {
+    "statue": 2.4,
+    "pedestal": 0.96
+  },
+  "mant-1970": {
+    "statue": 0.35,
+    "pedestal": 0.21
+  },
+  "turku-1977": {
+    "statue": 1.0,
+    "pedestal": 1.0
+  },
+  "karlovy-vary-1966": {
+    "statue": 3.5,
+    "pedestal": 2.7
+  },
+  "galanta-1972": {
+    "statue": 5.0,
+    "pedestal": 2.5
+  },
+  "gradets-1970": {
+    "statue": 2.7,
+    "pedestal": 2.3
+  },
+  "drietoma-1970": {
+    "statue": 5.0,
+    "pedestal": 2.0
+  },
+  "koshitse-1987": {
+    "statue": 2.27,
+    "pedestal": 1.22
+  },
+  "praga-1973": {
+    "statue": 3.0,
+    "pedestal": 2.0
+  },
+  "kheb-1979": {
+    "statue": 2.0,
+    "pedestal": 0.8
+  },
+  "olomouts-1955": {
+    "statue": 3.25,
+    "pedestal": 1.75
+  },
+  "vittsshe-1959": {
+    "statue": 4.0,
+    "pedestal": 1.6
+  },
+  "khillerstorp-1973": {
+    "statue": 5.2,
+    "pedestal": 2.08
+  },
+  "addis-1983": {
+    "statue": 6.9,
+    "pedestal": 1.1
   }
 }
