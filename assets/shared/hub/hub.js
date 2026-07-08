@@ -85,14 +85,33 @@ function applyNav() {
 }
 applyNav();
 
-/* Полосы на фоне рендерятся самими прототипами на своём штатном z-index
- * (контент выше полос — фикс через z-index, а не яркость). Хаб ими НЕ
- * управляет: оператор-слайдер и запись --stripe-opacity убраны. Причина —
- * баг `Number(null)===0` в старом loadStripe гасил полосы на любом свежем
- * браузере, а на офлайн-киоске залипшее затемнение некому сбросить.
- * Историю см. COORDINATION.md → «Хронология слияний».
- * Подчищаем legacy-ключ, чтобы старые браузеры не таскали мёртвое значение. */
-try { localStorage.removeItem("bmk-hub-stripe"); } catch { /* приватный режим */ }
+/* ---- Полосы на фоне (--stripe-opacity в документе прототипа-iframe) ----
+ * Оператор-слайдер «Полосы на фоне» в панели ⚙, значение 0..100 %.
+ * Дефолт: пустой localStorage → 100 % (видно). Раньше тут был баг
+ * `Number(null)===0` → на свежем браузере полосы гасли и «мигали»; теперь
+ * отсутствие ключа явно даёт 100. На дефолте var вообще НЕ ставится — прототип
+ * рисует по своему fallback `1`, поэтому нет вспышки 1→0. Прототипы без полос
+ * переменную игнорируют. Конвенция: завести полосы на
+ * `opacity: var(--stripe-opacity, 1)` (сделали МТК 41 и 42). */
+const STRIPE_KEY = "bmk-hub-stripe";
+const STRIPE_DEFAULT = 100;
+function loadStripe() {
+  const raw = localStorage.getItem(STRIPE_KEY);
+  if (raw === null) return STRIPE_DEFAULT;                 // ФИКС: нет ключа → дефолт 100, не Number(null)=0
+  const v = Number(raw);
+  return Number.isFinite(v) && v >= 0 && v <= 100 ? v : STRIPE_DEFAULT;
+}
+let stripeCfg = loadStripe();
+function applyStripes() {
+  try {
+    const doc = frame.contentDocument;
+    if (!doc) return;
+    if (stripeCfg >= STRIPE_DEFAULT) doc.documentElement.style.removeProperty("--stripe-opacity"); // дефолт → fallback 1, без вспышки
+    else doc.documentElement.style.setProperty("--stripe-opacity", (stripeCfg / 100).toFixed(2));
+  } catch { /* cross-origin — молча пропускаем */ }
+}
+/* Переприменяем при загрузке каждого варианта (в т.ч. при смене версии). */
+frame.addEventListener("load", applyStripes);
 
 /* Шестерёнка в баре (перед .hub__nav) */
 const gear = document.createElement("button");
@@ -115,6 +134,11 @@ settings.innerHTML =
     `<input type="range" data-key="${s.key}" min="${s.min}" max="${s.max}" step="${s.step}" value="${navCfg[s.key]}">` +
     `</div>`
   ).join("") +
+  '<div class="hub__settings__group">Фон прототипа</div>' +
+  '<div class="hub__set-row">' +
+  `<label>Полосы на фоне<span class="val" data-val="stripe">${stripeCfg}%</span></label>` +
+  `<input type="range" data-stripe min="0" max="100" step="5" value="${stripeCfg}">` +
+  '</div>' +
   '<button type="button" class="hub__settings__reset">Сбросить</button>';
 document.body.appendChild(settings);
 
@@ -137,6 +161,15 @@ settings.querySelectorAll("input[data-key]").forEach(input => {
   });
 });
 
+/* Слайдер полос (ставит --stripe-opacity в документ прототипа = iframe) */
+const stripeInput = settings.querySelector("input[data-stripe]");
+stripeInput.addEventListener("input", () => {
+  stripeCfg = Number(stripeInput.value);
+  settings.querySelector('[data-val="stripe"]').textContent = stripeCfg + "%";
+  applyStripes();
+  localStorage.setItem(STRIPE_KEY, String(stripeCfg));
+});
+
 settings.querySelector(".hub__settings__reset").addEventListener("click", () => {
   navCfg = { ...NAV_DEFAULTS };
   applyNav();
@@ -146,6 +179,11 @@ settings.querySelector(".hub__settings__reset").addEventListener("click", () => 
     input.value = navCfg[input.dataset.key];
     settings.querySelector(`[data-val="${input.dataset.key}"]`).textContent = navCfg[input.dataset.key] + spec.unit;
   });
+  stripeCfg = STRIPE_DEFAULT;
+  applyStripes();
+  localStorage.setItem(STRIPE_KEY, String(stripeCfg));
+  stripeInput.value = stripeCfg;
+  settings.querySelector('[data-val="stripe"]').textContent = stripeCfg + "%";
 });
 
 /* Inject orientation switch (Гор / Верт) into the bar. The hub renders
