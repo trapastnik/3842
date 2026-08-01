@@ -63,6 +63,9 @@
   "belfast-1999": [
     "photos/01_curator.jpg"
   ],
+  "belgorod-1927": [
+    "photos/01_curator.jpg"
+  ],
   "belgorod-1957": [
     "photos/01_curator.jpg"
   ],
@@ -79,6 +82,12 @@
     "photos/01_curator.jpg"
   ],
   "blagoveshchensk-1959": [
+    "photos/01_curator.jpg"
+  ],
+  "blagoveshchensk-amur-1925": [
+    "photos/01_curator.jpg"
+  ],
+  "blagoveshchensk-rb-geoglif-1970": [
     "photos/01_curator.jpg"
   ],
   "brest-1958": [
@@ -106,7 +115,8 @@
     "photos/01_Бюст В. И. Ленина (Челябинск).JPG",
     "photos/02_Памятник-мавзолей Ленину на Алом поле (Челябинск) f019.jpg",
     "photos/03_Памятник-мавзолей Ленину на Алом поле (Челябинск) f011.jpg",
-    "photos/04_Памятник-мавзолей Ленину на Алом поле (Челябинск) f003.jpg"
+    "photos/04_Памятник-мавзолей Ленину на Алом поле (Челябинск) f003.jpg",
+    "photos/05_curator.jpg"
   ],
   "cherkassy-1969": [
     "photos/01_curator.jpg"
@@ -166,6 +176,9 @@
   "ekaterinburg-1957": [
     "photos/01_curator.jpg"
   ],
+  "elabuga-1925": [
+    "photos/01_curator.jpg"
+  ],
   "elista-1970": [
     "photos/01_curator.jpg"
   ],
@@ -223,6 +236,9 @@
   "ivanovo-1956": [
     "photos/01_curator.jpg"
   ],
+  "ivanovo-voznesensk-1924": [
+    "photos/01_curator.jpg"
+  ],
   "izhevsk-1958": [
     "photos/01_curator.jpg"
   ],
@@ -233,9 +249,13 @@
     "photos/01_curator.jpg"
   ],
   "kaluga-1925": [
-    "photos/01_curator.jpg"
+    "photos/01_curator.jpg",
+    "photos/02_curator.jpg"
   ],
   "karaganda-1970": [
+    "photos/01_curator.jpg"
+  ],
+  "karakas-2017": [
     "photos/01_curator.jpg"
   ],
   "karlovy-vary-1966": [
@@ -252,6 +272,9 @@
     "photos/02_Казань. Памятник студенту Володе Ульянову (Ленину) перед главным зданием университета - вид с тыла.JPG",
     "photos/03_Казань. Установка памятника студенту Володе Ульянову (Ленину) перед главным зданием университета. Фото 1954 года.png"
   ],
+  "kazan-leninskiy-sad-1925": [
+    "photos/01_curator.jpg"
+  ],
   "kemerovo-1970": [
     "photos/01_curator.jpg"
   ],
@@ -262,6 +285,9 @@
     "photos/01_curator.jpg"
   ],
   "khanty-mansiisk-1987": [
+    "photos/01_curator.jpg"
+  ],
+  "kharare-1980": [
     "photos/01_curator.jpg"
   ],
   "kharkov-1963": [
@@ -297,10 +323,16 @@
   "kishinev-1949": [
     "photos/01_curator.jpg"
   ],
+  "kislovodsk-krasnye-kamni-1926": [
+    "photos/01_curator.jpg"
+  ],
   "klaipeda-1976": [
     "photos/01_curator.jpg"
   ],
   "kokshetau-1963": [
+    "photos/01_curator.jpg"
+  ],
+  "kolchugino-1925": [
     "photos/01_curator.jpg"
   ],
   "kopengagen-1986": [
@@ -331,6 +363,9 @@
   "krasnodar-vishnyakovskii-1925": [
     "photos/01_curator.jpg"
   ],
+  "krasnoyarsk-1925": [
+    "photos/01_curator.jpg"
+  ],
   "krasnoyarsk-1970": [
     "photos/01_curator.jpg"
   ],
@@ -340,6 +375,9 @@
   "kuldzha-1990": [
     "photos/01_curator.jpg"
   ],
+  "kulebaki-1925": [
+    "photos/01_curator.jpg"
+  ],
   "kurgan-1967": [
     "photos/01_curator.jpg"
   ],
@@ -347,6 +385,9 @@
     "photos/01_curator.jpg"
   ],
   "kyzyl-1970": [
+    "photos/01_curator.jpg"
+  ],
+  "kyzyltash-1975": [
     "photos/01_curator.jpg"
   ],
   "leningrad-1920s": [
@@ -388,6 +429,9 @@
   "maikop-1959": [
     "photos/01_curator.jpg"
   ],
+  "makachevo-1924": [
+    "photos/01_curator.jpg"
+  ],
   "makhachkala-1960": [
     "photos/01_curator.jpg"
   ],
@@ -421,10 +465,16 @@
   "mordzhim-2000": [
     "photos/01_curator.jpg"
   ],
+  "moscow-oktyabrskaya-1925": [
+    "photos/01_curator.jpg"
+  ],
   "moskva-kaluzhskaya-1985": [
     "photos/01_curator.jpg"
   ],
   "moskva-kreml-1967": [
+    "photos/01_curator.jpg"
+  ],
+  "mozhaysk-1924": [
     "photos/01_curator.jpg"
   ],
   "mozyr-1947": [
@@ -454,13 +504,26 @@
   "nizhnii-novgorod-1970": [
     "photos/01_curator.jpg"
   ],
+  "nizhniy-novgorod-sormovo-1927": [
+    "photos/01_curator.jpg"
+  ],
   "nizhny-tagil-1925": [
-    "photos/01_Tagil Lenin-monument-1.jpg"
+    "photos/01_Tagil Lenin-monument-1.jpg",
+    "photos/02_curator.jpg"
+  ],
+  "noginsk-1924": [
+    "photos/01_curator.jpg"
   ],
   "novgrad-1975": [
     "photos/01_curator.jpg"
   ],
+  "novocherkassk-1925": [
+    "photos/01_curator.jpg"
+  ],
   "novosibirsk-1970": [
+    "photos/01_curator.jpg"
+  ],
+  "odessa-1924": [
     "photos/01_curator.jpg"
   ],
   "odessa-1967": [
@@ -469,16 +532,28 @@
   "olomouts-1955": [
     "photos/01_curator.jpg"
   ],
+  "omsk-1925": [
+    "photos/01_curator.jpg"
+  ],
   "omsk-1957": [
     "photos/01_curator.jpg"
   ],
+  "orel-1920": [
+    "photos/01_curator.jpg"
+  ],
   "orel-1949": [
+    "photos/01_curator.jpg"
+  ],
+  "orenburg-1925": [
     "photos/01_curator.jpg"
   ],
   "orenburg-1963": [
     "photos/01_curator.jpg"
   ],
   "osh-1975": [
+    "photos/01_curator.jpg"
+  ],
+  "ostashkov-1919": [
     "photos/01_curator.jpg"
   ],
   "ostrov-kapri-1970": [
@@ -520,7 +595,13 @@
   "pskov-1960": [
     "photos/01_curator.jpg"
   ],
+  "pyatigorsk-mashuk-1925": [
+    "photos/01_curator.jpg"
+  ],
   "regla-1984": [
+    "photos/01_curator.jpg"
+  ],
+  "reutov-1925": [
     "photos/01_curator.jpg"
   ],
   "riga-1950": [
@@ -559,6 +640,12 @@
   "sankt-peterburg-moskovskaya-1970": [
     "photos/01_curator.jpg"
   ],
+  "sankt-peterburg-obukhovskoy-1926": [
+    "photos/01_curator.jpg"
+  ],
+  "sankt-peterburg-smolnyy-1927": [
+    "photos/01_curator.jpg"
+  ],
   "saransk": [
     "photos/01_curator.jpg"
   ],
@@ -575,6 +662,9 @@
     "photos/01_curator.jpg"
   ],
   "shpitsbergen-piramida-1975": [
+    "photos/01_curator.jpg"
+  ],
+  "shuya-1925": [
     "photos/01_curator.jpg"
   ],
   "shverin-1985": [
@@ -622,6 +712,9 @@
   "tashkent-nodate": [
     "photos/01_curator.jpg"
   ],
+  "tashkent-teplovozny-1925": [
+    "photos/01_curator.jpg"
+  ],
   "tbilisi-1956": [
     "photos/01_curator.jpg"
   ],
@@ -649,15 +742,26 @@
   "tver-1959": [
     "photos/01_curator.jpg"
   ],
+  "tver-proletarka-1925": [
+    "photos/01_curator.jpg"
+  ],
   "tyumen-1979": [
+    "photos/01_curator.jpg"
+  ],
+  "udalovka-bia-1947": [
     "photos/01_curator.jpg"
   ],
   "ufa-1924-larionov": [
     "photos/01_Памятник Ленину в сквере им. Ленина 01.jpg",
     "photos/02_Фото памятнику Ленину в г. Уфа.jpg",
-    "photos/03_Lenin Square in Ufa, Russia.jpg"
+    "photos/03_Lenin Square in Ufa, Russia.jpg",
+    "photos/04_curator.jpg",
+    "photos/05_curator.jpg"
   ],
   "ufa-1967": [
+    "photos/01_curator.jpg"
+  ],
+  "ukhta-vetlosyan-1970": [
     "photos/01_curator.jpg"
   ],
   "ulan-1954": [
@@ -691,11 +795,17 @@
   "ventspils-1975": [
     "photos/01_curator.jpg"
   ],
+  "verkhniy-fiagdon-1924": [
+    "photos/01_curator.jpg"
+  ],
   "vidzhaiavada-1987": [
     "photos/01_curator.jpg"
   ],
   "vilnius-1952": [
     "photos/01_curator.png"
+  ],
+  "vin-2024": [
+    "photos/01_curator.jpg"
   ],
   "vinnitsa-1972": [
     "photos/01_curator.jpg"
@@ -709,10 +819,16 @@
   "viunsdorf-1985": [
     "photos/01_curator.jpg"
   ],
+  "vladikavkaz-1926": [
+    "photos/01_curator.jpg"
+  ],
   "vladikavkaz-1957": [
     "photos/01_curator.jpg"
   ],
   "vladimir-lenina-1958": [
+    "photos/01_curator.jpg"
+  ],
+  "vladimir-sobornaya-1925": [
     "photos/01_curator.jpg"
   ],
   "vladimir-sobornaya-1950": [
@@ -731,6 +847,9 @@
   "volgograd-lenina-1960": [
     "photos/01_curator.jpg"
   ],
+  "volgograd-pavshikh-1925": [
+    "photos/01_curator.jpg"
+  ],
   "vologda-1958": [
     "photos/01_curator.jpg"
   ],
@@ -738,6 +857,12 @@
     "photos/01_curator.jpg"
   ],
   "voznesene-1925": [
+    "photos/01_curator.jpg"
+  ],
+  "vyshniy-volochek-1926": [
+    "photos/01_curator.jpg"
+  ],
+  "vytegra-1924": [
     "photos/01_curator.jpg"
   ],
   "yakutsk-1967": [
@@ -758,6 +883,12 @@
   "zaporozhe-1964": [
     "photos/01_curator.jpg"
   ],
+  "zaslavl-1924": [
+    "photos/01_curator.jpg"
+  ],
+  "zhadovka-1924": [
+    "photos/01_curator.jpg"
+  ],
   "zheneva-1921": [
     "photos/01_curator.png"
   ],
@@ -767,7 +898,13 @@
   "zhilina-1971": [
     "photos/01_curator.jpg"
   ],
+  "zhitomir-1922": [
+    "photos/01_curator.jpg"
+  ],
   "zhitomir-1964": [
+    "photos/01_curator.jpg"
+  ],
+  "zlatoust-1926": [
     "photos/01_curator.jpg"
   ]
 }
