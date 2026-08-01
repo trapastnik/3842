@@ -189,7 +189,9 @@ function openDetail(it) {
   }
   $('[data-bind="kind"]', d).textContent = it.tag;
   $('[data-bind="name"]', d).textContent = it.name;
-  $('[data-bind="meta"]', d).textContent = `${it.role} · ${it.yearsAlive}`;
+  $('[data-bind="meta"]', d).textContent = it.yearsAlive
+    ? `${it.role} · ${it.yearsAlive}`
+    : it.role;
   $('[data-bind="epoch"]', d).textContent = epochLabel(it.epoch);
   $('[data-bind="tone-label"]', d).textContent = toneLabel(it.tone);
 

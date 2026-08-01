@@ -74,7 +74,8 @@
   "subetto": {
     "title": "Субетто, Александр Иванович",
     "lang": "ru",
-    "image": null
+    "image": "c-subetto.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "potseluev": {
     "title": "Поцелуев, Владимир Алексеевич",
@@ -108,7 +109,8 @@
   "bordyugov": {
     "title": "Бордюгов, Геннадий Аркадьевич",
     "lang": "ru",
-    "image": null
+    "image": "c-bordyugov.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "danilkin": {
     "title": "Данилкин, Лев Александрович",
@@ -573,7 +575,8 @@
   "clark": {
     "title": "Кларк, Рональд",
     "lang": "ru",
-    "image": null
+    "image": "c-clark.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "naumov-vp": {
     "title": "Наумов, Владимир Павлович (историк)",
@@ -630,7 +633,8 @@
   "ennker": {
     "title": "Эннкер, Бенно",
     "lang": "ru",
-    "image": null
+    "image": "c-ennker.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "service": {
     "title": "Сервис, Роберт",
@@ -737,12 +741,14 @@
   "novoselov": {
     "title": "Новосёлов, Валерий Михайлович",
     "lang": "ru",
-    "image": null
+    "image": "c-novoselov.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "devyatov": {
     "title": "Девятов, Сергей Викторович",
     "lang": "ru",
-    "image": null
+    "image": "c-devyatov.jpg",
+    "source": "Материалы заказчика (08.2026)"
   },
   "gasparyan": {
     "title": "Гаспарян, Армен Сумбатович",
@@ -752,6 +758,77 @@
   },
   "vakhitov": {
     "title": "Вахитов, Рустем Ринатович",
+    "lang": "ru",
+    "image": "c-vakhitov.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "paleologue": {
+    "title": "Палеолог, Жорж Морис",
+    "lang": "ru",
+    "image": "c-paleologue.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "montagu": {
+    "title": "Монтегю, Айвор",
+    "lang": "ru",
+    "image": "c-montagu.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "nimtz": {
+    "title": "Нимитц, Август",
+    "lang": "ru",
+    "image": "c-nimtz.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "brie": {
+    "title": "Бри, Михаэль",
+    "lang": "ru",
+    "image": "c-brie.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "douds": {
+    "title": "Дудз, Лара",
+    "lang": "ru",
+    "image": "c-douds.png",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "egorov-vn": {
+    "title": "Егоров, В.Н.",
+    "lang": "ru",
+    "image": "c-egorov-vn.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "marshall": {
+    "title": "Маршалл, Алекс",
+    "lang": "ru",
+    "image": "c-marshall.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "perfilov": {
+    "title": "Перфилов, В.А.",
+    "lang": "ru",
+    "image": "c-perfilov.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "prokopenko": {
+    "title": "Прокопенко, С.А.",
+    "lang": "ru",
+    "image": "c-prokopenko.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "jayatilleka": {
+    "title": "Джаятиллека, Даян",
+    "lang": "ru",
+    "image": "c-jayatilleka.jpg",
+    "source": "Материалы заказчика (08.2026)"
+  },
+  "krutov": {
+    "title": "Крутов, Владимир",
+    "lang": "ru",
+    "image": null
+  },
+  "prilepin": {
+    "title": "Прилепин, Захар",
     "lang": "ru",
     "image": null
   }
