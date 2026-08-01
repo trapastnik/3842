@@ -4,8 +4,8 @@
 // Любая v3-сцена (или другой МТК) подключает одной строкой; данные — запись из words.js.
 
 const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl')
-  ? `'20 Kopeek','Arial Unicode MS',sans-serif`
-  : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+  ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif`
+  : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 
 const CSS = `
 .v3card{position:fixed;left:50%;bottom:-360px;transform:translateX(-50%);z-index:9;width:min(540px,92vw);

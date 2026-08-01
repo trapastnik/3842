@@ -17,7 +17,7 @@ import urllib.request, urllib.parse, json, os, re, sys
 
 HERE = os.path.dirname(__file__)
 SRC = os.path.normpath(os.path.join(HERE, "..", "data", "mtk38.json"))
-OUTDIR = os.path.normpath(os.path.join(HERE, "..", "mtk38-v2", "fonts", "noto"))
+OUTDIR = os.path.normpath(os.path.join(HERE, "..", (sys.argv[1] if len(sys.argv) > 1 else "mtk38-v2"), "fonts", "noto"))
 os.makedirs(OUTDIR, exist_ok=True)
 
 UA = ("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15) AppleWebKit/537.36 "
@@ -35,7 +35,26 @@ FAMILY = {
     "Olck":"Noto Sans Ol Chiki","Orya":"Noto Sans Oriya","Sinh":"Noto Sans Sinhala",
     "Taml":"Noto Sans Tamil","Telu":"Noto Sans Telugu","Tfng":"Noto Sans Tifinagh",
     "Thaa":"Noto Sans Thaana","Tibt":"Noto Serif Tibetan",
+    # добавлено 2026-08-01 вместе с расширением канона до 128 языков
+    "Syrc":"Noto Sans Syriac","Thai":"Noto Sans Thai",
 }
+
+# Брендовый 20 Kopeek покрывает базовую латиницу и кириллицу, но не расширенную:
+# ԓ ӈ ҷ ә ө ҡ ҥ ԥ (языки народов России), ə ʻ ẽ ế (азербайджанский, вьетнамский) и т.п.
+# Тянем subset «Noto Sans» РОВНО на недостающие символы — файл выходит на пару килобайт.
+KOPEEK_GLOB = os.path.join(HERE, "..", "mtk38-v3", "fonts", "kopeek", "*.otf")
+
+
+def kopeek_cmap():
+    try:
+        import glob
+        from fontTools.ttLib import TTFont
+    except ImportError:
+        return None
+    cm = set()
+    for f in glob.glob(KOPEEK_GLOB):
+        cm |= set(TTFont(f, fontNumber=0).getBestCmap())
+    return cm or None
 
 def fetch(url):
     req = urllib.request.Request(url, headers={"User-Agent": UA})
@@ -81,6 +100,37 @@ for iso in sorted(chars):
         print(f"  ✓ {iso:5} {FAMILY[iso]:22} 400:{len(w):>5}b  {nb}")
     except Exception as e:
         print(f"  ✗ {iso} ({FAMILY[iso]}): {e}", file=sys.stderr)
+
+# фолбэк на символы, которых нет в брендовом 20 Kopeek
+cm = kopeek_cmap()
+fallback_chars = set()
+if cm:
+    for l in data["languages"]:
+        if l["script"]["iso15924"] not in ("Latn", "Cyrl"):
+            continue
+        for field in ("writing", "endonym"):
+            for ch in (l.get(field) or ""):
+                if ch.isalpha() and ord(ch) not in cm:
+                    fallback_chars.add(ch)
+if fallback_chars:
+    text = "".join(sorted(fallback_chars))
+    try:
+        url = css_woff2_url("Noto Sans", text)
+        if url:
+            w = fetch(url)
+            open(os.path.join(OUTDIR, "fallback.woff2"), "wb").write(w)
+            total += len(w)
+            manifest.append("fallback")
+            ub = css_woff2_url("Noto Sans", text, 700)
+            if ub:
+                wb = fetch(ub)
+                open(os.path.join(OUTDIR, "fallback-700.woff2"), "wb").write(wb)
+                total += len(wb); bold.append("fallback")
+            print(f"  ✓ fallback  Noto Sans  {len(fallback_chars)} симв.: {text}")
+    except Exception as e:
+        print(f"  ✗ fallback: {e}", file=sys.stderr)
+else:
+    print("  · фолбэк не нужен (или нет fontTools для проверки покрытия)")
 
 json.dump({"scripts": manifest, "bold": bold, "note": "subset-Noto (400+700) только для валидатора"},
           open(os.path.join(OUTDIR, "manifest.json"), "w", encoding="utf-8"),

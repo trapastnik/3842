@@ -49,6 +49,8 @@
 @font-face{font-family:"noto-Orya";font-weight:700;src:url("./noto/Orya-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Sinh";src:url("./noto/Sinh.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Sinh";font-weight:700;src:url("./noto/Sinh-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Syrc";src:url("./noto/Syrc.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Syrc";font-weight:700;src:url("./noto/Syrc-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Taml";src:url("./noto/Taml.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Taml";font-weight:700;src:url("./noto/Taml-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Telu";src:url("./noto/Telu.woff2") format("woff2");font-display:swap}
@@ -57,5 +59,9 @@
 @font-face{font-family:"noto-Tfng";font-weight:700;src:url("./noto/Tfng-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Thaa";src:url("./noto/Thaa.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Thaa";font-weight:700;src:url("./noto/Thaa-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thai";src:url("./noto/Thai.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-Thai";font-weight:700;src:url("./noto/Thai-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Tibt";src:url("./noto/Tibt.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Tibt";font-weight:700;src:url("./noto/Tibt-700.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-fallback";src:url("./noto/fallback.woff2") format("woff2");font-display:swap}
+@font-face{font-family:"noto-fallback";font-weight:700;src:url("./noto/fallback-700.woff2") format("woff2");font-display:swap}

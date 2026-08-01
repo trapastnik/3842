@@ -56,7 +56,7 @@
 <script src="../shared/quotes.js"></script>
 <script>
 const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
-const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-"+iso+"',sans-serif";
+const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-fallback','noto-"+iso+"',sans-serif";
 
 (document.fonts?document.fonts.ready:Promise.resolve())
   .then(()=>MTK38Data.load())

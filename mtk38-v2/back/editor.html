@@ -151,8 +151,8 @@ const VER = ['idml-source','machine-triangulated','needs-verification','unverifi
 const WEIGHTS = [[1,'1 — прочий'],[2,'2 — крупный региональный'],[3,'3 — мировой / ООН']];
 const KEY = 'mtk38-data-v1', RKEY='mtk38-reviewer';
 const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
-const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',system-ui,sans-serif"
-                                               : "'Arial Unicode MS','noto-"+iso+"',system-ui,sans-serif";
+const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','noto-fallback','Arial Unicode MS',system-ui,sans-serif"
+                                               : "'Arial Unicode MS','noto-fallback','noto-"+iso+"',system-ui,sans-serif";
 const cps = s => [...String(s||'')].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone = o => JSON.parse(JSON.stringify(o));

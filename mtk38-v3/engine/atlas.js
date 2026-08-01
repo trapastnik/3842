@@ -6,8 +6,8 @@
 // Источник слов и шрифт-стек идентичны globe (engine/data.js → data/mtk38.json + text.js FAM).
 
 const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl')
-  ? `'20 Kopeek','Arial Unicode MS',sans-serif`
-  : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+  ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif`
+  : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 
 /**
  * @returns {{texture, rects:Array<{x,y,w,h,aspect}>, W, H, count}}

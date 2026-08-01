@@ -27,7 +27,7 @@ import { createCard } from './engine/card.js';
 import { createTuner } from './tuner.js';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
-const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 const PAL = { paper: '#F7F9EF', brass: '#D2B773', red: '#A02128', window: '#9DA3A8', graphite: '#435059' };
 const cc = (hex, a) => { const v = hex.replace('#', ''); return `rgba(${parseInt(v.slice(0,2),16)},${parseInt(v.slice(2,4),16)},${parseInt(v.slice(4,6),16)},${a})`; };
 
