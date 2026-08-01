@@ -19,16 +19,12 @@ const USSR_ISO = new Set([
 ]);
 
 const DEFAULT_ROTATE = [-55, -50, 0];
-// Default scale: tuned for landscape viewport. In portrait (9:16 kiosk,
-// tall iframe in the hub), the globe needs more zoom to fill the
-// narrower width — picked dynamically below.
+// Проект целиком в горизонтали 3840×2160 (директива 2026-07-22), вертикальная
+// ветка масштаба убрана.
 const DEFAULT_SCALE_LANDSCAPE = 1.18;
-const DEFAULT_SCALE_PORTRAIT = 1.55;
 
 function defaultScaleForViewport() {
-  return window.innerWidth >= window.innerHeight
-    ? DEFAULT_SCALE_LANDSCAPE
-    : DEFAULT_SCALE_PORTRAIT;
+  return DEFAULT_SCALE_LANDSCAPE;
 }
 
 let DEFAULT_SCALE = defaultScaleForViewport();
@@ -111,7 +107,20 @@ const settings = loadSettings();
 
 const canvas = document.getElementById("globe");
 const ctx = canvas.getContext("2d");
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
+// Кап буфера рендера: на 4K с DPR 2 канвас был бы 33 Мп — держим бюджет ~8.3 Мп
+// (задача координатора по итогам 4K-смоука 2026-07-22).
+const PIXEL_BUDGET = 8.3e6;
+function capDpr() {
+  const raw = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return Math.max(1, Math.min(raw, 2, Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h))));
+}
+
+// Кегли и метки на канвасе заданы в пикселях под ~1600 px ширины — на 49" 4K
+// их надо укрупнять пропорционально, иначе получается микротекст.
+const uiScale = () => Math.max(1, Math.min(2.6, window.innerWidth / 1600));
+let dpr = capDpr();
 
 const projection = geoOrthographic().precision(0.3);
 const path = geoPath(projection, ctx);
@@ -146,6 +155,7 @@ function generateStars() {
 function resize() {
   width = window.innerWidth;
   height = window.innerHeight;
+  dpr = capDpr();
   canvas.width = Math.floor(width * dpr);
   canvas.height = Math.floor(height * dpr);
   canvas.style.width = width + "px";
@@ -261,7 +271,7 @@ function renderArc() {
       ctx.stroke();
 
       ctx.fillStyle = "rgba(247, 249, 239, 0.85)";
-      ctx.font = '600 11px "20 Kopeek", monospace';
+      ctx.font = `600 ${Math.round(11 * uiScale())}px "20 Kopeek", monospace`;
       ctx.fillText("УЛЬЯНОВСК · 1870", op[0] + 10, op[1] - 8);
     }
   }
@@ -350,7 +360,7 @@ function render(now) {
     const isSel = selected && selected.id === item.id;
     const flyIn = pointFlyInScale(item.id, now);
     const pulse = passes ? pulsate(now) : 1;
-    const baseR = 6;
+    const baseR = 6 * uiScale();
     const r = (isSel ? baseR + 3 : baseR) * flyIn * pulse;
     if (r <= 0.3) continue;
 
@@ -398,7 +408,7 @@ function drawLabels(candidates) {
   if (candidates.length === 0) return;
   candidates.sort((a, b) => (a.tier - b.tier) || (a.sub - b.sub));
   const drawn = [];
-  ctx.font = '600 11px "20 Kopeek", "Courier New", monospace';
+  ctx.font = `600 ${Math.round(11 * uiScale())}px "20 Kopeek", "Courier New", monospace`;
 
   for (const c of candidates) {
     if (!settings.labels && c.tier !== -1) continue;

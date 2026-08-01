@@ -92,6 +92,16 @@ def _letters(s):
     return len(re.findall(r'[^\W\d_]', s, re.U))
 
 
+def _tidy(s):
+    """Убирает скобку, оставшуюся от разреза «Астероид (852) Владилена (Wladilena)»."""
+    s = s.strip(' -–—/,')
+    if s.count('(') > s.count(')'):
+        s = s.rstrip('( ').strip()
+    if s.count(')') > s.count('('):
+        s = s.rstrip(') ').strip() if s.endswith(')') else s.lstrip(') ').strip()
+    return s
+
+
 def split_name(raw):
     """→ (name_ru, name_orig). Оригинальное написание отделяется от русского."""
     raw = raw.strip()
@@ -106,19 +116,26 @@ def split_name(raw):
         left, right = raw[:m.start()], raw[m.start():]
         if (re.search(r'[%s]' % LATIN, left) and _letters(left) >= 3
                 and _letters(right) >= 3 and not re.search(r'[%s]' % LATIN, right)):
-            return right.strip(), left.strip(' -–—/,')
+            return _tidy(right), _tidy(left)
 
     m = FWD_RE.match(raw)
     if m and _letters(m.group(1)) >= 3 and _letters(m.group(2)) >= 3:
-        return m.group(2).strip(), m.group(1).strip(' -–—/,')
+        return _tidy(m.group(2)), _tidy(m.group(1))
     m = BWD_RE.match(raw)
     if m and _letters(m.group(1)) >= 3 and _letters(m.group(2)) >= 3:
-        return m.group(1).strip(' -–—/,'), m.group(2).strip()
+        return _tidy(m.group(1)), _tidy(m.group(2))
 
     # склейка без смены алфавита: «ЛењиноваУлица Ленина» (сербская кириллица)
     parts = SPLIT_RE.split(raw, maxsplit=1)
     if len(parts) == 2 and parts[0].strip() and re.search(r'[јљњћђџ]', parts[0]):
-        return parts[1].strip(), parts[0].strip(' -–—/')
+        return _tidy(parts[1]), _tidy(parts[0])
+
+    # «Сейчас Хан Кубратулица Ленин» — слева нынешнее название, справа ленинское;
+    # оба по-русски, разделителя нет
+    m = re.match(r'^((?:Сейчас|Ныне|Сега)\b.*?)((?:улица|площад|булевард|бульвар|проспект)'
+                 r'[а-яё]*\s+Лен[а-яё]+.*)$', raw, re.I)
+    if m and _letters(m.group(1)) >= 3:
+        return _tidy(m.group(2)), None
     return raw, None
 
 

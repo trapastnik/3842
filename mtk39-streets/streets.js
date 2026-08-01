@@ -186,6 +186,27 @@ function makeSheet(data) {
   };
 }
 
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
+}
+
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
@@ -212,7 +233,13 @@ async function main() {
     + `${fmtLen(longest.length_m)}. Самый короткий — ${fmtLen(shortest.length_m)}, `
     + `${shortest.city.split(",")[0]}. Листы отсортированы по длине.`;
 
-  buildWall(items, document.getElementById("wall"), makeSheet(data));
+  const wall = document.getElementById("wall");
+  const openSheet = makeSheet(data);
+  buildWall(items, wall, openSheet);
+  armIdleReset(() => {
+    document.querySelector(".sheet__close").click();
+    wall.scrollTo({ left: 0, behavior: "smooth" });
+  });
 }
 
 main().catch((e) => {

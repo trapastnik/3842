@@ -47,7 +47,7 @@
   --font-body: "21 Cent", Georgia, serif;
   --font-mono: "20 Kopeek", "Courier New", monospace;
 
-  --u: clamp(9px, 1.1vw, 28px);
+  --u: clamp(11px, 1.1vw, 46px);
   --pad: calc(var(--u) * 2);
 }
 

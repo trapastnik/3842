@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Картотека имени</title>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <main class="stage">
+      <aside class="rail">
+        <header class="rail__head">
+          <span class="eyebrow">МТК · 39</span>
+          <h1 class="title">Картотека</h1>
+          <p class="sub">
+            Весь свод без карты: имя Ленина носили вещи разного порядка —
+            от адреса до астероида. Здесь они разложены по тому, чем были.
+          </p>
+        </header>
+        <nav class="rubrics" data-rubrics aria-label="Разделы картотеки"></nav>
+        <p class="rail__foot" data-total></p>
+      </aside>
+
+      <section class="wall">
+        <header class="wall__head">
+          <h2 class="wall__title" data-rubric-title></h2>
+          <p class="wall__note" data-rubric-note></p>
+        </header>
+        <div class="wall__scroll" id="scroll" data-cards></div>
+      </section>
+
+      <div class="sheet" id="sheet" hidden>
+        <div class="sheet__box">
+          <button class="sheet__close" type="button" aria-label="Закрыть">✕</button>
+          <div class="sheet__orig" data-orig></div>
+          <h2 class="sheet__name" data-name></h2>
+          <p class="sheet__where" data-where></p>
+          <p class="sheet__text" data-desc></p>
+          <dl class="sheet__facts" data-facts></dl>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="./catalog.js?v=3"></script>
+  </body>
+</html>

@@ -393,7 +393,9 @@ function renderMass(canvas, foot, data) {
   const draw = () => {
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // тот же бюджет пикселей, что и в канвас-прототипах (4K-смоук 2026-07-22)
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2,
+      Math.sqrt(8.3e6 / Math.max(1, rect.width * rect.height * 4))));
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     const ctx = canvas.getContext("2d");
@@ -423,6 +425,27 @@ function renderMass(canvas, foot, data) {
   foot.innerHTML = `<b>${nf.format(s.streets)}</b> улиц и <b>${nf.format(s.lanes)}</b> переулков — `
     + `всего ${nf.format(s.total_all)} на ${s.year} год. Весь остальной свод, все семьдесят четыре страны, `
     + `— это ${nf.format(1216)} записей: меньше, чем ленинских улиц в одной Ульяновской области.`;
+}
+
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
 }
 
 /* ------------------------------------------------------------------ запуск */
@@ -473,6 +496,8 @@ async function main() {
 
   document.querySelectorAll(".screen > *").forEach((n) => n.setAttribute("data-anim", ""));
   setupNav();
+  const scroll = document.getElementById("scroll");
+  armIdleReset(() => scroll.scrollTo({ left: 0, behavior: "smooth" }));
 }
 
 main().catch((e) => {

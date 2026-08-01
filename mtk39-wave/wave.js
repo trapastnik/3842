@@ -23,7 +23,20 @@ const C = {
 
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
+// Кап буфера рендера: на 4K с DPR 2 канвас был бы 33 Мп — держим бюджет ~8.3 Мп
+// (задача координатора по итогам 4K-смоука 2026-07-22).
+const PIXEL_BUDGET = 8.3e6;
+function capDpr() {
+  const raw = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return Math.max(1, Math.min(raw, 2, Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h))));
+}
+
+// Кегли и метки на канвасе заданы в пикселях под ~1600 px ширины — на 49" 4K
+// их надо укрупнять пропорционально, иначе получается микротекст.
+const uiScale = () => Math.max(1, Math.min(2.6, window.innerWidth / 1600));
+let dpr = capDpr();
 const nf = new Intl.NumberFormat("ru-RU");
 
 let width = 0;
@@ -49,6 +62,7 @@ const playBtn = document.querySelector("[data-play]");
 function layout() {
   width = window.innerWidth;
   height = window.innerHeight;
+  dpr = capDpr();
   canvas.width = Math.floor(width * dpr);
   canvas.height = Math.floor(height * dpr);
   canvas.style.width = `${width}px`;
@@ -120,6 +134,7 @@ function stateAt(p, y) {
 }
 
 function render() {
+  const u = uiScale();
   ctx.clearRect(0, 0, width, height);
   drawLand();
 
@@ -127,7 +142,7 @@ function render() {
   for (const p of undated) {
     const [x, y] = project(p.lat, p.lng);
     ctx.beginPath();
-    ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+    ctx.arc(x, y, 1.7 * u, 0, Math.PI * 2);
     ctx.fillStyle = C.bg;
     ctx.fill();
   }
@@ -143,7 +158,7 @@ function render() {
     if (st === 1) {
       live += 1;
       ctx.beginPath();
-      ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.6 * u, 0, Math.PI * 2);
       ctx.fillStyle = C.live;
       ctx.fill();
       if (p.year_named && year - p.year_named < FLASH) {
@@ -152,7 +167,7 @@ function render() {
     } else {
       gone += 1;
       ctx.beginPath();
-      ctx.arc(x, y, 2.1, 0, Math.PI * 2);
+      ctx.arc(x, y, 2.1 * u, 0, Math.PI * 2);
       ctx.fillStyle = year - p.year_renamed < FLASH
         ? C.gone
         : "rgba(201, 84, 90, 0.34)";
@@ -165,10 +180,10 @@ function render() {
 
   // вспышки — поверх всего, чтобы событие года было видно в общей россыпи
   for (const [x, y, t, color] of flashes) {
-    const r = 5 + (1 - t) * 26;
+    const r = (5 + (1 - t) * 26) * u;
     ctx.beginPath();
     ctx.arc(x, y, r, 0, Math.PI * 2);
-    ctx.lineWidth = 1.6;
+    ctx.lineWidth = 1.6 * u;
     ctx.strokeStyle = hexToRgba(color, t * 0.8);
     ctx.stroke();
   }
@@ -212,6 +227,33 @@ scrub.addEventListener("input", () => {
 });
 window.addEventListener("resize", () => { layout(); render(); }, { passive: true });
 
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
+}
+
+function resetView() {
+  year = FROM;
+  scrub.value = String(FROM);
+  setPlaying(true);
+}
+
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
@@ -240,6 +282,7 @@ async function main() {
     + "Годы выведены из формулировок описаний и требуют выборочной проверки.";
 
   setPlaying(true);
+  armIdleReset(resetView);
   requestAnimationFrame(tick);
 }
 
