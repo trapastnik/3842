@@ -57,7 +57,7 @@
   --font-mono: "20 Kopeek", "Courier New", monospace;
 
   /* базовая единица: одинаковая логика на 4K-горизонтали и в превью хаба */
-  --u: clamp(9px, 1.15vw, 30px);
+  --u: clamp(11px, 1.15vw, 46px);
   --pad: calc(var(--u) * 2.4);
 }
 

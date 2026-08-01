@@ -22,7 +22,20 @@ const MAX_ZOOM = 9;
 
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
-const dpr = Math.min(window.devicePixelRatio || 1, 2);
+// Кап буфера рендера: на 4K с DPR 2 канвас был бы 33 Мп — держим бюджет ~8.3 Мп
+// (задача координатора по итогам 4K-смоука 2026-07-22).
+const PIXEL_BUDGET = 8.3e6;
+function capDpr() {
+  const raw = window.devicePixelRatio || 1;
+  const w = window.innerWidth;
+  const h = window.innerHeight;
+  return Math.max(1, Math.min(raw, 2, Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h))));
+}
+
+// Кегли и метки на канвасе заданы в пикселях под ~1600 px ширины — на 49" 4K
+// их надо укрупнять пропорционально, иначе получается микротекст.
+const uiScale = () => Math.max(1, Math.min(2.6, window.innerWidth / 1600));
+let dpr = capDpr();
 const nf = new Intl.NumberFormat("ru-RU");
 
 let width = 0;
@@ -50,6 +63,7 @@ function fitBase() {
 function resize() {
   width = window.innerWidth;
   height = window.innerHeight;
+  dpr = capDpr();
   canvas.width = Math.floor(width * dpr);
   canvas.height = Math.floor(height * dpr);
   canvas.style.width = `${width}px`;
@@ -134,7 +148,7 @@ function render() {
   drawLand();
 
   visible = [];
-  const r = Math.max(1.8, Math.min(5, 2.2 * Math.sqrt(zoom)));
+  const r = Math.max(1.8, Math.min(5, 2.2 * Math.sqrt(zoom))) * uiScale();
   for (const pass of [false, true]) {
     for (const p of points) {
       if (shown(p) !== pass) continue;
@@ -181,7 +195,8 @@ const invalidate = () => { needsDraw = true; };
 
 function pick(x, y) {
   let best = null;
-  let bestD = 24 * 24;
+  const hit = 24 * uiScale();
+  let bestD = hit * hit;
   for (const v of visible) {
     const d = (v.x - x) ** 2 + (v.y - y) ** 2;
     if (d < bestD) { bestD = d; best = v.p; }

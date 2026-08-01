@@ -393,7 +393,9 @@ function renderMass(canvas, foot, data) {
   const draw = () => {
     const rect = canvas.getBoundingClientRect();
     if (rect.width < 10 || rect.height < 10) return;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    // тот же бюджет пикселей, что и в канвас-прототипах (4K-смоук 2026-07-22)
+    const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2,
+      Math.sqrt(8.3e6 / Math.max(1, rect.width * rect.height * 4))));
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     const ctx = canvas.getContext("2d");
