@@ -23,6 +23,7 @@ const MIN_ZOOM = 1;
 const MAX_ZOOM = 9;
 
 let credits = {};
+let closeOffmapRef = () => {};
 
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
@@ -421,12 +422,74 @@ function resetView() {
   panX = 0;
   panY = 0;
   showCard(null);
+  closeOffmapRef();
   const legendHost = document.querySelector("[data-legend]");
   buildFilters(document.querySelector("[data-filters]"), legendHost);
   buildLegend(legendHost);
   document.querySelector("[data-hint]").classList.remove("is-off");
   clampPan();
   invalidate();
+}
+
+
+/* ------------------------------------------------------------ не на карте
+
+   69 записей свода не удалось привязать к точке: кириллические транслитерации
+   итальянских, сербских и индийских топонимов не ищутся, а часть объектов точки
+   не имеет в принципе (премия, комсомол, послание в космос). Приём взят из
+   первой версии глобуса: они не пропадают молча, а лежат отдельным списком. */
+
+function buildOffmap(all) {
+  const panel = document.getElementById("offmap");
+  const list = panel.querySelector("[data-off-list]");
+  const toggle = document.getElementById("offmap-toggle");
+  const off = all.filter((r) => r.lat === null || r.lng === null);
+
+  if (!off.length) {
+    toggle.hidden = true;
+    return () => {};
+  }
+  toggle.querySelector("[data-off-count]").textContent = off.length;
+
+  const byCountry = new Map();
+  for (const r of off) {
+    const key = r.country || "—";
+    if (!byCountry.has(key)) byCountry.set(key, []);
+    byCountry.get(key).push(r);
+  }
+  const groups = [...byCountry.entries()].sort((a, b) => b[1].length - a[1].length);
+
+  list.replaceChildren();
+  for (const [country, recs] of groups) {
+    const head = document.createElement("li");
+    head.className = "offmap__country";
+    head.textContent = `${country} · ${recs.length}`;
+    list.appendChild(head);
+    for (const rec of recs) {
+      // в одной стране бывает по шесть «улиц Ленина» — различает город
+      const li = document.createElement("li");
+      li.className = "offmap__item";
+      const nm = document.createElement("div");
+      nm.textContent = rec.name;
+      li.appendChild(nm);
+      if (rec.city) {
+        const where = document.createElement("div");
+        where.className = "offmap__where";
+        where.textContent = rec.city;
+        li.appendChild(where);
+      }
+      li.addEventListener("click", () => showCard(rec));
+      list.appendChild(li);
+    }
+  }
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    toggle.setAttribute("aria-pressed", String(open));
+  };
+  toggle.addEventListener("click", () => setOpen(panel.hidden));
+  panel.querySelector(".offmap__close").addEventListener("click", () => setOpen(false));
+  return () => setOpen(false);
 }
 
 /* ------------------------------------------------------------------ запуск */
@@ -447,6 +510,7 @@ async function main() {
 
   const legendHost = document.querySelector("[data-legend]");
   buildLegend(legendHost);
+  closeOffmapRef = buildOffmap(corpus.records);
   buildFilters(document.querySelector("[data-filters]"), legendHost);
 
   resize();
