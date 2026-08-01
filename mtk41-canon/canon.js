@@ -129,6 +129,9 @@
   ]).then(([mtk, manifest]) => {
     monuments = mtk.items || [];
     photoManifest = manifest || {};
+    Mtk41Stats.setSubtitle(monuments, s =>
+      `${s.count} ${Mtk41Stats.plural(s.count, ["изображение", "изображения", "изображений"])} `
+      + `одного человека, ${s.years}. Первое — ${s.first.city}, последнее — ${s.last.city}.`);
     render();
   }).catch(err => {
     // eslint-disable-next-line no-console

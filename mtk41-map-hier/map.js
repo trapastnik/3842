@@ -1382,6 +1382,12 @@
         geoLoaded = true;
       }
       monuments = (mtk.items || []).filter(it => typeof it.lat === "number" && typeof it.lng === "number");
+      Mtk41Stats.setSubtitle(monuments, s => {
+        const P = Mtk41Stats.plural;
+        return `${s.count} ${P(s.count, ["памятник", "памятника", "памятников"])} `
+          + `в ${s.countryCount} ${P(s.countryCount, ["стране", "странах", "странах"])}, ${s.years}. `
+          + `Тап на кружок — распадается. Размер ~ число памятников.`;
+      });
       buildTree();
     });
   }

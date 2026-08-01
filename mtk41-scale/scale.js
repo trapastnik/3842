@@ -128,6 +128,11 @@
         w: figureW,
         statueH, pedestalH, totalH,
         h_statue: h.statue, h_pedestal: h.pedestal,
+        // У части памятников в таблице куратора габаритов нет вовсе. Раньше
+        // они молча получали FALLBACK_HEIGHT и стояли в ряду как измеренные —
+        // мемориальная плита выглядела семиметровой. Помечаем, чтобы отрисовать
+        // контуром и подписать «нет данных».
+        estimated: !HEIGHTS[m.id],
       });
     }
 
@@ -233,18 +238,23 @@
       const x = screenX(pm.worldX);
       const bottomOfStatue = pm.baseY - pm.pedestalH;
 
-      // Pedestal: graphite rectangle
-      ctx.fillStyle = isSelected
-        ? cssColor(palette.brass, 0.5)
-        : cssColor(palette.graphite, 0.92);
-      ctx.fillRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
-
-      // Pedestal outline
+      // Pedestal: graphite rectangle. У записей без габаритов постамент такой
+      // же домысел, как и фигура, — рисуем пунктиром, без заливки.
+      ctx.save();
+      if (!pm.estimated) {
+        ctx.fillStyle = isSelected
+          ? cssColor(palette.brass, 0.5)
+          : cssColor(palette.graphite, 0.92);
+        ctx.fillRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
+      } else {
+        ctx.setLineDash([4, 4]);
+      }
       ctx.strokeStyle = isSelected
         ? palette.brass
-        : cssColor(palette.window, 0.5);
+        : cssColor(palette.window, pm.estimated ? 0.7 : 0.5);
       ctx.lineWidth = isSelected ? 2 : 1;
       ctx.strokeRect(x - pm.w * 0.4, bottomOfStatue, pm.w * 0.8, pm.pedestalH);
+      ctx.restore();
 
       // Statue: stylised — trapezoid body topped with sphere head
       const sBottom = bottomOfStatue;
@@ -261,18 +271,30 @@
       const bodyTop = sTop + headH;
 
       ctx.save();
-      ctx.fillStyle = statueFill;
-      ctx.globalAlpha = statueOpacity;
-      ctx.fillRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
-      ctx.fillRect(x - headW * 0.5, sTop, headW, headH);
+      if (pm.estimated) {
+        // Габаритов нет — рисуем только пунктирный контур: видно, что фигура
+        // занимает место в ряду, но её высота не измерена, а подставлена.
+        ctx.strokeStyle = cssColor(isSelected ? palette.brass : palette.window, 0.7);
+        ctx.lineWidth = isSelected ? 2 : 1;
+        ctx.setLineDash([4, 4]);
+        ctx.strokeRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+        ctx.strokeRect(x - headW * 0.5, sTop, headW, headH);
+      } else {
+        ctx.fillStyle = statueFill;
+        ctx.globalAlpha = statueOpacity;
+        ctx.fillRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+        ctx.fillRect(x - headW * 0.5, sTop, headW, headH);
+      }
       ctx.restore();
 
-      ctx.save();
-      ctx.strokeStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.5);
-      ctx.lineWidth = isSelected ? 2 : 0.8;
-      ctx.strokeRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
-      ctx.strokeRect(x - headW * 0.5, sTop, headW, headH);
-      ctx.restore();
+      if (!pm.estimated) {
+        ctx.save();
+        ctx.strokeStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.5);
+        ctx.lineWidth = isSelected ? 2 : 0.8;
+        ctx.strokeRect(x - bodyW * 0.5, bodyTop, bodyW, sBottom - bodyTop);
+        ctx.strokeRect(x - headW * 0.5, sTop, headW, headH);
+        ctx.restore();
+      }
     }
 
     // Labels (city + year + height) below pedestal.
@@ -294,8 +316,10 @@
       const cityRaw = m.city || m.country || "";
       const city = cityRaw.length > 18 ? cityRaw.slice(0, 16) + "…" : cityRaw;
       const yearLabel = pm.year ? String(pm.year) : "—";
-      const heightLabel = ((pm.h_statue + pm.h_pedestal).toFixed(
-        pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
+      const heightLabel = pm.estimated
+        ? "нет данных"
+        : ((pm.h_statue + pm.h_pedestal).toFixed(
+            pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
 
       if (needRotate) {
         // Rotate labels -60° so a long city name doesn't collide with
@@ -397,6 +421,21 @@
   ]).then(([mtk, heights]) => {
     monuments = mtk.items || [];
     HEIGHTS = heights || {};
+    // Крайние точки шкалы берём из самих высот: раньше они были вписаны в
+    // разметку («от 60-сантиметрового бюста 1919-го») и разъехались с данными.
+    Mtk41Stats.setSubtitle(monuments, () => {
+      const byId = new Map(monuments.map(m => [m.id, m]));
+      const totals = Object.entries(HEIGHTS)
+        .map(([id, h]) => ({ id, total: (h.statue || 0) + (h.pedestal || 0) }))
+        .filter(e => e.total > 0 && byId.has(e.id))
+        .sort((a, b) => a.total - b.total);
+      if (!totals.length) return "";
+      const lo = totals[0], hi = totals[totals.length - 1];
+      const name = e => `${byId.get(e.id).city}, ${byId.get(e.id).year}`;
+      const fmt = v => (v < 1 ? `${Math.round(v * 100)} см` : `${(+v.toFixed(1))} м`);
+      return `От ${fmt(lo.total)} (${name(lo)}) до ${fmt(hi.total)} (${name(hi)}). `
+        + `Слева — человек ростом 1.75 м для сравнения.`;
+    });
     resize();
     requestAnimationFrame(render);
   }).catch(err => {

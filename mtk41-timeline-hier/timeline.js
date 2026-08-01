@@ -843,6 +843,10 @@
   function loadAll() {
     return fetch("../data/mtk41.json").then(r => r.json()).then(data => {
       items = (data.items || []).filter(it => typeof it.year === "number");
+      Mtk41Stats.setSubtitle(items, s =>
+        `${s.count} ${Mtk41Stats.plural(s.count, ["памятник", "памятника", "памятников"])}, `
+        + `${s.years}. Тап на кружок — распадается на подкружки: декада → год → отдельные `
+        + `памятники. Верх — сохранились, низ — снесены.`);
       rebuildAggregates();
     });
   }

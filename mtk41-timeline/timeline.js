@@ -374,6 +374,10 @@
     fetch("../data/mtk41.json").then(r => r.json()),
   ]).then(([mtk]) => {
     monuments = mtk.items || [];
+    Mtk41Stats.setSubtitle(monuments, s =>
+      `${s.first.year} — первый: ${s.first.city}. ${s.peakYear} — пик: ${s.peakCount} `
+      + `${Mtk41Stats.plural(s.peakCount, ["памятник", "памятника", "памятников"])} за год. `
+      + `${s.last.year} — последний: ${s.last.city}.`);
     resize();
     requestAnimationFrame(render);
   }).catch(err => {
