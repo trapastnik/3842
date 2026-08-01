@@ -427,6 +427,27 @@ function renderMass(canvas, foot, data) {
     + `— это ${nf.format(1216)} записей: меньше, чем ленинских улиц в одной Ульяновской области.`;
 }
 
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
+}
+
 /* ------------------------------------------------------------------ запуск */
 
 function setupNav() {
@@ -475,6 +496,8 @@ async function main() {
 
   document.querySelectorAll(".screen > *").forEach((n) => n.setAttribute("data-anim", ""));
   setupNav();
+  const scroll = document.getElementById("scroll");
+  armIdleReset(() => scroll.scrollTo({ left: 0, behavior: "smooth" }));
 }
 
 main().catch((e) => {

@@ -431,6 +431,42 @@ function buildFilters(host, legendHost) {
   host.appendChild(toggle);
 }
 
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
+}
+
+function resetView() {
+  filter = "all";
+  hideUssr = false;
+  scaleFactor = DEFAULT_SCALE;
+  tilt = DEFAULT_ROTATE[1];
+  rotation = DEFAULT_ROTATE.slice();
+  showCard(null);
+  setMode("globe");
+  const legendHost = document.querySelector("[data-legend]");
+  buildFilters(document.querySelector("[data-filters]"), legendHost);
+  buildLegend(legendHost, points);
+  document.querySelector("[data-hint]").classList.remove("is-off");
+  applyProjection();
+}
+
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
@@ -454,6 +490,7 @@ async function main() {
     b.addEventListener("click", () => setMode(b.dataset.mode));
   }
   syncModeUI();
+  armIdleReset(resetView);
 
   resize();
   bindInput();

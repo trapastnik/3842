@@ -227,6 +227,33 @@ scrub.addEventListener("input", () => {
 });
 window.addEventListener("resize", () => { layout(); render(); }, { passive: true });
 
+
+/* ------------------------------------------------------------------ простой
+
+   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
+   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
+   к исходному виду. */
+
+const IDLE_RESET_MS = 75000;
+let idleTimer = null;
+
+function armIdleReset(reset) {
+  const rearm = () => {
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(reset, IDLE_RESET_MS);
+  };
+  for (const ev of ["pointerdown", "pointermove", "wheel", "touchstart", "keydown"]) {
+    window.addEventListener(ev, rearm, { passive: true });
+  }
+  rearm();
+}
+
+function resetView() {
+  year = FROM;
+  scrub.value = String(FROM);
+  setPlaying(true);
+}
+
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
@@ -255,6 +282,7 @@ async function main() {
     + "Годы выведены из формулировок описаний и требуют выборочной проверки.";
 
   setPlaying(true);
+  armIdleReset(resetView);
   requestAnimationFrame(tick);
 }
 
