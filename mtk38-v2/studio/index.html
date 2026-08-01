@@ -18,9 +18,9 @@
     background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 42%,rgba(10,14,17,.92) 100%)}
   /* слой цитат — вынесен в переиспользуемый shared/quotes.css (window.Quotes) */
   /* — карточка языка Р2 — */
-  #card{position:fixed;left:50%;bottom:-360px;transform:translateX(-50%);z-index:6;width:min(540px,90vw);
+  #card{position:fixed;left:50%;bottom:-820px;transform:translateX(-50%);z-index:6;width:min(540px,90vw);
     background:rgba(20,25,28,.93);backdrop-filter:blur(14px);border:1px solid rgba(210,183,115,.4);border-radius:16px;
-    padding:18px 22px;color:var(--telegrey);transition:bottom .5s cubic-bezier(.2,.7,.2,1)}
+    padding:18px 22px;color:var(--telegrey);transition:bottom .5s cubic-bezier(.2,.7,.2,1);max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
   #card.show{bottom:24px}
   #card .x{position:absolute;top:12px;right:15px;cursor:pointer;color:var(--window);font-size:18px}
   #card .w{font-size:clamp(34px,5vw,60px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
@@ -54,6 +54,7 @@
 <script src="../shared/data.js"></script>
 <script src="../shared/panel.js"></script>
 <script src="../shared/quotes.js"></script>
+<script src="../shared/publication.js"></script>
 <script>
 const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
 const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-fallback','noto-"+iso+"',sans-serif";
@@ -73,7 +74,10 @@ function boot(L, QUOTES, source){
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
   const MAXANISO=renderer.capabilities.getMaxAnisotropy();
   const scene=new THREE.Scene();
-  const camera=new THREE.PerspectiveCamera(45,1,0.1,200);camera.position.z=16;
+  const camera=new THREE.PerspectiveCamera(45,1,0.1,400);
+  // Композиции тюнились под 53 языка; при 128 сцена уплотняется втрое. Разводим её
+  // пропорционально корню из числа слов — плотность на экране остаётся прежней.
+  const K=Math.sqrt(N/53);camera.position.z=16*K;
   const group=new THREE.Group();scene.add(group);
   const raycaster=new THREE.Raycaster();
 
@@ -112,7 +116,7 @@ function boot(L, QUOTES, source){
     bloom:0.85,radius:0.55,thresh:0.7,expo:1.1,fog:0.22,vign:0.5,grain:0.4,bg:44};
 
   function setScale(){sprites.forEach((sp,i)=>{const s=(0.9+L[i].wt*0.5)*P.size;sp.scale.set(s*sp.userData.aspect,s,1);});}
-  const R=6.4, gold=Math.PI*(3-Math.sqrt(5));
+  const R=6.4*K, gold=Math.PI*(3-Math.sqrt(5));
   function computeTargets(){
     for(let i=0;i<N;i++){const t=targets[i],d=L[i],rv=RV[i];
       if(P.layout==='globe'){const y=1-(i/(N-1))*2,r=Math.sqrt(1-y*y),th=gold*i;t.set(Math.cos(th)*r*R,y*R,Math.sin(th)*r*R);}
@@ -156,7 +160,9 @@ function boot(L, QUOTES, source){
 
   // — карточка Р2 —
   const card=document.getElementById('card');
+  const pub=MTK38Pub.create();card.appendChild(pub.dom);   // блок «Издание» (shared/publication.js)
   function openCard(d){
+    pub.show(d.id);
     document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
     document.getElementById('c_n').textContent=d.n;
     document.getElementById('c_e').textContent=d.e;document.getElementById('c_e').style.fontFamily=FF(d.sc);
