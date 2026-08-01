@@ -2915,9 +2915,9 @@
     "type": "relation",
     "id": 7628583
    },
-   "lat": -17.07052,
-   "lng": 15.72801,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-англия-терраса-ленина",
@@ -3494,9 +3494,9 @@
    "link": "https://commons.wikimedia.org/wiki/File:Fenain_-_Rue_Vladimir-Lénine_(01).JPG",
    "link_kind": "commons",
    "osm": null,
-   "lat": 56.8769,
-   "lng": 14.26706,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-франция-проспект-ленина-4",
@@ -3581,9 +3581,9 @@
    "link": "https://nominatim.openstreetmap.org/ui/search.html?accept-language=ru%2Cen&extratags=1&format=html&q=Place+Lénine%09Gauchy%09France&viewbox=5.688868761062623%2C45.18676118247868%2C5.693079829216004%2C45.18505033034468",
    "link_kind": "osm_search",
    "osm": null,
-   "lat": 17.58229,
-   "lng": 121.76507,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-франция-проспект-ленина-6",
@@ -5711,9 +5711,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 44.82618,
-   "lng": 20.45726,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-италия-улица-ленина",
@@ -5936,9 +5936,9 @@
    "link": "https://www.openstreetmap.org/search?query=Via+Lenin%09Chiusi&zoom=19&minlon=10.53066909313202&minlat=44.69357530577793&maxlon=10.534880161285402&maxlat=44.6953008655599#map=18/43.013938/11.950845",
    "link_kind": "osm_search",
    "osm": null,
-   "lat": 58.21923,
-   "lng": 53.36141,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-италия-улица-ленина-6",
@@ -6509,9 +6509,9 @@
    "link": "https://nominatim.openstreetmap.org/ui/search.html?q=Piazza+Lenin%09Scicli&viewbox=12.69691%2C45.72524%2C12.70452%2C45.72289&accept-language=ru%2Cen",
    "link_kind": "osm_search",
    "osm": null,
-   "lat": 11.6084,
-   "lng": 29.6362,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-италия-улица-ленина-25",
@@ -7619,9 +7619,9 @@
    "link": "https://commons.wikimedia.org/wiki/Category:Jankov_Most Можно найти по карте на ссылке",
    "link_kind": "commons",
    "osm": null,
-   "lat": 50.01834,
-   "lng": 27.90274,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-сербия-лењинова-41",
@@ -7976,9 +7976,9 @@
    "link": "https://yandex.ru/maps/180/serbia/geo/2521725090/?ll=20.585649%2C44.948298&z=17",
    "link_kind": "other",
    "osm": null,
-   "lat": 41.02612,
-   "lng": 28.97705,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-сербия-лењинова-57",
@@ -12698,9 +12698,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 50.75049,
-   "lng": 20.78291,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-венгрия-lenin-utca-19",
@@ -13298,9 +13298,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 49.21009,
-   "lng": 42.21401,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-польша-дом-музей-ви-ленина-в-белом-",
@@ -13361,9 +13361,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 46.13474,
-   "lng": 30.37031,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-польша-аллея-ленина-ныне-аллея-генр",
@@ -17771,9 +17771,9 @@
    "link": "https://ru.wikipedia.org/wiki/Лиман_(Азербайджан)",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 47.25251,
-   "lng": 39.69413,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "ussr-азербайджан-ашагы-ленинабад-верхний-лени",
@@ -17792,9 +17792,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 47.22006,
-   "lng": 39.7759,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "ussr-азербайджан-юхары-ленинабад-нижний-ленин",
@@ -17813,9 +17813,9 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 47.22006,
-   "lng": 39.7759,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "ussr-азербайджан-ленинабад",
@@ -18107,9 +18107,9 @@
    "link": "https://translated.turbopages.org/proxy_u/en-ru.ru.ce11fd59-6a4b86b8-75f0b1d1-74722d776562/https/en.wikipedia.org/wiki/Balıqçılar",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 47.25251,
-   "lng": 39.69413,
-   "geo_src": "nominatim-alt"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "ussr-азербайджан-бакинский-филиал-центральног",
@@ -27231,9 +27231,9 @@
    "osm": 231,
    "wiki": 122,
    "nominatim": 747,
-   "none": 54,
-   "nominatim-alt": 62
+   "none": 69,
+   "nominatim-alt": 47
   },
-  "note": "координаты запечены офлайн, см. tools/geocode.py"
+  "note": "координаты запечены офлайн, см. tools/geocode.py; каждая точка проверена на попадание в свою страну (Natural Earth 110m, допуск 1.2°)"
  }
 }

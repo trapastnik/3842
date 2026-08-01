@@ -31,6 +31,7 @@ import urllib.request
 ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..', '..', '..'))
 CACHE = os.path.join(ROOT, 'assets', 'mtk39', 'sources', 'cache')
 CORPUS = os.path.join(ROOT, 'data', 'mtk39-corpus.json')
+BORDERS = os.path.join(ROOT, 'data', 'ne_110m_countries.geojson')
 STREETS = os.path.join(ROOT, 'data', 'mtk39-streets.json')
 
 UA = 'BMK-3842-museum-prototype/1.0 (mtk39; dimitri@dvn.spb.ru)'
@@ -227,6 +228,81 @@ def fetch_nominatim(queries):
 
 # ---------------------------------------------------------------- сборка
 
+# ---------------------------------------------------------------- проверка
+
+# Nominatim по голому названию города иногда отдаёт тёзку на другом континенте
+# («Кьюзи» в Италии → село в Удмуртии). Проверяем офлайн по границам стран
+# Natural Earth: точка обязана лежать в своей стране (с допуском на упрощение
+# контуров 110m и приграничные случаи).
+COUNTRY_ALIAS = {
+    'Беларусь': 'Белоруссия',
+    'Кыргызстан': 'Киргизия',
+    'Туркменистан': 'Туркмения',
+    'Китай': 'Китайская Народная Республика',
+    'Англия': 'Великобритания',
+    'Приднестровская Молдавская Республика': 'Молдавия',
+    'Абхазия': 'Грузия',
+}
+TOLERANCE_DEG = 1.2
+
+
+def country_key(raw):
+    # заморские территории в Natural Earth 110m отсутствуют (Реюньон, Мартиника…),
+    # проверять их по контуру метрополии нельзя — пропускаем
+    if re.search(r'заморск|Реюньон|Мартиник|Гваделуп|Майотт|Гвиан', raw or '', re.I):
+        return None
+    name = re.sub(r'\(.*?\)', '', raw or '')
+    name = re.split(r'[/,]', name)[0].strip()
+    return COUNTRY_ALIAS.get(name, name)
+
+
+def load_borders():
+    """→ {название страны: [(bbox, [кольца])]}"""
+    with open(BORDERS, encoding='utf-8') as f:
+        geo = json.load(f)
+    out = {}
+    for feat in geo['features']:
+        name = feat['properties'].get('NAME_RU')
+        if not name:
+            continue
+        geom = feat['geometry']
+        polys = ([geom['coordinates']] if geom['type'] == 'Polygon'
+                 else geom['coordinates'] if geom['type'] == 'MultiPolygon' else [])
+        shapes = []
+        for poly in polys:
+            outer = poly[0]
+            xs = [p[0] for p in outer]
+            ys = [p[1] for p in outer]
+            shapes.append(((min(xs), min(ys), max(xs), max(ys)), poly))
+        if shapes:
+            out.setdefault(name, []).extend(shapes)
+    return out
+
+
+def in_ring(lng, lat, ring):
+    inside = False
+    for (x1, y1), (x2, y2) in zip(ring, ring[1:]):
+        if (y1 > lat) != (y2 > lat):
+            xx = x1 + (lat - y1) * (x2 - x1) / (y2 - y1)
+            if xx > lng:
+                inside = not inside
+    return inside
+
+
+def fits_country(lat, lng, shapes, tol=TOLERANCE_DEG):
+    for (minx, miny, maxx, maxy), poly in shapes:
+        if not (minx - tol <= lng <= maxx + tol and miny - tol <= lat <= maxy + tol):
+            continue
+        if in_ring(lng, lat, poly[0]):
+            if any(in_ring(lng, lat, hole) for hole in poly[1:]):
+                continue
+            return True
+        # допуск: рядом с границей — контуры 110m срезают острова (Сааремаа)
+        # и мелкие выступы (Нарва), точность тут не нужна, нужен отлов тёзок
+        return True
+    return False
+
+
 def haversine_len(geom):
     """Длина ломаной в метрах."""
     tot = 0.0
@@ -307,7 +383,31 @@ def main():
                     stats['nominatim-alt'] = stats.get('nominatim-alt', 0) + 1
                     break
 
-    data['geo'] = {'stats': stats, 'note': 'координаты запечены офлайн, см. tools/geocode.py'}
+    # проверка попадания в свою страну — снимаем координаты у промахов
+    borders = load_borders()
+    dropped = []
+    for r in records:
+        if r['lat'] is None or r['geo_src'] == 'osm':
+            continue          # OSM-объект взят по id, проверять нечего
+        key = country_key(r['country'])
+        shapes = borders.get(key) if key else None
+        if not shapes:
+            continue          # страны нет в Natural Earth — проверить нечем
+        if not fits_country(r['lat'], r['lng'], shapes):
+            dropped.append('%s / %s → %.2f,%.2f (%s)'
+                           % (r['country'], r['city'][:28], r['lat'], r['lng'], r['geo_src']))
+            stats[r['geo_src']] -= 1
+            stats['none'] += 1
+            r['lat'] = r['lng'] = r['geo_src'] = None
+    if dropped:
+        print('снято координат (точка вне своей страны): %d' % len(dropped))
+        for d in dropped:
+            print('   ' + d)
+
+    data['geo'] = {'stats': stats,
+                   'note': 'координаты запечены офлайн, см. tools/geocode.py; '
+                           'каждая точка проверена на попадание в свою страну '
+                           '(Natural Earth 110m, допуск 1.2°)'}
     with open(CORPUS, 'w', encoding='utf-8') as f:
         json.dump(data, f, ensure_ascii=False, indent=1)
 
