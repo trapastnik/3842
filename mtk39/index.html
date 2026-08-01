@@ -26,14 +26,18 @@
   </div>
 
   <script>
-    /* Тексты от сессии МТК 39 — assets/mtk39/HUB-TEXT.md (2026-07-22). */
+    /* Тексты от сессии МТК 39 — assets/mtk39/HUB-TEXT.md (2026-07-22).
+     * Версии: v1 — исходный глобус избранного (57 объектов с фото),
+     * v2 — поколение полного корпуса (1 216 записей). Дефолт = новейшая (v2),
+     * первым открывается «Мир: шар ⇄ карта». */
     window.HUB_VARIANTS = [
-      { slug: "mtk39-world",   tag: "01 · World",   name: "Мир: шар ⇄ карта" },
-      { slug: "mtk39-map",     tag: "02 · Map",     name: "Карта имени" },
-      { slug: "mtk39-wave",    tag: "03 · Wave",    name: "Прилив и отлив" },
-      { slug: "mtk39-streets", tag: "04 · Streets", name: "Гербарий улиц" },
-      { slug: "mtk39-stats",   tag: "05 · Stats",   name: "Корпус в цифрах" },
-      { slug: "mtk39-globe",   tag: "06 · Globe",   name: "Глобус избранного" },
+      { slug: "mtk39-globe",   tag: "01 · Globe",   name: "Глобус избранного", version: "v1" },
+
+      { slug: "mtk39-world",   tag: "01 · World",   name: "Мир: шар ⇄ карта",  version: "v2" },
+      { slug: "mtk39-map",     tag: "02 · Map",     name: "Карта имени",       version: "v2" },
+      { slug: "mtk39-wave",    tag: "03 · Wave",    name: "Прилив и отлив",    version: "v2" },
+      { slug: "mtk39-streets", tag: "04 · Streets", name: "Гербарий улиц",     version: "v2" },
+      { slug: "mtk39-stats",   tag: "05 · Stats",   name: "Корпус в цифрах",   version: "v2" },
     ];
   </script>
   <script src="../assets/shared/hub/hub.js?v=20260722"></script>
