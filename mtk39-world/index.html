@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Имя Ленина на карте мира</title>
+    <link rel="stylesheet" href="./styles.css?v=3" />
+  </head>
+  <body>
+    <main class="stage">
+      <canvas id="globe"></canvas>
+
+      <header class="head">
+        <span class="eyebrow">МТК · 39</span>
+        <h1 class="title">Имя на карте мира</h1>
+        <p class="sub" data-sub>Свод из 74 стран: где имя Ленина осталось и где ушло.</p>
+      </header>
+
+      <aside class="legend" data-legend></aside>
+
+      <nav class="modes" aria-label="Вид">
+        <button class="chip" type="button" data-mode="globe" aria-pressed="true">глобус</button>
+        <button class="chip" type="button" data-mode="map" aria-pressed="false">карта</button>
+      </nav>
+
+      <nav class="filters" data-filters aria-label="Что показывать"></nav>
+
+      <aside class="card" id="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__orig" data-orig></div>
+        <h2 class="card__name" data-name></h2>
+        <p class="card__where" data-where></p>
+        <p class="card__text" data-desc></p>
+        <dl class="card__facts" data-facts></dl>
+      </aside>
+
+      <div class="hint" data-hint aria-hidden="true">поверните глобус · коснитесь точки · «карта» разворачивает мир</div>
+    </main>
+
+    <script src="./vendor/d3.v7.min.js"></script>
+    <script src="../assets/shared/lib/projection.js"></script>
+    <script type="module" src="./world.js?v=4"></script>
+  </body>
+</html>

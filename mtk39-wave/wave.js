@@ -1,0 +1,249 @@
+/* МТК 39 · «Прилив и отлив».
+   Столетие имени на карте мира: 1900 → 2025. Точка вспыхивает в год, когда объект
+   получил имя Ленина, и гаснет в год, когда имя сняли.
+
+   Проекция — общий канон проекта: MtkProjection.WinkelTripel из assets/shared/lib
+   (порядок аргументов (lat, lng), аспект только из WT.ASPECT — своей математики нет).
+   Библиотека подключена классическим <script> — рантайм-CDN в проекте запрещены. */
+
+const CORPUS = "../data/mtk39-corpus.json";
+const COUNTRIES = "../data/ne_110m_countries.geojson";
+const WT = window.MtkProjection.WinkelTripel;
+
+const FROM = 1900;
+const TO = 2025;
+const YEARS_PER_SEC = 6;
+const FLASH = 2.2;              // сколько лет держится вспышка события
+
+const C = {
+  live: "#d2b773",
+  gone: "#c9545a",
+  bg: "rgba(157, 163, 168, 0.22)",
+};
+
+const canvas = document.getElementById("map");
+const ctx = canvas.getContext("2d");
+const dpr = Math.min(window.devicePixelRatio || 1, 2);
+const nf = new Intl.NumberFormat("ru-RU");
+
+let width = 0;
+let height = 0;
+let worldW = 0;
+let worldH = 0;
+let offX = 0;
+let offY = 0;
+let land = null;              // спроецированные контуры стран (world-px)
+let dated = [];               // объекты с годом
+let undated = [];             // объекты без года — тихий фон
+let year = FROM;
+let playing = true;
+let lastFrame = 0;
+
+const yearEl = document.querySelector("[data-year]");
+const countsEl = document.querySelector("[data-counts]");
+const scrub = document.querySelector("[data-scrub]");
+const playBtn = document.querySelector("[data-play]");
+
+/* ------------------------------------------------------------------ раскладка */
+
+function layout() {
+  width = window.innerWidth;
+  height = window.innerHeight;
+  canvas.width = Math.floor(width * dpr);
+  canvas.height = Math.floor(height * dpr);
+  canvas.style.width = `${width}px`;
+  canvas.style.height = `${height}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  // карта занимает ширину сцены, поля — под заголовок и таймлайн
+  const availW = width * 0.92;
+  const availH = height * 0.66;
+  worldW = Math.min(availW, availH * WT.ASPECT);
+  worldH = worldW / WT.ASPECT;
+  offX = (width - worldW) / 2;
+  offY = (height - worldH) / 2 - height * 0.05;
+}
+
+const project = (lat, lng) => {
+  const p = WT.project(lat, lng, worldW, worldH);
+  return [p.x + offX, p.y + offY];
+};
+
+/* ------------------------------------------------------------------ данные */
+
+function prepareLand(geo) {
+  // контуры считаем один раз в мировых пикселях, при ресайзе пересчитываем
+  land = [];
+  for (const f of geo.features) {
+    const polys = f.geometry.type === "Polygon"
+      ? [f.geometry.coordinates]
+      : f.geometry.type === "MultiPolygon" ? f.geometry.coordinates : [];
+    for (const poly of polys) {
+      for (const ring of poly) {
+        if (ring.length < 4) continue;
+        land.push(ring);
+      }
+    }
+  }
+}
+
+function drawLand() {
+  ctx.beginPath();
+  for (const ring of land) {
+    let started = false;
+    let prevX = 0;
+    for (const [lng, lat] of ring) {
+      const [x, y] = project(lat, lng);
+      // разрыв на антимеридиане: не тянем полигон через всю карту
+      if (started && Math.abs(x - prevX) > worldW * 0.5) {
+        started = false;
+      }
+      if (!started) { ctx.moveTo(x, y); started = true; } else { ctx.lineTo(x, y); }
+      prevX = x;
+    }
+  }
+  ctx.fillStyle = "rgba(72, 86, 95, 0.72)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(247, 249, 239, 0.18)";
+  ctx.lineWidth = 0.7;
+  ctx.stroke();
+}
+
+/* ------------------------------------------------------------------ кадр */
+
+function stateAt(p, y) {
+  // 0 — ещё не названо, 1 — носит имя, 2 — имя снято
+  if (p.year_named && y < p.year_named) return 0;
+  if (p.year_renamed && y >= p.year_renamed) return 2;
+  if (!p.year_named && p.year_renamed && y < p.year_renamed) return 1;
+  return p.year_named ? 1 : 0;
+}
+
+function render() {
+  ctx.clearRect(0, 0, width, height);
+  drawLand();
+
+  // фон: объекты, для которых материалы не называют год
+  for (const p of undated) {
+    const [x, y] = project(p.lat, p.lng);
+    ctx.beginPath();
+    ctx.arc(x, y, 1.7, 0, Math.PI * 2);
+    ctx.fillStyle = C.bg;
+    ctx.fill();
+  }
+
+  let live = 0;
+  let gone = 0;
+  const flashes = [];
+
+  for (const p of dated) {
+    const st = stateAt(p, year);
+    if (st === 0) continue;
+    const [x, y] = project(p.lat, p.lng);
+    if (st === 1) {
+      live += 1;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+      ctx.fillStyle = C.live;
+      ctx.fill();
+      if (p.year_named && year - p.year_named < FLASH) {
+        flashes.push([x, y, 1 - (year - p.year_named) / FLASH, C.live]);
+      }
+    } else {
+      gone += 1;
+      ctx.beginPath();
+      ctx.arc(x, y, 2.1, 0, Math.PI * 2);
+      ctx.fillStyle = year - p.year_renamed < FLASH
+        ? C.gone
+        : "rgba(201, 84, 90, 0.34)";
+      ctx.fill();
+      if (year - p.year_renamed < FLASH) {
+        flashes.push([x, y, 1 - (year - p.year_renamed) / FLASH, C.gone]);
+      }
+    }
+  }
+
+  // вспышки — поверх всего, чтобы событие года было видно в общей россыпи
+  for (const [x, y, t, color] of flashes) {
+    const r = 5 + (1 - t) * 26;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, Math.PI * 2);
+    ctx.lineWidth = 1.6;
+    ctx.strokeStyle = hexToRgba(color, t * 0.8);
+    ctx.stroke();
+  }
+
+  yearEl.textContent = Math.floor(year);
+  countsEl.innerHTML = `<b>${nf.format(live)}</b> носят имя · <i>${nf.format(gone)}</i> лишились`;
+}
+
+function hexToRgba(hex, a) {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}, ${a.toFixed(3)})`;
+}
+
+/* ------------------------------------------------------------------ цикл */
+
+function tick(now) {
+  const dt = lastFrame ? (now - lastFrame) / 1000 : 0;
+  lastFrame = now;
+  if (playing) {
+    year += dt * YEARS_PER_SEC;
+    if (year > TO) year = FROM;
+    scrub.value = String(Math.floor(year));
+  }
+  render();
+  requestAnimationFrame(tick);
+}
+
+/* ------------------------------------------------------------------ ввод */
+
+function setPlaying(next) {
+  playing = next;
+  playBtn.textContent = playing ? "❚❚" : "▶";
+  playBtn.setAttribute("aria-label", playing ? "Пауза" : "Пуск");
+}
+
+playBtn.addEventListener("click", () => setPlaying(!playing));
+scrub.addEventListener("input", () => {
+  setPlaying(false);
+  year = Number(scrub.value);
+  render();
+});
+window.addEventListener("resize", () => { layout(); render(); }, { passive: true });
+
+/* ------------------------------------------------------------------ запуск */
+
+async function main() {
+  const [corpus, geo] = await Promise.all([
+    fetch(CORPUS).then((r) => r.json()),
+    fetch(COUNTRIES).then((r) => r.json()),
+  ]);
+
+  const geolocated = corpus.records.filter((r) => r.lat !== null && r.lng !== null);
+  dated = geolocated.filter((r) => r.year_named || r.year_renamed);
+  undated = geolocated.filter((r) => !r.year_named && !r.year_renamed);
+
+  prepareLand(geo);
+  layout();
+
+  const ticks = document.querySelector("[data-ticks]");
+  for (let y = FROM; y <= TO; y += 25) {
+    const s = document.createElement("span");
+    s.textContent = y;
+    ticks.appendChild(s);
+  }
+
+  document.querySelector("[data-note]").innerHTML =
+    `Анимированы ${nf.format(dated.length)} объектов, у которых в материалах назван год. `
+    + `Ещё ${nf.format(undated.length)} нанесены серым — даты нет, судьба неизвестна. `
+    + "Годы выведены из формулировок описаний и требуют выборочной проверки.";
+
+  setPlaying(true);
+  requestAnimationFrame(tick);
+}
+
+main().catch((e) => {
+  console.error(e);
+  document.querySelector(".title").textContent = "Данные не загрузились";
+});
