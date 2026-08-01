@@ -370,6 +370,28 @@ function openDetail(item) {
   } else {
     aftermath.hidden = true;
   }
+  renderPhotos($('[data-bind="photos"]', d), item.photos);
+}
+
+function renderPhotos(box, photos) {
+  box.textContent = "";
+  const list = photos || [];
+  box.hidden = list.length === 0;
+  for (const ph of list) {
+    const fig = document.createElement("figure");
+    fig.className = "detail__photo";
+    const img = document.createElement("img");
+    img.src = `../assets/mtk42/museums/${ph.file}`;
+    img.alt = ph.caption || "";
+    img.loading = "lazy";
+    fig.appendChild(img);
+    if (ph.caption) {
+      const cap = document.createElement("figcaption");
+      cap.textContent = ph.caption;
+      fig.appendChild(cap);
+    }
+    box.appendChild(fig);
+  }
 }
 function closeDetail() { $("#detail").hidden = true; }
 
