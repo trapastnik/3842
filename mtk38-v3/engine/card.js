@@ -24,6 +24,12 @@ const CSS = `
 .v3card .w{font-size:clamp(34px,5vw,60px);color:#F7F9EF;line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
 .v3card .n{font-size:19px;color:#F7F9EF;font-weight:600;margin-top:3px}
 .v3card .e{font-size:15px;color:#D2B773}
+.v3card .many{margin-top:10px}
+.v3card .many-n{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#9DA3A8;margin-bottom:7px}
+.v3card .chips{display:flex;flex-wrap:wrap;gap:6px;max-height:132px;overflow-y:auto}
+.v3card .chip{height:32px;padding:0 12px;border:1px solid rgba(210,183,115,.34);border-radius:8px;
+  background:transparent;color:#CFD0CF;font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+.v3card .chip[aria-current="true"]{background:#D2B773;color:#1a1f23;border-color:#D2B773;font-weight:600}
 .v3card .rows{margin-top:12px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
 .v3card .rows b{color:#9DA3A8;font-weight:600}
 .v3card .ver{margin-top:11px;display:inline-block;font-size:11px;padding:3px 10px;border-radius:10px}
@@ -63,7 +69,9 @@ export function createCard(opts = {}) {
   const el = document.createElement('div');
   el.className = 'v3card';
   el.innerHTML = `<span class="x">✕</span>
-    <div class="w"></div><div class="n"></div><div class="e"></div>
+    <div class="w"></div>
+    <div class="many"><div class="many-n"></div><div class="chips"></div></div>
+    <div class="n"></div><div class="e"></div>
     <div class="rows"></div><span class="ver"></span>
     <div class="pub">
       <div class="pub-head">
@@ -123,10 +131,10 @@ export function createCard(opts = {}) {
     q('.imp').textContent = [imp, p.area ? `· ${p.area}` : ''].filter(Boolean).join(' ');
   }
 
-  function open(w) {
-    if (!w) return;
+  // Показ одного языка (внутри формы или самостоятельного). Написание задаётся формой
+  // и не меняется при переключении языков — оно у них общее, в этом весь смысл группы.
+  function renderLang(w) {
     const ff = FAM(w.sc);
-    const cw = q('.w'); cw.textContent = w.w; cw.style.fontFamily = ff;
     q('.n').textContent = w.n;
     const ce = q('.e'); ce.textContent = w.e; ce.style.fontFamily = ff;
     const also = (w.also && w.also.length) ? ` · также: ${w.also.join(', ')}` : '';
@@ -142,6 +150,37 @@ export function createCard(opts = {}) {
     list = pubs.get(w.id) || [];
     idx = 0;
     renderPub();
+  }
+
+  const plural = (n) => n % 10 === 1 && n % 100 !== 11 ? 'язык'
+    : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'языка' : 'языков';
+
+  function open(w) {
+    if (!w) return;
+    const cw = q('.w'); cw.textContent = w.w; cw.style.fontFamily = FAM(w.sc);
+
+    // форма, общая для нескольких языков → чипы с выбором; иначе блок скрыт
+    const langs = (w.langs && w.langs.length > 1) ? w.langs : null;
+    const many = q('.many');
+    many.style.display = langs ? 'block' : 'none';
+    if (langs) {
+      q('.many-n').textContent = `так пишут ${langs.length} ${plural(langs.length)}`;
+      const chips = q('.chips');
+      chips.innerHTML = '';
+      langs.forEach((l, k) => {
+        const b = document.createElement('button');
+        b.className = 'chip'; b.textContent = l.n;
+        b.setAttribute('aria-current', k === 0 ? 'true' : 'false');
+        b.onclick = () => {
+          [...chips.children].forEach((c, j) => c.setAttribute('aria-current', j === k ? 'true' : 'false'));
+          renderLang(l);
+        };
+        chips.appendChild(b);
+      });
+      renderLang(langs[0]);
+    } else {
+      renderLang(w);
+    }
     el.scrollTop = 0;
     el.classList.add('show');
   }

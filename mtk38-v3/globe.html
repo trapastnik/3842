@@ -35,7 +35,7 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · кольцевой глобус · 128 написаний «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 60 написаний «Ленин» на 128 языках · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -45,11 +45,11 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createCard } from './engine/card.js?v=20260801';
+import { createCard } from './engine/card.js?v=20260802';
 import { createTuner } from './tuner.js';
 import { createGlobe } from './scenes/globe-rings.js';
 import { createEarth } from './scenes/earth.js';
-import { loadWords, loadPublications } from './engine/data.js?v=20260801';
+import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
@@ -61,6 +61,9 @@ try {
   // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
   const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+  // в композиции одна ФОРМА = один объект: 128 языков дают 60 написаний,
+  // «Ленин» пишут 36 языков — без группировки половина сцены была бы двумя строками
+  const FORMS = groupByWriting(WORDS);
   const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
@@ -74,7 +77,7 @@ try {
   camera.lookAt(0, 0, 0);
 
   // глобус слов (структура v1) — без плоского тела: под именами ляжет Земля
-  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
+  let globe = createGlobe(THREE, { words: FORMS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
   scene.add(globe.group);
   let autoSpin = 0.06;
 
@@ -146,7 +149,7 @@ try {
     ndc.set((cx / globalThis.innerWidth) * 2 - 1, -(cy / globalThis.innerHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     const hit = ray.intersectObjects(globe.meshes, false)[0];   // FrontSide → только видимые (передние) слова
-    if (hit && hit.object.userData.wi != null) card.open(WORDS[hit.object.userData.wi]);
+    if (hit && hit.object.userData.wi != null) card.open(FORMS[hit.object.userData.wi]);
     else card.close();
   }
 
@@ -202,7 +205,7 @@ try {
     densityTimer = setTimeout(() => {
       const old = globe;
       scene.remove(old.group);
-      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
+      globe = createGlobe(THREE, { words: FORMS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
       scene.add(globe.group);
       old.dispose();
     }, 180);

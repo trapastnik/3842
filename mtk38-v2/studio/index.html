@@ -25,6 +25,13 @@
   #card .x{position:absolute;top:12px;right:15px;cursor:pointer;color:var(--window);font-size:18px}
   #card .w{font-size:clamp(34px,5vw,60px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
   #card .n{font-size:19px;color:var(--paper);font-weight:600;margin-top:3px}#card .e{font-size:15px;color:var(--brass)}
+  /* форма, общая для нескольких языков → выбор языка чипами */
+  #card .many{margin-top:10px}
+  #card .many-n{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--window);margin-bottom:7px}
+  #card .chips{display:flex;flex-wrap:wrap;gap:6px;max-height:132px;overflow-y:auto}
+  #card .chip{height:32px;padding:0 12px;border:1px solid rgba(210,183,115,.34);border-radius:8px;
+    background:transparent;color:var(--telegrey);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
+  #card .chip[aria-current="true"]{background:var(--brass);color:#1a1f23;border-color:var(--brass);font-weight:600}
   #card .rows{margin-top:10px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}#card .rows b{color:var(--window);font-weight:600}
   #card .ver{margin-top:9px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
   .ver-ok{background:var(--brass);color:#1a1f23}.ver-warn{background:var(--red);color:#fff}
@@ -39,9 +46,11 @@
 <div id="grain"></div>
 <div id="vign"></div>
 <div id="card"><span class="x" id="cardx">✕</span>
-  <div class="w" id="c_w"></div><div class="n" id="c_n"></div><div class="e" id="c_e"></div>
+  <div class="w" id="c_w"></div>
+  <div class="many" id="c_many"><div class="many-n" id="c_manyn"></div><div class="chips" id="c_chips"></div></div>
+  <div class="n" id="c_n"></div><div class="e" id="c_e"></div>
   <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
-<div class="hint">Арт-объект МТК 38 · тяни мышью — поворот · <b>тап по слову</b> → карточка языка · настройки и композиции — панель <b>справа</b> (клавиша <b>H</b>)</div>
+<div class="hint">Арт-объект МТК 38 · тяни мышью — поворот · <b>тап по слову</b> → карточка: языки этой формы и издания · настройки и композиции — панель <b>справа</b> (клавиша <b>H</b>)</div>
 <div id="boot">Загрузка канона…</div>
 <script src="../vendor/three/three.min.js"></script>
 <script src="../vendor/three/js/shaders/CopyShader.js"></script>
@@ -64,7 +73,11 @@ const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial U
   .then(({words,quotes,source})=>{ try{ boot(words,quotes,source); }catch(e){ document.getElementById('boot').textContent='Ошибка: '+((e&&e.message)||e); console.error(e);} })
   .catch(e=>{ document.getElementById('boot').textContent='Ошибка загрузки данных: '+((e&&e.message)||e); console.error(e); });
 
-function boot(L, QUOTES, source){
+function boot(WORDS, QUOTES, source){
+  // В композиции одна ФОРМА = один объект: 128 языков дают 60 написаний, «Ленин» пишут
+  // 36 языков. Без группировки половина сцены была бы двумя повторяющимися строками,
+  // а тап по ним давал бы формально верный, но случайный для зрителя язык.
+  const L=MTK38Data.groupByWriting(WORDS);
   const N=L.length;
   let seed=1; const rng=()=>(seed=(seed*16807)%2147483647)/2147483647;
   const RV=L.map(()=>({x:rng()*2-1,y:rng()*2-1,z:rng()*2-1,ph:rng()*Math.PI*2,sp:0.6+rng()*0.8}));
@@ -161,17 +174,32 @@ function boot(L, QUOTES, source){
   // — карточка Р2 —
   const card=document.getElementById('card');
   const pub=MTK38Pub.create();card.appendChild(pub.dom);   // блок «Издание» (shared/publication.js)
-  function openCard(d){
+  const plural=n=>n%10===1&&n%100!==11?'язык':(n%10>=2&&n%10<=4&&(n%100<12||n%100>14))?'языка':'языков';
+  // показ одного языка формы; написание общее для всех её языков и не меняется
+  function renderLang(d){
     pub.show(d.id);
-    document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
     document.getElementById('c_n').textContent=d.n;
     document.getElementById('c_e').textContent=d.e;document.getElementById('c_e').style.fontFamily=FF(d.sc);
     document.getElementById('c_rows').innerHTML=
       `<b>письмо</b><span>${d.scn} (${d.sc})</span><b>семья</b><span>${d.f}</span>`+
       `<b>ареал</b><span>${d.r}</span><b>источник</b><span>${d.src}</span>`;
     const ver=document.getElementById('c_ver'),warn=d.ver==='needs-verification';
-    ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+d.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');
-    card.classList.add('show');}
+    ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+d.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');}
+  function openCard(d){
+    document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
+    const langs=(d.langs&&d.langs.length>1)?d.langs:null;
+    const many=document.getElementById('c_many'),chips=document.getElementById('c_chips');
+    many.style.display=langs?'block':'none';
+    if(langs){
+      document.getElementById('c_manyn').textContent=`так пишут ${langs.length} ${plural(langs.length)}`;
+      chips.innerHTML='';
+      langs.forEach((l,k)=>{const b=document.createElement('button');
+        b.className='chip';b.textContent=l.n;b.setAttribute('aria-current',k===0?'true':'false');
+        b.onclick=()=>{[...chips.children].forEach((c,j)=>c.setAttribute('aria-current',j===k?'true':'false'));renderLang(l);};
+        chips.appendChild(b);});
+      renderLang(langs[0]);
+    } else renderLang(d);
+    card.scrollTop=0;card.classList.add('show');}
   document.getElementById('cardx').onclick=()=>card.classList.remove('show');
 
   // — слой цитат (переиспользуемый модуль shared/quotes.js) —
