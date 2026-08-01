@@ -26,11 +26,10 @@ mtk38-v2/
 │   └── analysis.html     ← репрезентативность, охват, предложения
 ├── shared/               ← переиспользуемые модули
 │   ├── panel.css/.js     ← ★ ЕДИНАЯ панель настроек (window.Panel) — выезжает справа, оверлей, hotkey H
-│   └── data.js           ← рантайм-загрузчик канона (window.MTK38Data.load) + встроенный fallback
-├── hub-proto/            ← прототип версионного хаба для координатора (v1/v2/v3 + служебная кнопка)
-│   ├── hub.js, hub-ext.css ← drop-in в assets/shared/hub/ (version + url + HUB_TOOLS)
-│   └── index.html          ← демо МТК 38 (см. mtk38-handoff/HANDOFF-hub-versioning.md)
-├── fonts/                ← faces.css (единый @font-face) + noto/ (subset, 29 письменностей ×400/700)
+│   ├── data.js           ← рантайм-загрузчик канона (load / loadPublications / groupByWriting) + fallback
+│   ├── quotes.css/.js    ← слой цитат (window.Quotes)
+│   └── publication.js    ← блок «Издание» в карточке (обложка, заглавие, выходные данные)
+├── fonts/                ← faces.css (единый @font-face) + noto/ (subset, 32 письменности + fallback)
 └── vendor/three/         ← Three.js r137 UMD + bloom-addons (вендорено, без CDN)
 ```
 

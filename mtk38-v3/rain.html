@@ -34,8 +34,8 @@ import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberratio
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
 import { createTuner } from './tuner.js';
-import { makeWordAtlas } from './engine/atlas.js';
-import { createRain } from './scenes/rain.js';
+import { makeWordAtlas } from './engine/atlas.js?v=20260802';
+import { createRain } from './scenes/rain.js?v=20260802';
 import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
 import { createCard } from './engine/card.js?v=20260802';
 
@@ -73,7 +73,7 @@ try {
     try { base = dof(col, sp.getViewZNode(), uDofFocus, uDofRange, uDofBokeh); } catch (e) { console.warn('[dof off]', e); base = col; }
     const baseTex = convertToTexture(base);
     let out = baseTex;
-    try { bloomPass = bloom(baseTex, 0.45, 0.5, 0.62); out = baseTex.add(bloomPass); } catch (e) { console.warn('[bloom off]', e); out = baseTex; }
+    try { bloomPass = bloom(baseTex, 0.26, 0.55, 0.78); out = baseTex.add(bloomPass); } catch (e) { console.warn('[bloom off]', e); out = baseTex; }
     try { out = chromaticAberration(out, uCa, vec2(0.5, 0.5), 1.1); } catch (e) { console.warn('[ca off]', e); }
     post.outputNode = out;
   } catch (e) { console.warn('[post off]', e); post = null; }
@@ -149,8 +149,8 @@ try {
       ] },
       { title: 'свет / пост', params: [
         { key: 'exposure', label: 'экспозиция', min: .4, max: 1.8, step: .02, value: 1 },
-        { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .45 },
-        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .62 },
+        { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .26 },
+        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .78 },
         { key: 'dofBokeh', label: 'DOF боке', min: 0, max: 3, step: .05, value: 0 },
         { key: 'dofFocus', label: 'DOF фокус', min: 14, max: 40, step: .5, value: 26 },
         { key: 'ca', label: 'аберрация', min: 0, max: 2.5, step: .05, value: .3 },

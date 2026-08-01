@@ -135,8 +135,13 @@ const modal=document.getElementById('modal');let mOpen=false;
 const pub=MTK38Pub.create();document.querySelector('.mcard').appendChild(pub.dom);   // блок «Издание» (shared/publication.js)
 function openModal(p){pub.show(p.id);document.getElementById('m_w').textContent=p.w;document.getElementById('m_w').style.fontFamily=FF(p.sc,1,400).replace(/^\S+ 1px /,'');
   document.getElementById('m_n').textContent=p.n;document.getElementById('m_e').textContent=p.e;document.getElementById('m_e').style.fontFamily=document.getElementById('m_w').style.fontFamily;
-  const sp=p.sp>=1000?`≈ ${(p.sp/1000).toFixed(1)} млрд носителей`:`≈ ${p.sp} млн носителей`;
-  document.getElementById('m_rows').innerHTML=`<b>письмо</b><span>${p.scn} (${p.sc})</span><b>семья</b><span>${p.f}</span><b>ареал</b><span>${p.r}</span><b>носители</b><span>${sp}</span><b>источник</b><span>${p.src}</span>`;
+  // поле называется speakers (загрузчик shared/data.js), а не sp — раньше здесь
+  // печаталось «≈ undefined млн носителей»; у языков из документа оценки нет вовсе
+  const n=p.speakers;
+  const sp=(typeof n==='number'&&isFinite(n))
+    ? (n>=1000?`≈ ${(n/1000).toFixed(1)} млрд носителей`:`≈ ${n} млн носителей`) : '';
+  document.getElementById('m_rows').innerHTML=`<b>письмо</b><span>${p.scn} (${p.sc})</span><b>семья</b><span>${p.f}</span><b>ареал</b><span>${p.r}</span>`+
+    (sp?`<b>носители</b><span>${sp}</span>`:'')+`<b>источник</b><span>${p.src}</span>`;
   const ver=document.getElementById('m_ver'),warn=p.ver==='needs-verification';ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+p.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');
   modal.classList.add('is-open');mOpen=true;}
 function closeModal(){modal.classList.remove('is-open');mOpen=false;}

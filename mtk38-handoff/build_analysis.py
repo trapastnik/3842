@@ -9,12 +9,12 @@
 
 Запуск:  python3 mtk38-handoff/build_analysis.py
 """
-import json, os, collections
+import json, os, re, collections
 
 HERE = os.path.dirname(__file__)
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 SRC = os.path.join(ROOT, "data", "mtk38.json")
-OUT = os.path.join(ROOT, "mtk38-v2", "analysis.html")
+OUT = os.path.join(ROOT, "mtk38-v2", "back", "analysis.html")
 
 CONT = {'RU':'Европа','BY':'Европа','KZ':'Центр. Азия','CN':'Вост. Азия','IN':'Южная Азия',
 'BD':'Южная Азия','PK':'Южная Азия','LK':'Южная Азия','MV':'Южная Азия','BT':'Южная Азия',
@@ -43,13 +43,62 @@ ours = []
 for l in L:
     g = l["geo"]; c = g["primary"]["country_iso"] if g.get("primary") else None
     ours.append({"n": l["name_ru"], "fam": l["family"], "ft": l["family"].split("→")[0].strip(),
-                 "sp": l["speakers_mln"], "sc": l["script"]["iso15924"],
+                 "sp": l.get("speakers_mln"), "sc": l["script"]["iso15924"],
                  "reg": (CONT.get(c, "—") if c else "диаспора")})
-ours.sort(key=lambda x: -x["sp"])
+# у языков из кураторского документа оценки носителей нет — такие в конец списка
+ours.sort(key=lambda x: -(x["sp"] if isinstance(x["sp"], (int, float)) else -1))
 
 stats = {"langs": len(L), "scripts": len(scripts), "countries": len(countries), "families": len(families),
          "regions": regions}
 stats_json = json.dumps(stats, ensure_ascii=False)
+
+# Мировой топ-25 по носителям — внешние данные (не наш канон). Раньше статус
+# «в списке / частично / отсутствует» стоял здесь руками и устарел после
+# расширения канона: немецкий, индонезийский, маратхи, турецкий, вьетнамский и
+# хауса уже добавлены, а помечались красным. Теперь статус считается от канона.
+TOP_WORLD = [
+    ("Английский", 1500),
+    ("Китайский (мандарин)", 1100),
+    ("Хинди", 610),
+    ("Испанский", 560),
+    ("Арабский", 370),
+    ("Французский", 310),
+    ("Бенгальский", 270),
+    ("Португальский", 260),
+    ("Русский", 255),
+    ("Урду", 230),
+    ("Индонезийский", 200),
+    ("Немецкий", 135),
+    ("Японский", 125),
+    ("Нигерийский пиджин", 120),
+    ("Панджаби", 113),
+    ("Маратхи", 99),
+    ("Телугу", 95),
+    ("Турецкий", 90),
+    ("Тамильский", 87),
+    ("Кантонский (юэ)", 86),
+    ("Вьетнамский", 85),
+    ("У (китайский)", 83),
+    ("Корейский", 82),
+    ("Хауса", 80),
+    ("Персидский", 79),
+]
+# у мировых названий свои уточнения в скобках — сверяем по «голому» имени
+ALIAS = {"китайский (мандарин)": "китайский", "кантонский (юэ)": "кантонский",
+         "персидский": "персидский", "у (китайский)": "у"}
+
+
+def _bare(s):
+    s = re.sub(r"\s*\([^)]*\)", "", s).strip().lower()
+    return ALIAS.get(s, s)
+
+
+_canon_names = {_bare(l["name_ru"]) for l in L}
+canon_names_json = json.dumps(sorted(_canon_names), ensure_ascii=False)
+top_json = json.dumps(
+    [{"n": n, "sp": sp, "s": "in" if _bare(n) in _canon_names else "miss"}
+     for n, sp in TOP_WORLD], ensure_ascii=False)
+
 ours_json = json.dumps(ours, ensure_ascii=False)
 nlang = lambda n: f"{n} " + ("язык" if n%10==1 and n%100!=11 else "языка" if 2<=n%10<=4 and not 12<=n%100<=14 else "языков")
 NL = nlang(len(L))
@@ -157,20 +206,7 @@ HTML = r"""<!doctype html>
 <script>
 const S = __STATS__;
 const OURS = __OURS__;
-const TOP=[
- {n:'Английский',sp:1500,s:'in'},{n:'Китайский (мандарин)',sp:1100,s:'in'},
- {n:'Хинди',sp:610,s:'part'},{n:'Испанский',sp:560,s:'in'},
- {n:'Арабский',sp:370,s:'in'},{n:'Французский',sp:310,s:'in'},
- {n:'Бенгальский',sp:270,s:'in'},{n:'Португальский',sp:260,s:'in'},
- {n:'Русский',sp:255,s:'in'},{n:'Урду',sp:230,s:'in'},
- {n:'Индонезийский',sp:200,s:'miss'},{n:'Немецкий',sp:135,s:'miss'},
- {n:'Японский',sp:125,s:'in'},{n:'Нигерийский пиджин',sp:120,s:'miss'},
- {n:'Панджаби',sp:113,s:'in'},{n:'Маратхи',sp:99,s:'miss'},
- {n:'Телугу',sp:95,s:'in'},{n:'Турецкий',sp:90,s:'miss'},
- {n:'Тамильский',sp:87,s:'in'},{n:'Кантонский (юэ)',sp:86,s:'in'},
- {n:'Вьетнамский',sp:85,s:'miss'},{n:'У (китайский)',sp:83,s:'miss'},
- {n:'Корейский',sp:82,s:'in'},{n:'Хауса',sp:80,s:'miss'},
- {n:'Персидский',sp:79,s:'part'}];
+const TOP=__TOP__;
 const PROPS=[
  {n:'Хинди',sp:610,sc:'деванагари (есть)',fam:'индоарийская',
   why:'Сейчас в списке только авадхи (региональный язык хинди‑пояса). Хинди как таковой — крупнейший язык Индии.'},
@@ -203,7 +239,12 @@ document.getElementById('byfam').innerHTML=Object.entries(fams).sort((a,b)=>b[1]
   .map(([f,ns])=>`<div class="famrow"><span class="famn">${f} <b>(${ns.length})</b></span><span class="famls">${ns.join(', ')}</span></div>`).join('');
 
 const rel=sub=>OURS.filter(o=>o.fam.includes(sub)).map(o=>o.n);
-document.getElementById('props').innerHTML=PROPS.map(p=>{
+// Предложения по дополнению: скрываем те языки, что уже вошли в канон —
+// после расширения до 128 большая их часть добавлена, и список ввёл бы в заблуждение.
+const CANON=new Set(__CANONNAMES__);
+const bare=s=>s.replace(/\s*\([^)]*\)/g,'').trim().toLowerCase();
+const OPEN=PROPS.filter(p=>!CANON.has(bare(p.n)));
+document.getElementById('props').innerHTML=(OPEN.length?OPEN:[]).map(p=>{
   const r=rel(p.fam);
   const have=r.length
     ? `<b>семья уже в списке (${r.length}):</b> ${r.join(', ')} — добавит население/узнаваемость, не новую ветвь`
@@ -211,13 +252,14 @@ document.getElementById('props').innerHTML=PROPS.map(p=>{
   return `<div class="prop${p.star?' star':''}">
     <div class="h"><span class="nm">${p.n}</span><span class="sp">${p.sp} млн<br>${p.sc}</span></div>
     <div class="why">${p.why}</div>
-    <div class="have">${have}</div></div>`;}).join('');
+    <div class="have">${have}</div></div>`;}).join('')
+  || '<div class="prop"><div class="why">Все прежние предложения вошли в канон — новых нет.</div></div>';
 </script>
 </body>
 </html>
 """
 
-html = (HTML.replace("__STATS__", stats_json).replace("__OURS__", ours_json).replace("__NL__", NL))
+html = (HTML.replace("__STATS__", stats_json).replace("__TOP__", top_json).replace("__CANONNAMES__", canon_names_json).replace("__OURS__", ours_json).replace("__NL__", NL))
 with open(OUT, "w", encoding="utf-8") as f:
     f.write(html)
 print(f"written: {OUT}")

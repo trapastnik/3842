@@ -47,7 +47,10 @@ export function makeWordAtlas(THREE, words, { fontPx = 170, pad = 12, maxW = 409
     ctx.font = `${b.wt} ${fontPx}px ${b.fam}`;
     ctx.textAlign = 'left'; ctx.textBaseline = 'alphabetic';
     ctx.fillText(b.wd.w, b.x + pad + b.left, b.y + pad + b.asc);
-    return { x: b.x / W, y: b.y / H, w: b.w / W, h: b.h / H, aspect: b.w / b.h };
+    // y отдаём в координатах ТЕКСТУРЫ, а не канваса: у CanvasTexture flipY=true,
+    // поэтому v=0 — это низ картинки (канвас y=H), а не верх. Раньше сюда уходило
+    // b.y/H, из-за чего каждая частица брала чужой кусок атласа и вверх ногами.
+    return { x: b.x / W, y: 1 - (b.y + b.h) / H, w: b.w / W, h: b.h / H, aspect: b.w / b.h };
   });
 
   const tex = new THREE.CanvasTexture(cnv);

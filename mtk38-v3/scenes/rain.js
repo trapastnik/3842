@@ -10,8 +10,11 @@ import { Fn, instancedArray, instanceIndex, uniform, uniformArray, float, vec2, 
 export async function createRain(THREE, renderer, {
   atlas,
   count = 7000,
-  bounds = { x: 26, y: 17, z: 11 },
-  sizes = [0.42, 0.72, 1.2, 2.0],            // 4 яруса (высота слова, мир)
+  // Объём заметно шире кадра: при прежних 26×17 все 500 частиц сидели во вьюпорте
+  // и слипались в сплошное светящееся полотно. Теперь видно ~2/3, остальное подходит
+  // из-за краёв — сцена дышит, слова читаются по отдельности.
+  bounds = { x: 44, y: 30, z: 18 },
+  sizes = [0.34, 0.58, 0.95, 1.55],          // 4 яруса (высота слова, мир)
   tones = ['#F7F9EF', '#D2B773', '#A02128'], // paper, латунь, красный
 } = {}) {
   const N = atlas.rects.length;
