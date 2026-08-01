@@ -329,3 +329,28 @@ body {
   border-color: var(--red-mark);
   background: rgba(201, 84, 90, 0.18);
 }
+
+/* переключатель вида: шар ⇄ карта */
+.modes {
+  position: absolute;
+  top: calc(var(--pad) * 0.9);
+  right: calc(var(--pad) * 1.3);
+  z-index: 3;
+  display: flex;
+  gap: calc(var(--u) * 0.4);
+  padding: calc(var(--u) * 0.3);
+  border: 1px solid rgba(157, 163, 168, 0.3);
+  border-radius: calc(var(--u) * 2);
+  background: rgba(12, 16, 18, 0.55);
+}
+
+.modes .chip {
+  border-color: transparent;
+  background: none;
+}
+
+.modes .chip[aria-pressed="true"] {
+  border-color: transparent;
+  background: rgba(210, 183, 115, 0.2);
+  color: var(--paper);
+}

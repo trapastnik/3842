@@ -1,12 +1,21 @@
 /* МТК 39 · «Имя на карте мира».
-   Весь свод (1 162 геолоцированных объекта из 1 216) на ортографическом глобусе.
+   Весь свод (1 147 геолоцированных объектов из 1 216) на одной сцене, которая
+   разворачивается из глобуса в карту и сворачивается обратно.
    Цвет точки — судьба имени: латунь «носит имя», красный «переименовано»,
    серый «утрачено». Размер одинаковый: считываем плотность, а не важность.
+
+   Морфинг сделан по классической схеме d3: интерполируем не картинку, а сами
+   raw-проекции — ортографическую (шар) и Winkel Tripel (карта). WT берём из
+   канона проекта assets/shared/lib/projection.js: своей WT-математики здесь нет,
+   из константы используется только WT.ASPECT.
 
    d3 подключён локально (./vendor/d3.v7.min.js) классическим <script> —
    музейный киоск работает офлайн, рантайм-CDN запрещены (COORDINATION.md). */
 
-const { geoOrthographic, geoPath, geoGraticule10, geoDistance, drag, select } = window.d3;
+const {
+  geoProjection, geoOrthographicRaw, geoPath, geoGraticule10, geoDistance, drag, select,
+} = window.d3;
+const WT = window.MtkProjection.WinkelTripel;
 
 const CORPUS = "../data/mtk39-corpus.json";
 const COUNTRIES = "../data/ne_110m_countries.geojson";
@@ -29,11 +38,34 @@ const MIN_SCALE = 0.4;
 const MAX_SCALE = 9;
 const IDLE_MS = 9000;          // после этого глобус снова начинает вращаться
 const ROTATE_SPEED = 3.2;      // градусов в секунду
+const MORPH_MS = 1500;         // разворачивание шара в карту
 
 const canvas = document.getElementById("globe");
 const ctx = canvas.getContext("2d");
 const dpr = Math.min(window.devicePixelRatio || 1, 2);
-const projection = geoOrthographic().precision(0.4);
+
+// alpha: 0 — шар, 1 — карта. Промежуточные значения — кадры разворачивания.
+let alpha = 0;
+
+// Winkel Tripel в «сырых» радианных единицах, восстановленный из канонической
+// библиотеки: она отдаёт нормализованные world-px, здесь возвращаем их в тот же
+// масштаб, в котором работают raw-проекции d3 (широта ±π/2).
+const WT_X_SPAN = WT.ASPECT * Math.PI;           // полная ширина мира в raw-единицах
+const WT_HALF_X = WT_X_SPAN / 2;
+
+function wtRaw(lambda, phi) {
+  const p = WT.project((phi * 180) / Math.PI, (lambda * 180) / Math.PI, 1, 1);
+  return [(p.x - 0.5) * WT_X_SPAN, (0.5 - p.y) * Math.PI];
+}
+
+function morphRaw(lambda, phi) {
+  const [x0, y0] = geoOrthographicRaw(lambda, phi);
+  if (alpha === 0) return [x0, y0];
+  const [x1, y1] = wtRaw(lambda, phi);
+  return [x0 + (x1 - x0) * alpha, y0 + (y1 - y0) * alpha];
+}
+
+const projection = geoProjection(morphRaw).precision(0.4);
 const path = geoPath(projection, ctx);
 
 let width = 0;
@@ -43,11 +75,14 @@ let points = [];
 let visible = [];
 let selected = null;
 let rotation = DEFAULT_ROTATE.slice();
+let tilt = DEFAULT_ROTATE[1];   // наклон шара; на карте гасится до нуля
 let scaleFactor = DEFAULT_SCALE;
 let lastFrame = 0;
 let lastInteraction = performance.now();
 let filter = "all";
 let hideUssr = false;
+let mode = "globe";            // globe | map
+let morph = null;
 
 const nf = new Intl.NumberFormat("ru-RU");
 
@@ -65,15 +100,31 @@ function resize() {
 }
 
 function applyProjection() {
+  // масштаб тоже интерполируем: у шара raw-радиус 1, у карты полуширина WT_HALF_X
+  const globeK = (Math.min(width, height) * scaleFactor) / 2;
+  const mapK = (Math.min(width * 0.94, height * 0.78 * WT.ASPECT) * scaleFactor)
+    / (2 * WT_HALF_X);
+  rotation[1] = tilt * (1 - alpha);
   projection
-    .scale((Math.min(width, height) * scaleFactor) / 2)
+    .scale(globeK + (mapK - globeK) * alpha)
     .translate([width / 2, height / 2])
-    .rotate(rotation);
+    .rotate(rotation)
+    // на полностью развёрнутой карте складки нет — отсечение выключаем,
+    // иначе край отсечения даёт шов поперёк мира
+    .clipAngle(alpha >= 1 ? null : clipAngle());
+  projection.precision(0.4);
+}
+
+// у шара видно полушарие, у карты — почти весь мир; окно раскрывается по мере
+// разворачивания, поэтому обратная сторона «выплывает», а не появляется рывком
+function clipAngle() {
+  return 90 + 89 * alpha;
 }
 
 function isVisible(lng, lat) {
+  if (alpha >= 1) return true;
   const [rl, rp] = projection.rotate();
-  return geoDistance([lng, lat], [-rl, -rp]) < Math.PI / 2;
+  return geoDistance([lng, lat], [-rl, -rp]) < (clipAngle() * Math.PI) / 180;
 }
 
 const passes = (p) => (filter === "all" || p.status === filter)
@@ -84,7 +135,7 @@ const passes = (p) => (filter === "all" || p.status === filter)
 function render(now) {
   ctx.clearRect(0, 0, width, height);
 
-  // шар
+  // шар (на карте тот же путь даёт контур мира)
   ctx.beginPath();
   path({ type: "Sphere" });
   const grad = ctx.createRadialGradient(
@@ -94,7 +145,10 @@ function render(now) {
   grad.addColorStop(0, "rgba(58, 70, 78, 0.95)");
   grad.addColorStop(1, "rgba(18, 24, 28, 1)");
   ctx.fillStyle = grad;
+  // в середине разворачивания край отсечения вырождается в шов — гасим заливку
+  ctx.globalAlpha = alpha > 0 && alpha < 1 ? 1 - alpha * 0.85 : 1;
   ctx.fill();
+  ctx.globalAlpha = 1;
 
   ctx.beginPath();
   path(geoGraticule10());
@@ -117,12 +171,14 @@ function render(now) {
     }
   }
 
-  // край шара
-  ctx.beginPath();
-  path({ type: "Sphere" });
-  ctx.strokeStyle = "rgba(210, 183, 115, 0.4)";
-  ctx.lineWidth = 1.2;
-  ctx.stroke();
+  // край шара / рамка карты
+  if (alpha === 0 || alpha === 1) {
+    ctx.beginPath();
+    path({ type: "Sphere" });
+    ctx.strokeStyle = "rgba(210, 183, 115, 0.4)";
+    ctx.lineWidth = 1.2;
+    ctx.stroke();
+  }
 
   // точки: сначала приглушённые, потом активные — активные не тонут в общей массе
   visible = [];
@@ -165,10 +221,39 @@ function render(now) {
 
 /* ------------------------------------------------------------------ цикл */
 
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2);
+
+function stepMorph(now) {
+  if (!morph) return;
+  const t = Math.min(1, (now - morph.t0) / MORPH_MS);
+  alpha = morph.from + (morph.to - morph.from) * easeInOut(t);
+  applyProjection();
+  if (t >= 1) {
+    alpha = morph.to;
+    morph = null;
+  }
+}
+
+function setMode(next) {
+  if (mode === next) return;
+  mode = next;
+  morph = { from: alpha, to: next === "map" ? 1 : 0, t0: performance.now() };
+  showCard(null);
+  syncModeUI();
+  touched();
+}
+
+function syncModeUI() {
+  for (const b of document.querySelectorAll("[data-mode]")) {
+    b.setAttribute("aria-pressed", String(b.dataset.mode === mode));
+  }
+}
+
 function tick(now) {
   const dt = lastFrame ? (now - lastFrame) / 1000 : 0;
   lastFrame = now;
-  if (!selected && now - lastInteraction > IDLE_MS) {
+  stepMorph(now);
+  if (!selected && !morph && mode === "globe" && now - lastInteraction > IDLE_MS) {
     rotation[0] = (rotation[0] + ROTATE_SPEED * dt) % 360;
     applyProjection();
   }
@@ -207,7 +292,8 @@ function bindInput() {
         moved += Math.abs(e.dx) + Math.abs(e.dy);
         const k = 0.26 / Math.sqrt(scaleFactor);
         rotation[0] += e.dx * k * 1.6;
-        rotation[1] = Math.max(-89, Math.min(89, rotation[1] - e.dy * k * 1.6));
+        // наклон полюсов имеет смысл только у шара
+        tilt = Math.max(-89, Math.min(89, tilt - e.dy * k * 1.6 * (1 - alpha)));
         applyProjection();
         touched();
       })
@@ -348,6 +434,10 @@ async function main() {
   const legendHost = document.querySelector("[data-legend]");
   buildLegend(legendHost, points);
   buildFilters(document.querySelector("[data-filters]"), legendHost);
+  for (const b of document.querySelectorAll("[data-mode]")) {
+    b.addEventListener("click", () => setMode(b.dataset.mode));
+  }
+  syncModeUI();
 
   resize();
   bindInput();
