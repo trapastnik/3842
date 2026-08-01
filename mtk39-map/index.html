@@ -3,17 +3,17 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>МТК 39 · Имя Ленина на карте мира</title>
-    <link rel="stylesheet" href="./styles.css?v=2" />
+    <title>МТК 39 · Имя Ленина — карта мира</title>
+    <link rel="stylesheet" href="./styles.css?v=1" />
   </head>
   <body>
     <main class="stage">
-      <canvas id="globe"></canvas>
+      <canvas id="map"></canvas>
 
       <header class="head">
         <span class="eyebrow">МТК · 39</span>
-        <h1 class="title">Имя на карте мира</h1>
-        <p class="sub" data-sub>Свод из 74 стран: где имя Ленина осталось и где ушло.</p>
+        <h1 class="title">Карта имени</h1>
+        <p class="sub" data-sub>Весь свод на плоской карте: где имя Ленина осталось и где ушло.</p>
       </header>
 
       <aside class="legend" data-legend></aside>
@@ -29,10 +29,10 @@
         <dl class="card__facts" data-facts></dl>
       </aside>
 
-      <div class="hint" data-hint aria-hidden="true">поверните глобус · коснитесь точки</div>
+      <div class="hint" data-hint aria-hidden="true">тяните карту · щипок = масштаб · коснитесь точки</div>
     </main>
 
-    <script src="./vendor/d3.v7.min.js"></script>
-    <script type="module" src="./world.js?v=2"></script>
+    <script src="../assets/shared/lib/projection.js"></script>
+    <script type="module" src="./map.js?v=1"></script>
   </body>
 </html>

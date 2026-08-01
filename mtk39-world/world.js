@@ -47,6 +47,7 @@ let scaleFactor = DEFAULT_SCALE;
 let lastFrame = 0;
 let lastInteraction = performance.now();
 let filter = "all";
+let hideUssr = false;
 
 const nf = new Intl.NumberFormat("ru-RU");
 
@@ -75,7 +76,8 @@ function isVisible(lng, lat) {
   return geoDistance([lng, lat], [-rl, -rp]) < Math.PI / 2;
 }
 
-const passes = (p) => filter === "all" || p.status === filter;
+const passes = (p) => (filter === "all" || p.status === filter)
+  && !(hideUssr && p.continent === "Бывший СССР");
 
 /* ------------------------------------------------------------------ отрисовка */
 
@@ -280,7 +282,7 @@ card.querySelector(".card__close").addEventListener("click", () => showCard(null
 function buildLegend(host, all) {
   host.replaceChildren();
   for (const s of STATUS) {
-    const n = all.filter((p) => p.status === s.key).length;
+    const n = all.filter((p) => p.status === s.key && passes(p)).length;
     const row = document.createElement("div");
     row.className = "legend__row";
     row.innerHTML = `<span class="legend__dot" style="background:${s.color}"></span>`
@@ -289,9 +291,11 @@ function buildLegend(host, all) {
   }
 }
 
-function buildFilters(host) {
+function buildFilters(host, legendHost) {
   const opts = [["all", "все"], ...STATUS.map((s) => [s.key, s.label])];
   host.replaceChildren();
+  const group = document.createElement("div");
+  group.className = "chips";
   for (const [key, label] of opts) {
     const b = document.createElement("button");
     b.className = "chip";
@@ -301,11 +305,28 @@ function buildFilters(host) {
     b.addEventListener("click", () => {
       filter = key;
       showCard(null);
-      [...host.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+      [...group.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+      buildLegend(legendHost, points);
       touched();
     });
-    host.appendChild(b);
+    group.appendChild(b);
   }
+  host.appendChild(group);
+
+  // свод на 93% состоит из бывшего СССР и Европы: без ядра видно всё остальное
+  const toggle = document.createElement("button");
+  toggle.className = "chip chip--toggle";
+  toggle.type = "button";
+  toggle.textContent = "без бывшего СССР";
+  toggle.setAttribute("aria-pressed", "false");
+  toggle.addEventListener("click", () => {
+    hideUssr = !hideUssr;
+    toggle.setAttribute("aria-pressed", String(hideUssr));
+    showCard(null);
+    buildLegend(legendHost, points);
+    touched();
+  });
+  host.appendChild(toggle);
 }
 
 /* ------------------------------------------------------------------ запуск */
@@ -324,8 +345,9 @@ async function main() {
     + `свод по ${new Set(points.map((p) => p.country)).size} странам. `
     + "Цвет точки — судьба имени.";
 
-  buildLegend(document.querySelector("[data-legend]"), points);
-  buildFilters(document.querySelector("[data-filters]"));
+  const legendHost = document.querySelector("[data-legend]");
+  buildLegend(legendHost, points);
+  buildFilters(document.querySelector("[data-filters]"), legendHost);
 
   resize();
   bindInput();
