@@ -8,6 +8,8 @@
    так видно и состав рубрики, и её географию, без карты. */
 
 const SRC = "../data/mtk39-corpus.json";
+const CREDITS = "../data/images/mtk39/one-off/credits.json";
+const IMG_DIR = "../data/images/mtk39/one-off/";
 
 const STATUS_CLASS = {
   "носит имя": "card--live",
@@ -73,6 +75,7 @@ const nf = new Intl.NumberFormat("ru-RU");
 
 let records = [];
 let buckets = new Map();
+let credits = {};
 let active = RUBRICS[0].key;
 
 /* ------------------------------------------------------------------ раскладка */
@@ -106,6 +109,18 @@ function cardEl(rec, openSheet) {
   const b = document.createElement("button");
   b.type = "button";
   b.className = `card ${STATUS_CLASS[rec.status] || ""}`;
+
+  if (credits[rec.id]) {
+    const fig = document.createElement("div");
+    fig.className = "card__fig";
+    const img = document.createElement("img");
+    img.src = IMG_DIR + rec.id + ".jpg";
+    img.alt = "";
+    img.loading = "lazy";
+    fig.appendChild(img);
+    b.appendChild(fig);
+    b.classList.add("card--withfig");
+  }
 
   const orig = document.createElement("div");
   orig.className = "card__orig";
@@ -202,6 +217,22 @@ function makeSheet() {
       [rec.city, rec.country].filter(Boolean).join(" · ");
     sheet.querySelector("[data-desc]").textContent = rec.desc || "";
 
+    const fig = sheet.querySelector("[data-fig]");
+    const credit = credits[rec.id];
+    fig.replaceChildren();
+    fig.hidden = !credit;
+    if (credit) {
+      const img = document.createElement("img");
+      img.src = IMG_DIR + rec.id + ".jpg";
+      img.alt = rec.name;
+      fig.appendChild(img);
+      const cap = document.createElement("figcaption");
+      // Викисклад требует указывать автора и лицензию рядом с изображением
+      cap.textContent = [credit.author, credit.license, "Викисклад"]
+        .filter(Boolean).join(" · ");
+      fig.appendChild(cap);
+    }
+
     const facts = sheet.querySelector("[data-facts]");
     facts.replaceChildren();
     const rows = [["судьба имени", STATUS_LABEL[rec.status] || rec.status]];
@@ -242,7 +273,11 @@ function armIdleReset(reset) {
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
-  const data = await (await fetch(SRC)).json();
+  const [data, creditsData] = await Promise.all([
+    fetch(SRC).then((r) => r.json()),
+    fetch(CREDITS).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
+  ]);
+  credits = creditsData;
   records = data.records;
   buckets = assign(records);
 
