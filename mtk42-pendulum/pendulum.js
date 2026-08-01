@@ -221,6 +221,16 @@ const CATEGORY_TAG = {
   writers: "Литература",
 };
 
+// Точка на маятнике — 112 px на 1920, 224 px на 3840. Апскейл больше
+// двукратного мылит на 49″; такие портреты заменяем монограммой. Ширина —
+// из manifest.json, чтобы решать до загрузки. См. тот же порог в картотеке.
+const MIN_PORTRAIT_PX = 220;
+function usablePortrait(meta) {
+  if (!meta.image) return null;
+  if (typeof meta.w === "number" && meta.w < MIN_PORTRAIT_PX) return null;
+  return `../assets/mtk42/portraits/${meta.image}`;
+}
+
 function collectItems(content, portraits) {
   const items = [];
   for (const p of content.people) {
@@ -231,13 +241,13 @@ function collectItems(content, portraits) {
       id: p.id,
       category: p.category,
       name: p.name,
-      meta: `${p.role} · ${p.years}`,
+      meta: p.years ? `${p.role} · ${p.years}` : p.role,
       year: p.year,
       tone: p.tone,
       text: p.summary || "",
       source: p.key_work ? `«${p.key_work}»` : "",
       quote: p.quote || null,
-      portrait: portraitMeta.image ? `../assets/mtk42/portraits/${portraitMeta.image}` : null,
+      portrait: usablePortrait(portraitMeta),
       initials: initialsFromName(p.short || p.name),
       tag: CATEGORY_TAG[p.category] || p.category,
     });
