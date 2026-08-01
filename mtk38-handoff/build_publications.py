@@ -205,12 +205,40 @@ def split_imprint(text):
     head = text[:m.start()]
     # перевод строки — более сильная граница, чем точка: точка встречается внутри
     # выходных данных («Verlag von J. H. W. Reich und Co., 1915») и рвала бы их посередине
-    k = head.rfind("\n") if "\n" in head else max(head.rfind("."), head.rfind("?"), head.rfind("!"))
-    imprint = head[k + 1:].strip(" ,;:\n")
-    title = head[:k + 1].strip(" ,.;:\n") if k >= 0 else ""
-    if not title:                      # выходных данных нет — весь хвост это заглавие
-        title, imprint = imprint, ""
+    title, imprint = _cut_imprint(head)
     return title, imprint, year
+
+
+def _cut_imprint(head):
+    """Отделяет выходные данные от заглавия в тексте ДО года.
+
+    Источник непоследователен: «Заглавие. Город, 1970», «Заглавие\\nГород: Изд-во, 1970»,
+    «Заглавие. Город. 1959» (после точки пусто) и даже «Заглавие Город, 1933» (без всякого
+    разделителя). Поэтому идём по разделителям предложения справа налево и берём первый,
+    после которого получается правдоподобный выходной блок — короткий и с заглавной буквы.
+    """
+    # Перевод строки — авторская, а не угаданная граница: если он есть, доверяем ему
+    # безусловно. Выходные данные бывают длинными («Lisboa: Edições Avante! / Edições
+    # Progresso»), и общая эвристика ниже их бы отбраковала.
+    if "\n" in head:
+        k = head.rfind("\n")
+        return head[:k].strip(" ,.;:\n"), head[k + 1:].strip(" ,.;:\n")
+
+    seps = [i for i, ch in enumerate(head) if ch in ".?!"]
+    for k in reversed(seps):
+        cand = head[k + 1:].strip(" ,.;:\n")
+        if cand and len(cand.split()) <= 5 and cand[:1].isupper():
+            return head[:k + 1].strip(" ,.;:\n"), cand
+    # разделителя нет: город — хвост из заглавных слов перед последней запятой
+    c = head.rfind(",")
+    if c >= 0:
+        words = head[:c].split()
+        tail = []
+        while words and words[-1][:1].isupper() and len(tail) < 3:
+            tail.insert(0, words.pop())
+        if tail and words:
+            return " ".join(words).strip(" ,.;:"), " ".join(tail)
+    return head.strip(" ,.;:\n"), ""
 
 
 def parse_book(cell, writing=""):

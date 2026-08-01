@@ -1,6 +1,9 @@
 /* АВТОГЕНЕРАЦИЯ build_words_v3.py — @font-face для v3 (вендорено локально). */
 @font-face{font-family:"20 Kopeek";src:url("./kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
 @font-face{font-family:"20 Kopeek";font-weight:600;src:url("./kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+@font-face{font-family:"21 Cent";src:url("./cent/21Cent.woff") format("woff");font-display:swap}
+@font-face{font-family:"21 Cent";font-weight:700;src:url("./cent/21Cent-Bold.woff") format("woff");font-display:swap}
+@font-face{font-family:"Nolde";src:url("./nolde/nolde.otf") format("opentype");font-display:swap}
 @font-face{font-family:"noto-Arab";src:url("./noto/Arab.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Arab";font-weight:700;src:url("./noto/Arab-700.woff2") format("woff2");font-display:swap}
 @font-face{font-family:"noto-Armn";src:url("./noto/Armn.woff2") format("woff2");font-display:swap}

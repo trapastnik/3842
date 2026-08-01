@@ -14,16 +14,44 @@
   #modal{position:fixed;inset:0;z-index:7;display:none;align-items:center;justify-content:center}
   #modal.is-open{display:flex}
   #backdrop{position:absolute;inset:0;background:rgba(10,13,15,.55);backdrop-filter:blur(3px)}
-  .mcard{position:relative;width:min(540px,90vw);background:rgba(20,25,28,.94);border:1px solid rgba(210,183,115,.4);
-    border-radius:16px;padding:20px 24px;color:var(--telegrey);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  .mcard .x{position:absolute;top:12px;right:15px;cursor:pointer;color:var(--window);font-size:18px}
-  .mcard .w{font-size:clamp(36px,5.5vw,64px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
-  .mcard .n{font-size:20px;color:var(--paper);font-weight:600;margin-top:2px}
-  .mcard .e{font-size:15px;color:var(--brass)}
-  .mcard .rows{margin-top:12px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:4px 14px}
-  .mcard .rows b{color:var(--window);font-weight:600}
-  .mcard .ver{margin-top:10px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
-  .ver-ok{background:var(--brass);color:#1a1f23}.ver-warn{background:var(--red);color:#fff}
+  /* — карточка языка: типографика по дизайн-коду 2026-05-12 —
+     Nolde — только само написание, 21 Cent — читаемый текст, 20 Kopeek — подписи и годы.
+     Красный точечно: метка «ждёт проверки», не заливка. */
+  .mcard{position:relative;width:min(620px,94vw)}
+  .mcard{max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:rgba(24,29,33,.95);backdrop-filter:blur(16px);
+    border:1px solid rgba(210,183,115,.34);border-radius:18px;
+    padding:30px 34px 28px;color:var(--telegrey);font-family:'21 Cent',system-ui,sans-serif}
+  .mcard::-webkit-scrollbar{width:8px}
+  .mcard::-webkit-scrollbar-thumb{background:rgba(210,183,115,.28);border-radius:4px}
+  .mcard .x{position:absolute;top:12px;right:14px;width:44px;height:44px;line-height:44px;
+    text-align:center;cursor:pointer;color:var(--window);font-size:20px;border-radius:10px}
+  .mcard .w{font-size:clamp(44px,6.4vw,74px);color:var(--paper);line-height:1.06;letter-spacing:.01em;
+    text-shadow:0 0 30px rgba(247,249,239,.22);word-break:break-word}
+  .mcard .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:12px;
+    padding-bottom:16px;border-bottom:1px solid rgba(210,183,115,.2)}
+  .mcard .n{font-size:21px;font-weight:700;color:var(--paper)}
+  .mcard .e{font-size:16px;color:var(--brass)}
+  .mcard .many{margin-top:18px}
+  .mcard .many-n{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--window);margin-bottom:9px}
+  .mcard .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:140px;overflow-y:auto;padding-right:2px}
+  .mcard .chip{height:36px;padding:0 14px;border:1px solid rgba(210,183,115,.3);border-radius:9px;
+    background:transparent;color:var(--telegrey);font-family:'21 Cent',system-ui,sans-serif;
+    font-size:13px;cursor:pointer;white-space:nowrap}
+  .mcard .chip[aria-current="true"]{background:var(--brass);color:#1a1f23;border-color:var(--brass);font-weight:700}
+  .mcard .rows{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:9px 20px;align-items:baseline}
+  .mcard .rows b{font-family:'20 Kopeek',ui-monospace,monospace;font-weight:400;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--window);white-space:nowrap}
+  .mcard .rows span{font-size:15px;line-height:1.4;color:var(--telegrey)}
+  .mcard .ver{margin-top:18px;display:inline-flex;align-items:center;gap:8px;
+    font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:7px 14px;border-radius:11px;border:1px solid rgba(210,183,115,.4);color:var(--brass);background:none}
+  .mcard .ver::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brass);flex:0 0 auto}
+  .mcard .ver.ver-warn{border-color:rgba(160,33,40,.65);color:#E2777C;background:none}
+  .mcard .ver.ver-warn::before{background:var(--red)}
+  @media (max-width:560px){ .mcard{padding:24px 20px 22px} }
+
   .hint{position:fixed;left:16px;bottom:11px;z-index:4;font-size:11px;color:var(--window);opacity:.55;pointer-events:none}
   .hint b{color:var(--brass)}
 </style>
@@ -32,7 +60,8 @@
 <canvas id="map"></canvas>
 
 <div id="modal"><div id="backdrop"></div><div class="mcard"><span class="x" id="mx">✕</span>
-  <div class="w" id="m_w"></div><div class="n" id="m_n"></div><div class="e" id="m_e"></div>
+  <div class="w" id="m_w"></div>
+  <div class="head"><span class="n" id="m_n"></span><span class="e" id="m_e"></span></div>
   <div class="rows" id="m_rows"></div><span class="ver" id="m_ver"></span></div></div>
 <div class="hint">Карта мира · тяни — pan · настройки — панель <b>справа</b>, <b>тап по точке</b> → карточка языка</div>
 <script src="../../assets/shared/lib/projection.js"></script>
@@ -133,16 +162,16 @@ function findPoint(x,y){const sh=Math.min(W,H);let best=-1,bd=sh*0.06;
 // модалка Р2
 const modal=document.getElementById('modal');let mOpen=false;
 const pub=MTK38Pub.create();document.querySelector('.mcard').appendChild(pub.dom);   // блок «Издание» (shared/publication.js)
-function openModal(p){pub.show(p.id);document.getElementById('m_w').textContent=p.w;document.getElementById('m_w').style.fontFamily=FF(p.sc,1,400).replace(/^\S+ 1px /,'');
+function openModal(p){pub.show(p.id);document.getElementById('m_w').textContent=p.w;document.getElementById("m_w").style.fontFamily=(p.sc==="Latn"||p.sc==="Cyrl")?"'Nolde','20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":FF(p.sc,1,400).replace(/^\S+ 1px /,"");
   document.getElementById('m_n').textContent=p.n;document.getElementById('m_e').textContent=p.e;document.getElementById('m_e').style.fontFamily=document.getElementById('m_w').style.fontFamily;
   // поле называется speakers (загрузчик shared/data.js), а не sp — раньше здесь
   // печаталось «≈ undefined млн носителей»; у языков из документа оценки нет вовсе
+  const also=(p.also&&p.also.length)?` · также ${p.also.join(", ")}`:"";
   const n=p.speakers;
   const sp=(typeof n==='number'&&isFinite(n))
     ? (n>=1000?`≈ ${(n/1000).toFixed(1)} млрд носителей`:`≈ ${n} млн носителей`) : '';
-  document.getElementById('m_rows').innerHTML=`<b>письмо</b><span>${p.scn} (${p.sc})</span><b>семья</b><span>${p.f}</span><b>ареал</b><span>${p.r}</span>`+
-    (sp?`<b>носители</b><span>${sp}</span>`:'')+`<b>источник</b><span>${p.src}</span>`;
-  const ver=document.getElementById('m_ver'),warn=p.ver==='needs-verification';ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+p.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');
+  document.getElementById('m_rows').innerHTML=`<b>письмо</b><span>${p.scn}</span><b>семья</b><span>${p.f}</span><b>ареал</b><span>${p.r}${also}</span>`+(sp?`<b>носители</b><span>${sp}</span>`:"");
+  const ver=document.getElementById('m_ver'),warn=p.ver==='needs-verification';ver.textContent=warn?'написание ждёт проверки носителем':`написание выверено · ${p.src}`;ver.className='ver'+(warn?' ver-warn':'');
   modal.classList.add('is-open');mOpen=true;}
 function closeModal(){modal.classList.remove('is-open');mOpen=false;}
 document.getElementById('mx').onclick=closeModal;document.getElementById('backdrop').onclick=closeModal;

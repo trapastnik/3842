@@ -17,24 +17,46 @@
   #vign{position:fixed;inset:0;z-index:1;pointer-events:none;
     background:radial-gradient(ellipse at 50% 50%,rgba(0,0,0,0) 42%,rgba(10,14,17,.92) 100%)}
   /* слой цитат — вынесен в переиспользуемый shared/quotes.css (window.Quotes) */
-  /* — карточка языка Р2 — */
-  #card{position:fixed;left:50%;bottom:-820px;transform:translateX(-50%);z-index:6;width:min(540px,90vw);
-    background:rgba(20,25,28,.93);backdrop-filter:blur(14px);border:1px solid rgba(210,183,115,.4);border-radius:16px;
-    padding:18px 22px;color:var(--telegrey);transition:bottom .5s cubic-bezier(.2,.7,.2,1);max-height:86vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  #card.show{bottom:24px}
-  #card .x{position:absolute;top:12px;right:15px;cursor:pointer;color:var(--window);font-size:18px}
-  #card .w{font-size:clamp(34px,5vw,60px);color:var(--paper);line-height:1.1;text-shadow:0 0 24px rgba(247,249,239,.25)}
-  #card .n{font-size:19px;color:var(--paper);font-weight:600;margin-top:3px}#card .e{font-size:15px;color:var(--brass)}
-  /* форма, общая для нескольких языков → выбор языка чипами */
-  #card .many{margin-top:10px}
-  #card .many-n{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--window);margin-bottom:7px}
-  #card .chips{display:flex;flex-wrap:wrap;gap:6px;max-height:132px;overflow-y:auto}
-  #card .chip{height:32px;padding:0 12px;border:1px solid rgba(210,183,115,.34);border-radius:8px;
-    background:transparent;color:var(--telegrey);font:inherit;font-size:12px;cursor:pointer;white-space:nowrap}
-  #card .chip[aria-current="true"]{background:var(--brass);color:#1a1f23;border-color:var(--brass);font-weight:600}
-  #card .rows{margin-top:10px;font-size:13px;display:grid;grid-template-columns:auto 1fr;gap:3px 14px}#card .rows b{color:var(--window);font-weight:600}
-  #card .ver{margin-top:9px;display:inline-block;font-size:11px;padding:2px 9px;border-radius:10px}
-  .ver-ok{background:var(--brass);color:#1a1f23}.ver-warn{background:var(--red);color:#fff}
+  /* — карточка языка: типографика по дизайн-коду 2026-05-12 —
+     Nolde — только само написание, 21 Cent — читаемый текст, 20 Kopeek — подписи и годы.
+     Красный точечно: метка «ждёт проверки», не заливка. */
+  #card{position:fixed;left:50%;bottom:-880px;transform:translateX(-50%);z-index:6;
+    width:min(620px,94vw);transition:bottom .5s cubic-bezier(.2,.7,.2,1)}
+  #card.show{bottom:26px}
+  #card{max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+    background:rgba(24,29,33,.95);backdrop-filter:blur(16px);
+    border:1px solid rgba(210,183,115,.34);border-radius:18px;
+    padding:30px 34px 28px;color:var(--telegrey);font-family:'21 Cent',system-ui,sans-serif}
+  #card::-webkit-scrollbar{width:8px}
+  #card::-webkit-scrollbar-thumb{background:rgba(210,183,115,.28);border-radius:4px}
+  #card .x{position:absolute;top:12px;right:14px;width:44px;height:44px;line-height:44px;
+    text-align:center;cursor:pointer;color:var(--window);font-size:20px;border-radius:10px}
+  #card .w{font-size:clamp(44px,6.4vw,74px);color:var(--paper);line-height:1.06;letter-spacing:.01em;
+    text-shadow:0 0 30px rgba(247,249,239,.22);word-break:break-word}
+  #card .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:12px;
+    padding-bottom:16px;border-bottom:1px solid rgba(210,183,115,.2)}
+  #card .n{font-size:21px;font-weight:700;color:var(--paper)}
+  #card .e{font-size:16px;color:var(--brass)}
+  #card .many{margin-top:18px}
+  #card .many-n{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
+    text-transform:uppercase;color:var(--window);margin-bottom:9px}
+  #card .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:140px;overflow-y:auto;padding-right:2px}
+  #card .chip{height:36px;padding:0 14px;border:1px solid rgba(210,183,115,.3);border-radius:9px;
+    background:transparent;color:var(--telegrey);font-family:'21 Cent',system-ui,sans-serif;
+    font-size:13px;cursor:pointer;white-space:nowrap}
+  #card .chip[aria-current="true"]{background:var(--brass);color:#1a1f23;border-color:var(--brass);font-weight:700}
+  #card .rows{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:9px 20px;align-items:baseline}
+  #card .rows b{font-family:'20 Kopeek',ui-monospace,monospace;font-weight:400;font-size:11px;
+    letter-spacing:.16em;text-transform:uppercase;color:var(--window);white-space:nowrap}
+  #card .rows span{font-size:15px;line-height:1.4;color:var(--telegrey)}
+  #card .ver{margin-top:18px;display:inline-flex;align-items:center;gap:8px;
+    font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+    padding:7px 14px;border-radius:11px;border:1px solid rgba(210,183,115,.4);color:var(--brass);background:none}
+  #card .ver::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--brass);flex:0 0 auto}
+  #card .ver.ver-warn{border-color:rgba(160,33,40,.65);color:#E2777C;background:none}
+  #card .ver.ver-warn::before{background:var(--red)}
+  @media (max-width:560px){ #card{padding:24px 20px 22px} }
+
   .hint{position:fixed;left:16px;bottom:11px;z-index:4;font-size:11px;color:var(--window);opacity:.55;pointer-events:none;max-width:70vw}
   .hint b{color:var(--brass)}
   #boot{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#222a30;color:var(--window);font-size:14px}
@@ -47,8 +69,8 @@
 <div id="vign"></div>
 <div id="card"><span class="x" id="cardx">✕</span>
   <div class="w" id="c_w"></div>
+  <div class="head"><span class="n" id="c_n"></span><span class="e" id="c_e"></span></div>
   <div class="many" id="c_many"><div class="many-n" id="c_manyn"></div><div class="chips" id="c_chips"></div></div>
-  <div class="n" id="c_n"></div><div class="e" id="c_e"></div>
   <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
 <div class="hint">Арт-объект МТК 38 · тяни мышью — поворот · <b>тап по слову</b> → карточка: языки этой формы и издания · настройки и композиции — панель <b>справа</b> (клавиша <b>H</b>)</div>
 <div id="boot">Загрузка канона…</div>
@@ -67,6 +89,8 @@
 <script>
 const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
 const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-fallback','noto-"+iso+"',sans-serif";
+// написание в карточке — крупный заголовок, значит Nolde (дизайн-код); в сцене остаётся 20 Kopeek
+const FF_BIG=iso=>(iso==='Latn'||iso==='Cyrl')?"'Nolde','20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":FF(iso);
 
 (document.fonts?document.fonts.ready:Promise.resolve())
   .then(()=>MTK38Data.load())
@@ -180,13 +204,15 @@ function boot(WORDS, QUOTES, source){
     pub.show(d.id);
     document.getElementById('c_n').textContent=d.n;
     document.getElementById('c_e').textContent=d.e;document.getElementById('c_e').style.fontFamily=FF(d.sc);
+    const also=(d.also&&d.also.length)?` · также ${d.also.join(', ')}`:'';
     document.getElementById('c_rows').innerHTML=
-      `<b>письмо</b><span>${d.scn} (${d.sc})</span><b>семья</b><span>${d.f}</span>`+
-      `<b>ареал</b><span>${d.r}</span><b>источник</b><span>${d.src}</span>`;
+      `<b>письмо</b><span>${d.scn}</span><b>семья</b><span>${d.f}</span>`+
+      `<b>ареал</b><span>${d.r}${also}</span>`;
     const ver=document.getElementById('c_ver'),warn=d.ver==='needs-verification';
-    ver.textContent=warn?'⚠ требует проверки носителем':'✓ '+d.ver;ver.className='ver '+(warn?'ver-warn':'ver-ok');}
+    ver.textContent=warn?'написание ждёт проверки носителем':`написание выверено · ${d.src}`;
+    ver.className='ver'+(warn?' ver-warn':'');}
   function openCard(d){
-    document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF(d.sc);
+    document.getElementById('c_w').textContent=d.w;document.getElementById('c_w').style.fontFamily=FF_BIG(d.sc);
     const langs=(d.langs&&d.langs.length>1)?d.langs:null;
     const many=document.getElementById('c_many'),chips=document.getElementById('c_chips');
     many.style.display=langs?'block':'none';
@@ -198,7 +224,7 @@ function boot(WORDS, QUOTES, source){
         b.onclick=()=>{[...chips.children].forEach((c,j)=>c.setAttribute('aria-current',j===k?'true':'false'));renderLang(l);};
         chips.appendChild(b);});
       renderLang(langs[0]);
-    } else renderLang(d);
+    } else { chips.innerHTML=''; renderLang(d); }   // иначе висят чипы прошлой карточки
     card.scrollTop=0;card.classList.add('show');}
   document.getElementById('cardx').onclick=()=>card.classList.remove('show');
 

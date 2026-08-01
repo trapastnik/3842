@@ -14,23 +14,28 @@
 */
 (function () {
   var CSS = '' +
-    '.mtkpub{margin-top:16px;padding-top:14px;border-top:1px solid rgba(210,183,115,.26);display:none}' +
+    '.mtkpub{margin-top:22px;padding-top:18px;border-top:1px solid rgba(210,183,115,.2);display:none}' +
     '.mtkpub.on{display:block}' +
-    '.mtkpub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;min-height:34px}' +
-    '.mtkpub-head>span{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--window,#9DA3A8)}' +
-    '.mtkpub-nav{display:flex;align-items:center;gap:4px}' +
-    '.mtkpub-nav button{width:36px;height:36px;border:1px solid rgba(210,183,115,.4);background:transparent;' +
-      'color:var(--brass,#D2B773);border-radius:8px;font-size:16px;cursor:pointer;font-family:inherit;padding:0}' +
-    '.mtkpub-nav button:disabled{opacity:.3}' +
-    '.mtkpub-nav i{font-style:normal;font-size:12px;color:var(--window,#9DA3A8);min-width:46px;text-align:center}' +
-    '.mtkpub-body{display:flex;gap:14px;align-items:flex-start}' +
-    '.mtkpub-cover{width:104px;flex:0 0 104px;border-radius:5px;display:none}' +
+    '.mtkpub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;min-height:38px}' +
+    '.mtkpub-head>span{font-family:\'20 Kopeek\',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;' +
+      'text-transform:uppercase;color:var(--window,#9DA3A8)}' +
+    '.mtkpub-nav{display:flex;align-items:center;gap:6px}' +
+    '.mtkpub-nav button{width:38px;height:38px;border:1px solid rgba(210,183,115,.34);background:transparent;' +
+      'color:var(--brass,#D2B773);border-radius:9px;font-size:17px;cursor:pointer;font-family:inherit;padding:0;line-height:1}' +
+    '.mtkpub-nav button:disabled{opacity:.28}' +
+    '.mtkpub-nav i{font-style:normal;font-family:\'20 Kopeek\',ui-monospace,monospace;font-size:12px;' +
+      'color:var(--window,#9DA3A8);min-width:48px;text-align:center}' +
+    '.mtkpub-body{display:flex;gap:20px;align-items:flex-start}' +
+    '.mtkpub-cover{width:132px;flex:0 0 132px;border-radius:3px;display:none;' +
+      'border:1px solid rgba(210,183,115,.22);box-shadow:0 8px 26px rgba(0,0,0,.5)}' +
     '.mtkpub-cover.on{display:block}' +
     '.mtkpub-txt{flex:1 1 auto;min-width:0}' +
-    '.mtkpub-nat{font-size:15px;color:var(--paper,#F7F9EF);line-height:1.35}' +
-    '.mtkpub-ru{font-size:13px;color:#CFD0CF;margin-top:5px;line-height:1.35}' +
-    '.mtkpub-imp{font-size:12px;color:var(--window,#9DA3A8);margin-top:7px}' +
-    '.mtkpub-none{font-size:12px;color:var(--window,#9DA3A8);font-style:italic}';
+    '.mtkpub-nat{font-size:18px;line-height:1.35;color:var(--paper,#F7F9EF);white-space:pre-line}' +
+    '.mtkpub-ru{font-size:15px;line-height:1.4;color:#CFD0CF;margin-top:8px}' +
+    '.mtkpub-imp{font-family:\'20 Kopeek\',ui-monospace,monospace;font-size:12px;letter-spacing:.04em;' +
+      'color:var(--brass,#D2B773);margin-top:12px}' +
+    '.mtkpub-imp em{font-style:normal;color:var(--window,#9DA3A8)}' +
+    '.mtkpub-none{font-size:14px;color:var(--window,#9DA3A8);font-style:italic}';
 
   function create() {
     if (!document.getElementById('mtkpub-css')) {
@@ -72,15 +77,17 @@
       } else { img.classList.remove('on'); img.removeAttribute('src'); }
 
       if (p.titleNative || p.titleRu) {
-        q('.mtkpub-nat').textContent = p.titleNative || '';
-        q('.mtkpub-ru').textContent = p.titleRu ? (p.titleNative ? '— ' + p.titleRu : p.titleRu) : '';
+        // если заглавия на языке издания нет — крупно ставим русское, а не пустую строку
+        q('.mtkpub-nat').textContent = p.titleNative || p.titleRu;
+        q('.mtkpub-ru').textContent = (p.titleNative && p.titleRu) ? p.titleRu : '';
       } else {
         q('.mtkpub-nat').innerHTML = '<span class="mtkpub-none">описания издания в источнике нет</span>';
         q('.mtkpub-ru').textContent = '';
       }
       var imp = [p.cityRu || p.cityNative, p.publisherRu || p.publisherNative, p.year]
-        .filter(Boolean).join(', ');
-      q('.mtkpub-imp').textContent = imp + (p.area ? (imp ? ' · ' : '') + p.area : '');
+        .filter(Boolean).join(' · ');
+      q('.mtkpub-imp').innerHTML = imp
+        + (p.area ? (imp ? ' <em>· </em>' : '') + '<em>' + p.area + '</em>' : '');
     }
 
     q('.p').onclick = function (e) { e.stopPropagation(); if (idx > 0) { idx--; render(); } };
