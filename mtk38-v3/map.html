@@ -21,6 +21,7 @@
 <div id="grain"></div>
 <div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>тап</b> → карточка · <b>T</b> параметры</div>
 <div id="err"></div>
+<script src="../assets/shared/lib/projection.js"></script>
 <script type="module">
 import { loadWords, loadPublications } from './engine/data.js?v=20260801';
 import { createCard } from './engine/card.js?v=20260801';
@@ -44,16 +45,20 @@ try {
   let geojson = null, reliefImg = null, physicalImg = null;
   try { geojson = await (await fetch('../data/ne_110m_countries.geojson')).json(); } catch (_) {}
   const loadImg = (u) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = u; });
-  loadImg('../assets/mtk38/textures/earth-relief.jpg').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
-  loadImg('../assets/mtk38/textures/earth-physical.jpg').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-relief-wt.webp').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-physical-wt.webp').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
 
   let W = 0, H = 0, dpr = 1;
   const map = { worldW: 0, worldH: 0, baseW: 0, zoom: 1, camX: 0, camY: 0, camVX: 0, camVY: 0, camYAnchor: 0, dragging: false, cache: null };
-  const project = (lat, lng) => ({ x: ((lng + 180) / 360) * map.worldW, y: ((90 - lat) / 180) * map.worldH });
+  // Единая проекция проекта — Winkel Tripel из assets/shared/lib/projection.js (как в МТК 41).
+  // Аспект берём только из WT.ASPECT, локальной математики проекции здесь нет.
+  const WT = MtkProjection.WinkelTripel;
+  const project = (lat, lng) => WT.project(lat, lng, map.worldW, map.worldH);
 
   // подложка кэшируется в ФИКС. разрешении (масштабируется при зуме); текст векторный → чёткий
   function rebuildCache() {
-    const CW = 4096, CH = 2048;
+    const CW = 4096, CH = Math.round(CW / WT.ASPECT);
+    const proj = (lat, lng) => WT.project(lat, lng, CW, CH);
     const off = document.createElement('canvas'); off.width = CW; off.height = CH;
     const g = off.getContext('2d');
     const s = Math.round(P.bg);
@@ -72,23 +77,39 @@ try {
           if (!ring || ring.length < 2) continue;
           g.beginPath(); let px = null;
           for (let k = 0; k < ring.length; k++) {
-            const x = ((ring[k][0] + 180) / 360) * CW, y = ((90 - ring[k][1]) / 180) * CH;
-            if (px === null || Math.abs(x - px) > CW * 0.5) g.moveTo(x, y); else g.lineTo(x, y); px = x;
+            const pt = proj(ring[k][1], ring[k][0]);      // порядок (lat, lng) — обратен GeoJSON
+            if (px === null || Math.abs(pt.x - px) > CW * 0.5) g.moveTo(pt.x, pt.y); else g.lineTo(pt.x, pt.y);
+            px = pt.x;
           }
           if (P.base === 'countries') { g.closePath(); g.fill(); }
           g.stroke();
         }
       }
     }
+    // сетка: в Winkel Tripel меридианы и параллели — кривые, поэтому сэмплируем их,
+    // а не рисуем прямыми, как было в equirectangular
     g.strokeStyle = cc(PAL.brass, 0.09); g.lineWidth = 1.4; g.setLineDash([4, 26]);
-    g.beginPath(); g.moveTo(0, CH * 0.5); g.lineTo(CW, CH * 0.5); g.stroke();
-    for (let lng = -180; lng <= 180; lng += 30) { const x = ((lng + 180) / 360) * CW; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, CH); g.stroke(); }
+    g.beginPath();
+    for (let lng = -180; lng <= 180; lng += 2) { const p = proj(0, lng); lng === -180 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y); }
+    g.stroke();
+    for (let lng = -180; lng <= 180; lng += 30) {
+      g.beginPath();
+      for (let lat = -90; lat <= 90; lat += 2) { const p = proj(lat, lng); lat === -90 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y); }
+      g.stroke();
+    }
     g.setLineDash([]);
     map.cache = off;
   }
 
   // zoom=1 → весь мир по ширине вьюпорта; zoom>1 → крупнее (точки расходятся → деклаттер показывает больше подписей)
-  function applyWorld() { map.worldW = map.baseW * map.zoom; map.worldH = map.worldW / 2; }
+  function applyWorld() { map.worldW = map.baseW * map.zoom; map.worldH = map.worldW / WT.ASPECT; }
+  // Winkel Tripel — НЕ цилиндрическая: мир не заворачивается по долготе, поэтому
+  // камеру по X теперь зажимаем так же, как по Y (в equirect здесь был wrap).
+  function clampCamX() {
+    if (map.worldW <= W) { map.camX = (map.worldW - W) * 0.5; return; }
+    const m = map.worldW * 0.03;
+    map.camX = Math.max(-m, Math.min(map.worldW - W + m, map.camX));
+  }
   function clampCamY() {
     if (map.worldH < H) { map.camY = map.camYAnchor; }
     else { const maxY = map.worldH - H + map.worldH * 0.04, minY = -map.worldH * 0.04; map.camY = Math.max(minY, Math.min(maxY, map.camY)); }
@@ -103,9 +124,9 @@ try {
     map.camYAnchor = project(20, 0).y - H / 2;     // ВЕСЬ МИР: вертикаль сдвинута к северу (там масса языков)
     if (oldW < 2) { map.camX = 0; map.camY = map.camYAnchor; }   // старт — нулевой меридиан в центре
     else { map.camX *= map.worldW / oldW; map.camY = map.worldH < H ? map.camYAnchor : map.camY * map.worldW / oldW; }   // ресайз — сохранить позицию
-    clampCamY();
+    clampCamY(); clampCamX();
   }
-  addEventListener('resize', resize);
+  addEventListener("resize", resize);
 
   function dynamics(dt) {
     if (map.dragging) return;
@@ -113,23 +134,17 @@ try {
     map.camVX *= Math.pow(0.91, dt * 60); map.camVY *= Math.pow(0.91, dt * 60);
     if (Math.abs(map.camVX) < 0.5) map.camVX = 0; if (Math.abs(map.camVY) < 0.5) map.camVY = 0;
     if (map.worldH < H) map.camVY = 0;
-    clampCamY();
-    if (map.camX < 0) map.camX += map.worldW; if (map.camX >= map.worldW) map.camX -= map.worldW;
+    clampCamY(); clampCamX();
   }
   function toScreen(lat, lng) {
-    const w = project(lat, lng); let x = w.x - map.camX;
-    // привести к копии, ближайшей к ЦЕНТРУ вьюпорта (W/2), а не к нулю — иначе точки
-    // восточнее центра улетали за левый край и отсекались (появлялись только при панораме).
-    const c = W / 2, hw = map.worldW / 2;
-    while (x < c - hw) x += map.worldW;
-    while (x > c + hw) x -= map.worldW;
-    return { x, y: w.y - map.camY };
+    const w = project(lat, lng);
+    return { x: w.x - map.camX, y: w.y - map.camY };
   }
 
   function drawBase() {
     if (!map.cache) return;
     ctx.save(); ctx.globalAlpha = 0.9; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    for (const off of [-map.worldW, 0, map.worldW]) ctx.drawImage(map.cache, off - map.camX, -map.camY, map.worldW, map.worldH);
+    ctx.drawImage(map.cache, -map.camX, -map.camY, map.worldW, map.worldH);
     ctx.restore();
   }
   function drawRoutes() {
@@ -214,10 +229,10 @@ try {
     map.zoom = Math.max(1, Math.min(16, map.zoom * factor));
     applyWorld();
     map.camX = u * map.worldW - px; map.camY = v * map.worldH - py;
-    map.camVX = map.camVY = 0; clampCamY();
+    map.camVX = map.camVY = 0; clampCamY(); clampCamX();
   }
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
-  canvas.addEventListener('dblclick', (e) => { e.preventDefault(); map.zoom = 1; applyWorld(); map.camX = 0; map.camY = map.camYAnchor; clampCamY(); });
+  canvas.addEventListener('dblclick', (e) => { e.preventDefault(); map.zoom = 1; applyWorld(); map.camX = 0; map.camY = map.camYAnchor; clampCamY(); clampCamX(); });
 
   // pan (1 палец) + pinch-zoom (2 пальца) + тап
   const ptrs = new Map(); let pinchD = 0, dx0 = 0, dy0 = 0, dt0 = 0, moved = false, lx = 0, ly = 0, lt = 0;

@@ -35,6 +35,7 @@
   <div class="w" id="m_w"></div><div class="n" id="m_n"></div><div class="e" id="m_e"></div>
   <div class="rows" id="m_rows"></div><span class="ver" id="m_ver"></span></div></div>
 <div class="hint">Карта мира · тяни — pan · настройки — панель <b>справа</b>, <b>тап по точке</b> → карточка языка</div>
+<script src="../../assets/shared/lib/projection.js"></script>
 <script src="../shared/data.js"></script>
 <script src="../shared/panel.js"></script>
 <script src="../shared/quotes.js"></script>
@@ -52,25 +53,28 @@ let W=0,H=0,dpr=1,start=performance.now(),prev=0;
 const P={point:1.0,glow:0.7,guides:0.5,grain:0.5,vign:0.55,bg:43,conn:true};
 const map={worldW:0,worldH:0,camX:0,camY:0,camVX:0,camVY:0,camYAnchor:0,dragging:false,cached:null};
 let hoverI=-1,lpx=0,lpy=0,lpt=0;
-function project(lat,lng){return{x:((lng+180)/360)*map.worldW,y:((90-lat)/180)*map.worldH};}
+// Единая проекция проекта — Winkel Tripel (assets/shared/lib/projection.js, как в МТК 41)
+const WT=MtkProjection.WinkelTripel;
+function project(lat,lng){return WT.project(lat,lng,map.worldW,map.worldH);}
 function buildCache(){const off=document.createElement('canvas');off.width=Math.max(1,Math.floor(map.worldW));off.height=Math.max(1,Math.floor(map.worldH));
   const g=off.getContext('2d');g.fillStyle='rgba(247,249,239,0.015)';g.fillRect(0,0,off.width,off.height);
   g.strokeStyle=cc(PAL.window,0.3);g.lineWidth=0.8;g.fillStyle='rgba(157,163,168,0.06)';
   for(const f of (GEO.features||[])){const gm=f.geometry;if(!gm)continue;
     const polys=gm.type==='Polygon'?[gm.coordinates]:gm.type==='MultiPolygon'?gm.coordinates:null;if(!polys)continue;
     for(const poly of polys){const ring=poly[0];if(!ring||ring.length<2)continue;g.beginPath();
-      for(let k=0;k<ring.length;k++){const[lng,lat]=ring[k];const x=((lng+180)/360)*map.worldW,y=((90-lat)/180)*map.worldH;k?g.lineTo(x,y):g.moveTo(x,y);}
+      for(let k=0;k<ring.length;k++){const[lng,lat]=ring[k];const p=project(lat,lng);k?g.lineTo(p.x,p.y):g.moveTo(p.x,p.y);}
       g.closePath();g.fill();g.stroke();}}
   g.strokeStyle=cc(PAL.brass,0.10*P.guides*2);g.lineWidth=0.6;g.setLineDash([2,14]);
-  g.beginPath();g.moveTo(0,map.worldH*0.5);g.lineTo(map.worldW,map.worldH*0.5);g.stroke();
-  for(let lng=-180;lng<=180;lng+=30){const x=((lng+180)/360)*map.worldW;g.beginPath();g.moveTo(x,0);g.lineTo(x,map.worldH);g.stroke();}
+  // в Winkel Tripel меридианы и параллели — кривые, поэтому сэмплируем
+  g.beginPath();for(let lng=-180;lng<=180;lng+=2){const p=project(0,lng);lng===-180?g.moveTo(p.x,p.y):g.lineTo(p.x,p.y);}g.stroke();
+  for(let lng=-180;lng<=180;lng+=30){g.beginPath();for(let lat=-90;lat<=90;lat+=2){const p=project(lat,lng);lat===-90?g.moveTo(p.x,p.y):g.lineTo(p.x,p.y);}g.stroke();}
   g.setLineDash([]);map.cached=off;}
 function resize(){const r=cv.getBoundingClientRect();dpr=Math.min(devicePixelRatio||1,2);W=Math.max(1,Math.floor(r.width));H=Math.max(1,Math.floor(r.height));
   cv.width=Math.floor(W*dpr);cv.height=Math.floor(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
   blurC.width=cv.width;blurC.height=cv.height;
   const padLng=10,padLat=8;let mnLa=90,mxLa=-90,mnLo=180,mxLo=-180;
   for(const p of POINTS){mnLa=Math.min(mnLa,p.lat);mxLa=Math.max(mxLa,p.lat);mnLo=Math.min(mnLo,p.lng);mxLo=Math.max(mxLo,p.lng);}
-  const lngSpan=(mxLo+padLng)-(mnLo-padLng);map.worldW=W*(360/lngSpan);map.worldH=map.worldW/2;
+  const lngSpan=(mxLo+padLng)-(mnLo-padLng);map.worldW=W*(360/lngSpan);map.worldH=map.worldW/WT.ASPECT;
   const tl=project(mxLa+padLat,mnLo-padLng),br=project(mnLa-padLat,mxLo+padLng);
   map.camX=(tl.x+br.x)/2-W/2;map.camY=(tl.y+br.y)/2-H/2;map.camYAnchor=map.camY;buildCache();}
 addEventListener('resize',resize);
@@ -78,22 +82,34 @@ function dynamics(dt){if(map.dragging)return;map.camX+=map.camVX*dt;map.camY+=ma
   map.camVX*=Math.pow(0.91,dt*60);map.camVY*=Math.pow(0.91,dt*60);
   if(Math.abs(map.camVX)<0.5)map.camVX=0;if(Math.abs(map.camVY)<0.5)map.camVY=0;
   if(map.worldH<H){map.camY=map.camYAnchor;map.camVY=0;}else{const mx=map.worldH-H+map.worldH*0.04,mn=-map.worldH*0.04;if(map.camY>mx)map.camY=mx;if(map.camY<mn)map.camY=mn;}
-  if(map.camX<0)map.camX+=map.worldW;if(map.camX>=map.worldW)map.camX-=map.worldW;}
-function toScreen(lat,lng){const w=project(lat,lng);let x=w.x-map.camX;if(x<-map.worldW*0.5)x+=map.worldW;else if(x>map.worldW*0.5)x-=map.worldW;return{x,y:w.y-map.camY};}
+  clampCamX();}
+// Winkel Tripel — НЕ цилиндрическая: мир не заворачивается по долготе (был wrap)
+function clampCamX(){if(map.worldW<=W){map.camX=(map.worldW-W)*0.5;return;}const m=map.worldW*0.03;map.camX=Math.max(-m,Math.min(map.worldW-W+m,map.camX));}
+function toScreen(lat,lng){const w=project(lat,lng);return{x:w.x-map.camX,y:w.y-map.camY};}
 function drawBase(){if(!map.cached)return;ctx.save();ctx.globalAlpha=0.85;
-  ctx.drawImage(map.cached,-map.camX,-map.camY);ctx.drawImage(map.cached,-map.camX+map.worldW,-map.camY);ctx.drawImage(map.cached,-map.camX-map.worldW,-map.camY);ctx.restore();}
+  ctx.drawImage(map.cached,-map.camX,-map.camY);ctx.restore();}
 function drawConn(){if(!P.conn)return;ctx.save();ctx.strokeStyle=cc(PAL.brass,0.13);ctx.lineWidth=0.8;ctx.setLineDash([2,8]);
   const m=POINTS[0];for(const p of POINTS){if(p===m||p.wt<2)continue;const a=toScreen(m.lat,m.lng),b=toScreen(p.lat,p.lng);
     if(Math.abs(a.x-b.x)>W*1.2)continue;ctx.beginPath();ctx.moveTo(a.x,a.y);ctx.lineTo(b.x,b.y);ctx.stroke();}ctx.setLineDash([]);ctx.restore();}
 function drawPoints(){const cx=W*0.5,cy=H*0.5,sh=Math.min(W,H);
-  for(let i=0;i<POINTS.length;i++){const p=POINTS[i],s=toScreen(p.lat,p.lng);
+  // Деклаттер: со 128 языками подписи в Европе и Южной Азии сливались в кашу.
+  // Маркер рисуем всем (тап работает всегда), подпись — только если не легла на соседнюю;
+  // языки ООН и крупные пишем всегда. Порядок: ООН → вес → остальные.
+  const drawn=[];
+  const order=POINTS.map((p,i)=>i).sort((a,b)=>((POINTS[b].un?1:0)-(POINTS[a].un?1:0))||(POINTS[b].wt-POINTS[a].wt));
+  for(const i of order){const p=POINTS[i],s=toScreen(p.lat,p.lng);
     if(s.x<-200||s.x>W+200||s.y<-100||s.y>H+100)continue;
     const d=Math.hypot(s.x-cx,s.y-cy),prox=Math.max(0,1-d/(sh*0.55)),hov=i===hoverI;
     ctx.beginPath();ctx.arc(s.x,s.y,(2+p.wt*1.2+prox*2.5)*P.point,0,Math.PI*2);ctx.fillStyle=PAL.red;ctx.globalAlpha=0.86;ctx.fill();ctx.globalAlpha=1;
     const bs=(sh*(0.018+p.wt*0.008)+prox*sh*0.012)*P.point,wt=p.wt>=2?600:400;
     ctx.font=FF(p.sc,bs,wt);ctx.textAlign='left';ctx.textBaseline='middle';
+    const ox=bs*0.4,oy=-bs*0.15;
+    const box={x:s.x+ox,y:s.y+oy-bs*0.6,w:ctx.measureText(p.w).width+4,h:bs*1.6};
+    const important=p.un||p.wt>=2||hov;
+    if(!important&&drawn.some(q=>box.x<q.x+q.w&&box.x+box.w>q.x&&box.y<q.y+q.h&&box.y+box.h>q.y))continue;
+    drawn.push(box);
     ctx.shadowColor=cc(PAL.black,0.75);ctx.shadowBlur=8+prox*14;ctx.fillStyle=hov?PAL.brass:PAL.paper;ctx.globalAlpha=0.5+prox*0.5;
-    const ox=bs*0.4,oy=-bs*0.15;ctx.fillText(p.w,s.x+ox,s.y+oy);
+    ctx.fillText(p.w,s.x+ox,s.y+oy);
     if(prox>0.25||hov){ctx.font=`600 ${bs*0.42}px "20 Kopeek",monospace`;ctx.shadowBlur=4;ctx.fillStyle=cc(PAL.brass,0.6+prox*0.3);ctx.fillText(p.n,s.x+ox,s.y+oy+bs*0.62);}
     ctx.globalAlpha=1;ctx.shadowBlur=0;}}
 function post(){ // bloom (lighter blurred) + зерно + виньетка
