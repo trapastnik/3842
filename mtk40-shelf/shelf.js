@@ -25,10 +25,9 @@ function adjustHex(hex, delta) {
 }
 function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
 
-function spineWidth(item, portrait) {
+function spineWidth(item) {
   const p = Math.max(8, item.pages_approx || 80);
   const base = 14 + Math.log2(p) * 7;
-  // в портрете оставляем landscape-ширину — высокие секции уже делают корешки вытянутее.
   return Math.max(22, Math.min(110, base));
 }
 
@@ -70,10 +69,6 @@ class ShelfApp {
     this.cardCloseEl.addEventListener("click", () => this.hideCard());
   }
 
-  isPortrait() {
-    return this.H > this.W;
-  }
-
   resize() {
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = rect.width;
@@ -86,7 +81,7 @@ class ShelfApp {
   }
 
   titleAreaPx() {
-    return (this.isPortrait() ? 150 : 110) * this.dpr;
+    return 110 * this.dpr;
   }
 
   shelfBaseHeight() {
@@ -94,13 +89,12 @@ class ShelfApp {
   }
 
   layoutShelf(shelf) {
-    const portrait = this.isPortrait();
     const baseH = this.shelfBaseHeight();
-    const maxSpineH = baseH * (portrait ? 0.82 : 0.78);
+    const maxSpineH = baseH * 0.78;
     let x = 0;
     shelf.spineRects = [];
     for (const item of shelf.items) {
-      const w = spineWidth(item, portrait) * this.dpr;
+      const w = spineWidth(item) * this.dpr;
       const hRatio = (item.height_cm || 22) / 22;
       const h = maxSpineH * Math.max(0.66, Math.min(1.18, hRatio));
       shelf.spineRects.push({ item, x, w, h });

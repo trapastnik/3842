@@ -117,10 +117,6 @@ html, body {
   text-transform: uppercase;
   color: rgba(247, 249, 239, 0.62);
 }
-@media (orientation: portrait) {
-  .title__sub { display: none; }
-}
-
 .card {
   position: absolute;
   right: 32px;
