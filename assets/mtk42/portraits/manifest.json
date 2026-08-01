@@ -288,17 +288,19 @@
     "title": "Роллан, Ромен",
     "lang": "ru",
     "image": "rolland.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Romain_Rolland_1915.jpg",
-    "w": 280,
-    "h": 396
+    "source_url": "https://commons.wikimedia.org/wiki/File:Romain_Rolland_de_face_au_balcon,_Meurisse,_1914_retouche.jpg",
+    "w": 760,
+    "h": 950,
+    "license": "Public domain · Agence Meurisse, 1914 (Gallica); кадрирован"
   },
   "keynes": {
     "title": "Кейнс, Джон Мейнард",
     "lang": "ru",
     "image": "keynes.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Keynes_1933.jpg",
-    "w": 289,
-    "h": 300
+    "source_url": "https://commons.wikimedia.org/wiki/File:John_Maynard_Keynes_(1929).jpg",
+    "w": 749,
+    "h": 999,
+    "license": "Public domain · 1929"
   },
   "einstein": {
     "title": "Эйнштейн, Альберт",
@@ -416,9 +418,10 @@
     "title": "Суханов, Николай Николаевич",
     "lang": "ru",
     "image": "sukhanov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c1/Suhanov.jpg",
-    "w": 118,
-    "h": 193
+    "source_url": "https://commons.wikimedia.org/wiki/File:Nikolaj_N._Suchanov_Himmer.jpeg",
+    "w": 240,
+    "h": 375,
+    "license": "Public domain · ок. 1925"
   },
   "lukacs": {
     "title": "Лукач, Дьёрдь",
@@ -605,9 +608,10 @@
     "title": "Фишер, Луис",
     "lang": "ru",
     "image": "fischer.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/50/%D0%9B%D1%83%D0%B8%D1%81_%D0%A4%D0%B8%D1%88%D0%B5%D1%80_%281896%E2%80%941970%29.png",
-    "w": 271,
-    "h": 325
+    "source_url": "https://commons.wikimedia.org/wiki/File:Louis_Fischer_1944.jpg",
+    "w": 472,
+    "h": 686,
+    "license": "Public domain · 1944; снята архивная рамка"
   },
   "schapiro": {
     "title": "Leonard_Schapiro",
@@ -1096,6 +1100,10 @@
   "prilepin": {
     "title": "Прилепин, Захар",
     "lang": "ru",
-    "image": null
+    "image": "prilepin.jpg",
+    "source_url": "https://commons.wikimedia.org/wiki/File:%D0%97%D0%B0%D1%85%D0%B0%D1%80_%D0%9F%D1%80%D0%B8%D0%BB%D0%B5%D0%BF%D0%B8%D0%BD_(Spravedlivo.ru)_(cropped).jpg",
+    "license": "CC BY 4.0 · Spravedlivo.ru",
+    "w": 876,
+    "h": 1200
   }
 }
