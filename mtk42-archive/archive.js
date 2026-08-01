@@ -198,7 +198,12 @@ function openDetail(it) {
   const workSection = $('[data-bind="work-section"]', d);
   if (it.keyWork) {
     workSection.hidden = false;
-    $('[data-bind="work"]', d).textContent = `${it.keyWork} · ${it.year}`;
+    // Год дописываем, только если в самой библиографии его нет: у 110 из 140
+    // записей он уже в конце ссылки, и выходило «М., 2025 · 2025». Там, где
+    // год записи и год издания расходятся (дневник 1917 / публикация 1922,
+    // высказывание 1930 / сборник 1971), приписка остаётся и несёт смысл.
+    const hasYear = new RegExp(`\\b${it.year}\\b`).test(it.keyWork);
+    $('[data-bind="work"]', d).textContent = hasYear ? it.keyWork : `${it.keyWork} · ${it.year}`;
   } else {
     workSection.hidden = true;
   }

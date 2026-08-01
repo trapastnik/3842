@@ -584,22 +584,3 @@ html, body {
 .legend__dot--transformed { background: var(--window); }
 .legend__dot--closed { background: var(--red); }
 .legend__dot--private { background: repeating-linear-gradient(90deg, var(--brass) 0 5px, rgba(210, 183, 115, 0.45) 5px 9px); }
-
-/* ─── Portrait / kiosk 4K ─── */
-@media (orientation: portrait) and (min-width: 480px) {
-  :root { --label-col: 320px; }
-  .title { padding: 40px 56px 18px; }
-  .title__h { font-size: clamp(48px, 6vw, 88px); }
-  .title__sub { font-size: clamp(16px, 0.833vw, 32px); }
-  .filters { margin: 0 56px; gap: 24px; }
-  .filter { min-height: 48px; padding: 0 20px; font-size: clamp(13px, 0.677vw, 26px); }
-  .filters__counter { font-size: clamp(13px, 0.677vw, 26px); }
-  .year-axis { margin: 0 56px; height: 42px; }
-  .timeline { padding: 12px 56px 60px; }
-  .region-header { margin-top: 30px; }
-  /* row/bar/label sizes are driven by settings via CSS vars now. */
-  .legend-toggle { width: 60px; height: 60px; font-size: clamp(26px, 1.354vw, 52px); right: 40px; bottom: 40px; }
-  .legend { right: 40px; bottom: 110px; width: min(clamp(460px, 23.958vw, 920px), calc(100% - 80px)); }
-  .settings-toggle { width: 60px; height: 60px; font-size: clamp(26px, 1.354vw, 52px); right: 40px; bottom: 110px; }
-  .settings { width: min(clamp(420px, 21.875vw, 840px), 100%); padding: 28px 26px; }
-}

@@ -178,8 +178,9 @@ function setupCanvas() {
   canvas.height = Math.floor(rect.height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   // Пересчёт worldW/worldH. targetLngSpan = сколько градусов долготы влезает
-  // в ширину canvas'а при zoom=1. 180° — стандарт mtk41-hier (landscape).
-  const targetLngSpan = rect.height > rect.width ? 130 : 180;
+  // в ширину canvas'а при zoom=1. 180° — стандарт mtk41-hier; проект целиком
+  // в горизонтали 3840×2160 (COORDINATION 2026-07-22), portrait-ветки нет.
+  const targetLngSpan = 180;
   map.worldW = (rect.width / targetLngSpan) * 360;
   map.worldH = map.worldW / currentAspect();
 }

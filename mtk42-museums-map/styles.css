@@ -435,14 +435,3 @@ html, body {
 .legend__dot--transformed { background: var(--window); }
 .legend__dot--closed { background: var(--red); }
 .legend__dot--private   { background: rgba(210, 183, 115, 0.55); }
-
-/* ─── Portrait / kiosk 4K ─── */
-@media (orientation: portrait) and (min-width: 480px) {
-  .title { top: 44px; left: 56px; right: 56px; }
-  .title__h { font-size: clamp(48px, 6vw, 88px); }
-  .title__sub { font-size: clamp(16px, 0.833vw, 32px); }
-  .filters { left: 56px; bottom: 56px; }
-  .filter { min-height: 52px; padding: 0 22px; font-size: clamp(13px, 0.677vw, 26px); }
-  .legend-toggle { width: 60px; height: 60px; font-size: clamp(26px, 1.354vw, 52px); right: 40px; bottom: 40px; }
-  .legend { right: 40px; bottom: 110px; width: min(clamp(460px, 23.958vw, 920px), calc(100% - 80px)); }
-}
