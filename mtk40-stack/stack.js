@@ -12,6 +12,12 @@ const BUCKET_META = {
   "in-library":  { label: "ЧИТАЛ", accent: "#5D6970" },
 };
 
+// Базовая ширина, под которую подобраны все размеры ниже. Реальный кадр —
+// киоск 3840×2160 (49", dpr 1); превью в браузере обычно уже. Масштаб `this.s`
+// приводит одно к другому: композиция на обоих одинакова, меняется только
+// количество пикселей. `this.dpr` остаётся только для css→canvas.
+const DESIGN_W = 1280;
+
 // изометрия 30°
 const ISO_COS = Math.cos(Math.PI / 6); // 0.866
 const ISO_SIN = Math.sin(Math.PI / 6); // 0.5
@@ -74,6 +80,7 @@ class StackApp {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
+    this.s = this.dpr * (rect.width / DESIGN_W);
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
     this.canvas.width = this.W;
@@ -85,8 +92,8 @@ class StackApp {
     // Три башни в линию по оси X (мира). Сортировка внутри по году ↓ (старые сверху, чтобы новые были ближе к зрителю и видимее).
     // Чтобы стопки не вырастали слишком высокими, разбиваем каждую на 2 столбика.
     const buckets = ["by-lenin", "about-lenin", "in-library"];
-    const towerSpacingX = TOWER_SPACING_X * this.dpr;
-    const colSpacingZ = 145 * this.dpr;
+    const towerSpacingX = TOWER_SPACING_X * this.s;
+    const colSpacingZ = 145 * this.s;
     const baseY = 0;
     this.books = [];
 
@@ -102,9 +109,9 @@ class StackApp {
       for (let i = 0; i < items.length; i++) {
         const item = items[i];
         const colIdx = i % cols;
-        const t = thicknessOf(item) * this.dpr;
-        const w = coverWidth(item) * this.dpr;
-        const d = coverDepth(item) * this.dpr;
+        const t = thicknessOf(item) * this.s;
+        const w = coverWidth(item) * this.s;
+        const d = coverDepth(item) * this.s;
         const yBottom = colHeights[colIdx];
         const colZ = (cols === 1 ? 0 : (colIdx === 0 ? -colSpacingZ / 2 : colSpacingZ / 2));
         this.books.push({
@@ -156,7 +163,7 @@ class StackApp {
     this.panY += dy;
     this.dragging.lastX = x;
     this.dragging.lastY = y;
-    if (Math.hypot(x - this.dragging.startX, y - this.dragging.startY) > 6 * this.dpr) {
+    if (Math.hypot(x - this.dragging.startX, y - this.dragging.startY) > 6 * this.s) {
       this.dragging.moved = true;
     }
   };
@@ -169,7 +176,7 @@ class StackApp {
       const hit = this.hitTest(x, y);
       if (hit) {
         this.activeId = hit.item.id;
-        this.lift.set(hit.item.id, { current: 0, target: 32 * this.dpr });
+        this.lift.set(hit.item.id, { current: 0, target: 32 * this.s });
         this.showCard(hit.item);
       } else {
         this.deselect();
@@ -261,12 +268,12 @@ class StackApp {
     for (let bi = 0; bi < towers.length; bi++) {
       const towerX = (bi - 1) * this.towerSpacingX;
       const meta = BUCKET_META[towers[bi]];
-      const baseProj = this.project(towerX, 0, 130 * this.dpr);
+      const baseProj = this.project(towerX, 0, 130 * this.s);
       ctx.save();
       ctx.fillStyle = meta.accent;
-      ctx.font = `600 ${18 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.font = `600 ${18 * this.s}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
-      ctx.fillText(meta.label, baseProj.sx, baseProj.sy + 22 * this.dpr);
+      ctx.fillText(meta.label, baseProj.sx, baseProj.sy + 22 * this.s);
       ctx.restore();
     }
 
@@ -284,7 +291,7 @@ class StackApp {
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.5)";
       ctx.beginPath();
-      ctx.ellipse(center.sx, center.sy + 6 * this.dpr, 210 * this.dpr, 56 * this.dpr, 0, 0, Math.PI * 2);
+      ctx.ellipse(center.sx, center.sy + 6 * this.s, 210 * this.s, 56 * this.s, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
@@ -339,8 +346,8 @@ class StackApp {
       ctx.fill();
       // тонкие горизонтальные линии — листы
       ctx.strokeStyle = "rgba(120,110,90,0.3)";
-      ctx.lineWidth = 0.5 * this.dpr;
-      const layers = Math.max(3, Math.min(12, Math.round(book.t / (3 * this.dpr))));
+      ctx.lineWidth = 0.5 * this.s;
+      const layers = Math.max(3, Math.min(12, Math.round(book.t / (3 * this.s))));
       for (let i = 1; i < layers; i++) {
         const yMid = yBot + (book.t * i) / layers;
         const a = this.project(x2, yMid, z1);
@@ -369,9 +376,9 @@ class StackApp {
 
       // тиснёная рамка
       ctx.strokeStyle = adjustHex(c, isOther ? -10 : 32);
-      ctx.lineWidth = 1.2 * this.dpr;
+      ctx.lineWidth = 1.2 * this.s;
       ctx.beginPath();
-      const inset = 9 * this.dpr;
+      const inset = 9 * this.s;
       const i1 = this.project(x1 + inset, yTop, z1 + inset);
       const i2 = this.project(x2 - inset, yTop, z1 + inset);
       const i3 = this.project(x2 - inset, yTop, z2 - inset);
@@ -388,23 +395,23 @@ class StackApp {
         const cp = this.project(book.x, yTop + 0.1, book.z);
         ctx.fillStyle = COLORS.brass;
         ctx.beginPath();
-        ctx.arc(cp.sx, cp.sy, (book.item.significance === 5 ? 5.5 : 3.5) * this.dpr, 0, Math.PI * 2);
+        ctx.arc(cp.sx, cp.sy, (book.item.significance === 5 ? 5.5 : 3.5) * this.s, 0, Math.PI * 2);
         ctx.fill();
       }
 
       // подпись по центру обложки (на топовых книгах стопки и значимых)
-      if (lift > 4 * this.dpr || book.item.significance === 5) {
+      if (lift > 4 * this.s || book.item.significance === 5) {
         const cp = this.project(book.x, yTop + 0.1, book.z);
         ctx.save();
         // лёгкий поворот по изометрической оси
         ctx.translate(cp.sx, cp.sy);
         ctx.rotate(Math.atan2(ISO_SIN, ISO_COS) - Math.PI);
         ctx.fillStyle = adjustHex(c, 100);
-        ctx.font = `400 ${15 * this.dpr}px Nolde, Georgia, serif`;
+        ctx.font = `400 ${15 * this.s}px Nolde, Georgia, serif`;
         ctx.textAlign = "center";
         ctx.textBaseline = "middle";
         let title = book.item.title;
-        const maxChars = Math.max(10, Math.floor(book.w / (this.dpr * 8)));
+        const maxChars = Math.max(10, Math.floor(book.w / (this.s * 8)));
         if (title.length > maxChars) title = title.slice(0, maxChars - 1) + "…";
         ctx.fillText(title, 0, 0);
         ctx.restore();
@@ -418,7 +425,7 @@ class StackApp {
       const p3 = this.project(x2, yTop, z2);
       const p4 = this.project(x1, yTop, z2);
       ctx.strokeStyle = COLORS.brass;
-      ctx.lineWidth = 2 * this.dpr;
+      ctx.lineWidth = 2 * this.s;
       ctx.beginPath();
       ctx.moveTo(p1.sx, p1.sy);
       ctx.lineTo(p2.sx, p2.sy);

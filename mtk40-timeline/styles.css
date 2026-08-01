@@ -38,6 +38,13 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* HTML-обвязка задана в px под ширину 1280 (см. DESIGN_W в JS). На киоске
+   3840×2160 кадр втрое шире — zoom приводит её к тем же пропорциям, что и
+   отрисованную канву. Canvas масштабируется своим `s` и zoom не затронут. */
+.title, .card, .back {
+  zoom: calc(100vw / 1280);
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -105,7 +112,7 @@ html, body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(28px, 4vw, 56px);
+  font-size: 52px;
   letter-spacing: 0.01em;
   color: var(--paper-white);
 }

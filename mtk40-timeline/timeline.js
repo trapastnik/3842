@@ -22,6 +22,12 @@ const CONN_STYLE = {
   "parallel":        { color: "#9DA3A6", width: 1.6, dash: [3, 3],      label: "параллель" },
 };
 
+// Базовая ширина, под которую подобраны все размеры ниже. Реальный кадр —
+// киоск 3840×2160 (49", dpr 1); превью в браузере обычно уже. Масштаб `this.s`
+// приводит одно к другому: композиция на обоих одинакова, меняется только
+// количество пикселей. `this.dpr` остаётся только для css→canvas.
+const DESIGN_W = 1280;
+
 const YEAR_MIN = 1840;
 const YEAR_MAX = 2025;
 
@@ -92,6 +98,7 @@ class TimelineApp {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
+    this.s = this.dpr * (rect.width / DESIGN_W);
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
     this.canvas.width = this.W;
@@ -100,13 +107,13 @@ class TimelineApp {
   }
 
   yearToX(year) {
-    const sideMargin = 60 * this.dpr;
+    const sideMargin = 60 * this.s;
     const usableW = this.W - 2 * sideMargin;
     const r = (year - this.viewYearStart) / (this.viewYearEnd - this.viewYearStart);
     return sideMargin + r * usableW;
   }
   xToYear(x) {
-    const sideMargin = 60 * this.dpr;
+    const sideMargin = 60 * this.s;
     const usableW = this.W - 2 * sideMargin;
     return this.viewYearStart + ((x - sideMargin) / usableW) * (this.viewYearEnd - this.viewYearStart);
   }
@@ -114,8 +121,8 @@ class TimelineApp {
   computeLayout() {
     // Три горизонтальные «ленты», уложенные сверху вниз:
     // by-lenin (верх), in-library (середина), about-lenin (низ)
-    const titleArea = 130 * this.dpr;
-    const bottomArea = 70 * this.dpr;
+    const titleArea = 130 * this.s;
+    const bottomArea = 70 * this.s;
     const usableH = this.H - titleArea - bottomArea;
     const order = ["by-lenin", "in-library", "about-lenin"];
     const sectionH = usableH / 3;
@@ -124,7 +131,7 @@ class TimelineApp {
       sections[order[i]] = {
         top: titleArea + i * sectionH,
         height: sectionH,
-        baseline: titleArea + (i + 1) * sectionH - 18 * this.dpr,
+        baseline: titleArea + (i + 1) * sectionH - 18 * this.s,
       };
     }
     this.layout = { sections, order };
@@ -149,7 +156,7 @@ class TimelineApp {
     }
     for (const arr of grouped.values()) {
       const sec = arr[0].sec;
-      const slotH = Math.min(28 * this.dpr, (sec.height - 30 * this.dpr) / Math.max(1, arr.length));
+      const slotH = Math.min(28 * this.s, (sec.height - 30 * this.s) / Math.max(1, arr.length));
       for (let i = 0; i < arr.length; i++) {
         arr[i].slotIdx = i;
         arr[i].slotH = slotH;
@@ -177,10 +184,10 @@ class TimelineApp {
     const y = ev.offsetY * this.dpr;
     const dx = x - this.dragging.startX;
     const dy = y - this.dragging.startY;
-    if (Math.hypot(dx, dy) > 6 * this.dpr) this.dragging.moved = true;
+    if (Math.hypot(dx, dy) > 6 * this.s) this.dragging.moved = true;
     if (this.dragging.moved) {
       // pan по времени — по горизонтали
-      const usableMain = this.W - 120 * this.dpr;
+      const usableMain = this.W - 120 * this.s;
       const yearsPer = (this.dragging.startViewEnd - this.dragging.startViewStart) / usableMain;
       const yearShift = -dx * yearsPer;
       let s = this.dragging.startViewStart + yearShift;
@@ -222,7 +229,7 @@ class TimelineApp {
   };
 
   hitTest(px, py) {
-    const r = 7 * this.dpr;
+    const r = 7 * this.s;
     for (const p of this.placedItems) {
       const x = this.yearToX(p.year);
       const y = p.sec.baseline - (p.slotIdx + 1) * p.slotH + p.slotH / 2;
@@ -281,16 +288,16 @@ class TimelineApp {
       ctx.fillRect(0, sec.top, this.W, sec.height);
       // baseline (полка)
       ctx.fillStyle = "rgba(210,183,115,0.4)";
-      ctx.fillRect(40 * this.dpr, sec.baseline, this.W - 80 * this.dpr, 1 * this.dpr);
+      ctx.fillRect(40 * this.s, sec.baseline, this.W - 80 * this.s, 1 * this.s);
       // label
       ctx.save();
       ctx.fillStyle = meta.accent;
-      ctx.font = `600 ${13 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.font = `600 ${13 * this.s}px "20 Kopeek", monospace`;
       ctx.textBaseline = "top";
-      ctx.fillText(meta.label, 28 * this.dpr, sec.top + 8 * this.dpr);
+      ctx.fillText(meta.label, 28 * this.s, sec.top + 8 * this.s);
       ctx.fillStyle = "rgba(247,249,239,0.5)";
-      ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
-      ctx.fillText(meta.note.toUpperCase(), 28 * this.dpr, sec.top + 26 * this.dpr);
+      ctx.font = `400 ${10 * this.s}px "20 Kopeek", monospace`;
+      ctx.fillText(meta.note.toUpperCase(), 28 * this.s, sec.top + 26 * this.s);
       ctx.restore();
     }
 
@@ -332,9 +339,9 @@ class TimelineApp {
   renderTimeAxis() {
     const ctx = this.ctx;
     // нижняя ось
-    const axisY = this.H - 50 * this.dpr;
+    const axisY = this.H - 50 * this.s;
     ctx.fillStyle = "rgba(210,183,115,0.6)";
-    ctx.fillRect(40 * this.dpr, axisY, this.W - 80 * this.dpr, 1 * this.dpr);
+    ctx.fillRect(40 * this.s, axisY, this.W - 80 * this.s, 1 * this.s);
 
     // годы — крупные деления каждые 10 / 5 лет в зависимости от масштаба
     const span = this.viewYearEnd - this.viewYearStart;
@@ -343,32 +350,32 @@ class TimelineApp {
 
     for (let y = Math.ceil(YEAR_MIN / stepSmall) * stepSmall; y <= YEAR_MAX; y += stepSmall) {
       const x = this.yearToX(y);
-      if (x < 30 * this.dpr || x > this.W - 30 * this.dpr) continue;
+      if (x < 30 * this.s || x > this.W - 30 * this.s) continue;
       const big = y % stepBig === 0;
       ctx.fillStyle = big ? "rgba(247,249,239,0.55)" : "rgba(247,249,239,0.18)";
-      ctx.fillRect(x, axisY, 1 * this.dpr, big ? 8 * this.dpr : 4 * this.dpr);
+      ctx.fillRect(x, axisY, 1 * this.s, big ? 8 * this.s : 4 * this.s);
       if (big) {
         ctx.fillStyle = "rgba(247,249,239,0.65)";
-        const yearFs = 10 * this.dpr;
+        const yearFs = 10 * this.s;
         ctx.font = `400 ${yearFs}px "20 Kopeek", monospace`;
         ctx.textAlign = "center";
-        ctx.fillText(String(y), x, axisY + 22 * this.dpr);
+        ctx.fillText(String(y), x, axisY + 22 * this.s);
       }
     }
     ctx.textAlign = "left";
 
     // ленинские якоря
-    const anchorFs = 10 * this.dpr;
+    const anchorFs = 10 * this.s;
     for (const t of TIMELINE_TICKS) {
       const x = this.yearToX(t.year);
-      if (x < 30 * this.dpr || x > this.W - 30 * this.dpr) continue;
+      if (x < 30 * this.s || x > this.W - 30 * this.s) continue;
       ctx.fillStyle = "rgba(160,33,40,0.7)";
-      ctx.fillRect(x, 130 * this.dpr, 1 * this.dpr, axisY - 130 * this.dpr);
+      ctx.fillRect(x, 130 * this.s, 1 * this.s, axisY - 130 * this.s);
       ctx.fillStyle = COLORS.brass;
       ctx.font = `600 ${anchorFs}px "20 Kopeek", monospace`;
       ctx.textAlign = "left";
       ctx.save();
-      ctx.translate(x + 4 * this.dpr, 124 * this.dpr);
+      ctx.translate(x + 4 * this.s, 124 * this.s);
       ctx.fillText(`${t.year} · ${t.label}`, 0, 0);
       ctx.restore();
     }
@@ -377,33 +384,33 @@ class TimelineApp {
   renderItem(p, dim) {
     const ctx = this.ctx;
     const x = this.yearToX(p.year);
-    if (x < 30 * this.dpr || x > this.W - 30 * this.dpr) return;
+    if (x < 30 * this.s || x > this.W - 30 * this.s) return;
     const y = p.sec.baseline - (p.slotIdx + 1) * p.slotH + p.slotH / 2;
-    const w = 5 * this.dpr;
-    const h = Math.max(14 * this.dpr, p.slotH * 0.86);
+    const w = 5 * this.s;
+    const h = Math.max(14 * this.s, p.slotH * 0.86);
 
     ctx.globalAlpha = dim ? 0.16 : 1;
     // тень
     ctx.fillStyle = "rgba(0,0,0,0.4)";
-    ctx.fillRect(x - w / 2 + 1, y - h / 2 + 2, w, h);
+    ctx.fillRect(x - w / 2 + 1 * this.s, y - h / 2 + 2 * this.s, w, h);
     // спинка
     ctx.fillStyle = p.item.cover_color;
     ctx.fillRect(x - w / 2, y - h / 2, w, h);
     // фаска
     ctx.fillStyle = adjustHex(p.item.cover_color, 35);
-    ctx.fillRect(x - w / 2, y - h / 2, 1, h);
+    ctx.fillRect(x - w / 2, y - h / 2, 1 * this.s, h);
     ctx.fillStyle = adjustHex(p.item.cover_color, -25);
-    ctx.fillRect(x + w / 2 - 1, y - h / 2, 1, h);
+    ctx.fillRect(x + w / 2 - 1 * this.s, y - h / 2, 1 * this.s, h);
 
     if (p.item.significance >= 4) {
       // подпись для значимых при достаточном масштабе
       const span = this.viewYearEnd - this.viewYearStart;
       if (span < 180) {
         ctx.fillStyle = p.item.significance === 5 ? COLORS.brass : "rgba(247,249,239,0.7)";
-        ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
+        ctx.font = `400 ${10 * this.s}px "20 Kopeek", monospace`;
         ctx.textAlign = "left";
         ctx.save();
-        ctx.translate(x + 6 * this.dpr, y);
+        ctx.translate(x + 6 * this.s, y);
         ctx.rotate(-Math.PI / 6);
         let label = p.item.title;
         if (label.length > 26) label = label.slice(0, 24) + "…";
@@ -414,8 +421,8 @@ class TimelineApp {
 
     if (this.activeId === p.item.id) {
       ctx.strokeStyle = COLORS.brass;
-      ctx.lineWidth = 1.5 * this.dpr;
-      ctx.strokeRect(x - w / 2 - 3 * this.dpr, y - h / 2 - 3 * this.dpr, w + 6 * this.dpr, h + 6 * this.dpr);
+      ctx.lineWidth = 1.5 * this.s;
+      ctx.strokeRect(x - w / 2 - 3 * this.s, y - h / 2 - 3 * this.s, w + 6 * this.s, h + 6 * this.s);
     }
     ctx.globalAlpha = 1;
   }
@@ -432,7 +439,7 @@ class TimelineApp {
     // парабола вверх (изгиб вверх между точками)
     const midX = (ax + bx) / 2;
     const dist = Math.abs(bx - ax);
-    const arc = Math.min(180 * this.dpr, 30 * this.dpr + dist * 0.18);
+    const arc = Math.min(180 * this.s, 30 * this.s + dist * 0.18);
     const c1x = ax;
     const c1y = ay - arc;
     const c2x = bx;
@@ -440,10 +447,10 @@ class TimelineApp {
 
     ctx.save();
     ctx.strokeStyle = style.color;
-    ctx.lineWidth = style.width * this.dpr;
-    ctx.setLineDash(style.dash.map((d) => d * this.dpr));
+    ctx.lineWidth = style.width * this.s;
+    ctx.setLineDash(style.dash.map((d) => d * this.s));
     ctx.shadowColor = style.color;
-    ctx.shadowBlur = 6 * this.dpr;
+    ctx.shadowBlur = 6 * this.s;
     ctx.beginPath();
     ctx.moveTo(ax, ay);
     ctx.bezierCurveTo(c1x, c1y, c2x, c2y, bx, by);
@@ -454,12 +461,12 @@ class TimelineApp {
     const peakY = Math.min(ay, by) - arc * 0.55;
     ctx.save();
     ctx.fillStyle = "rgba(12,16,18,0.85)";
-    ctx.fillRect(midX - 36 * this.dpr, peakY - 9 * this.dpr, 72 * this.dpr, 18 * this.dpr);
+    ctx.fillRect(midX - 36 * this.s, peakY - 9 * this.s, 72 * this.s, 18 * this.s);
     ctx.fillStyle = style.color;
-    ctx.font = `600 ${10 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.font = `600 ${10 * this.s}px "20 Kopeek", monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(style.label.toUpperCase(), midX, peakY + 1 * this.dpr);
+    ctx.fillText(style.label.toUpperCase(), midX, peakY + 1 * this.s);
     ctx.restore();
   }
 }

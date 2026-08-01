@@ -14,6 +14,12 @@ const BUCKET_META = {
   "in-library":  { label: "ЧИТАЛ", accent: "#5D6970", note: "что читал из чужого"  },
 };
 
+// Базовая ширина, под которую подобраны все размеры ниже. Реальный кадр —
+// киоск 3840×2160 (49", dpr 1); превью в браузере обычно уже. Масштаб `this.s`
+// приводит одно к другому: композиция на обоих одинакова, меняется только
+// количество пикселей. `this.dpr` остаётся только для css→canvas.
+const DESIGN_W = 1280;
+
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
 function adjustHex(hex, delta) {
@@ -73,6 +79,7 @@ class ShelfApp {
     const rect = this.canvas.getBoundingClientRect();
     this.cssW = rect.width;
     this.cssH = rect.height;
+    this.s = this.dpr * (rect.width / DESIGN_W);
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
     this.canvas.width = this.W;
@@ -81,7 +88,7 @@ class ShelfApp {
   }
 
   titleAreaPx() {
-    return 110 * this.dpr;
+    return 110 * this.s;
   }
 
   shelfBaseHeight() {
@@ -94,11 +101,11 @@ class ShelfApp {
     let x = 0;
     shelf.spineRects = [];
     for (const item of shelf.items) {
-      const w = spineWidth(item) * this.dpr;
+      const w = spineWidth(item) * this.s;
       const hRatio = (item.height_cm || 22) / 22;
       const h = maxSpineH * Math.max(0.66, Math.min(1.18, hRatio));
       shelf.spineRects.push({ item, x, w, h });
-      x += w + 2 * this.dpr;
+      x += w + 2 * this.s;
     }
     shelf.totalWidth = x;
   }
@@ -130,7 +137,7 @@ class ShelfApp {
     this.dragging.lastX = x;
     this.dragging.lastT = now;
     this.dragging.lastVx = -dx / dt;
-    if (Math.abs(x - this.dragging.startX) > 6 * this.dpr) this.dragging.moved = true;
+    if (Math.abs(x - this.dragging.startX) > 6 * this.s) this.dragging.moved = true;
   };
 
   onPointerUp = (ev) => {
@@ -169,8 +176,8 @@ class ShelfApp {
     const titleArea = this.titleAreaPx();
     const baseH = this.shelfBaseHeight();
     const top = titleArea + idx * baseH;
-    const baseline = top + baseH - 36 * this.dpr;
-    const offsetX = 100 * this.dpr;
+    const baseline = top + baseH - 36 * this.s;
+    const offsetX = 100 * this.s;
     for (const rect of shelf.spineRects) {
       const x = rect.x - shelf.scrollX + offsetX;
       if (px >= x && px <= x + rect.w && py >= baseline - rect.h && py <= baseline) {
@@ -203,13 +210,13 @@ class ShelfApp {
       } else {
         shelf.velocityX = 0;
       }
-      const offsetX = 100 * this.dpr;
-      const maxScroll = Math.max(0, shelf.totalWidth + offsetX + 60 * this.dpr - this.W);
-      if (shelf.scrollX < -40 * this.dpr) {
-        shelf.scrollX += (-40 * this.dpr - shelf.scrollX) * 0.18;
+      const offsetX = 100 * this.s;
+      const maxScroll = Math.max(0, shelf.totalWidth + offsetX + 60 * this.s - this.W);
+      if (shelf.scrollX < -40 * this.s) {
+        shelf.scrollX += (-40 * this.s - shelf.scrollX) * 0.18;
         shelf.velocityX *= 0.78;
-      } else if (shelf.scrollX > maxScroll + 40 * this.dpr) {
-        shelf.scrollX += (maxScroll + 40 * this.dpr - shelf.scrollX) * 0.18;
+      } else if (shelf.scrollX > maxScroll + 40 * this.s) {
+        shelf.scrollX += (maxScroll + 40 * this.s - shelf.scrollX) * 0.18;
         shelf.velocityX *= 0.78;
       }
     }
@@ -229,59 +236,59 @@ class ShelfApp {
 
   renderShelf(shelf, top, height) {
     const ctx = this.ctx;
-    const baseline = top + height - 36 * this.dpr;
-    const offsetX = 100 * this.dpr;
+    const baseline = top + height - 36 * this.s;
+    const offsetX = 100 * this.s;
     const meta = BUCKET_META[shelf.bucket];
 
     // полка-доска
     ctx.fillStyle = "rgba(210,183,115,0.45)";
-    ctx.fillRect(0, baseline + 1, this.W, 4 * this.dpr);
+    ctx.fillRect(0, baseline + 1, this.W, 4 * this.s);
     ctx.fillStyle = "rgba(0,0,0,0.5)";
-    ctx.fillRect(0, baseline + 5 * this.dpr, this.W, 14 * this.dpr);
+    ctx.fillRect(0, baseline + 5 * this.s, this.W, 14 * this.s);
     ctx.fillStyle = "rgba(0,0,0,0.25)";
-    ctx.fillRect(0, baseline + 19 * this.dpr, this.W, 6 * this.dpr);
+    ctx.fillRect(0, baseline + 19 * this.s, this.W, 6 * this.s);
 
     // секционная метка слева
     ctx.save();
     ctx.fillStyle = meta.accent;
-    ctx.font = `600 ${14 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.font = `600 ${14 * this.s}px "20 Kopeek", monospace`;
     ctx.textBaseline = "top";
-    ctx.fillText(meta.label, 26 * this.dpr, top + 16 * this.dpr);
+    ctx.fillText(meta.label, 26 * this.s, top + 16 * this.s);
     ctx.fillStyle = "rgba(247,249,239,0.55)";
-    ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
-    ctx.fillText(meta.note.toUpperCase(), 26 * this.dpr, top + 36 * this.dpr);
+    ctx.font = `400 ${10 * this.s}px "20 Kopeek", monospace`;
+    ctx.fillText(meta.note.toUpperCase(), 26 * this.s, top + 36 * this.s);
     // счётчик
     ctx.fillStyle = "rgba(247,249,239,0.5)";
-    ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.font = `400 ${10 * this.s}px "20 Kopeek", monospace`;
     ctx.textAlign = "right";
-    ctx.fillText(`${shelf.items.length} ед.`, this.W - 26 * this.dpr, top + 16 * this.dpr);
+    ctx.fillText(`${shelf.items.length} ед.`, this.W - 26 * this.s, top + 16 * this.s);
     ctx.textAlign = "left";
     ctx.restore();
 
     // корешки
     ctx.save();
     ctx.beginPath();
-    ctx.rect(offsetX - 4 * this.dpr, top + 60 * this.dpr, this.W - offsetX, baseline - top - 60 * this.dpr + 4 * this.dpr);
+    ctx.rect(offsetX - 4 * this.s, top + 60 * this.s, this.W - offsetX, baseline - top - 60 * this.s + 4 * this.s);
     ctx.clip();
     for (const rect of shelf.spineRects) {
       const x = rect.x - shelf.scrollX + offsetX;
-      if (x + rect.w < offsetX - 8 * this.dpr || x > this.W + 8 * this.dpr) continue;
+      if (x + rect.w < offsetX - 8 * this.s || x > this.W + 8 * this.s) continue;
       this.renderSpine(rect, x, baseline);
     }
     ctx.restore();
 
     // градиент edge fade слева/справа от корешков (намёк на «полка продолжается»)
-    const fadeW = 24 * this.dpr;
+    const fadeW = 24 * this.s;
     const grL = ctx.createLinearGradient(offsetX, 0, offsetX + fadeW, 0);
     grL.addColorStop(0, "rgba(12,16,18,0.85)");
     grL.addColorStop(1, "rgba(12,16,18,0)");
     ctx.fillStyle = grL;
-    ctx.fillRect(offsetX - 4 * this.dpr, top + 60 * this.dpr, fadeW + 4 * this.dpr, baseline - top - 60 * this.dpr);
+    ctx.fillRect(offsetX - 4 * this.s, top + 60 * this.s, fadeW + 4 * this.s, baseline - top - 60 * this.s);
     const grR = ctx.createLinearGradient(this.W - fadeW, 0, this.W, 0);
     grR.addColorStop(0, "rgba(12,16,18,0)");
     grR.addColorStop(1, "rgba(12,16,18,0.85)");
     ctx.fillStyle = grR;
-    ctx.fillRect(this.W - fadeW, top + 60 * this.dpr, fadeW, baseline - top - 60 * this.dpr);
+    ctx.fillRect(this.W - fadeW, top + 60 * this.s, fadeW, baseline - top - 60 * this.s);
   }
 
   renderSpine({ item, w, h }, x, baselineY) {
@@ -290,7 +297,7 @@ class ShelfApp {
 
     // тень
     ctx.fillStyle = "rgba(0,0,0,0.32)";
-    ctx.fillRect(x + 2 * this.dpr, y + 4 * this.dpr, w, h);
+    ctx.fillRect(x + 2 * this.s, y + 4 * this.s, w, h);
 
     // корешок
     ctx.fillStyle = item.cover_color;
@@ -298,29 +305,29 @@ class ShelfApp {
 
     // светлая «фаска» слева
     ctx.fillStyle = adjustHex(item.cover_color, 28);
-    ctx.fillRect(x, y, 2 * this.dpr, h);
+    ctx.fillRect(x, y, 2 * this.s, h);
     // тёмная «фаска» справа
     ctx.fillStyle = adjustHex(item.cover_color, -28);
-    ctx.fillRect(x + w - 2 * this.dpr, y, 2 * this.dpr, h);
+    ctx.fillRect(x + w - 2 * this.s, y, 2 * this.s, h);
     // верхняя «крышка» (каптал)
     ctx.fillStyle = adjustHex(item.cover_color, 18);
-    ctx.fillRect(x, y, w, 4 * this.dpr);
+    ctx.fillRect(x, y, w, 4 * this.s);
     // декоративные тиснёные линии
     ctx.fillStyle = adjustHex(item.cover_color, 36);
-    ctx.fillRect(x + 4 * this.dpr, y + 16 * this.dpr, w - 8 * this.dpr, 1 * this.dpr);
-    ctx.fillRect(x + 4 * this.dpr, y + h - 22 * this.dpr, w - 8 * this.dpr, 1 * this.dpr);
+    ctx.fillRect(x + 4 * this.s, y + 16 * this.s, w - 8 * this.s, 1 * this.s);
+    ctx.fillRect(x + 4 * this.s, y + h - 22 * this.s, w - 8 * this.s, 1 * this.s);
 
     // тиснение — заголовок вертикально
-    if (w >= 26 * this.dpr) {
+    if (w >= 26 * this.s) {
       ctx.save();
-      ctx.translate(x + w / 2, y + h - 28 * this.dpr);
+      ctx.translate(x + w / 2, y + h - 28 * this.s);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = adjustHex(item.cover_color, 95);
-      const fs = Math.min(14 * this.dpr, w * 0.34);
+      const fs = Math.min(14 * this.s, w * 0.34);
       ctx.font = `400 ${fs}px Nolde, Georgia, serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      const maxChars = Math.floor((h - 60 * this.dpr) / (fs * 0.55));
+      const maxChars = Math.floor((h - 60 * this.s) / (fs * 0.55));
       let title = item.title;
       if (title.length > maxChars) title = title.slice(0, Math.max(3, maxChars - 1)) + "…";
       ctx.fillText(title, 0, 0);
@@ -330,14 +337,14 @@ class ShelfApp {
     // sig=5 → латунная звёздочка снизу
     if (item.significance === 5) {
       ctx.fillStyle = COLORS.brass;
-      ctx.fillRect(x + w / 2 - 2 * this.dpr, y + h - 10 * this.dpr, 4 * this.dpr, 4 * this.dpr);
+      ctx.fillRect(x + w / 2 - 2 * this.s, y + h - 10 * this.s, 4 * this.s, 4 * this.s);
     }
 
     // активный — подсветка
     if (this.activeId === item.id) {
       ctx.strokeStyle = COLORS.brass;
-      ctx.lineWidth = 2 * this.dpr;
-      ctx.strokeRect(x - 3 * this.dpr, y - 3 * this.dpr, w + 6 * this.dpr, h + 6 * this.dpr);
+      ctx.lineWidth = 2 * this.s;
+      ctx.strokeRect(x - 3 * this.s, y - 3 * this.s, w + 6 * this.s, h + 6 * this.s);
     }
   }
 }
