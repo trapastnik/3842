@@ -354,3 +354,27 @@ body {
   background: rgba(210, 183, 115, 0.2);
   color: var(--paper);
 }
+
+/* иллюстрация в карточке — есть только у «штучных» объектов */
+.card__fig {
+  margin: 0 0 calc(var(--u) * 0.8);
+}
+
+.card__fig[hidden] {
+  display: none;
+}
+
+.card__fig img {
+  width: 100%;
+  max-height: calc(var(--u) * 11);
+  object-fit: cover;
+  border-radius: 2px;
+  filter: saturate(0.75) contrast(1.04);
+}
+
+.card__fig figcaption {
+  margin-top: calc(var(--u) * 0.35);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.72);
+  color: rgba(157, 163, 168, 0.7);
+}

@@ -7,6 +7,8 @@
    Библиотека подключена классическим <script>: рантайм-CDN в проекте запрещены. */
 
 const CORPUS = "../data/mtk39-corpus.json";
+const CREDITS = "../data/images/mtk39/one-off/credits.json";
+const IMG_DIR = "../data/images/mtk39/one-off/";
 const COUNTRIES = "../data/ne_110m_countries.geojson";
 const WT = window.MtkProjection.WinkelTripel;
 
@@ -19,6 +21,8 @@ const COLOR = new Map(STATUS.map((s) => [s.key, s.color]));
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 9;
+
+let credits = {};
 
 const canvas = document.getElementById("map");
 const ctx = canvas.getContext("2d");
@@ -291,6 +295,21 @@ function showCard(p) {
   invalidate();
   if (!p) { card.hidden = true; return; }
 
+  const fig = card.querySelector("[data-fig]");
+  const credit = credits[p.id];
+  fig.replaceChildren();
+  fig.hidden = !credit;
+  if (credit) {
+    const img = document.createElement("img");
+    img.src = IMG_DIR + p.id + ".jpg";
+    img.alt = p.name;
+    fig.appendChild(img);
+    const cap = document.createElement("figcaption");
+    // условие Викисклада: автор и лицензия рядом с изображением
+    cap.textContent = [credit.author, credit.license, "Викисклад"].filter(Boolean).join(" · ");
+    fig.appendChild(cap);
+  }
+
   card.querySelector("[data-orig]").textContent =
     p.name_orig && p.name_orig !== p.name ? p.name_orig : "";
   card.querySelector("[data-name]").textContent = p.name;
@@ -413,10 +432,12 @@ function resetView() {
 /* ------------------------------------------------------------------ запуск */
 
 async function main() {
-  const [corpus, geo] = await Promise.all([
+  const [corpus, geo, creditsData] = await Promise.all([
     fetch(CORPUS).then((r) => r.json()),
     fetch(COUNTRIES).then((r) => r.json()),
+    fetch(CREDITS).then((r) => (r.ok ? r.json() : {})).catch(() => ({})),
   ]);
+  credits = creditsData;
   prepareLand(geo);
   points = corpus.records.filter((r) => r.lat !== null && r.lng !== null);
 
