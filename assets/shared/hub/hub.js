@@ -186,22 +186,15 @@ settings.querySelector(".hub__settings__reset").addEventListener("click", () => 
   settings.querySelector('[data-val="stripe"]').textContent = stripeCfg + "%";
 });
 
-/* Inject orientation switch (Гор / Верт) into the bar. The hub renders
- * the iframe full-viewport for horizontal mode, or pinned to 9:16
- * portrait centered + scaled for vertical (kiosk) preview. */
-const orientEl = document.createElement("div");
-orientEl.className = "hub__orient";
-orientEl.setAttribute("role", "group");
-orientEl.setAttribute("aria-label", "Ориентация");
-orientEl.innerHTML =
-  '<button type="button" data-o="h" aria-label="Горизонтально">Гор</button>' +
-  '<button type="button" data-o="v" aria-label="Вертикально (киоск 2160×3840)">Верт</button>';
-nav.parentNode.insertBefore(orientEl, nav);
+/* Переключатель Гор/Верт удалён (решение пользователя 2026-07-22): проект
+ * ушёл в горизонталь, вертикальное 9:16-превью больше не нужно. iframe всегда
+ * full-viewport. Старые ссылки с ?o=v просто игнорируются. */
+try { localStorage.removeItem("bmk-hub-orient"); } catch { /* приватный режим */ }
 
 /* Шестерёнка настроек стрелок — в бар, перед .hub__nav */
 nav.parentNode.insertBefore(gear, nav);
 
-/* Сегмент версий (только если версий >1) — визуально как .hub__orient, рядом с заголовком. */
+/* Сегмент версий (только если версий >1) — рядом с заголовком. */
 let verEl = null;
 if (versions.length > 1) {
   verEl = document.createElement("div");
@@ -354,30 +347,6 @@ if (verEl) verEl.querySelectorAll("button").forEach(b => {
 buildDots();
 const startIdx = vis().findIndex(v => v.slug === initSlug);
 goto(startIdx >= 0 ? startIdx : 0);
-
-/* Orientation persistence: query ?o=v|h beats localStorage beats default 'h'. */
-const STORAGE_KEY = "bmk-hub-orient";
-function readOrient() {
-  const q = new URL(location.href).searchParams.get("o");
-  if (q === "v" || q === "h") return q;
-  const s = localStorage.getItem(STORAGE_KEY);
-  return s === "v" ? "v" : "h";
-}
-function setOrient(o) {
-  hub.classList.toggle("hub--vertical", o === "v");
-  orientEl.querySelectorAll("button").forEach(b => {
-    b.classList.toggle("is-active", b.dataset.o === o);
-    b.setAttribute("aria-pressed", b.dataset.o === o ? "true" : "false");
-  });
-  localStorage.setItem(STORAGE_KEY, o);
-  const u = new URL(location.href);
-  u.searchParams.set("o", o);
-  history.replaceState(null, "", u.toString());
-}
-orientEl.querySelectorAll("button").forEach(b => {
-  b.addEventListener("click", () => setOrient(b.dataset.o));
-});
-setOrient(readOrient());
 
 /* Bar auto-hide. */
 const HIDE_AFTER_MS = 4000;
