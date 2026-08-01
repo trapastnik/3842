@@ -35,7 +35,7 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
+<div id="hint">МТК 38 v3 · кольцевой глобус · 128 написаний «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -45,11 +45,11 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createCard } from './engine/card.js';
+import { createCard } from './engine/card.js?v=20260801';
 import { createTuner } from './tuner.js';
 import { createGlobe } from './scenes/globe-rings.js';
 import { createEarth } from './scenes/earth.js';
-import { loadWords } from './engine/data.js';
+import { loadWords, loadPublications } from './engine/data.js?v=20260801';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
@@ -61,6 +61,7 @@ try {
   // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
   const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+  const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
 
@@ -139,7 +140,7 @@ try {
   } catch (err) { console.warn('[post off]', err); post = null; }
 
   // карточка языка Р2 (переиспользуемый модуль по образцу v2)
-  const card = createCard();
+  const card = createCard({ publications: PUBS });
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function tapAt(cx, cy) {
     ndc.set((cx / globalThis.innerWidth) * 2 - 1, -(cy / globalThis.innerHeight) * 2 + 1);

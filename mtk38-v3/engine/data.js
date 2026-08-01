@@ -27,6 +27,29 @@ export async function loadWords(url = '../data/mtk38.json') {
   });
 }
 
+// Издания В.И. Ленина по языкам (data/mtk38-publications.json).
+// Один язык → N изданий, поэтому возвращаем Map: lang_id → [издание, …].
+// base — префикс к путям обложек: они записаны от корня репозитория.
+export async function loadPublications(url = '../data/mtk38-publications.json', base = '../') {
+  try {
+    const d = await (await fetch(url)).json();
+    const by = new Map();
+    for (const p of d.publications || []) {
+      if (!p.lang_id) continue;
+      const covers = (p.covers || []).map((c) => base + c);
+      if (!by.has(p.lang_id)) by.set(p.lang_id, []);
+      by.get(p.lang_id).push({
+        area: p.area || '', section: p.section || '',
+        titleNative: p.title_native || '', authorNative: p.author_native || '',
+        cityNative: p.city_native || '', publisherNative: p.publisher_native || '',
+        titleRu: p.title_ru || '', cityRu: p.city_ru || '', publisherRu: p.publisher_ru || '',
+        year: p.year || '', covers,
+      });
+    }
+    return by;
+  } catch (_) { return new Map(); }
+}
+
 export async function loadQuotes(url = '../data/mtk38-quotes.json') {
   try {
     const d = await (await fetch(url)).json();

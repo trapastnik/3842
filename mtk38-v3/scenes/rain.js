@@ -96,8 +96,38 @@ export async function createRain(THREE, renderer, {
   const mesh = new THREE.InstancedMesh(new THREE.PlaneGeometry(1, 1), mat, count);
   mesh.frustumCulled = false;
 
+  // Попадание тапом по частице. Позиции живут в storage-буфере на GPU, поэтому
+  // читаем буфер обратно (500 частиц ≈ 6 КБ — дёшево, делаем только по тапу).
+  // Шаг элемента считаем из длины буфера: vec3 в storage выравнивается до 4 float.
+  async function pick(ray, maxPerp = 1.6) {
+    if (typeof renderer.getArrayBufferAsync !== 'function') return null;
+    let P, D;
+    try {
+      const [pb, db] = await Promise.all([
+        renderer.getArrayBufferAsync(posBuf.value),
+        renderer.getArrayBufferAsync(dataBuf.value),
+      ]);
+      P = new Float32Array(pb); D = new Float32Array(db);
+    } catch (e) { console.warn('[rain pick off]', e); return null; }
+
+    const sp = P.length / count, sd = D.length / count;
+    const o = ray.origin, d = ray.direction;
+    let best = -1, bestPerp = maxPerp, bestT = Infinity;
+    for (let i = 0; i < count; i++) {
+      const x = P[i * sp] - o.x, y = P[i * sp + 1] - o.y, z = P[i * sp + 2] - o.z;
+      const t = x * d.x + y * d.y + z * d.z;
+      if (t <= 0) continue;
+      const px = x - d.x * t, py = y - d.y * t, pz = z - d.z * t;
+      const perp = Math.sqrt(px * px + py * py + pz * pz);
+      if (perp < bestPerp || (perp < maxPerp && t < bestT - 2)) {
+        best = i; bestPerp = perp; bestT = t;
+      }
+    }
+    return best < 0 ? null : D[best * sd] | 0;      // индекс слова в атласе
+  }
+
   return {
-    mesh, count,
+    mesh, count, pick,
     params: { uBuoy, uDrag, uRepel, uSizeScale },
     setPointer(v3, radius) { uPointer.value.copy(v3); uPointerR.value = radius; },
     update(dt) { uDt.value = dt; return renderer.computeAsync(computeUpdate); },

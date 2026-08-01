@@ -36,7 +36,8 @@ import { createStats } from './engine/stats.js';
 import { createTuner } from './tuner.js';
 import { makeWordAtlas } from './engine/atlas.js';
 import { createRain } from './scenes/rain.js';
-import { loadWords } from './engine/data.js';
+import { loadWords, loadPublications } from './engine/data.js?v=20260801';
+import { createCard } from './engine/card.js?v=20260801';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
 window.__rain = { ready: false };
@@ -44,6 +45,7 @@ try {
   const canvas = document.getElementById('c');
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
   const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+  const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x10141a });
 
@@ -79,9 +81,26 @@ try {
     const t = -ray.ray.origin.z / ray.ray.direction.z; return ray.ray.origin.clone().addScaledVector(ray.ray.direction, t); };
   let pr = 0;
   canvas.addEventListener('pointermove', (e) => { rain.setPointer(toWorld(e.clientX, e.clientY), pr || 5.5); pr = pr || 5.5; }, { passive: true });
-  canvas.addEventListener('pointerdown', (e) => { pr = 8.5; rain.setPointer(toWorld(e.clientX, e.clientY), pr); });
-  canvas.addEventListener('pointerup', () => { pr = 5.5; });
   canvas.addEventListener('pointerleave', () => { pr = 0; rain.setPointer(new THREE.Vector3(0, 0, 0), 0); });
+
+  // Тап без протяжки → карточка ближайшего к лучу слова; протяжка остаётся отталкиванием.
+  const card = createCard({ publications: PUBS });
+  const T = { x: 0, y: 0, t: 0, moved: false };
+  canvas.addEventListener('pointerdown', (e) => {
+    pr = 8.5; rain.setPointer(toWorld(e.clientX, e.clientY), pr);
+    T.x = e.clientX; T.y = e.clientY; T.t = performance.now(); T.moved = false;
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (Math.hypot(e.clientX - T.x, e.clientY - T.y) > 6) T.moved = true;
+  }, { passive: true });
+  canvas.addEventListener('pointerup', async (e) => {
+    pr = 5.5;
+    if (T.moved || performance.now() - T.t > 400) return;
+    ndc.set(e.clientX / globalThis.innerWidth * 2 - 1, -(e.clientY / globalThis.innerHeight * 2 - 1));
+    ray.setFromCamera(ndc, camera);
+    const wi = await rain.pick(ray.ray);
+    if (wi != null && WORDS[wi]) card.open(WORDS[wi]); else card.close();
+  });
 
   const stats = createStats(renderer, { extra: () => `частиц    ${rain.count}` });
 

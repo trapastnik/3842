@@ -176,6 +176,12 @@ EAST_DIGITS = str.maketrans("٠١٢٣٤٥٦٧٨٩۰۱۲۳۴۵۶۷۸۹", "0123456
 CYR = re.compile(r"[А-Яа-яЁё]")
 
 
+def deaccent(s):
+    """Строчные без диакритики: Lénin / Lênin / Ļeņins → lenin / lenins."""
+    n = unicodedata.normalize("NFD", (s or "").lower())
+    return "".join(c for c in n if not unicodedata.combining(c))
+
+
 def is_russian(line):
     letters = [c for c in line if c.isalpha()]
     if not letters:
@@ -234,9 +240,10 @@ def parse_book(cell, writing=""):
     author_native = ""
     nlines = [l.strip() for l in native.split("\n") if l.strip()]
     if len(nlines) > 1:
-        base = (writing or "").strip().lower()
-        head = nlines[0].lower()
-        looks_author = (base and base in head) or LENIN_ANY.search(nlines[0])
+        # сравниваем без диакритики: в каноне «LÊNIN», в строке автора «V. I. Lénin»
+        base = deaccent(writing or "")
+        head = deaccent(nlines[0])
+        looks_author = (base and base in head) or LENIN_ANY.search(deaccent(nlines[0]))
         if looks_author and len(nlines[0]) < len(native) * 0.6:
             author_native = nlines[0]
             native = "\n".join(nlines[1:])
