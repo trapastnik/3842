@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 40 · Объём написанного</title>
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260801" />
+    <link rel="stylesheet" href="./styles.css?v=20260801" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="title">
+        <span class="title__num">МТК · 40 · ВАРИАНТ 08</span>
+        <h1 class="title__h">Объём написанного</h1>
+        <p class="title__sub">Площадь плитки — число страниц · 90 402 страницы в 99 книгах · «Декрет о земле» — 4 страницы, ПСС — 30 000</p>
+      </header>
+
+      <canvas id="view" class="view"></canvas>
+
+      <div class="modes" id="modes" aria-label="Метрика площади"></div>
+
+      <aside id="card" class="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__cat" data-bind="cat"></div>
+        <h2 class="card__name" data-bind="name"></h2>
+        <p class="card__author" data-bind="author"></p>
+        <p class="card__where" data-bind="where"></p>
+        <p class="card__text" data-bind="short"></p>
+        <ul id="card-conns" class="card__conns" hidden></ul>
+      </aside>
+
+      <div class="legend" id="note" aria-hidden="true"></div>
+
+      <a class="back" href="../">← все МТК</a>
+    </main>
+
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260801"></script>
+    <script src="./volume.js?v=20260801"></script>
+  </body>
+</html>
