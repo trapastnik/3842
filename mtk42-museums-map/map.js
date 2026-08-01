@@ -100,7 +100,7 @@ function resetViewFromSettings() {
   render();
   bindUi();
   syncControlsFromState();
-  window.addEventListener("resize", () => { setupCanvas(); applyView(state.view); render(); });
+  window.addEventListener("resize", () => { applyVisualSettings(); setupCanvas(); applyView(state.view); render(); });
 })();
 
 // ─── Projection ─────────────────────────────────────────────
@@ -164,12 +164,16 @@ function clientToWorld(cx, cy) {
 }
 
 // ─── Canvas ─────────────────────────────────────────────────
+const PIXEL_BUDGET = 3840 * 2160; // потолок буфера рендера, ~8.3 Мп
 let canvas, ctx, dpr;
 function setupCanvas() {
   canvas = $("#map");
   ctx = canvas.getContext("2d");
-  dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1));
   const rect = canvas.getBoundingClientRect();
+  // Кап буфера рендера по бюджету пикселей (COORDINATION, 4K-смоук 2026-07-22):
+  // без него 3840×2160 при DPR 2 даёт 33 Мп в canvas2D. Бюджет ~8.3 Мп = ровно 4K.
+  const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, rect.width * rect.height));
+  dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, budget));
   canvas.width = Math.floor(rect.width * dpr);
   canvas.height = Math.floor(rect.height * dpr);
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -218,7 +222,7 @@ function render() {
 }
 
 function drawCountries() {
-  const bw = state.settings.borderWidth / map.zoom;
+  const bw = (state.settings.borderWidth * uiScale()) / map.zoom;
   ctx.strokeStyle = "rgba(210, 183, 115, 0.28)";
   ctx.lineWidth = bw;
   ctx.fillStyle = "rgba(67, 80, 89, 0.35)";
@@ -273,7 +277,7 @@ function drawGraticule() {
 
 function drawDots() {
   const items = filteredItems();
-  const R = state.settings.dotRadius / map.zoom;
+  const R = (state.settings.dotRadius * uiScale()) / map.zoom;
   const halo = 2 / map.zoom;
   const outline = 5 / map.zoom;
   const lw = 1 / map.zoom;
@@ -304,8 +308,8 @@ function drawDots() {
 function drawCityLabels(W, H) {
   const items = filteredItems();
   const seen = new Set();
-  const R = state.settings.dotRadius; // screen-px (labels — screen-space)
-  const size = state.settings.citySize;
+  const R = state.settings.dotRadius * uiScale(); // screen-px (labels — screen-space)
+  const size = state.settings.citySize * uiScale(); // 4K: подписи городов ×2
   const alpha = state.settings.cityOpacity / 100;
   ctx.save();
   ctx.font = `500 ${size}px "20 Kopeek", "Courier New", monospace`;
@@ -334,7 +338,7 @@ function hitTest(clientX, clientY) {
   const rect = canvas.getBoundingClientRect();
   const px = clientX - rect.left, py = clientY - rect.top;
   const items = filteredItems();
-  const HIT_R = Math.max(22, state.settings.dotRadius + 10);
+  const HIT_R = Math.max(22, state.settings.dotRadius + 10) * uiScale();
   for (let i = items.length - 1; i >= 0; i--) {
     const it = items[i];
     if (typeof it.lat !== "number") continue;
@@ -395,14 +399,22 @@ function renderPhotos(box, photos) {
 }
 function closeDetail() { $("#detail").hidden = true; }
 
+// ─── 4K-масштаб кеглей (COORDINATION, смоук 2026-07-22) ─────
+// Значения из ⚙-панели нормированы на ширину 1920. На 3840 (канон 4K, 49")
+// множитель 2 — иначе подписи вырождаются в микротекст. Ниже 1920 — без изменений.
+function uiScale() {
+  return Math.min(2, Math.max(1, window.innerWidth / 1920));
+}
+function uiPx(v) { return (v * uiScale()).toFixed(1) + "px"; }
+
 // ─── Visual settings (CSS variables) ────────────────────────
 function applyVisualSettings() {
   const root = document.documentElement;
   const s = state.settings;
-  root.style.setProperty("--title-size", s.titleSize + "px");
+  root.style.setProperty("--title-size", uiPx(s.titleSize));
   root.style.setProperty("--title-opacity", (s.titleOpacity / 100).toFixed(2));
   root.style.setProperty("--title-weight", s.titleBold ? 700 : 400);
-  root.style.setProperty("--filter-size", s.filterSize + "px");
+  root.style.setProperty("--filter-size", uiPx(s.filterSize));
   root.style.setProperty("--filter-opacity", (s.filterOpacity / 100).toFixed(2));
   root.style.setProperty("--filter-weight", s.filterBold ? 700 : 400);
 }

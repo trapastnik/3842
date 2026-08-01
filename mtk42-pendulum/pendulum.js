@@ -84,6 +84,13 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   bindUi();
   syncControlsFromState();
 
+  // Кегли/точки нормированы на 1920 — пересчитать при смене вьюпорта (4K).
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { applyVisualSettings(); rebuildChart(); }, 150);
+  });
+
   // Initial scroll close to 1988 (entry to back-to-lenin) for visual interest.
   requestAnimationFrame(() => {
     const chart = $("#chart");
@@ -421,16 +428,24 @@ function closeCard() {
   }
 }
 
+// ─── 4K-масштаб кеглей (COORDINATION, смоук 2026-07-22) ─────
+// Значения из ⚙-панели нормированы на ширину 1920. На 3840 (канон 4K, 49")
+// множитель 2 — иначе подписи вырождаются в микротекст. Ниже 1920 — без изменений.
+function uiScale() {
+  return Math.min(2, Math.max(1, window.innerWidth / 1920));
+}
+function uiPx(v) { return (v * uiScale()).toFixed(1) + "px"; }
+
 // ─── Visual settings (CSS variables + body flags) ───────────
 function applyVisualSettings() {
   const root = document.documentElement;
   const s = state.settings;
-  root.style.setProperty("--dot-size", s.dotSize + "px");
+  root.style.setProperty("--dot-size", uiPx(s.dotSize));
   root.style.setProperty("--pendulum-stroke", s.strokeWidth);
   root.style.setProperty("--axis-size",  s.axisSize  + "px");
   root.style.setProperty("--axis-opacity", (s.axisOpacity / 100).toFixed(2));
   root.style.setProperty("--axis-weight", s.axisBold ? 700 : 400);
-  root.style.setProperty("--epoch-size", s.epochSize + "px");
+  root.style.setProperty("--epoch-size", uiPx(s.epochSize));
   root.style.setProperty("--epoch-opacity", (s.epochOpacity / 100).toFixed(2));
   root.style.setProperty("--epoch-weight", s.epochBold ? 700 : 400);
   root.style.setProperty("--year-size",  s.yearSize  + "px");
