@@ -1,0 +1,312 @@
+/* МТК 39 · «Имя на карте мира» — весь свод на орто-глобусе.
+   Формат — горизонталь 3840×2160 (директива 2026-07-22).
+   Палитра и шрифты — брендбук музея (COORDINATION.md). */
+
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "21 Cent";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+}
+
+:root {
+  --paper: #f7f9ef;
+  --brass: #d2b773;
+  --red: #a02128;
+  --red-mark: #c9545a;
+  --window: #9da3a8;
+  --graphite: #435059;
+  --night: #0c1012;
+
+  --font-display: "Nolde", Georgia, serif;
+  --font-body: "21 Cent", Georgia, serif;
+  --font-mono: "20 Kopeek", "Courier New", monospace;
+
+  --u: clamp(9px, 1.1vw, 28px);
+  --pad: calc(var(--u) * 2);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--graphite);
+  color: var(--paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 120% 85% at 50% 40%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.96)),
+    var(--graphite);
+}
+
+/* Брендполосы держатся краёв; яркость — от хаба (⚙ → «Полосы на фоне»). */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  background:
+    linear-gradient(105deg, transparent 0, transparent 95.4%, rgba(160, 33, 40, 0.62) 95.4%, rgba(160, 33, 40, 0.62) 99%, transparent 99.2%),
+    linear-gradient(105deg, transparent 0, transparent 1.5%, rgba(157, 163, 166, 0.1) 1.5%, rgba(157, 163, 166, 0.1) 9%, transparent 9.2%),
+    linear-gradient(105deg, transparent 0, transparent 93.6%, rgba(210, 183, 115, 0.6) 93.6%, rgba(210, 183, 115, 0.6) 93.75%, transparent 93.95%);
+}
+
+#globe {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+/* ------------------------------------------------------------------ тексты */
+
+.head {
+  position: absolute;
+  top: calc(var(--pad) * 0.9);
+  left: calc(var(--pad) * 1.3);
+  z-index: 2;
+  max-width: 30em;
+  pointer-events: none;
+}
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 1);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.title {
+  margin: calc(var(--u) * 0.4) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 3.2);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.sub {
+  margin: calc(var(--u) * 0.7) 0 0;
+  max-width: 26em;
+  font-size: calc(var(--u) * 1.1);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.72);
+}
+
+/* ------------------------------------------------------------------ легенда */
+
+.legend {
+  position: absolute;
+  left: calc(var(--pad) * 1.3);
+  bottom: calc(var(--pad) * 1.1);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--u) * 0.6);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.94);
+  color: rgba(247, 249, 239, 0.82);
+  pointer-events: none;
+}
+
+.legend__row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.7);
+}
+
+.legend__dot {
+  width: calc(var(--u) * 0.72);
+  height: calc(var(--u) * 0.72);
+  border-radius: 50%;
+}
+
+.legend__num {
+  color: rgba(157, 163, 168, 0.9);
+}
+
+/* ------------------------------------------------------------------ фильтры */
+
+.filters {
+  position: absolute;
+  right: calc(var(--pad) * 1.3);
+  bottom: calc(var(--pad) * 1.1);
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: calc(var(--u) * 0.6);
+  max-width: 40%;
+}
+
+.chip {
+  padding: calc(var(--u) * 0.5) calc(var(--u) * 1);
+  border: 1px solid rgba(157, 163, 168, 0.4);
+  border-radius: calc(var(--u) * 2);
+  background: rgba(12, 16, 18, 0.5);
+  color: rgba(247, 249, 239, 0.8);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.88);
+  letter-spacing: 0.04em;
+}
+
+.chip[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: rgba(210, 183, 115, 0.16);
+  color: var(--paper);
+}
+
+/* ------------------------------------------------------------------ карточка */
+
+.card {
+  position: absolute;
+  top: 50%;
+  right: calc(var(--pad) * 1.3);
+  z-index: 4;
+  width: min(34em, 34vw);
+  padding: calc(var(--u) * 1.6) calc(var(--u) * 1.8) calc(var(--u) * 1.8);
+  border: 1px solid rgba(210, 183, 115, 0.34);
+  border-radius: 3px;
+  background: rgba(12, 16, 18, 0.93);
+  transform: translateY(-50%);
+  animation: rise 0.26s ease;
+}
+
+.card[hidden] {
+  display: none;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translate(0, calc(-50% + 14px)); }
+  to { opacity: 1; transform: translateY(-50%); }
+}
+
+.card__close {
+  position: absolute;
+  top: calc(var(--u) * 0.9);
+  right: calc(var(--u) * 0.9);
+  width: calc(var(--u) * 2.1);
+  height: calc(var(--u) * 2.1);
+  border: 1px solid rgba(157, 163, 168, 0.4);
+  border-radius: 50%;
+  background: none;
+  color: var(--paper);
+  font-size: calc(var(--u) * 0.95);
+  line-height: 1;
+}
+
+.card__orig {
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 1);
+  letter-spacing: 0.1em;
+  color: var(--brass);
+}
+
+.card__orig:empty {
+  display: none;
+}
+
+.card__name {
+  margin: calc(var(--u) * 0.5) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 1.9);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.card__where {
+  margin: calc(var(--u) * 0.5) 0 0;
+  font-size: calc(var(--u) * 1.06);
+  color: rgba(247, 249, 239, 0.74);
+}
+
+.card__text {
+  margin: calc(var(--u) * 0.9) 0 0;
+  font-size: calc(var(--u) * 1);
+  line-height: 1.45;
+  color: rgba(247, 249, 239, 0.88);
+}
+
+.card__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(var(--u) * 0.4) calc(var(--u) * 1);
+  margin: calc(var(--u) * 1.1) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.88);
+}
+
+.card__facts dt {
+  color: rgba(157, 163, 168, 0.8);
+}
+
+.card__facts dd {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------------ подсказка */
+
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 1.4);
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.86);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.55);
+  transform: translateX(-50%);
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+
+.hint.is-off {
+  opacity: 0;
+}
