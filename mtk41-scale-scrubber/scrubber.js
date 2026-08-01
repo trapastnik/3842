@@ -1,6 +1,26 @@
+/**
+ * МТК 41 · Масштаб, вариант навигации «год-скраббер».
+ *
+ * Задача: 283 памятника при слоте 84 px дают ленту в 23 772 px — на киоске
+ * 3840 это 6,2 экрана сплошного драга, где посетитель не понимает ни где он,
+ * ни сколько осталось. Базовый mtk41-scale не даёт никаких ориентиров.
+ *
+ * Решение: под сценой — полоса во всю ширину, в которую сжата ВСЯ хронология.
+ * Каждый памятник — вертикальный штрих высотой ~ его росту, так что полоса
+ * заодно читается как спарклайн: видно вспышку 1925-го и пик 1970-го. Текущее
+ * окно просмотра подсвечено рамкой. Тап по полосе — прыжок, драг по полосе —
+ * быстрая промотка через весь корпус за один жест.
+ *
+ * Плюс инерция на основном драге: без неё шесть экранов требуют шести свайпов.
+ */
 (function () {
   const canvas = document.getElementById("scale");
   const ctx = canvas.getContext("2d", { alpha: true });
+
+  const STRIP_H = 74;            // высота полосы-скраббера
+  const STRIP_PAD = 28;          // поля полосы по горизонтали
+  const FRICTION = 0.93;         // затухание инерции за кадр
+  const MIN_VELOCITY = 0.4;      // ниже — считаем, что остановились
 
   const palette = {
     paper: "#F7F9EF",
@@ -45,7 +65,11 @@
   let pressStartX = 0, pressStartY = 0;
   let didDrag = false;
   let pointerDown = false;
+  let onStrip = false;           // жест начался на полосе-скраббере
+  let velocityX = 0;             // px/кадр, для инерции основного драга
   const TAP_THRESHOLD = 8;
+
+  function stripTop() { return height - STRIP_H; }
 
   function cssColor(hex, alpha) {
     const v = hex.replace("#", "");
@@ -98,7 +122,9 @@
     const left = width * PAD_LEFT;
     const right = width * 0.98;
     const viewportW = right - left;
-    const baseY = height * 0.86;                     // ground line
+    // Землю поднимаем над полосой-скраббером, иначе подписи городов уезжают
+    // под неё: они рисуются на 3 строки ниже baseY.
+    const baseY = (height - STRIP_H) * 0.84;         // ground line
     const skyTop = height * 0.20;                    // top reserved for title
     const usableHeight = baseY - skyTop;
 
@@ -351,10 +377,129 @@
     }
   }
 
+  // --- Полоса-скраббер -----------------------------------------------------
+
+  /** Доля прокрутки 0..1: 0 — начало ленты, 1 — конец. */
+  function scrollFraction() {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const span = contentW - viewportW;
+    if (span <= 0) return 0;
+    return Math.min(1, Math.max(0, -viewOffsetX / span));
+  }
+
+  /** Обратное к scrollFraction: поставить прокрутку в долю f. */
+  function scrollToFraction(f) {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const span = contentW - viewportW;
+    if (span <= 0) return;
+    viewOffsetX = -Math.min(1, Math.max(0, f)) * span;
+    clampPan();
+  }
+
+  function drawStrip() {
+    if (!placed.length) return;
+    const top = stripTop();
+    const x0 = STRIP_PAD;
+    const x1 = width - STRIP_PAD;
+    const w = x1 - x0;
+    const barsTop = top + 20;                 // 20 px сверху — под подписи лет
+    const barsH = STRIP_H - 30;
+
+    ctx.save();
+
+    // Подложка полосы
+    ctx.fillStyle = cssColor(palette.graphite, 0.5);
+    ctx.fillRect(0, top, width, STRIP_H);
+    ctx.strokeStyle = cssColor(palette.paper, 0.12);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(0, top);
+    ctx.lineTo(width, top);
+    ctx.stroke();
+
+    // Штрихи: по одному на памятник, высота ~ его росту. Полоса читается как
+    // спарклайн по всему корпусу — сразу видно, где густо, а где пусто.
+    let maxTotal = 0;
+    for (const pm of placed) maxTotal = Math.max(maxTotal, pm.h_statue + pm.h_pedestal);
+    const barW = Math.max(1, w / placed.length - 0.6);
+    for (let k = 0; k < placed.length; k += 1) {
+      const pm = placed[k];
+      const bx = x0 + (w * k) / placed.length;
+      const total = pm.h_statue + pm.h_pedestal;
+      // sqrt — иначе 57-метровый Волгоград прижимает все остальные к нулю
+      const bh = Math.max(2, barsH * Math.sqrt(total / maxTotal));
+      ctx.fillStyle = pm.i === selectedIndex
+        ? palette.brass
+        : cssColor(statusColor(pm.m.status), pm.estimated ? 0.35 : 0.75);
+      ctx.fillRect(bx, barsTop + barsH - bh, barW, bh);
+    }
+
+    // Подписи десятилетий по фактическому положению в ленте
+    ctx.font = `400 11px "20 Kopeek", "Courier New", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    let lastLabelX = -Infinity;
+    for (let k = 0; k < placed.length; k += 1) {
+      const year = placed[k].year;
+      if (!year) continue;
+      const decade = Math.floor(year / 10) * 10;
+      // Метку ставим на ПЕРВЫЙ памятник десятилетия, а не на памятник ровного
+      // года: в 1940-е и 2000-е ни один не пришёлся на год, кратный десяти,
+      // и эти десятилетия оставались без подписи.
+      const prevDecade = k > 0 && placed[k - 1].year
+        ? Math.floor(placed[k - 1].year / 10) * 10 : -1;
+      if (decade === prevDecade) continue;
+      const bx = x0 + (w * k) / placed.length;
+      if (bx - lastLabelX < 46) continue;                   // не наслаивать подписи
+      lastLabelX = bx;
+      ctx.strokeStyle = cssColor(palette.paper, 0.18);
+      ctx.beginPath();
+      ctx.moveTo(bx, barsTop);
+      ctx.lineTo(bx, barsTop + barsH);
+      ctx.stroke();
+      ctx.fillStyle = cssColor(palette.paper, 0.5);
+      ctx.fillText(String(decade), bx, top + 4);
+    }
+
+    // Текущее окно просмотра
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const winW = Math.max(10, w * Math.min(1, viewportW / contentW));
+    const winX = x0 + (w - winW) * scrollFraction();
+    ctx.fillStyle = cssColor(palette.paper, 0.10);
+    ctx.fillRect(winX, barsTop - 4, winW, barsH + 8);
+    ctx.strokeStyle = palette.brass;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(winX, barsTop - 4, winW, barsH + 8);
+
+    ctx.restore();
+  }
+
+  function stripFractionAt(clientX) {
+    const x0 = STRIP_PAD;
+    const w = (width - STRIP_PAD) - x0;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const contentW = contentRight - contentLeft;
+    const winW = Math.max(10, w * Math.min(1, viewportW / contentW));
+    // Тап ставит центр окна в точку касания, а не его левый край.
+    return (clientX - x0 - winW / 2) / Math.max(1, w - winW);
+  }
+
   function render() {
+    // Инерция основного драга
+    if (!pointerDown && Math.abs(velocityX) > MIN_VELOCITY) {
+      viewOffsetX += velocityX;
+      velocityX *= FRICTION;
+      const before = viewOffsetX;
+      clampPan();
+      if (viewOffsetX !== before) velocityX = 0;   // упёрлись в край — гасим
+    }
     ctx.clearRect(0, 0, width, height);
     drawScene();
     if (placed.length) drawMonuments();
+    drawStrip();
     requestAnimationFrame(render);
   }
 
@@ -379,9 +524,12 @@
   canvas.addEventListener("pointerdown", event => {
     pointerDown = true;
     didDrag = false;
+    velocityX = 0;
     pressStartX = event.clientX;
     pressStartY = event.clientY;
     lastPointerX = event.clientX;
+    onStrip = event.clientY >= stripTop();
+    if (onStrip) scrollToFraction(stripFractionAt(event.clientX));
     if (canvas.setPointerCapture) {
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
     }
@@ -389,12 +537,20 @@
 
   canvas.addEventListener("pointermove", event => {
     if (!pointerDown) return;
+    if (onStrip) {
+      // На полосе перетаскивание абсолютное: палец = позиция окна.
+      scrollToFraction(stripFractionAt(event.clientX));
+      lastPointerX = event.clientX;
+      return;
+    }
     if (!didDrag &&
         Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
       didDrag = true;
     }
     if (didDrag) {
-      viewOffsetX += event.clientX - lastPointerX;
+      const dx = event.clientX - lastPointerX;
+      viewOffsetX += dx;
+      velocityX = dx;            // последнее смещение и есть скорость броска
       clampPan();
     }
     lastPointerX = event.clientX;
@@ -404,12 +560,13 @@
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
-    if (pointerDown && !didDrag) {
+    if (pointerDown && !didDrag && !onStrip) {
       const hit = findAt(event.clientX, event.clientY);
       if (hit >= 0) showMonument(hit);
       else hideMonument();
     }
     pointerDown = false;
+    onStrip = false;
   }
 
   canvas.addEventListener("pointerup", endPointer);
@@ -437,7 +594,7 @@
       const name = e => `${byId.get(e.id).city}, ${byId.get(e.id).year}`;
       const fmt = v => (v < 1 ? `${Math.round(v * 100)} см` : `${(+v.toFixed(1))} м`);
       return `От ${fmt(lo.total)} (${name(lo)}) до ${fmt(hi.total)} (${name(hi)}). `
-        + `Слева — человек ростом 1.75 м для сравнения.`;
+        + `Полоса внизу — вся хронология: тап или драг по ней перематывает.`;
     });
     resize();
     requestAnimationFrame(render);

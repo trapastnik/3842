@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 41 · Масштаб + зум</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
+</head>
+<body>
+  <main class="stage" aria-label="МТК 41 Скульптуры Ленина — масштаб">
+    <canvas id="scale" aria-hidden="true"></canvas>
+    <header class="title-block" aria-hidden="true">
+      <div class="kicker">МТК 41 · Скульптуры</div>
+      <h1>Масштаб · зум</h1>
+      <div class="subtitle">От 60-сантиметрового бюста 1919-го — до 57-метрового колосса Вучетича 1973-го. Слева — человек ростом 1.75 м для сравнения.</div>
+    </header>
+    <div class="zoom-controls" aria-hidden="true"><button type="button" id="zoom-all">Весь корпус</button><button type="button" id="zoom-in">Крупно</button></div>
+    <aside id="card" class="card" data-mtk-card hidden></aside>
+  </main>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "../assets/mtk41/lib/three/three.module.min.js",
+      "three/addons/": "../assets/mtk41/lib/three/addons/"
+    }
+  }
+  </script>
+  <script type="module">
+    import { initMtkCard } from "../assets/mtk41/lib/card.js";
+    initMtkCard();
+  </script>
+  <script src="../assets/mtk41/lib/corpus-stats.js?v=20260801b"></script>
+  <script src="./zoom.js?v=20260801b"></script>
+</body>
+</html>

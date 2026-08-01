@@ -1,6 +1,24 @@
+/**
+ * МТК 41 · Масштаб, вариант навигации «страницы по десятилетиям».
+ *
+ * Базовый mtk41-scale держит все 283 памятника одной лентой в 23 772 px — на
+ * киоске это 6,2 экрана драга вслепую. Здесь промотки нет вообще: строка
+ * кнопок наверху делит корпус на десятилетия, в самом плотном (1970-е) — 62
+ * памятника, и они помещаются в экран целиком.
+ *
+ * Главная ловушка такого деления — потерять смысл прототипа. Если каждую
+ * страницу растягивать по своему максимуму, 4-метровый бюст 1920-х займёт ту
+ * же высоту, что 57-метровый колосс 1973-го, и «в одном масштабе» перестанет
+ * быть правдой. Поэтому масштаб метра в пикселях считается ОДИН РАЗ по всему
+ * корпусу и не меняется при переключении: на странице 1920-х фигуры честно
+ * жмутся к земле, и пустота над ними — это и есть сообщение.
+ */
 (function () {
   const canvas = document.getElementById("scale");
   const ctx = canvas.getContext("2d", { alpha: true });
+
+  let activeDecade = null;       // null — показать весь корпус
+  let globalMaxTotal = 0;        // максимум по ВСЕМУ корпусу, не по странице
 
   const palette = {
     paper: "#F7F9EF",
@@ -85,7 +103,7 @@
     if (!monuments.length) return;
 
     // Sort chronologically (null years assigned to their decade midpoint)
-    const items = monuments.map((m, i) => {
+    const all = monuments.map((m, i) => {
       let y = m.year;
       if (typeof y !== "number") {
         if (m.id && m.id.includes("1920s")) y = 1925;
@@ -95,6 +113,15 @@
       return { m, i, year: y };
     }).sort((a, b) => a.year - b.year);
 
+    // Масштаб — по всему корпусу, независимо от выбранной страницы.
+    globalMaxTotal = 0;
+    for (const it of all) globalMaxTotal = Math.max(globalMaxTotal, totalHeight(it.m.id));
+
+    const items = activeDecade === null
+      ? all
+      : all.filter(it => Math.floor(it.year / 10) * 10 === activeDecade);
+    if (!items.length) return;
+
     const left = width * PAD_LEFT;
     const right = width * 0.98;
     const viewportW = right - left;
@@ -102,16 +129,15 @@
     const skyTop = height * 0.20;                    // top reserved for title
     const usableHeight = baseY - skyTop;
 
-    // Find the tallest monument → scale so it fills usableHeight × 0.9
-    let maxTotal = 0;
-    for (const it of items) maxTotal = Math.max(maxTotal, totalHeight(it.m.id));
-    // 1 metre in pixels:
-    const mPx = (usableHeight * 0.9) / maxTotal;
+    // Метр в пикселях — от максимума ПО ВСЕМУ КОРПУСУ. Если считать по
+    // странице, 1920-е растянутся до потолка и сравнение с колоссами 1970-х
+    // станет ложью — ровно тем, ради чего прототип и существует.
+    const mPx = (usableHeight * 0.9) / globalMaxTotal;
 
-    // Slot width: either pack 94 into viewport, or use a touch-friendly minimum
-    // (whichever is larger). With min 84px and 94 items the lineup is 7896px
-    // wide → user pans horizontally.
-    const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
+    // Внутри десятилетия промотки быть не должно — слот ужимаем под страницу.
+    // Нижняя граница 30 px: уже палец не попадает, и тогда лента всё-таки
+    // становится прокручиваемой (это 1970-е с их 62 памятниками на узком окне).
+    const slotW = Math.max(30, Math.min(MIN_SLOT_W * 1.6, viewportW / items.length));
     const figureW = Math.min(slotW * 0.55, 80);
 
     for (let k = 0; k < items.length; k += 1) {
@@ -146,6 +172,54 @@
     layout.right = right;
     layout.baseY = baseY;
     layout.slotW = slotW;
+  }
+
+  /** Строка кнопок: «Все» + десятилетия с количеством памятников в каждом. */
+  function buildDecadeBar() {
+    const bar = document.getElementById("decades");
+    if (!bar) return;
+    const counts = new Map();
+    for (const m of monuments) {
+      const y = typeof m.year === "number" ? m.year : 1930;
+      const d = Math.floor(y / 10) * 10;
+      counts.set(d, (counts.get(d) || 0) + 1);
+    }
+    const decades = [...counts.keys()].sort((a, b) => a - b);
+    bar.textContent = "";
+
+    const mk = (label, n, value) => {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.textContent = label;
+      if (n != null) {
+        const s = document.createElement("span");
+        s.className = "n";
+        s.textContent = String(n);
+        b.appendChild(s);
+      }
+      b.addEventListener("click", () => {
+        activeDecade = value;
+        viewOffsetX = 0;
+        hideMonument();
+        layout();
+        syncDecadeBar();
+      });
+      b.dataset.value = value === null ? "all" : String(value);
+      bar.appendChild(b);
+    };
+
+    mk("Все", monuments.length, null);
+    for (const d of decades) mk(`${d}-е`, counts.get(d), d);
+    syncDecadeBar();
+  }
+
+  function syncDecadeBar() {
+    const bar = document.getElementById("decades");
+    if (!bar) return;
+    const want = activeDecade === null ? "all" : String(activeDecade);
+    for (const b of bar.querySelectorAll("button")) {
+      b.classList.toggle("is-on", b.dataset.value === want);
+    }
   }
 
   function clampPan() {
@@ -298,13 +372,14 @@
       }
     }
 
-    // Labels (city + year + height) below pedestal.
-    // In portrait the slot is narrow → labels rotate -60° so they don't
-    // overlap their neighbours.
-    const isPortrait = height > width;
     // Ширину слота берём из layout(): placed[k].x не существует (там worldX),
     // и прежнее выражение молча давало NaN — подписи не поворачивались никогда.
     const slotW = layout.slotW || 60;
+    // На странице «Все» 283 слота по ~13 px, и подписи сливаются в кашу.
+    // Это обзорный режим: показываем форму корпуса, читать идём в десятилетие.
+    if (slotW < 16) return;
+    const showCity = slotW >= 34;
+    const isPortrait = height > width;
     const needRotate = isPortrait || slotW < 90;
 
     for (const pm of placed) {
@@ -331,21 +406,33 @@
         ctx.rotate(-Math.PI / 3);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
-        ctx.fillText(city, 0, 0);
+        let row = 0;
+        if (showCity) {
+          ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
+          ctx.fillText(city, 0, 0);
+          row += 1;
+        }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.95 : 0.6);
-        ctx.fillText(yearLabel, 0, fontSize * 1.25);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        ctx.fillText(yearLabel, 0, fontSize * 1.25 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        }
       } else {
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-        ctx.fillText(city, screenX(pm.worldX), y);
+        let row = 0;
+        if (showCity) {
+          ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
+          ctx.fillText(city, screenX(pm.worldX), y);
+          row += 1;
+        }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        }
       }
       ctx.restore();
     }
@@ -437,8 +524,9 @@
       const name = e => `${byId.get(e.id).city}, ${byId.get(e.id).year}`;
       const fmt = v => (v < 1 ? `${Math.round(v * 100)} см` : `${(+v.toFixed(1))} м`);
       return `От ${fmt(lo.total)} (${name(lo)}) до ${fmt(hi.total)} (${name(hi)}). `
-        + `Слева — человек ростом 1.75 м для сравнения.`;
+        + `Кнопки справа — десятилетия. Масштаб общий, страницы сравнимы между собой.`;
     });
+    buildDecadeBar();
     resize();
     requestAnimationFrame(render);
   }).catch(err => {

@@ -1,6 +1,28 @@
+/**
+ * МТК 41 · Масштаб, вариант навигации «зум».
+ *
+ * Базовый mtk41-scale держит слот фиксированным (84 px), поэтому 283 памятника
+ * дают 23 772 px ленты — 6,2 экрана драга без единого ориентира.
+ *
+ * Здесь ширина слота — переменная. В положении «весь корпус» все 283 фигуры
+ * сжаты в один экран: читать подписи нельзя, зато видна ФОРМА массива — редкие
+ * 1930-40-е, плотный частокол 1950-70-х, обрыв после 1991-го. Дальше зум
+ * внутрь до читаемого размера: колёсико и пинч — плавно с привязкой к точке
+ * касания, двойной тап — переключение между двумя крайними состояниями.
+ *
+ * Компромисс варианта: на мелком зуме объект нельзя опознать и открыть, это
+ * режим обзора, а не работы. Тап по фигуре включается только когда слот вырос
+ * настолько, что в него попадает палец.
+ */
 (function () {
   const canvas = document.getElementById("scale");
   const ctx = canvas.getContext("2d", { alpha: true });
+
+  const SLOT_MAX = 120;          // самый крупный слот
+  const LABEL_MIN_SLOT = 34;     // уже — подписи городов не влезают
+  const YEAR_MIN_SLOT = 20;      // уже — не рисуем и годы
+  const TAP_MIN_SLOT = 26;       // уже — тап по фигуре не ловим, только обзор
+  const DOUBLE_TAP_MS = 320;
 
   const palette = {
     paper: "#F7F9EF",
@@ -46,6 +68,37 @@
   let didDrag = false;
   let pointerDown = false;
   const TAP_THRESHOLD = 8;
+
+  // Ширина слота в пикселях — единственная переменная зума. Держим её саму,
+  // а не безразмерный коэффициент: все пороги читаемости заданы в пикселях,
+  // и сравнивать их с реальной шириной проще, чем с абстрактным множителем.
+  let slotW = 0;
+  let fitSlotW = 0;              // слот, при котором весь корпус влезает в экран
+  const pointers = new Map();    // активные касания — для пинча
+  let pinchStartDist = 0, pinchStartSlot = 0, pinchAnchorX = 0;
+  let lastTapAt = 0;
+
+  function setSlotW(next, anchorScreenX) {
+    const clamped = Math.min(SLOT_MAX, Math.max(fitSlotW, next));
+    if (clamped === slotW) return;
+    // Держим точку под пальцем на месте: пересчитываем смещение так, чтобы
+    // мировая координата под anchorScreenX осталась той же после смены слота.
+    const worldBefore = (anchorScreenX - viewOffsetX - (layout.left || 0)) / slotW;
+    slotW = clamped;
+    layout();
+    viewOffsetX = anchorScreenX - (layout.left || 0) - worldBefore * slotW;
+    clampPan();
+    syncButtons();
+  }
+
+  function syncButtons() {
+    const all = document.getElementById("zoom-all");
+    const zin = document.getElementById("zoom-in");
+    if (!all || !zin) return;
+    const atFit = slotW <= fitSlotW + 0.5;
+    all.classList.toggle("is-on", atFit);
+    zin.classList.toggle("is-on", !atFit);
+  }
 
   function cssColor(hex, alpha) {
     const v = hex.replace("#", "");
@@ -108,10 +161,11 @@
     // 1 metre in pixels:
     const mPx = (usableHeight * 0.9) / maxTotal;
 
-    // Slot width: either pack 94 into viewport, or use a touch-friendly minimum
-    // (whichever is larger). With min 84px and 94 items the lineup is 7896px
-    // wide → user pans horizontally.
-    const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
+    // Ширину слота задаёт зум. fitSlotW — нижняя граница: при ней последний
+    // памятник ровно упирается в правый край, дальше сжимать бессмысленно.
+    fitSlotW = viewportW / items.length;
+    if (!slotW) slotW = fitSlotW;                       // старт — весь корпус
+    slotW = Math.min(SLOT_MAX, Math.max(fitSlotW, slotW));
     const figureW = Math.min(slotW * 0.55, 80);
 
     for (let k = 0; k < items.length; k += 1) {
@@ -145,7 +199,6 @@
     layout.left = left;
     layout.right = right;
     layout.baseY = baseY;
-    layout.slotW = slotW;
   }
 
   function clampPan() {
@@ -298,13 +351,12 @@
       }
     }
 
-    // Labels (city + year + height) below pedestal.
-    // In portrait the slot is narrow → labels rotate -60° so they don't
-    // overlap their neighbours.
+    // Подписи. На мелком зуме их просто нет: пытаться уместить город в 12 px
+    // — это каша из чёрточек, которая мешает увидеть форму массива, ради
+    // которой в мелкий зум и уходят.
+    if (slotW < YEAR_MIN_SLOT) return;
+    const showCity = slotW >= LABEL_MIN_SLOT;
     const isPortrait = height > width;
-    // Ширину слота берём из layout(): placed[k].x не существует (там worldX),
-    // и прежнее выражение молча давало NaN — подписи не поворачивались никогда.
-    const slotW = layout.slotW || 60;
     const needRotate = isPortrait || slotW < 90;
 
     for (const pm of placed) {
@@ -331,21 +383,33 @@
         ctx.rotate(-Math.PI / 3);
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
-        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
-        ctx.fillText(city, 0, 0);
+        let row = 0;
+        if (showCity) {
+          ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
+          ctx.fillText(city, 0, 0);
+          row += 1;
+        }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.95 : 0.6);
-        ctx.fillText(yearLabel, 0, fontSize * 1.25);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        ctx.fillText(yearLabel, 0, fontSize * 1.25 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        }
       } else {
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-        ctx.fillText(city, screenX(pm.worldX), y);
+        let row = 0;
+        if (showCity) {
+          ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
+          ctx.fillText(city, screenX(pm.worldX), y);
+          row += 1;
+        }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        }
       }
       ctx.restore();
     }
@@ -377,6 +441,15 @@
   let lastPointerX = 0;
 
   canvas.addEventListener("pointerdown", event => {
+    pointers.set(event.pointerId, event.clientX);
+    if (pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchStartDist = Math.abs(a - b);
+      pinchStartSlot = slotW;
+      pinchAnchorX = (a + b) / 2;
+      pointerDown = false;
+      return;
+    }
     pointerDown = true;
     didDrag = false;
     pressStartX = event.clientX;
@@ -388,6 +461,13 @@
   });
 
   canvas.addEventListener("pointermove", event => {
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, event.clientX);
+    if (pointers.size === 2 && pinchStartDist > 0) {
+      const [a, b] = [...pointers.values()];
+      const dist = Math.abs(a - b);
+      setSlotW(pinchStartSlot * (dist / pinchStartDist), pinchAnchorX);
+      return;
+    }
     if (!pointerDown) return;
     if (!didDrag &&
         Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
@@ -401,20 +481,50 @@
   }, { passive: true });
 
   function endPointer(event) {
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchStartDist = 0;
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
     if (pointerDown && !didDrag) {
-      const hit = findAt(event.clientX, event.clientY);
-      if (hit >= 0) showMonument(hit);
-      else hideMonument();
+      const now = performance.now();
+      if (now - lastTapAt < DOUBLE_TAP_MS) {
+        // Двойной тап — качели между обзором и деталью, в точке касания.
+        setSlotW(slotW > fitSlotW + 0.5 ? fitSlotW : SLOT_MAX * 0.7, event.clientX);
+        lastTapAt = 0;
+      } else {
+        lastTapAt = now;
+        // На обзорном зуме фигура уже 5 px — попасть в неё пальцем нельзя,
+        // и «промах» с закрытием карточки раздражал бы. Просто не ловим.
+        if (slotW >= TAP_MIN_SLOT) {
+          const hit = findAt(event.clientX, event.clientY);
+          if (hit >= 0) showMonument(hit);
+          else hideMonument();
+        }
+      }
     }
     pointerDown = false;
   }
 
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", endPointer);
-  canvas.addEventListener("pointerleave", () => { pointerDown = false; });
+  canvas.addEventListener("pointerleave", event => {
+    pointers.delete(event.pointerId);
+    pointerDown = false;
+  });
+
+  canvas.addEventListener("wheel", event => {
+    event.preventDefault();
+    // Мышиное колесо и трекпад: вниз — мельче, вверх — крупнее.
+    setSlotW(slotW * (event.deltaY < 0 ? 1.12 : 1 / 1.12), event.clientX);
+  }, { passive: false });
+
+  document.getElementById("zoom-all").addEventListener("click", () => {
+    setSlotW(fitSlotW, width / 2);
+  });
+  document.getElementById("zoom-in").addEventListener("click", () => {
+    setSlotW(SLOT_MAX * 0.7, width / 2);
+  });
 
   window.addEventListener("resize", resize);
 
@@ -437,9 +547,10 @@
       const name = e => `${byId.get(e.id).city}, ${byId.get(e.id).year}`;
       const fmt = v => (v < 1 ? `${Math.round(v * 100)} см` : `${(+v.toFixed(1))} м`);
       return `От ${fmt(lo.total)} (${name(lo)}) до ${fmt(hi.total)} (${name(hi)}). `
-        + `Слева — человек ростом 1.75 м для сравнения.`;
+        + `Пинч, колесо или двойной тап — от всего корпуса до отдельной фигуры.`;
     });
     resize();
+    syncButtons();
     requestAnimationFrame(render);
   }).catch(err => {
     // eslint-disable-next-line no-console
