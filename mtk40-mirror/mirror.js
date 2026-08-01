@@ -96,7 +96,10 @@ class MirrorApp {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
-    this.s = this.dpr * (rect.width / DESIGN_W);
+    const scale = rect.width / DESIGN_W;
+    this.s = this.dpr * scale;
+    // тем же коэффициентом тянется HTML-обвязка (zoom в styles.css)
+    document.documentElement.style.setProperty("--zoom", scale);
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
     this.canvas.width = this.W;
