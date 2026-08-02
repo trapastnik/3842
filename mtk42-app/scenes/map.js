@@ -358,7 +358,8 @@ export const mapScene = {
     const r = this._canvas.getBoundingClientRect();
     const x = clientX - r.left, y = clientY - r.top;
     const R = this._dotRadius(this._app.a11y);
-    const hitR = Math.max(R + 12, 44);
+    /* Тач-стандарт п.1: попадание не меньше 64 px, даже если точка мельче. */
+    const hitR = Math.max(R + 12, 64);
     const hits = [];
     for (const it of this._items()) {
       if (typeof it.lat !== "number") continue;
