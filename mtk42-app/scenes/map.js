@@ -63,7 +63,13 @@ export const mapScene = {
 
     this._bindGestures();
 
-    this._ro = new ResizeObserver(() => { this._size(); this._fit(); this._draw(); });
+    this._lastW = 0;
+    this._ro = new ResizeObserver(() => {
+      const w = this._canvas ? this._canvas.clientWidth : 0;
+      if (!w || Math.abs(w - this._lastW) < 2) return;
+      this._lastW = w;
+      this._size(); this._fit(); this._draw();
+    });
     this._ro.observe(this._canvas);
 
     /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан. */

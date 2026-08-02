@@ -61,8 +61,16 @@ export const timelineScene = {
     };
     this._innerEl.addEventListener("click", this._onRow);
 
-    /* Полосы позиционируются по ширине контейнера — пересчёт на resize. */
-    this._ro = new ResizeObserver(() => this._renderRows());
+    /* Полосы позиционируются по ширине контейнера — пересчёт на resize.
+     * Показ слоя тоже дёргает RO (0 → полная ширина), поэтому сверяем
+     * ширину: иначе каждое переключение сцены = полная переотрисовка. */
+    this._lastW = 0;
+    this._ro = new ResizeObserver(() => {
+      const w = this._scrollEl ? this._scrollEl.clientWidth : 0;
+      if (!w || Math.abs(w - this._lastW) < 2) return;
+      this._lastW = w;
+      this._renderRows();
+    });
     this._ro.observe(this._scrollEl);
 
     this._renderAll();

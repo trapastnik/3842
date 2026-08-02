@@ -63,7 +63,16 @@ export const pendulumScene = {
     };
     this._innerEl.addEventListener("click", this._onDot);
 
-    this._ro = new ResizeObserver(() => this._build());
+    /* Слой сцены при показе меняет размер с 0 на полный — наивный RO
+     * перестраивал бы 140 точек на каждом переключении. Перестраиваем
+     * только когда ширина реально изменилась. */
+    this._lastW = 0;
+    this._ro = new ResizeObserver(() => {
+      const w = this._scrollEl ? this._scrollEl.clientWidth : 0;
+      if (!w || Math.abs(w - this._lastW) < 2) return;
+      this._lastW = w;
+      this._build();
+    });
     this._ro.observe(this._scrollEl);
 
     /* Драг вертикальной ленты — по тач-стандарту нужен призыв к жесту. */
