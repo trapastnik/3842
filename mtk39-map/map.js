@@ -1,10 +1,13 @@
-/* МТК 39 · «Карта имени».
-   Тот же свод, что и на глобусе (mtk39-world), но на плоской карте — чтобы
-   сравнить две подачи и выбрать. Цвет точки — судьба имени.
+/* МТК 39 · «Карта Союза».
+   Та часть свода, что лежит в бывшем СССР, — крупным планом, с рубрикатором по
+   республикам. Здесь и находится главный сюжет: имя ушло прежде всего оттуда,
+   где его насаждали, и на этой карте перевес красного виден без пояснений.
+   Мировая картина осталась в «Мире» — этот вариант намеренно смотрит внутрь.
 
    Проекция — общий канон проекта: MtkProjection.WinkelTripel из assets/shared/lib
    (порядок аргументов (lat, lng), аспект только из WT.ASPECT — своей математики нет).
-   Библиотека подключена классическим <script>: рантайм-CDN в проекте запрещены. */
+   Мир считается целиком, а на экран берётся окно нужной республики: так масштаб
+   и сетка остаются теми же, что в «Мире», и карты сопоставимы между собой. */
 
 const CORPUS = "../data/mtk39-corpus.json";
 const CREDITS = "../data/images/mtk39/one-off/credits.json";
@@ -19,8 +22,21 @@ const STATUS = [
 ];
 const COLOR = new Map(STATUS.map((s) => [s.key, s.color]));
 
+// 15 республик; названия в Natural Earth расходятся с музейными
+const REPUBLIC_ISO = new Set([
+  "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
+  "GEO", "ARM", "AZE", "KAZ", "UZB", "TKM", "TJK", "KGZ",
+]);
+const NE_ALIAS = {
+  Беларусь: "Белоруссия",
+  Кыргызстан: "Киргизия",
+  Туркменистан: "Туркмения",
+  Молдавия: "Молдова",
+};
+
 const MIN_ZOOM = 1;
-const MAX_ZOOM = 9;
+const MAX_ZOOM = 26;
+const FLY_MS = 800;
 
 let credits = {};
 let closeOffmapRef = () => {};
@@ -32,9 +48,8 @@ const ctx = canvas.getContext("2d");
 const PIXEL_BUDGET = 8.3e6;
 function capDpr() {
   const raw = window.devicePixelRatio || 1;
-  const w = window.innerWidth;
-  const h = window.innerHeight;
-  return Math.max(1, Math.min(raw, 2, Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h))));
+  return Math.max(1, Math.min(raw, 2,
+    Math.sqrt(PIXEL_BUDGET / Math.max(1, window.innerWidth * window.innerHeight))));
 }
 
 // Кегли и метки на канвасе заданы в пикселях под ~1600 px ширины — на 49" 4K
@@ -45,25 +60,21 @@ const nf = new Intl.NumberFormat("ru-RU");
 
 let width = 0;
 let height = 0;
-let baseW = 0;             // ширина карты при zoom = 1
+let baseW = 0;             // ширина мира при zoom = 1
 let zoom = 1;
-let panX = 0;              // сдвиг в экранных пикселях
+let panX = 0;
 let panY = 0;
-let land = [];
+let land = [];             // контуры стран: { ring, ussr }
+let bboxes = new Map();    // название страны → географический bbox
 let points = [];
 let visible = [];
 let selected = null;
 let statusFilter = "all";
-let hideUssr = false;
+let republic = null;       // null = весь Союз
 let needsDraw = true;
+let fly = null;
 
 /* ------------------------------------------------------------------ раскладка */
-
-function fitBase() {
-  const availW = width * 0.98;
-  const availH = height * 0.8;
-  baseW = Math.min(availW, availH * WT.ASPECT);
-}
 
 function resize() {
   width = window.innerWidth;
@@ -74,21 +85,19 @@ function resize() {
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  fitBase();
+  baseW = Math.min(width * 0.98, height * 0.8 * WT.ASPECT);
   clampPan();
   needsDraw = true;
 }
 
 const worldW = () => baseW * zoom;
 const worldH = () => worldW() / WT.ASPECT;
-
-function originX() { return (width - worldW()) / 2 + panX; }
-function originY() { return (height - worldH()) / 2 + panY - height * 0.02; }
+const originX = () => (width - worldW()) / 2 + panX;
+const originY = () => (height - worldH()) / 2 + panY;
 
 function clampPan() {
-  // не даём утащить карту за пределы экрана
-  const limX = Math.max(0, (worldW() - width) / 2 + width * 0.12);
-  const limY = Math.max(0, (worldH() - height) / 2 + height * 0.12);
+  const limX = Math.max(0, (worldW() - width) / 2 + width * 0.2);
+  const limY = Math.max(0, (worldH() - height) / 2 + height * 0.2);
   panX = Math.max(-limX, Math.min(limX, panX));
   panY = Math.max(-limY, Math.min(limY, panY));
 }
@@ -98,62 +107,119 @@ function project(lat, lng) {
   return [p.x + originX(), p.y + originY()];
 }
 
+/* Приближение к географическому bbox: считаем нужный масштаб и сдвиг так,
+   чтобы область заняла экран с полями под рубрикатор слева. */
+function viewFor([west, south, east, north]) {
+  const at1 = (lat, lng) => WT.project(lat, lng, baseW, baseW / WT.ASPECT);
+  const corners = [at1(north, west), at1(north, east), at1(south, west), at1(south, east),
+    at1((north + south) / 2, west), at1((north + south) / 2, east)];
+  const xs = corners.map((p) => p.x);
+  const ys = corners.map((p) => p.y);
+  const w = Math.max(1e-6, Math.max(...xs) - Math.min(...xs));
+  const h = Math.max(1e-6, Math.max(...ys) - Math.min(...ys));
+  const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
+    Math.min((width * 0.6) / w, (height * 0.78) / h)));
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
+  // центр области — правее середины экрана, слева живёт рубрикатор
+  return {
+    zoom: z,
+    panX: width * 0.6 - (width - baseW * z) / 2 - cx * z,
+    panY: height / 2 - (height - (baseW / WT.ASPECT) * z) / 2 - cy * z,
+  };
+}
+
+function flyTo(view, instant) {
+  if (instant) {
+    // первый кадр киоска должен открыться уже наведённым на Союз,
+    // а не доезжать анимацией
+    ({ zoom, panX, panY } = view);
+    fly = null;
+    needsDraw = true;
+    return;
+  }
+  fly = { from: { zoom, panX, panY }, to: view, t0: performance.now() };
+}
+
+const easeInOut = (t) => (t < 0.5 ? 4 * t * t * t : 1 - ((-2 * t + 2) ** 3) / 2);
+
+function stepFly(now) {
+  if (!fly) return;
+  const t = Math.min(1, (now - fly.t0) / FLY_MS);
+  const k = easeInOut(t);
+  zoom = fly.from.zoom + (fly.to.zoom - fly.from.zoom) * k;
+  panX = fly.from.panX + (fly.to.panX - fly.from.panX) * k;
+  panY = fly.from.panY + (fly.to.panY - fly.from.panY) * k;
+  if (t >= 1) fly = null;
+  needsDraw = true;
+}
+
 /* ------------------------------------------------------------------ данные */
 
 function prepareLand(geo) {
   land = [];
+  bboxes = new Map();
   for (const f of geo.features) {
+    const iso = f.properties.ISO_A3 || f.properties.ADM0_A3;
+    const name = f.properties.NAME_RU;
+    const ussr = REPUBLIC_ISO.has(iso);
     const g = f.geometry;
     const polys = g.type === "Polygon" ? [g.coordinates]
       : g.type === "MultiPolygon" ? g.coordinates : [];
+    let box = null;
     for (const poly of polys) {
       for (const ring of poly) {
-        if (ring.length >= 4) land.push(ring);
+        if (ring.length < 4) continue;
+        land.push({ ring, ussr });
+        for (const [lng, lat] of ring) {
+          // Чукотка уходит за антимеридиан и растягивает bbox России на весь мир —
+          // считаем рамку только по восточному полушарию
+          if (ussr && lng < 0) continue;
+          box = box
+            ? [Math.min(box[0], lng), Math.min(box[1], lat),
+              Math.max(box[2], lng), Math.max(box[3], lat)]
+            : [lng, lat, lng, lat];
+        }
       }
     }
+    if (name && box) bboxes.set(name, box);
   }
 }
 
+const bboxOf = (country) => bboxes.get(NE_ALIAS[country] || country) || null;
 const shown = (p) => (statusFilter === "all" || p.status === statusFilter)
-  && !(hideUssr && p.continent === "Бывший СССР");
+  && (!republic || p.country === republic);
 
 /* ------------------------------------------------------------------ отрисовка */
 
 function drawLand() {
-  ctx.beginPath();
-  for (const ring of land) {
-    let started = false;
-    let prevX = 0;
-    for (const [lng, lat] of ring) {
-      const [x, y] = project(lat, lng);
-      if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
-      if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
-      prevX = x;
+  for (const ussr of [false, true]) {
+    ctx.beginPath();
+    for (const item of land) {
+      if (item.ussr !== ussr) continue;
+      let started = false;
+      let prevX = 0;
+      for (const [lng, lat] of item.ring) {
+        const [x, y] = project(lat, lng);
+        if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
+        if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
+        prevX = x;
+      }
     }
+    ctx.fillStyle = ussr ? "rgba(96, 104, 92, 0.85)" : "rgba(58, 70, 78, 0.65)";
+    ctx.fill();
+    ctx.strokeStyle = ussr ? "rgba(210, 183, 115, 0.42)" : "rgba(247, 249, 239, 0.13)";
+    ctx.lineWidth = ussr ? 1 : 0.7;
+    ctx.stroke();
   }
-  ctx.fillStyle = "rgba(72, 86, 95, 0.72)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(247, 249, 239, 0.18)";
-  ctx.lineWidth = 0.7;
-  ctx.stroke();
 }
 
 function render() {
   ctx.clearRect(0, 0, width, height);
-
-  // рамка карты
-  const ox = originX();
-  const oy = originY();
-  ctx.beginPath();
-  ctx.rect(ox, oy, worldW(), worldH());
-  ctx.strokeStyle = "rgba(210, 183, 115, 0.22)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
-
   drawLand();
 
   visible = [];
-  const r = Math.max(1.8, Math.min(5, 2.2 * Math.sqrt(zoom))) * uiScale();
+  const r = Math.max(2, Math.min(6, 2.4 * Math.sqrt(zoom))) * uiScale();
   for (const pass of [false, true]) {
     for (const p of points) {
       if (shown(p) !== pass) continue;
@@ -161,9 +227,9 @@ function render() {
       if (x < -40 || x > width + 40 || y < -40 || y > height + 40) continue;
       if (pass) visible.push({ p, x, y });
       ctx.beginPath();
-      ctx.arc(x, y, pass ? r : r * 0.7, 0, Math.PI * 2);
-      ctx.fillStyle = pass ? COLOR.get(p.status) : "rgba(157, 163, 168, 0.13)";
-      ctx.globalAlpha = pass ? 0.9 : 1;
+      ctx.arc(x, y, pass ? r : r * 0.65, 0, Math.PI * 2);
+      ctx.fillStyle = pass ? COLOR.get(p.status) : "rgba(157, 163, 168, 0.16)";
+      ctx.globalAlpha = pass ? 0.92 : 1;
       ctx.fill();
       ctx.globalAlpha = 1;
     }
@@ -176,17 +242,11 @@ function render() {
     ctx.strokeStyle = "#f7f9ef";
     ctx.lineWidth = 1.6;
     ctx.stroke();
-    ctx.beginPath();
-    ctx.arc(x, y, r + 13, 0, Math.PI * 2);
-    const glow = ctx.createRadialGradient(x, y, r, x, y, r + 16);
-    glow.addColorStop(0, "rgba(247, 249, 239, 0.4)");
-    glow.addColorStop(1, "rgba(247, 249, 239, 0)");
-    ctx.fillStyle = glow;
-    ctx.fill();
   }
 }
 
-function frame() {
+function frame(now) {
+  stepFly(now);
   if (needsDraw) {
     needsDraw = false;
     render();
@@ -212,15 +272,11 @@ function pick(x, y) {
 function zoomAt(factor, cx, cy) {
   const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
   if (next === zoom) return;
-
-  // точка под пальцем должна остаться на месте: считаем её мировую долю
-  // до зума и восстанавливаем сдвиг после
   const wx = (cx - originX()) / worldW();
   const wy = (cy - originY()) / worldH();
   zoom = next;
   panX = cx - (width - worldW()) / 2 - wx * worldW();
-  panY = cy - (height - worldH()) / 2 + height * 0.02 - wy * worldH();
-
+  panY = cy - (height - worldH()) / 2 - wy * worldH();
   clampPan();
   invalidate();
 }
@@ -239,6 +295,7 @@ function bindInput() {
     moved = 0;
     lastX = e.clientX;
     lastY = e.clientY;
+    fly = null;
     canvas.setPointerCapture(e.pointerId);
     touched();
   });
@@ -254,16 +311,16 @@ function bindInput() {
     clampPan();
     invalidate();
   });
-  const endDrag = (e) => {
+  canvas.addEventListener("pointerup", (e) => {
     if (!dragging) return;
     dragging = false;
     if (moved < 6) showCard(pick(e.clientX, e.clientY));
-  };
-  canvas.addEventListener("pointerup", endDrag);
+  });
   canvas.addEventListener("pointercancel", () => { dragging = false; });
 
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
+    fly = null;
     zoomAt(e.deltaY < 0 ? 1.14 : 1 / 1.14, e.clientX, e.clientY);
     touched();
   }, { passive: false });
@@ -272,7 +329,7 @@ function bindInput() {
   const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
   const mid = (t) => [(t[0].clientX + t[1].clientX) / 2, (t[0].clientY + t[1].clientY) / 2];
   canvas.addEventListener("touchstart", (e) => {
-    if (e.touches.length === 2) { dragging = false; pinch = dist(e.touches); }
+    if (e.touches.length === 2) { dragging = false; fly = null; pinch = dist(e.touches); }
   }, { passive: true });
   canvas.addEventListener("touchmove", (e) => {
     if (pinch && e.touches.length === 2) {
@@ -325,7 +382,6 @@ function showCard(p) {
   if (st) rows.push(["судьба имени", st.label]);
   if (p.year_named) rows.push(["имя присвоено", p.year_named]);
   if (p.year_renamed) rows.push(["имя снято", p.year_renamed]);
-  rows.push(["часть света", p.continent]);
   if (String(p.geo_src).startsWith("nominatim")) {
     rows.push(["координаты", "по городу, не по объекту"]);
   }
@@ -355,11 +411,59 @@ function buildLegend(host) {
   }
 }
 
-function buildFilters(host, legendHost) {
+const UNION_BBOX = [19, 35, 180, 78];   // от Калининграда до Чукотки
+
+function buildRepublics(host, all, legendHost, subHost) {
+  const counts = new Map();
+  for (const r of all) counts.set(r.country, (counts.get(r.country) || 0) + 1);
+  const list = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+
+  let first = true;
+  const setRepublic = (name, btn) => {
+    republic = name;
+    showCard(null);
+    [...host.children].forEach((c) => c.setAttribute("aria-pressed", String(c === btn)));
+    buildLegend(legendHost);
+    const box = name ? bboxOf(name) : UNION_BBOX;
+    flyTo(viewFor(box || UNION_BBOX), first);
+    first = false;
+    const inCorpus = all.filter((r) => !name || r.country === name).length;
+    const onMap = points.filter(shown).length;
+    subHost.textContent = name
+      // в рубрикаторе — все записи республики, на карте — только те, что удалось
+      // привязать к точке; разницу проговариваем, чтобы числа не спорили
+      ? `${name}: ${nf.format(inCorpus)} ${plural(inCorpus, "объект", "объекта", "объектов")} свода, `
+        + `${nf.format(onMap)} на карте.`
+      : `${nf.format(inCorpus)} ${plural(inCorpus, "объект", "объекта", "объектов")} `
+        + "в пятнадцати республиках. Цвет точки — судьба имени.";
+    invalidate();
+  };
+
   host.replaceChildren();
+  const all_ = document.createElement("button");
+  all_.className = "republic";
+  all_.type = "button";
+  all_.setAttribute("aria-pressed", "true");
+  all_.innerHTML = `<span>Весь Союз</span><span class="republic__n">${nf.format(all.length)}</span>`;
+  all_.addEventListener("click", () => setRepublic(null, all_));
+  host.appendChild(all_);
+
+  for (const [name, n] of list) {
+    if (n < 3) continue;                 // единичные «Абхазия», «Россия / Украина» — в картотеке
+    const b = document.createElement("button");
+    b.className = "republic";
+    b.type = "button";
+    b.setAttribute("aria-pressed", "false");
+    b.innerHTML = `<span>${name}</span><span class="republic__n">${nf.format(n)}</span>`;
+    b.addEventListener("click", () => setRepublic(name, b));
+    host.appendChild(b);
+  }
+  return () => setRepublic(null, all_);
+}
+
+function buildFilters(host, legendHost) {
   const opts = [["all", "все"], ...STATUS.map((s) => [s.key, s.label])];
-  const group = document.createElement("div");
-  group.className = "chips";
+  host.replaceChildren();
   for (const [key, label] of opts) {
     const b = document.createElement("button");
     b.className = "chip";
@@ -368,41 +472,162 @@ function buildFilters(host, legendHost) {
     b.setAttribute("aria-pressed", String(key === statusFilter));
     b.addEventListener("click", () => {
       statusFilter = key;
-      [...group.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+      [...host.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
       showCard(null);
       buildLegend(legendHost);
       invalidate();
     });
-    group.appendChild(b);
+    host.appendChild(b);
   }
-  host.appendChild(group);
-
-  // отдельный тумблер: свод на 93% состоит из бывшего СССР и Европы,
-  // без ядра видно всё остальное
-  const toggle = document.createElement("button");
-  toggle.className = "chip chip--toggle";
-  toggle.type = "button";
-  toggle.textContent = "без бывшего СССР";
-  toggle.setAttribute("aria-pressed", "false");
-  toggle.addEventListener("click", () => {
-    hideUssr = !hideUssr;
-    toggle.setAttribute("aria-pressed", String(hideUssr));
-    showCard(null);
-    buildLegend(legendHost);
-    invalidate();
-  });
-  host.appendChild(toggle);
 }
 
+const plural = (n, one, few, many) => {
+  const m10 = n % 10;
+  const m100 = n % 100;
+  if (m10 === 1 && m100 !== 11) return one;
+  if (m10 >= 2 && m10 <= 4 && (m100 < 10 || m100 >= 20)) return few;
+  return many;
+};
+
+/* ------------------------------------------------------------ не на карте
+
+   Часть записей свода не удалось привязать к точке: кириллические транслитерации
+   чужих топонимов не ищутся, а часть объектов точки не имеет в принципе (премия,
+   комсомол, послание в космос). Они не пропадают молча — открываются полноценной
+   картотекой с теми же карточками, что и у точек, и с перегруппировкой. */
+
+const KIND_LABEL = {
+  улица: "улицы", проспект: "проспекты и бульвары", площадь: "площади",
+  переулок: "переулки", город: "города и сёла", район: "районы и области",
+  завод: "заводы и фабрики", вуз: "институты и школы", культура: "музеи, театры, библиотеки",
+  парк: "парки", памятник: "памятники", электростанция: "электростанции",
+  колхоз: "колхозы и совхозы", транспорт: "транспорт", вода: "каналы и реки",
+  спорт: "стадионы", медицина: "больницы", судно: "суда", природа: "горы и заповедники",
+  награда: "ордена и премии", космос: "космос", прочее: "прочее",
+};
+const STATUS_CLASS = {
+  "носит имя": "offcard--live",
+  переименован: "offcard--gone",
+  утрачен: "offcard--lost",
+};
+const OFF_GROUPS = [
+  { key: "kind", label: "по типу", of: (r) => KIND_LABEL[r.kind] || r.kind },
+  { key: "status", label: "по судьбе имени",
+    of: (r) => (STATUS.find((s) => s.key === r.status) || {}).label || r.status },
+  { key: "country", label: "по республике", of: (r) => r.country || "—" },
+];
+
+function buildOffmap(all) {
+  const panel = document.getElementById("offmap");
+  const wall = panel.querySelector("[data-off-wall]");
+  const tabs = panel.querySelector("[data-off-groups]");
+  const toggle = document.getElementById("offmap-toggle");
+  const off = all.filter((r) => r.lat === null || r.lng === null);
+
+  if (!off.length) {
+    toggle.hidden = true;
+    return () => {};
+  }
+  toggle.querySelector("[data-off-count]").textContent = off.length;
+  panel.querySelector("[data-off-total]").textContent = off.length;
+
+  let groupBy = OFF_GROUPS[0];
+
+  const card_ = (rec) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = `offcard ${STATUS_CLASS[rec.status] || ""}`;
+
+    if (rec.name_orig && rec.name_orig !== rec.name) {
+      const o = document.createElement("div");
+      o.className = "offcard__orig";
+      o.textContent = rec.name_orig;
+      b.appendChild(o);
+    }
+    const nm = document.createElement("div");
+    nm.className = "offcard__name";
+    nm.textContent = rec.name;
+    b.appendChild(nm);
+
+    const where = document.createElement("div");
+    where.className = "offcard__where";
+    where.textContent = [rec.city, rec.country].filter(Boolean).join(" · ");
+    b.appendChild(where);
+
+    const year = document.createElement("div");
+    year.className = "offcard__year";
+    year.textContent = rec.year_named && rec.year_renamed
+      ? `${rec.year_named} — ${rec.year_renamed}`
+      : rec.year_named ? `с ${rec.year_named}`
+        : rec.year_renamed ? `имя снято в ${rec.year_renamed}`
+          : (STATUS.find((s) => s.key === rec.status) || {}).label || "";
+    b.appendChild(year);
+
+    b.addEventListener("click", () => { setOpen(false); showCard(rec); });
+    return b;
+  };
+
+  const render_ = () => {
+    const groups = new Map();
+    for (const rec of off) {
+      const k = groupBy.of(rec);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(rec);
+    }
+    const sorted = [...groups.entries()]
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ru"));
+
+    wall.replaceChildren();
+    for (const [title, recs] of sorted) {
+      const head = document.createElement("div");
+      head.className = "offgroup__head";
+      head.innerHTML = `<span class="offgroup__name">${title}</span>`
+        + `<span class="offgroup__n">${recs.length}</span>`
+        + '<span class="offgroup__line"></span>';
+      wall.appendChild(head);
+
+      const grid = document.createElement("div");
+      grid.className = "offcards";
+      for (const rec of recs) grid.appendChild(card_(rec));
+      wall.appendChild(grid);
+    }
+    wall.scrollTop = 0;
+  };
+
+  tabs.replaceChildren();
+  for (const g of OFF_GROUPS) {
+    const b = document.createElement("button");
+    b.className = "chip chip--tab";
+    b.type = "button";
+    b.textContent = g.label;
+    b.setAttribute("aria-pressed", String(g === groupBy));
+    b.addEventListener("click", () => {
+      groupBy = g;
+      [...tabs.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+      render_();
+    });
+    tabs.appendChild(b);
+  }
+  render_();
+
+  const setOpen = (open) => {
+    panel.hidden = !open;
+    toggle.setAttribute("aria-pressed", String(open));
+  };
+  toggle.addEventListener("click", () => setOpen(panel.hidden));
+  panel.querySelector(".offmap__close").addEventListener("click", () => setOpen(false));
+  panel.addEventListener("click", (e) => { if (e.target === panel) setOpen(false); });
+  return () => setOpen(false);
+}
 
 /* ------------------------------------------------------------------ простой
 
-   Музейный киоск: посетитель ушёл, оставив включённым фильтр или зум, — следующий
-   подходит к чужому состоянию. Через IDLE_RESET_MS без касаний возвращаем экран
-   к исходному виду. */
+   Музейный киоск: посетитель ушёл, оставив выбранную республику и зум, —
+   следующий подходит к чужому экрану. */
 
 const IDLE_RESET_MS = 75000;
 let idleTimer = null;
+let resetRepublicRef = () => {};
 
 function armIdleReset(reset) {
   const rearm = () => {
@@ -417,79 +642,13 @@ function armIdleReset(reset) {
 
 function resetView() {
   statusFilter = "all";
-  hideUssr = false;
-  zoom = 1;
-  panX = 0;
-  panY = 0;
   showCard(null);
   closeOffmapRef();
   const legendHost = document.querySelector("[data-legend]");
   buildFilters(document.querySelector("[data-filters]"), legendHost);
-  buildLegend(legendHost);
+  resetRepublicRef();
   document.querySelector("[data-hint]").classList.remove("is-off");
-  clampPan();
   invalidate();
-}
-
-
-/* ------------------------------------------------------------ не на карте
-
-   Часть записей свода не удалось привязать к точке: кириллические транслитерации
-   итальянских, сербских и индийских топонимов не ищутся, а часть объектов точки
-   не имеет в принципе (премия, комсомол, послание в космос). Приём взят из
-   первой версии глобуса: они не пропадают молча, а лежат отдельным списком. */
-
-function buildOffmap(all) {
-  const panel = document.getElementById("offmap");
-  const list = panel.querySelector("[data-off-list]");
-  const toggle = document.getElementById("offmap-toggle");
-  const off = all.filter((r) => r.lat === null || r.lng === null);
-
-  if (!off.length) {
-    toggle.hidden = true;
-    return () => {};
-  }
-  toggle.querySelector("[data-off-count]").textContent = off.length;
-
-  const byCountry = new Map();
-  for (const r of off) {
-    const key = r.country || "—";
-    if (!byCountry.has(key)) byCountry.set(key, []);
-    byCountry.get(key).push(r);
-  }
-  const groups = [...byCountry.entries()].sort((a, b) => b[1].length - a[1].length);
-
-  list.replaceChildren();
-  for (const [country, recs] of groups) {
-    const head = document.createElement("li");
-    head.className = "offmap__country";
-    head.textContent = `${country} · ${recs.length}`;
-    list.appendChild(head);
-    for (const rec of recs) {
-      // в одной стране бывает по шесть «улиц Ленина» — различает город
-      const li = document.createElement("li");
-      li.className = "offmap__item";
-      const nm = document.createElement("div");
-      nm.textContent = rec.name;
-      li.appendChild(nm);
-      if (rec.city) {
-        const where = document.createElement("div");
-        where.className = "offmap__where";
-        where.textContent = rec.city;
-        li.appendChild(where);
-      }
-      li.addEventListener("click", () => showCard(rec));
-      list.appendChild(li);
-    }
-  }
-
-  const setOpen = (open) => {
-    panel.hidden = !open;
-    toggle.setAttribute("aria-pressed", String(open));
-  };
-  toggle.addEventListener("click", () => setOpen(panel.hidden));
-  panel.querySelector(".offmap__close").addEventListener("click", () => setOpen(false));
-  return () => setOpen(false);
 }
 
 /* ------------------------------------------------------------------ запуск */
@@ -502,18 +661,21 @@ async function main() {
   ]);
   credits = creditsData;
   prepareLand(geo);
-  points = corpus.records.filter((r) => r.lat !== null && r.lng !== null);
 
-  document.querySelector("[data-sub]").textContent =
-    `${nf.format(points.length)} объектов из ${nf.format(corpus.records.length)} — `
-    + `${new Set(points.map((p) => p.country)).size} стран. Цвет точки — судьба имени.`;
+  const union = corpus.records.filter((r) => r.continent === "Бывший СССР");
+  points = union.filter((r) => r.lat !== null && r.lng !== null);
 
   const legendHost = document.querySelector("[data-legend]");
+  const subHost = document.querySelector("[data-sub]");
   buildLegend(legendHost);
-  closeOffmapRef = buildOffmap(corpus.records);
   buildFilters(document.querySelector("[data-filters]"), legendHost);
 
   resize();
+  resetRepublicRef = buildRepublics(
+    document.querySelector("[data-republics]"), union, legendHost, subHost,
+  );
+  resetRepublicRef();
+  closeOffmapRef = buildOffmap(union);
   bindInput();
   armIdleReset(resetView);
   requestAnimationFrame(frame);
