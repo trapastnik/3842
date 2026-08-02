@@ -34,9 +34,8 @@ const NE_ALIAS = {
   Молдавия: "Молдова",
 };
 
-const MIN_ZOOM = 1;
-const MAX_ZOOM = 26;
 const FLY_MS = 800;
+const ZOOM_RANGE = 2.6;    // насколько глубже кадра можно приблизить руками
 
 let credits = {};
 let closeOffmapRef = () => {};
@@ -64,7 +63,7 @@ let baseW = 0;             // ширина мира при zoom = 1
 let zoom = 1;
 let panX = 0;
 let panY = 0;
-let land = [];             // контуры пятнадцати республик
+let land = [];             // контуры пятнадцати республик: { ring, name }
 let unionBox = null;       // общая рамка Союза, считается из контуров
 let bboxes = new Map();    // название страны → географический bbox
 let points = [];
@@ -74,6 +73,8 @@ let statusFilter = "all";
 let republic = null;       // null = весь Союз
 let needsDraw = true;
 let fly = null;
+let activeBox = null;      // рамка того, что сейчас показываем
+let fitZoom = 1;           // масштаб этого кадра — ниже него не отпускаем
 
 /* ------------------------------------------------------------------ раскладка */
 
@@ -87,7 +88,12 @@ function resize() {
   canvas.style.height = `${height}px`;
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   baseW = Math.min(width * 0.98, height * 0.8 * WT.ASPECT);
-  clampPan();
+  if (activeBox) {
+    const v = viewFor(activeBox);
+    fitZoom = v.zoom;
+    ({ zoom, panX, panY } = v);
+  }
+  clampView();
   needsDraw = true;
 }
 
@@ -96,11 +102,31 @@ const worldH = () => worldW() / WT.ASPECT;
 const originX = () => (width - worldW()) / 2 + panX;
 const originY = () => (height - worldH()) / 2 + panY;
 
-function clampPan() {
-  const limX = Math.max(0, (worldW() - width) / 2 + width * 0.2);
-  const limY = Math.max(0, (worldH() - height) / 2 + height * 0.2);
-  panX = Math.max(-limX, Math.min(limX, panX));
-  panY = Math.max(-limY, Math.min(limY, panY));
+/* Стол, а не браузер: карту нельзя утащить в пустоту и нельзя отдалить дальше
+   кадра. Пока область меньше поля — она держится по центру, когда больше —
+   ходит ровно в пределах своих краёв. */
+function clampView() {
+  if (!activeBox) return;
+  zoom = Math.max(fitZoom, Math.min(fitZoom * ZOOM_RANGE, zoom));
+  const baseH = baseW / WT.ASPECT;
+  const f = field();
+  const w = (activeBox[2] - activeBox[0]) * baseW * zoom;
+  const h = (activeBox[3] - activeBox[1]) * baseH * zoom;
+  const cx = ((activeBox[0] + activeBox[2]) / 2) * baseW * zoom;
+  const cy = ((activeBox[1] + activeBox[3]) / 2) * baseH * zoom;
+
+  // положение центра области на экране при текущем сдвиге
+  const screenCX = cx + (width - baseW * zoom) / 2 + panX;
+  const screenCY = cy + (height - baseH * zoom) / 2 + panY;
+  const fitCX = (f.x0 + f.x1) / 2;
+  const fitCY = (f.y0 + f.y1) / 2;
+
+  const limitX = Math.max(0, (w - (f.x1 - f.x0)) / 2);
+  const limitY = Math.max(0, (h - (f.y1 - f.y0)) / 2);
+  const wantCX = Math.max(fitCX - limitX, Math.min(fitCX + limitX, screenCX));
+  const wantCY = Math.max(fitCY - limitY, Math.min(fitCY + limitY, screenCY));
+  panX += wantCX - screenCX;
+  panY += wantCY - screenCY;
 }
 
 function project(lat, lng) {
@@ -110,25 +136,30 @@ function project(lat, lng) {
 
 /* Приближение к географическому bbox: считаем нужный масштаб и сдвиг так,
    чтобы область заняла экран с полями под рубрикатор слева. */
-/* box — доли мира [minX, minY, maxX, maxY], посчитанные по самим контурам.
-   Вписываем в свободное поле справа от рубрикатора. */
+/* Свободное поле: всё, что справа от рубрикатора. Карта живёт только в нём. */
+function field() {
+  const rail = document.querySelector(".rail").getBoundingClientRect();
+  return {
+    x0: rail.right + width * 0.02,
+    x1: width * 0.985,
+    y0: height * 0.05,
+    y1: height * 0.88,
+  };
+}
+
+/* box — доли мира [minX, minY, maxX, maxY], посчитанные по самим контурам. */
 function viewFor(box) {
   const baseH = baseW / WT.ASPECT;
   const w = Math.max(1e-6, (box[2] - box[0]) * baseW);
   const h = Math.max(1e-6, (box[3] - box[1]) * baseH);
-
-  const rail = document.querySelector(".rail").getBoundingClientRect();
-  const x0 = rail.right + width * 0.02;
-  const x1 = width * 0.985;
-  const y0 = height * 0.05;
-  const y1 = height * 0.88;
-  const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((x1 - x0) / w, (y1 - y0) / h)));
+  const f = field();
+  const z = Math.min((f.x1 - f.x0) / w, (f.y1 - f.y0) / h);
   const cx = ((box[0] + box[2]) / 2) * baseW;
   const cy = ((box[1] + box[3]) / 2) * baseH;
   return {
     zoom: z,
-    panX: (x0 + x1) / 2 - (width - baseW * z) / 2 - cx * z,
-    panY: (y0 + y1) / 2 - (height - baseH * z) / 2 - cy * z,
+    panX: (f.x0 + f.x1) / 2 - (width - baseW * z) / 2 - cx * z,
+    panY: (f.y0 + f.y1) / 2 - (height - baseH * z) / 2 - cy * z,
   };
 }
 
@@ -175,7 +206,7 @@ function prepareLand(geo) {
     for (const poly of polys) {
       for (const ring of poly) {
         if (ring.length < 4) continue;
-        land.push({ ring });
+        land.push({ ring, name });
         for (const [lng, lat] of ring) {
           // Чукотка уходит за антимеридиан и растянула бы рамку России на весь мир —
           // считаем только по восточному полушарию
@@ -204,23 +235,43 @@ const shown = (p) => (statusFilter === "all" || p.status === statusFilter)
 
 /* ------------------------------------------------------------------ отрисовка */
 
+/* Выбранная республика горит, соседи приглушены. Без этого при приближении
+   соседняя земля читается как обрывки: заливка одна на всех, а границы
+   на таком масштабе уходят за экран. */
 function drawLand() {
-  ctx.beginPath();
-  for (const item of land) {
-    let started = false;
-    let prevX = 0;
-    for (const [lng, lat] of item.ring) {
-      const [x, y] = project(lat, lng);
-      if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
-      if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
-      prevX = x;
+  const active = republic ? (NE_ALIAS[republic] || republic) : null;
+
+  const paint = (isActive) => {
+    ctx.beginPath();
+    for (const item of land) {
+      if ((item.name === active) !== isActive) continue;
+      let started = false;
+      let prevX = 0;
+      for (const [lng, lat] of item.ring) {
+        const [x, y] = project(lat, lng);
+        if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
+        if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
+        prevX = x;
+      }
     }
-  }
-  ctx.fillStyle = "rgba(96, 104, 92, 0.9)";
-  ctx.fill();
-  ctx.strokeStyle = "rgba(210, 183, 115, 0.5)";
-  ctx.lineWidth = 1;
-  ctx.stroke();
+    if (isActive) {
+      ctx.fillStyle = "rgba(126, 132, 106, 0.96)";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(210, 183, 115, 0.85)";
+      ctx.lineWidth = 1.6 * uiScale();
+    } else {
+      ctx.fillStyle = active ? "rgba(74, 82, 76, 0.75)" : "rgba(96, 104, 92, 0.9)";
+      ctx.fill();
+      ctx.strokeStyle = active
+        ? "rgba(210, 183, 115, 0.22)"
+        : "rgba(210, 183, 115, 0.5)";
+      ctx.lineWidth = 1;
+    }
+    ctx.stroke();
+  };
+
+  paint(false);
+  if (active) paint(true);
 }
 
 function render() {
@@ -279,14 +330,14 @@ function pick(x, y) {
 }
 
 function zoomAt(factor, cx, cy) {
-  const next = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, zoom * factor));
-  if (next === zoom) return;
+  const next = Math.max(fitZoom, Math.min(fitZoom * ZOOM_RANGE, zoom * factor));
+  if (Math.abs(next - zoom) < 1e-6) return;
   const wx = (cx - originX()) / worldW();
   const wy = (cy - originY()) / worldH();
   zoom = next;
   panX = cx - (width - worldW()) / 2 - wx * worldW();
   panY = cy - (height - worldH()) / 2 - wy * worldH();
-  clampPan();
+  clampView();
   invalidate();
 }
 
@@ -317,7 +368,7 @@ function bindInput() {
     moved += Math.abs(dx) + Math.abs(dy);
     panX += dx;
     panY += dy;
-    clampPan();
+    clampView();
     invalidate();
   });
   canvas.addEventListener("pointerup", (e) => {
@@ -327,10 +378,12 @@ function bindInput() {
   });
   canvas.addEventListener("pointercancel", () => { dragging = false; });
 
+  // Колесо оставлено только как отладочное удобство на ноутбуке: на столе
+  // масштаб задают щипком, а основной способ приблизиться — выбор республики.
   canvas.addEventListener("wheel", (e) => {
     e.preventDefault();
     fly = null;
-    zoomAt(e.deltaY < 0 ? 1.14 : 1 / 1.14, e.clientX, e.clientY);
+    zoomAt(e.deltaY < 0 ? 1.08 : 1 / 1.08, e.clientX, e.clientY);
     touched();
   }, { passive: false });
 
@@ -431,8 +484,10 @@ function buildRepublics(host, all, legendHost, subHost) {
     showCard(null);
     [...host.children].forEach((c) => c.setAttribute("aria-pressed", String(c === btn)));
     buildLegend(legendHost);
-    const box = (name ? bboxOf(name) : unionBox) || unionBox;
-    flyTo(viewFor(box), first);
+    activeBox = (name ? bboxOf(name) : unionBox) || unionBox;
+    const view = viewFor(activeBox);
+    fitZoom = view.zoom;
+    flyTo(view, first);
     first = false;
     const inCorpus = all.filter((r) => !name || r.country === name).length;
     const onMap = points.filter(shown).length;
