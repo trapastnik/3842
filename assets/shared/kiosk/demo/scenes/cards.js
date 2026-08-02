@@ -4,12 +4,9 @@
  *  - что сцена без анимации ничего не делает на паузе сама собой.
  */
 
-const KINDS = [
-  { id: "all", label: { ru: "Все", en: "All", zh: "全部" } },
-  { id: "документ", label: { ru: "Документы", en: "Documents", zh: "文件" } },
-  { id: "фотография", label: { ru: "Фотографии", en: "Photos", zh: "照片" } },
-  { id: "плакат", label: { ru: "Плакаты", en: "Posters", zh: "海报" } },
-];
+/* Подписи фильтров НЕ хардкодятся — идут через словари приложения
+ * (i18n/*.json), как требует Киоск-стандарт v2, п. 11. */
+const KINDS = ["all", "документ", "фотография", "плакат"];
 
 export const cardsScene = {
   id: "cards",
@@ -19,7 +16,7 @@ export const cardsScene = {
 
   mount(el, ctx) {
     this._items = (ctx.data.demo && ctx.data.demo.cards) || [];
-    this._lang = ctx.lang;
+    this._app = ctx.app;
     this._filter = "all";
 
     const root = document.createElement("div");
@@ -49,7 +46,7 @@ export const cardsScene = {
   unmount() {
     if (this._filtersEl) this._filtersEl.removeEventListener("click", this._onFilter);
     if (this._root) this._root.remove();
-    this._root = this._filtersEl = this._gridEl = this._stateEl = null;
+    this._root = this._filtersEl = this._gridEl = this._stateEl = this._app = null;
   },
 
   pause() {},   // нечему останавливаться — сцена статична
@@ -63,25 +60,28 @@ export const cardsScene = {
     }
   },
 
-  setLang(lang) {
-    this._lang = lang;
+  setLang() {
     if (this._root) this._render();
   },
 
   setA11y() {},
 
   _render() {
-    const lang = this._lang || "ru";
+    const t = (k, v) => this._app.t(k, v);
     this._filtersEl.innerHTML = KINDS.map((k) =>
-      `<button type="button" class="demo-cards__filter${k.id === this._filter ? " is-active" : ""}" ` +
-      `data-kind="${k.id}">${k.label[lang] || k.label.ru}</button>`
+      `<button type="button" class="demo-cards__filter${k === this._filter ? " is-active" : ""}" ` +
+      `data-kind="${k}">${t("cards.filter." + k)}</button>`
     ).join("");
 
     const list = this._filter === "all"
       ? this._items
       : this._items.filter((it) => it.kind === this._filter);
 
-    this._stateEl.textContent = `фильтр: ${this._filter} · показано ${list.length} из ${this._items.length}`;
+    this._stateEl.textContent = t("cards.state", {
+      filter: t("cards.filter." + this._filter),
+      shown: list.length,
+      total: this._items.length,
+    });
     this._gridEl.innerHTML = list.map((it) =>
       '<article class="demo-card">' +
       `<div class="demo-card__kind">${it.kind}</div>` +

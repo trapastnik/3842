@@ -14,6 +14,7 @@ const app = createApp({
   appId: "kiosk-demo",
   title: { ru: "Демо ядра", en: "Core demo", zh: "内核演示" },
   configUrl: "./kiosk.config.json",
+  i18nUrl: "./i18n/",
 });
 
 app.registerScene(pulseScene);

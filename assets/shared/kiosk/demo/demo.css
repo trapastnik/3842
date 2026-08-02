@@ -24,13 +24,15 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
 
 /* ------------------------------------------------------------ сцена карточек */
 
+/* Верстаемся от полос, объявленных ядром: --kiosk-safe-top/-bottom уже
+ * учитывают навигацию, переключатель языков и шестерёнку. Хардкодить
+ * отступы под чужой хром нельзя — оператор двигает его из настроек. */
 .demo-cards {
   position: absolute;
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--edge-safe, 64px);
-  padding-bottom: calc(var(--edge-safe-bottom, 80px) + 220px); /* место под навигацию ядра */
+  padding: var(--kiosk-safe-top) var(--edge-safe, 64px) var(--kiosk-safe-bottom);
   gap: 28px;
 }
 

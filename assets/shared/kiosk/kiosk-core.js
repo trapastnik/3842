@@ -48,7 +48,17 @@
       opacity: 1,                // 0..1 → --stripe-opacity
       angle: 105                 // градусы, канон бренда
     },
-    a11y: { enabled: false },
+    i18n: {
+      langs: ["ru", "en", "zh"],
+      show: true                 // показывать переключатель «РУС · ENG · 中文»
+    },
+    a11y: {
+      enabled: false,
+      show: true                 // показывать кнопку режима слабовидящих
+    },
+    tools: {
+      position: "top-left"       // top-left | top-right | bottom-left | bottom-right
+    },
     service: { gear: "always" }, // always | tripleTap | hidden (решится позже)
     watchdog: {
       stallSec: 30,              // главный поток завис дольше → это авария
@@ -59,6 +69,38 @@
   };
 
   var IDLE = { ACTIVE: "active", STANDBY: "standby" };
+
+  /* Подписи языков в переключателе — на своём языке, как в каноне. */
+  var LANG_LABEL = { ru: "РУС", en: "ENG", zh: "中文" };
+
+  /* Строки самого ядра. Словари приложения (mtkXX-app/i18n/*.json)
+   * накладываются поверх и могут их переопределить. */
+  var CORE_STRINGS = {
+    ru: {
+      "standby.call": "Коснитесь экрана",
+      "nav.prev": "Предыдущий экран",
+      "nav.next": "Следующий экран",
+      "a11y.button": "Режим для слабовидящих",
+      "lang.button": "Язык интерфейса",
+      "loading": "Загрузка"
+    },
+    en: {
+      "standby.call": "Touch the screen",
+      "nav.prev": "Previous screen",
+      "nav.next": "Next screen",
+      "a11y.button": "Low vision mode",
+      "lang.button": "Interface language",
+      "loading": "Loading"
+    },
+    zh: {
+      "standby.call": "请触摸屏幕",
+      "nav.prev": "上一屏",
+      "nav.next": "下一屏",
+      "a11y.button": "低视力模式",
+      "lang.button": "界面语言",
+      "loading": "加载中"
+    }
+  };
 
   /* ------------------------------------------------- описание настроек
    * Сервис-панель строится ИЗ ЭТОГО списка — отсюда единый вид контролов
@@ -93,6 +135,16 @@
         { type: "range", path: "timings.fade", label: "Кроссфейд сцен", min: 0, max: 800, step: 50, unit: " мс" },
         { type: "range", path: "timings.standbyFps", label: "FPS заставки", min: 1, max: 15, step: 1 },
         { type: "text", path: "timings.restartAt", label: "Ночной рестарт (ЧЧ:ММ)", placeholder: "04:00" }
+      ]
+    },
+    {
+      group: "Язык и доступность",
+      rows: [
+        { type: "toggle", path: "i18n.show", label: "Переключатель языков" },
+        { type: "toggle", path: "a11y.show", label: "Кнопка слабовидящих" },
+        { type: "choice", path: "tools.position", label: "Их положение",
+          options: [["top-left", "Слева вверху"], ["top-right", "Справа вверху"],
+                    ["bottom-left", "Слева внизу"], ["bottom-right", "Справа внизу"]] }
       ]
     },
     {
@@ -290,6 +342,11 @@
     this.configUrl = opts.configUrl || null;
     this.config = deepMerge(DEFAULT_CONFIG, opts.config);
 
+    /* Словари UI-хрома: папка mtkXX-app/i18n/ ({lang}.json) и/или объект. */
+    this.i18nUrl = opts.i18nUrl || null;
+    this._strings = {};
+    this._inlineStrings = opts.i18n || null;
+
     this.lang = this.config.defaultLang || "ru";
     this.a11y = !!(this.config.a11y && this.config.a11y.enabled);
 
@@ -398,6 +455,7 @@
 
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
+      .then(function () { return self._loadStrings(); })
       .then(function () { return domReady(); })
       .then(function () {
         self._buildChrome();
@@ -488,9 +546,51 @@
     this.restart("сброс настроек");
   };
 
+  /* Сколько места сверху и снизу занял хром ядра. Сцена обязана верстаться
+   * от этих переменных (--kiosk-safe-top / --kiosk-safe-bottom), иначе её
+   * контент уедет под навигацию или под переключатель языков. Считаем от
+   * настроек, а не измерением DOM: значение стабильно и доступно сразу,
+   * до первой раскладки сцены. */
+  KioskApp.prototype._applyInsets = function () {
+    var root = this._els.root;
+    if (!root) return;
+    var cs = getComputedStyle(document.documentElement);
+    var edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
+    var edgeBottom = parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
+    var gap = parseFloat(cs.getPropertyValue("--touch-gap")) || 16;
+    var size = Number((this.config.nav || {}).size) || 96;
+
+    var nav = this.config.nav || {};
+    var navShown = nav.show !== false && this._records.length > 0;
+    var navTop = navShown && nav.position === "top";
+    var navBottom = navShown && nav.position !== "top";
+    /* Ряд стрелок + ряд точек, каждый со своим таргетом. */
+    var navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
+
+    var toolsPos = (this.config.tools || {}).position || "top-left";
+    var toolsShown = this._els.tools && !this._els.tools.hidden;
+    var toolsTop = toolsShown && toolsPos.indexOf("top") === 0;
+    var toolsBottom = toolsShown && toolsPos.indexOf("bottom") === 0;
+    var gearTop = this._els.gear && !this._els.gear.hidden;
+
+    var top = edge;
+    if (navTop) top += navBand;
+    else if (toolsTop || gearTop) top += size + gap;
+
+    var bottom = edgeBottom;
+    if (navBottom) bottom += navBand;
+    else if (toolsBottom) bottom += size + gap;
+
+    root.style.setProperty("--kiosk-safe-top", Math.round(top) + "px");
+    root.style.setProperty("--kiosk-safe-bottom", Math.round(bottom) + "px");
+  };
+
   KioskApp.prototype._applySettings = function (path) {
     if (!path || path.indexOf("nav.") === 0) this._applyNavStyle();
     if (!path || path.indexOf("stripes.") === 0) this._applyStripes();
+    if (!path || /^(tools|i18n|a11y)\./.test(path)) this._applyToolsStyle();
+    if (!path || path.indexOf("service.") === 0) this._applyGearMode();
+    this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
 
@@ -548,7 +648,11 @@
     root.appendChild(splash);
     host.appendChild(root);
 
+    doc.documentElement.setAttribute("lang", this.lang);
+    if (this.a11y) doc.documentElement.classList.add("a11y");
+    this._buildTools();
     this._buildService();
+    this._applyInsets();
   };
 
   KioskApp.prototype._buildNav = function (doc) {
@@ -648,6 +752,8 @@
     var single = this._records.length < 2;
     parts.prev.hidden = single;
     parts.next.hidden = single;
+    parts.prev.setAttribute("aria-label", this.t("nav.prev"));
+    parts.next.setAttribute("aria-label", this.t("nav.next"));
   };
 
   /* Вид навигации из настроек: позиция, размер таргета, яркость, состав. */
@@ -1446,39 +1552,165 @@
       'M30.3 9.7l-2.8 2.8M12.5 27.5l-2.8 2.8"/></svg>';
   }
 
-  /* ------------------------------------------- заготовки след. коммитов */
+  /* ======================================================== i18n ======= */
 
-  /* Полноценный i18n — следующим коммитом; сейчас нужен рабочий фолбэк,
-   * чтобы аттрактор и хром уже ходили через t(). */
-  var FALLBACK_STRINGS = { "standby.call": "Коснитесь экрана" };
+  KioskApp.prototype.langs = function () {
+    var list = (this.config.i18n || {}).langs;
+    return Array.isArray(list) && list.length ? list : ["ru"];
+  };
 
-  KioskApp.prototype.t = function (key) {
-    return FALLBACK_STRINGS[key] || key;
+  KioskApp.prototype._loadStrings = function () {
+    var self = this;
+    var langs = this.langs();
+
+    /* Строки ядра — основа; словари приложения кладутся поверх. */
+    langs.forEach(function (l) {
+      self._strings[l] = deepMerge(CORE_STRINGS[l] || CORE_STRINGS.ru || {}, null);
+    });
+    if (this._inlineStrings) this._mergeStrings(this._inlineStrings);
+    if (!this.i18nUrl) return Promise.resolve();
+
+    var base = this.i18nUrl.replace(/\/?$/, "/");
+    return Promise.all(langs.map(function (l) {
+      return loadJson(base + l + ".json")
+        .then(function (dict) {
+          var one = {};
+          one[l] = dict;
+          self._mergeStrings(one);
+        })
+        .catch(function (err) {
+          /* Нет словаря — не повод не запускаться: сработает фолбэк на ru. */
+          console.warn("[kiosk] словарь " + l + " не прочитан", err);
+        });
+    }));
+  };
+
+  KioskApp.prototype._mergeStrings = function (dicts) {
+    var self = this;
+    Object.keys(dicts).forEach(function (l) {
+      self._strings[l] = deepMerge(self._strings[l] || {}, dicts[l]);
+    });
+  };
+
+  /* t("scene.map.title") — фолбэк: текущий язык → ru → сам ключ.
+   * Ключ вместо пустоты намеренно: непереведённая строка должна быть
+   * видна на приёмке, а не молча исчезать. */
+  KioskApp.prototype.t = function (key, vars) {
+    var cur = this._strings[this.lang] || {};
+    var ru = this._strings.ru || CORE_STRINGS.ru;
+    var out = cur[key];
+    if (out == null) out = ru[key];
+    if (out == null) out = key;
+    if (vars) {
+      out = String(out).replace(/\{(\w+)\}/g, function (m, name) {
+        return vars[name] == null ? m : vars[name];
+      });
+    }
+    return out;
   };
 
   KioskApp.prototype.setLang = function (lang) {
     if (!lang || lang === this.lang) return this;
+    if (this.langs().indexOf(lang) < 0) return this;
     this.lang = lang;
+    document.documentElement.setAttribute("lang", lang);
     this._records.forEach(function (rec) {
       if (rec.mounted) safeCall(rec, "setLang", lang);
     });
     this._syncNav();
     this._syncStandbyLabel();
+    this._syncTools();
     this.emit("lang", { lang: lang });
     return this;
   };
+
+  /* ======================================================== a11y ======= */
 
   KioskApp.prototype.setA11y = function (on) {
     on = !!on;
     if (on === this.a11y) return this;
     this.a11y = on;
+    /* Класс на <html>: токены кегля/контраста/таргетов живут в kiosk.css
+     * и достаются и ядру, и сценам, и прототипам. */
     document.documentElement.classList.toggle("a11y", on);
     this._records.forEach(function (rec) {
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
+    this._syncTools();
+    this._applyInsets();          // таргеты выросли ×1.25 — полосы хрома тоже
     this.emit("a11y", { on: on });
+    this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;
   };
+
+  /* ------------------------------- панель посетителя: язык и доступность */
+
+  KioskApp.prototype._buildTools = function () {
+    var self = this;
+    var doc = document;
+    var box = doc.createElement("div");
+    box.className = "kiosk-tools";
+
+    var langs = doc.createElement("div");
+    langs.className = "kiosk-lang";
+    langs.setAttribute("role", "group");
+    langs.setAttribute("aria-label", this.t("lang.button"));
+
+    this.langs().forEach(function (l) {
+      var b = doc.createElement("button");
+      b.type = "button";
+      b.className = "kiosk-lang__btn kiosk-touch kiosk-touch--primary";
+      b.setAttribute("data-lang", l);
+      b.textContent = LANG_LABEL[l] || l.toUpperCase();
+      b.addEventListener("click", function () { self.setLang(l); });
+      langs.appendChild(b);
+    });
+
+    var eye = doc.createElement("button");
+    eye.type = "button";
+    eye.className = "kiosk-a11y kiosk-touch kiosk-touch--primary";
+    eye.innerHTML = eyeSvg();
+    eye.addEventListener("click", function () { self.setA11y(!self.a11y); });
+
+    box.appendChild(langs);
+    box.appendChild(eye);
+    this._els.root.appendChild(box);
+    this._els.tools = box;
+    this._els.langBox = langs;
+    this._els.eye = eye;
+
+    this._applyToolsStyle();
+    this._syncTools();
+  };
+
+  KioskApp.prototype._applyToolsStyle = function () {
+    var box = this._els.tools;
+    if (!box) return;
+    box.setAttribute("data-position", (this.config.tools || {}).position || "top-left");
+    this._els.langBox.hidden = (this.config.i18n || {}).show === false || this.langs().length < 2;
+    this._els.eye.hidden = (this.config.a11y || {}).show === false;
+    box.hidden = this._els.langBox.hidden && this._els.eye.hidden;
+  };
+
+  KioskApp.prototype._syncTools = function () {
+    var self = this;
+    if (!this._els.tools) return;
+    Array.prototype.forEach.call(this._els.langBox.children, function (b) {
+      var on = b.getAttribute("data-lang") === self.lang;
+      b.classList.toggle("is-on", on);
+      b.setAttribute("aria-pressed", on ? "true" : "false");
+    });
+    this._els.eye.classList.toggle("is-on", this.a11y);
+    this._els.eye.setAttribute("aria-pressed", this.a11y ? "true" : "false");
+    this._els.eye.setAttribute("aria-label", this.t("a11y.button"));
+  };
+
+  function eyeSvg() {
+    return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" ' +
+      'aria-hidden="true"><path d="M3 20c5-7.5 11-11.2 17-11.2S32 12.5 37 20c-5 7.5-11 11.2-17 11.2S8 27.5 3 20z"/>' +
+      '<circle cx="20" cy="20" r="5.2"/></svg>';
+  }
 
   /* ------------------------------------------------------------ хелперы */
 

@@ -18,6 +18,13 @@
   --kiosk-nav-opacity: 0.92;
   --kiosk-stripe-angle: 105deg;   /* канон бренда */
   --stripe-opacity: 1;            /* яркость косой подложки; крутится из настроек МТК */
+
+  /* Полосы, занятые хромом ядра. Ядро пересчитывает их при каждой правке
+   * настроек; СЦЕНА ОБЯЗАНА верстаться от них, а не от --edge-safe, иначе
+   * её контент уедет под навигацию или под переключатель языков.
+   * Здесь — значения на случай, если JS ещё не отработал. */
+  --kiosk-safe-top: var(--edge-safe, 64px);
+  --kiosk-safe-bottom: var(--edge-safe-bottom, 80px);
 }
 
 /* ------------------------------------------------------------ каркас */
@@ -309,6 +316,105 @@
 }
 .kiosk-splash.is-error .kiosk-splash__bar i { background: var(--red, #A02128); }
 .kiosk-splash.is-error .kiosk-splash__note { color: var(--red, #A02128); }
+
+/* ------------------------------------------ панель посетителя: язык, a11y */
+
+.kiosk-tools {
+  position: absolute;
+  z-index: 45;
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+}
+.kiosk-tools[hidden] { display: none; }
+.kiosk-tools[data-position="top-left"]     { top: var(--edge-safe, 64px);           left: var(--edge-safe, 64px); }
+.kiosk-tools[data-position="top-right"]    { top: var(--edge-safe, 64px);           right: var(--edge-safe, 64px); }
+.kiosk-tools[data-position="bottom-left"]  { bottom: var(--edge-safe-bottom, 80px); left: var(--edge-safe, 64px); }
+.kiosk-tools[data-position="bottom-right"] { bottom: var(--edge-safe-bottom, 80px); right: var(--edge-safe, 64px); }
+
+.kiosk-lang {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.62);
+  border: 1px solid rgba(210, 183, 115, 0.35);
+}
+.kiosk-lang[hidden] { display: none; }
+.kiosk-lang__btn {
+  min-width: var(--touch-primary, 96px);
+  height: var(--touch-primary, 96px);
+  padding: 0 22px;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: rgba(247, 249, 239, 0.62);
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: var(--type-min-ui, 32px);
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 160ms ease, color 160ms ease;
+}
+.kiosk-lang__btn.is-on {
+  background: rgba(210, 183, 115, 0.22);
+  color: var(--brass, #D2B773);
+}
+
+.kiosk-a11y {
+  width: var(--touch-primary, 96px);
+  height: var(--touch-primary, 96px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(210, 183, 115, 0.35);
+  background: rgba(12, 16, 18, 0.62);
+  color: rgba(247, 249, 239, 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-a11y[hidden] { display: none; }
+.kiosk-a11y svg { width: 56%; height: 56%; }
+.kiosk-a11y.is-on {
+  background: var(--a11y-accent, #FFD24A);
+  border-color: var(--a11y-accent, #FFD24A);
+  color: #000;
+}
+.kiosk-app.is-standby .kiosk-tools { opacity: 0; pointer-events: none; }
+
+/* ---- контраст-тема режима слабовидящих для хрома ядра ----
+ * Полупрозрачности убираются, латунь → жёлтый, декор-слои прячутся:
+ * посетителю остаётся только главный контент. */
+:root.a11y .kiosk-stripes { display: none; }
+:root.a11y .kiosk-app { background: var(--a11y-bg, #000); }
+
+:root.a11y .kiosk-nav__row,
+:root.a11y .kiosk-lang,
+:root.a11y .kiosk-a11y,
+:root.a11y .kiosk-gear {
+  background: var(--a11y-bg, #000);
+  border-color: var(--a11y-accent, #FFD24A);
+  backdrop-filter: none;
+}
+:root.a11y .kiosk-nav { opacity: 1; }
+:root.a11y .kiosk-nav__arrow,
+:root.a11y .kiosk-gear,
+:root.a11y .kiosk-nav__app { color: var(--a11y-accent, #FFD24A); }
+:root.a11y .kiosk-nav__arrow { background: none; border: 2px solid var(--a11y-accent, #FFD24A); }
+:root.a11y .kiosk-lang__btn { color: #FFFFFF; }
+/* Включённая кнопка режима должна остаться залитой — иначе общее
+   правило контраст-темы гасит её в пустой кружок. */
+:root.a11y .kiosk-a11y.is-on {
+  background: var(--a11y-accent, #FFD24A);
+  color: #000;
+}
+:root.a11y .kiosk-lang__btn.is-on { background: var(--a11y-accent, #FFD24A); color: #000; }
+:root.a11y .kiosk-nav__dot i { background: #FFFFFF; }
+:root.a11y .kiosk-nav__dot.is-active i { background: var(--a11y-accent, #FFD24A); border-color: #FFFFFF; }
+:root.a11y .kiosk-standby { background: #000; }
+:root.a11y .kiosk-standby__icon { color: var(--a11y-accent, #FFD24A); }
 
 /* ------------------------------------------------------- сервис-панель
  * Единый облик системных настроек для всех пяти МТК: сессия не рисует
