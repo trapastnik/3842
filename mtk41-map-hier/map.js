@@ -85,7 +85,6 @@
     showOutliers: true,
     crossfade: true,
     showMacroLabels: true,    // labels на LEVEL_MACRO кружках
-    show3D: true,             // 3D-модель в карточке
   };
 
   // Preset view configurations (lat, lng of camera target, zoom level).
@@ -477,6 +476,29 @@
       x: (cx - width * 0.5) / map.zoom + width * 0.5 + map.camX,
       y: (cy - height * 0.5) / map.zoom + height * 0.5 + map.camY,
     };
+  }
+
+  /**
+   * Сменить зум так, чтобы точка мира под (cx, cy) осталась под ней же.
+   *
+   * Раньше колесо и пинч трогали только map.zoom, а камера не двигалась — и
+   * масштаб всегда шёл к центру вьюпорта. На карте это особенно мешает: чтобы
+   * рассмотреть Прибалтику, надо было сперва подтащить её в центр, потом
+   * зумить, потом снова подтаскивать. Теперь якорь — сама точка касания
+   * (для пинча — середина между пальцами).
+   *
+   * Вывод: clientToWorld(c) = (c - S/2)/z + S/2 + cam. Хотим, чтобы при новом
+   * z' та же формула дала прежний world P, отсюда cam' = P - S/2 - (c - S/2)/z'.
+   */
+  function zoomAt(newZoom, cx, cy) {
+    const z = clampZoom(newZoom);
+    if (z === map.zoom) return false;
+    const p = clientToWorld(cx, cy);
+    map.zoom = z;
+    map.camX = p.x - width * 0.5 - (cx - width * 0.5) / z;
+    map.camY = p.y - height * 0.5 - (cy - height * 0.5) / z;
+    clampCamera();
+    return true;
   }
 
   // ---------- Sizing formulas -------------------------------------------
@@ -1116,17 +1138,6 @@
   wireCheck("opt-connectors", "showConnectors");
   wireCheck("opt-outliers", "showOutliers");
   wireCheck("opt-crossfade", "crossfade");
-  // 3D-модель — special: prox through MtkCard.setShow3D so open card refreshes
-  (function () {
-    const el = document.getElementById("opt-show3d");
-    el.checked = !!settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    el.addEventListener("change", () => {
-      settings.show3D = !!el.checked;
-      saveSettings();
-      if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    });
-  })();
 
   document.getElementById("opt-reset").addEventListener("click", () => {
     Object.assign(settings, DEFAULT_SETTINGS);
@@ -1142,8 +1153,6 @@
     document.getElementById("opt-connectors").checked = settings.showConnectors;
     document.getElementById("opt-outliers").checked = settings.showOutliers;
     document.getElementById("opt-crossfade").checked = settings.crossfade;
-    document.getElementById("opt-show3d").checked = settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
     settingsPanel.querySelectorAll("[data-size-mode]").forEach(b => {
       b.classList.toggle("active", b.dataset.sizeMode === settings.sizeMode);
     });
@@ -1200,8 +1209,11 @@
       const pts = Array.from(ACTIVE_POINTERS.values());
       const dist = Math.hypot(pts[1].x - pts[0].x, pts[1].y - pts[0].y);
       if (pinchInitialDist > 0) {
-        const target = pinchInitialZoom * (dist / pinchInitialDist);
-        map.zoom = clampZoom(target);
+        // Якорь — живая середина между пальцами: щипок увеличивает то место,
+        // которое держат, а не центр экрана.
+        const mx = (pts[0].x + pts[1].x) * 0.5;
+        const my = (pts[0].y + pts[1].y) * 0.5;
+        zoomAt(pinchInitialZoom * (dist / pinchInitialDist), mx, my);
       }
       didDrag = true;
       return;
@@ -1230,10 +1242,10 @@
   canvas.addEventListener("wheel", event => {
     event.preventDefault();
     const factor = Math.exp(-event.deltaY * 0.0015);
-    const newZoom = clampZoom(map.zoom * factor);
-    if (newZoom === map.zoom) return;
-    map.zoom = newZoom;
-    anim = null;   // wheel interrupts anim
+    // Якорь — курсор: колесо приближает то, на что наведено, а не центр.
+    if (zoomAt(map.zoom * factor, event.clientX, event.clientY)) {
+      anim = null;   // wheel interrupts anim
+    }
   }, { passive: false });
 
   function endPointer(event) {

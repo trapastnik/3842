@@ -67,7 +67,6 @@
     labelScale: 1.4,
     showEvents: true,
     crossfade: true,
-    show3D: true,
   };
   function loadSettings() {
     try {
@@ -647,16 +646,6 @@
   }
   wireCheck("opt-events", "showEvents");
   wireCheck("opt-crossfade", "crossfade");
-  (function () {
-    const el = document.getElementById("opt-show3d");
-    el.checked = !!settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    el.addEventListener("change", () => {
-      settings.show3D = !!el.checked;
-      saveSettings();
-      if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    });
-  })();
   document.getElementById("opt-reset").addEventListener("click", () => {
     Object.assign(settings, DEFAULT_SETTINGS);
     saveSettings();
@@ -665,8 +654,6 @@
     document.getElementById("opt-label-scale").value = settings.labelScale;
     document.getElementById("opt-events").checked = settings.showEvents;
     document.getElementById("opt-crossfade").checked = settings.crossfade;
-    document.getElementById("opt-show3d").checked = settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
     settingsPanel.querySelectorAll("[data-size-mode]").forEach(b => {
       b.classList.toggle("active", b.dataset.sizeMode === settings.sizeMode);
     });
