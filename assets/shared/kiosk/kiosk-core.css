@@ -1,0 +1,254 @@
+/* ============================================================
+ * BMK 38-42 · kiosk-core.css — хром киоск-ядра (зона kiosk-core)
+ *
+ * Подключать ПОСЛЕ kiosk.css (оттуда берутся тач-токены):
+ *   <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css">
+ *   <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css">
+ *
+ * Здесь только слои и контролы ядра: подложка, сцена, навигация, сплэш.
+ * Бренд-токены НЕ объявляются — берутся через var(...) с фолбэком, чтобы
+ * не переопределить палитру приложения.
+ * ============================================================ */
+
+:root {
+  --kiosk-core-css: 1;            /* маячок: ядро проверяет, что стили подключены */
+
+  --kiosk-fade: 350ms;            /* длительность кроссфейда (ядро ставит инлайном) */
+  --kiosk-nav-size: var(--touch-primary, 96px);
+  --kiosk-nav-opacity: 0.92;
+  --kiosk-stripe-angle: 105deg;   /* канон бренда */
+  --stripe-opacity: 1;            /* яркость косой подложки; крутится из настроек МТК */
+}
+
+/* ------------------------------------------------------------ каркас */
+
+.kiosk-app {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 120% 85% at 50% 42%, rgba(67, 80, 89, 0.34), rgba(12, 16, 18, 0.96)),
+    var(--graphite, #435059);
+  color: var(--paper, #F7F9EF);
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Косая подложка. Геометрия — канон прототипов (полосы держатся кромок,
+ * контент не пересекают): широкая красная у правого края, серое «окно»
+ * у левого, латунная волосяная линия рядом с красной. */
+.kiosk-stripes {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  transition: opacity 200ms ease;
+  background:
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 95.4%, rgba(160, 33, 40, 0.62) 95.4%, rgba(160, 33, 40, 0.62) 99%, transparent 99.2%),
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 1.5%, rgba(157, 163, 166, 0.1) 1.5%, rgba(157, 163, 166, 0.1) 9%, transparent 9.2%),
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 93.6%, rgba(210, 183, 115, 0.6) 93.6%, rgba(210, 183, 115, 0.6) 93.75%, transparent 93.95%);
+}
+.kiosk-stripes[hidden] { display: none; }
+
+.kiosk-stage {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+}
+
+/* ------------------------------------------------------------- слои сцен
+ * Каждая сцена получает свой слой. Невидимые слои сняты с композитинга
+ * (visibility + content-visibility) — браузер их не рисует, а сцена в это
+ * время обязана быть на pause() (0 rAF / 0 таймеров). Кроссфейд идёт
+ * между двумя слоями: уходящий и входящий одновременно видимы только
+ * на время перехода. */
+.kiosk-layer {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  visibility: hidden;
+  content-visibility: hidden;
+  pointer-events: none;
+  transition: opacity var(--kiosk-fade) ease;
+  will-change: opacity;
+}
+.kiosk-layer.is-visible {
+  visibility: visible;
+  content-visibility: visible;
+}
+.kiosk-layer.is-active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* --------------------------------------------------------- навигация сцен
+ * Тач-стандарт: стрелки 96 px (--touch-primary), зазор 16 px,
+ * отступ от нижней кромки 80 px (--edge-safe-bottom). */
+.kiosk-nav {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+  opacity: var(--kiosk-nav-opacity, 0.92);
+  pointer-events: none;              /* фон бара не перехватывает касания */
+}
+.kiosk-nav[data-position="bottom"] { bottom: var(--edge-safe-bottom, 80px); }
+.kiosk-nav[data-position="top"]    { top: var(--edge-safe, 64px); }
+.kiosk-nav[hidden] { display: none; }
+
+.kiosk-nav__row {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+  padding: 10px 18px;
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.62);
+  border: 1px solid rgba(210, 183, 115, 0.35);
+  backdrop-filter: blur(6px);
+  pointer-events: auto;
+}
+
+.kiosk-nav__arrow {
+  width: var(--kiosk-nav-size);
+  height: var(--kiosk-nav-size);
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  border-radius: 50%;
+  background: rgba(247, 249, 239, 0.06);
+  color: var(--brass, #D2B773);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 160ms ease, color 160ms ease, transform 120ms ease;
+}
+.kiosk-nav__arrow svg { width: 52%; height: 52%; }
+.kiosk-nav__arrow:active {
+  background: rgba(210, 183, 115, 0.22);
+  color: var(--paper, #F7F9EF);
+  transform: scale(0.94);
+}
+.kiosk-nav__arrow[hidden] { display: none; }
+
+.kiosk-nav__title {
+  min-width: 22ch;
+  padding: 0 12px;
+  text-align: center;
+  line-height: 1.15;
+}
+.kiosk-nav__app {
+  display: block;
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: var(--type-min-label, 24px);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(210, 183, 115, 0.8);
+}
+.kiosk-nav__scene {
+  display: block;
+  margin-top: 4px;
+  font-family: "21 Cent", Georgia, serif;
+  font-size: calc(var(--type-min-ui, 32px) * 1.1);
+  color: var(--paper, #F7F9EF);
+}
+
+.kiosk-nav__dots {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+  pointer-events: auto;
+}
+.kiosk-nav__dot {
+  width: var(--touch-min, 64px);
+  height: var(--touch-min, 64px);
+  display: grid;
+  place-items: center;
+  border: 0;
+  padding: 0;
+  background: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-nav__dot i {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(247, 249, 239, 0.28);
+  border: 2px solid transparent;
+  transition: background 180ms ease, transform 180ms ease, border-color 180ms ease;
+}
+.kiosk-nav__dot.is-active i {
+  background: var(--brass, #D2B773);
+  border-color: rgba(247, 249, 239, 0.55);
+  transform: scale(1.35);
+}
+
+/* Спрятанные части хрома (состав из настроек МТК) */
+.kiosk-nav .is-hidden { display: none; }
+
+/* ---------------------------------------------------------------- сплэш */
+
+.kiosk-splash {
+  position: absolute;
+  inset: 0;
+  z-index: 60;
+  display: grid;
+  place-items: center;
+  background: var(--amber-black, #000);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 400ms ease;
+}
+.kiosk-splash.is-on {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.kiosk-splash__inner {
+  width: min(64vw, 900px);
+  text-align: center;
+}
+.kiosk-splash__title {
+  font-family: "Nolde", "21 Cent", Georgia, serif;
+  font-size: clamp(40px, 4vw, 96px);
+  color: var(--paper, #F7F9EF);
+  letter-spacing: 0.02em;
+}
+.kiosk-splash__bar {
+  margin: 32px 0 18px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(247, 249, 239, 0.12);
+  overflow: hidden;
+}
+.kiosk-splash__bar i {
+  display: block;
+  width: 0;
+  height: 100%;
+  background: var(--brass, #D2B773);
+  transition: width 220ms ease;
+}
+.kiosk-splash__note {
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: var(--type-min-label, 24px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.62);
+}
+.kiosk-splash.is-error .kiosk-splash__bar i { background: var(--red, #A02128); }
+.kiosk-splash.is-error .kiosk-splash__note { color: var(--red, #A02128); }
+
+/* --------------------------------------------------- системные предпочтения */
+
+@media (prefers-reduced-motion: reduce) {
+  .kiosk-layer,
+  .kiosk-splash,
+  .kiosk-nav__arrow,
+  .kiosk-nav__dot i { transition-duration: 1ms !important; }
+}
