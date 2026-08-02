@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>МТК 41 · Масштаб</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./styles.css?v=20260802">
   <link rel="stylesheet" href="../assets/mtk41/lib/card.css">
 </head>
 <body>
@@ -16,6 +16,10 @@
       <h1>В одном масштабе</h1>
       <div class="subtitle">От 60-сантиметрового бюста 1919-го — до 57-метрового колосса Вучетича 1973-го. Слева — человек ростом 1.75 м для сравнения.</div>
     </header>
+    <div class="nav-controls" aria-hidden="true">
+      <div class="nav-row" id="nav-modes"></div>
+      <div class="nav-row nav-row--sub" id="nav-sub"></div>
+    </div>
     <aside id="card" class="card" data-mtk-card hidden></aside>
   </main>
   <script type="importmap">
@@ -30,7 +34,7 @@
     import { initMtkCard } from "../assets/mtk41/lib/card.js";
     initMtkCard();
   </script>
-  <script src="../assets/mtk41/lib/corpus-stats.js?v=20260801"></script>
-  <script src="./scale.js?v=20260801"></script>
+  <script src="../assets/mtk41/lib/corpus-stats.js?v=20260802"></script>
+  <script src="./scale.js?v=20260802"></script>
 </body>
 </html>
