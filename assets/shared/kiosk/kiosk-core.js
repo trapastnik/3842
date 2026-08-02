@@ -60,6 +60,70 @@
 
   var IDLE = { ACTIVE: "active", STANDBY: "standby" };
 
+  /* ------------------------------------------------- описание настроек
+   * Сервис-панель строится ИЗ ЭТОГО списка — отсюда единый вид контролов
+   * во всех пяти МТК: сессия не рисует свои переключатели, а добавляет
+   * строку в спецификацию (app.addSettings) и получает тот же облик. */
+  var SETTINGS_SPEC = [
+    {
+      group: "Навигация",
+      rows: [
+        { type: "choice", path: "nav.position", label: "Положение",
+          options: [["bottom", "Внизу"], ["top", "Вверху"]] },
+        { type: "range", path: "nav.size", label: "Размер кнопок", min: 64, max: 160, step: 8, unit: " px" },
+        { type: "range", path: "nav.opacity", label: "Яркость хрома", min: 0.3, max: 1, step: 0.02, pct: true },
+        { type: "toggle", path: "nav.showTitle", label: "Заголовок экрана" },
+        { type: "toggle", path: "nav.showArrows", label: "Стрелки" },
+        { type: "toggle", path: "nav.showDots", label: "Точки" }
+      ]
+    },
+    {
+      group: "Косая подложка",
+      rows: [
+        { type: "toggle", path: "stripes.on", label: "Полосы на фоне" },
+        { type: "range", path: "stripes.opacity", label: "Яркость полос", min: 0, max: 1, step: 0.05, pct: true },
+        { type: "range", path: "stripes.angle", label: "Угол", min: 75, max: 135, step: 1, unit: "°" }
+      ]
+    },
+    {
+      group: "Тайминги простоя",
+      rows: [
+        { type: "range", path: "timings.reset", label: "Сброс состояния", min: 15, max: 600, step: 5, unit: " с" },
+        { type: "range", path: "timings.standby", label: "Уход в заставку", min: 30, max: 1800, step: 10, unit: " с" },
+        { type: "range", path: "timings.fade", label: "Кроссфейд сцен", min: 0, max: 800, step: 50, unit: " мс" },
+        { type: "range", path: "timings.standbyFps", label: "FPS заставки", min: 1, max: 15, step: 1 },
+        { type: "text", path: "timings.restartAt", label: "Ночной рестарт (ЧЧ:ММ)", placeholder: "04:00" }
+      ]
+    },
+    {
+      group: "Умолчания",
+      rows: [
+        { type: "scene", path: "defaultScene", label: "Стартовый экран" },
+        { type: "choice", path: "defaultLang", label: "Язык",
+          options: [["ru", "РУС"], ["en", "ENG"], ["zh", "中文"]] }
+      ]
+    }
+  ];
+
+  function getByPath(obj, path) {
+    var parts = path.split("."), cur = obj, i;
+    for (i = 0; i < parts.length; i++) {
+      if (cur == null) return undefined;
+      cur = cur[parts[i]];
+    }
+    return cur;
+  }
+
+  function setByPath(obj, path, value) {
+    var parts = path.split("."), cur = obj, i;
+    for (i = 0; i < parts.length - 1; i++) {
+      if (!isObj(cur[parts[i]])) cur[parts[i]] = {};
+      cur = cur[parts[i]];
+    }
+    cur[parts[parts.length - 1]] = value;
+    return obj;
+  }
+
   /* События, считающиеся присутствием посетителя. mousemove намеренно нет:
    * на киоске мыши не бывает, а дрожь курсора при отладке держала бы
    * машину вечно в ACTIVE. */
@@ -240,6 +304,13 @@
     this._started = false;
     this._els = {};
 
+    /* Правки оператора хранятся ПАТЧЕМ, а не полным конфигом: иначе
+     * localStorage навсегда затенил бы будущие правки kiosk.config.json. */
+    this._override = {};
+    this._settingsSpec = SETTINGS_SPEC.map(function (g) {
+      return { group: g.group, rows: g.rows.slice() };
+    });
+
     /* idle-машина */
     this.idleState = IDLE.ACTIVE;
     this._lastActivity = Date.now();
@@ -342,6 +413,7 @@
       .then(function () {
         self._hideSplash();
         self._startIdle();
+        if (/[?&]service=1\b/.test(location.search)) self.openService(true);
         self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
         return self;
@@ -369,14 +441,65 @@
   KioskApp.prototype._applyStoredConfig = function () {
     var raw;
     try { raw = localStorage.getItem(this.storageKey()); } catch (e) { return; }
-    if (!raw) return;
-    try {
-      this.config = deepMerge(this.config, JSON.parse(raw));
-    } catch (err) {
-      console.warn("[kiosk] повреждён localStorage-конфиг, игнорирую", err);
+    if (raw) {
+      try {
+        var patch = JSON.parse(raw);
+        if (isObj(patch)) {
+          this._override = patch;
+          this.config = deepMerge(this.config, patch);
+        }
+      } catch (err) {
+        console.warn("[kiosk] повреждён localStorage-конфиг, игнорирую", err);
+      }
     }
     this.lang = this.config.defaultLang || this.lang;
     this.a11y = !!(this.config.a11y && this.config.a11y.enabled);
+  };
+
+  /* ------------------------------------------------------ API настроек */
+
+  KioskApp.prototype.getSetting = function (path) {
+    return getByPath(this.config, path);
+  };
+
+  /* Правка оператора: пишем и в живой конфиг, и в патч, применяем сразу. */
+  KioskApp.prototype.setSetting = function (path, value) {
+    setByPath(this.config, path, value);
+    setByPath(this._override, path, value);
+    this._saveOverride();
+    this._applySettings(path);
+    this.emit("setting", { path: path, value: value });
+    return this;
+  };
+
+  KioskApp.prototype._saveOverride = function () {
+    try {
+      localStorage.setItem(this.storageKey(), JSON.stringify(this._override));
+    } catch (err) {
+      this.log("warn", "не сохранились настройки: " + errText(err));
+    }
+  };
+
+  /* Сброс к kiosk.config.json. Перезагружаем страницу, а не «размерживаем»
+   * патч: файл — единственный источник правды, и это честнее. */
+  KioskApp.prototype.resetSettings = function () {
+    try { localStorage.removeItem(this.storageKey()); } catch (err) {}
+    this._override = {};
+    this.restart("сброс настроек");
+  };
+
+  KioskApp.prototype._applySettings = function (path) {
+    if (!path || path.indexOf("nav.") === 0) this._applyNavStyle();
+    if (!path || path.indexOf("stripes.") === 0) this._applyStripes();
+    /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
+  };
+
+  /* Сессия МТК может добавить свою группу настроек — и получить тот же
+   * вид контролов, что и у ядра (единый облик системных настроек). */
+  KioskApp.prototype.addSettings = function (group, rows) {
+    this._settingsSpec.push({ group: group, rows: rows.slice() });
+    if (this._els.service) this._rebuildService();
+    return this;
   };
 
   KioskApp.prototype.storageKey = function () {
@@ -424,6 +547,8 @@
     root.appendChild(nav);
     root.appendChild(splash);
     host.appendChild(root);
+
+    this._buildService();
   };
 
   KioskApp.prototype._buildNav = function (doc) {
@@ -1077,6 +1202,249 @@
     try { localStorage.removeItem(this.journalKey()); } catch (err) {}
     return this;
   };
+
+  /* ================================================= сервис-панель ===== */
+
+  KioskApp.prototype._buildService = function () {
+    var self = this;
+    var doc = document;
+
+    /* Шестерёнка. Пока видна всегда (service.gear: "always"); условие
+     * показа/скрытия решится позже — режимы уже заложены. */
+    var gear = doc.createElement("button");
+    gear.type = "button";
+    gear.className = "kiosk-gear kiosk-touch kiosk-touch--primary";
+    gear.setAttribute("aria-label", "Сервис-панель");
+    gear.innerHTML = gearSvg();
+    gear.addEventListener("click", function () { self.openService(true); });
+
+    var panel = doc.createElement("aside");
+    panel.className = "kiosk-service";
+    panel.hidden = true;
+    panel.innerHTML =
+      '<header class="kiosk-service__head">' +
+      "<span>Сервис-панель</span>" +
+      '<button type="button" class="kiosk-service__close kiosk-touch" aria-label="Закрыть">✕</button>' +
+      "</header>" +
+      '<div class="kiosk-service__body kiosk-scroll"></div>' +
+      '<footer class="kiosk-service__foot">' +
+      '<button type="button" class="kiosk-service__reset kiosk-touch">Сбросить настройки</button>' +
+      '<span class="kiosk-service__ver"></span>' +
+      "</footer>";
+
+    panel.querySelector(".kiosk-service__close")
+      .addEventListener("click", function () { self.openService(false); });
+    panel.querySelector(".kiosk-service__reset")
+      .addEventListener("click", function () { self.resetSettings(); });
+    panel.querySelector(".kiosk-service__ver").textContent =
+      "ядро " + VERSION + " · " + this.appId;
+
+    this._els.root.appendChild(gear);
+    this._els.root.appendChild(panel);
+    this._els.gear = gear;
+    this._els.service = panel;
+    this._els.serviceBody = panel.querySelector(".kiosk-service__body");
+
+    this._bindServiceBody();
+    this._applyGearMode();
+    this._bindTripleTap();
+  };
+
+  KioskApp.prototype._applyGearMode = function () {
+    var mode = (this.config.service || {}).gear || "always";
+    if (this._els.gear) this._els.gear.hidden = mode !== "always";
+  };
+
+  /* Тройной тап по заголовку — запасной вход, когда шестерёнку спрячут. */
+  KioskApp.prototype._bindTripleTap = function () {
+    var self = this;
+    var titleBox = this._els.nav && this._els.nav.querySelector(".kiosk-nav__title");
+    if (!titleBox) return;
+    var taps = 0, timer = null;
+    titleBox.addEventListener("pointerdown", function () {
+      taps++;
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(function () { taps = 0; }, 1200);
+      if (taps >= 3) {
+        taps = 0;
+        clearTimeout(timer);
+        self.openService(true);
+      }
+    });
+  };
+
+  KioskApp.prototype.openService = function (on) {
+    if (!this._els.service) return this;
+    on = on !== false;
+    if (on === !!this._serviceOpen) return this;
+    this._serviceOpen = on;
+
+    var panel = this._els.service;
+    if (on) {
+      this._rebuildService();
+      panel.hidden = false;
+      /* nextFrames, а не голый rAF: в скрытой вкладке кадров не бывает и
+       * панель осталась бы за краем экрана (страховка по таймеру внутри). */
+      nextFrames(1).then(function () { panel.classList.add("is-open"); });
+      this.suspendIdle(true);      // под руками оператора киоск не засыпает
+    } else {
+      panel.classList.remove("is-open");
+      setTimeout(function () { if (!panel.classList.contains("is-open")) panel.hidden = true; }, 350);
+      this.suspendIdle(false);
+    }
+    this.emit("service", { open: on });
+    return this;
+  };
+
+  KioskApp.prototype._rebuildService = function () {
+    var self = this;
+    var body = this._els.serviceBody;
+    if (!body) return;
+    var html = this._settingsSpec.map(function (g) {
+      return '<section class="kiosk-set__group">' +
+        '<div class="kiosk-set__title">' + esc(g.group) + "</div>" +
+        g.rows.map(function (row) { return self._rowHtml(row); }).join("") +
+        "</section>";
+    }).join("");
+
+    html += '<section class="kiosk-set__group kiosk-set__group--log">' +
+      '<div class="kiosk-set__title">Журнал <button type="button" class="kiosk-set__mini" data-log-clear>Очистить</button></div>' +
+      '<div class="kiosk-set__log">' + this._logHtml() + "</div>" +
+      "</section>";
+
+    body.innerHTML = html;
+  };
+
+  KioskApp.prototype._rowHtml = function (row) {
+    var val = getByPath(this.config, row.path);
+    var head = '<label class="kiosk-set-row__label">' + esc(row.label) +
+      '<span class="kiosk-set-row__val" data-val="' + row.path + '">' +
+      esc(fmtValue(row, val)) + "</span></label>";
+
+    if (row.type === "range") {
+      return '<div class="kiosk-set-row kiosk-set-row--range">' + head +
+        '<input type="range" data-path="' + row.path + '" min="' + row.min + '" max="' + row.max +
+        '" step="' + row.step + '" value="' + Number(val) + '">' + "</div>";
+    }
+    if (row.type === "toggle") {
+      return '<div class="kiosk-set-row kiosk-set-row--toggle">' +
+        '<label class="kiosk-set-row__label">' + esc(row.label) + "</label>" +
+        '<button type="button" class="kiosk-set__switch kiosk-touch' + (val ? " is-on" : "") +
+        '" data-path="' + row.path + '" data-toggle role="switch" aria-checked="' + (val ? "true" : "false") +
+        '"><i></i></button></div>';
+    }
+    if (row.type === "choice" || row.type === "scene") {
+      var options = row.type === "scene"
+        ? this._records.map(function (r) { return [r.id, pickLabel(r.title, "ru")]; })
+        : row.options;
+      return '<div class="kiosk-set-row kiosk-set-row--choice">' +
+        '<label class="kiosk-set-row__label">' + esc(row.label) + "</label>" +
+        '<div class="kiosk-set__choices">' + options.map(function (o) {
+          return '<button type="button" class="kiosk-set__choice kiosk-touch' +
+            (String(val) === String(o[0]) ? " is-on" : "") +
+            '" data-path="' + row.path + '" data-choice="' + esc(String(o[0])) + '">' +
+            esc(o[1]) + "</button>";
+        }).join("") + "</div></div>";
+    }
+    if (row.type === "text") {
+      return '<div class="kiosk-set-row kiosk-set-row--text">' +
+        '<label class="kiosk-set-row__label">' + esc(row.label) + "</label>" +
+        '<input type="text" class="kiosk-set__text" data-path="' + row.path + '" data-text value="' +
+        esc(val == null ? "" : String(val)) + '" placeholder="' + esc(row.placeholder || "") + '"></div>';
+    }
+    return "";
+  };
+
+  KioskApp.prototype._logHtml = function () {
+    var list = this.getLog().slice(-50).reverse();
+    if (!list.length) return '<div class="kiosk-set__log-empty">Пусто</div>';
+    return list.map(function (e) {
+      return '<div class="kiosk-set__log-row" data-level="' + esc(e.level) + '">' +
+        '<span class="kiosk-set__log-at">' + esc(String(e.at).slice(5, 19).replace("T", " ")) + "</span>" +
+        '<span class="kiosk-set__log-msg">' + esc(e.msg) + "</span></div>";
+    }).join("");
+  };
+
+  KioskApp.prototype._bindServiceBody = function () {
+    var self = this;
+    var body = this._els.serviceBody;
+
+    /* Слайдеры — на input, остальное — делегированием на click. */
+    body.addEventListener("input", function (e) {
+      var input = e.target.closest("input[type=range]");
+      if (!input) return;
+      var path = input.getAttribute("data-path");
+      var row = self._findRow(path);
+      self.setSetting(path, Number(input.value));
+      var out = body.querySelector('[data-val="' + path + '"]');
+      if (out && row) out.textContent = fmtValue(row, Number(input.value));
+    });
+
+    body.addEventListener("change", function (e) {
+      var input = e.target.closest("input[data-text]");
+      if (!input) return;
+      var path = input.getAttribute("data-path");
+      var v = input.value.trim();
+      self.setSetting(path, v === "" ? null : v);
+    });
+
+    body.addEventListener("click", function (e) {
+      var sw = e.target.closest("[data-toggle]");
+      if (sw) {
+        var path = sw.getAttribute("data-path");
+        var on = !getByPath(self.config, path);
+        self.setSetting(path, on);
+        sw.classList.toggle("is-on", on);
+        sw.setAttribute("aria-checked", on ? "true" : "false");
+        return;
+      }
+      var ch = e.target.closest("[data-choice]");
+      if (ch) {
+        var p = ch.getAttribute("data-path");
+        var v = ch.getAttribute("data-choice");
+        self.setSetting(p, v);
+        Array.prototype.forEach.call(
+          body.querySelectorAll('[data-path="' + p + '"][data-choice]'),
+          function (b) { b.classList.toggle("is-on", b === ch); }
+        );
+        if (p === "defaultLang") self.setLang(v);
+        return;
+      }
+      if (e.target.closest("[data-log-clear]")) {
+        self.clearLog();
+        var box = body.querySelector(".kiosk-set__log");
+        if (box) box.innerHTML = self._logHtml();
+      }
+    });
+  };
+
+  KioskApp.prototype._findRow = function (path) {
+    var found = null;
+    this._settingsSpec.forEach(function (g) {
+      g.rows.forEach(function (r) { if (r.path === path) found = r; });
+    });
+    return found;
+  };
+
+  function fmtValue(row, val) {
+    if (val == null) return "—";
+    if (row.pct) return Math.round(Number(val) * 100) + " %";
+    return String(val) + (row.unit || "");
+  }
+
+  function esc(s) {
+    return String(s)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function gearSvg() {
+    return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
+      'stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" ' +
+      'aria-hidden="true"><circle cx="20" cy="20" r="5.5"/>' +
+      '<path d="M20 5.5v4M20 30.5v4M5.5 20h4M30.5 20h4M9.7 9.7l2.8 2.8M27.5 27.5l2.8 2.8' +
+      'M30.3 9.7l-2.8 2.8M12.5 27.5l-2.8 2.8"/></svg>';
+  }
 
   /* ------------------------------------------- заготовки след. коммитов */
 
