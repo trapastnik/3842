@@ -12,10 +12,13 @@ build_fonts.py (нужна сеть для subset Google Fonts).
 import subprocess, os, sys
 
 HERE = os.path.dirname(__file__)
+# Только живые генераторы. Досплитовые (build_globe/map/studio/validate/render/
+# quotes_viz/app) переехали в legacy/: страниц, в которые они писали, больше нет —
+# запуск создавал бы устаревшие дубли рядом с живыми (см. legacy/README.md).
 GENS = [
-    "build_globe.py", "build_map.py", "build_studio.py",
-    "build_validate.py", "build_analysis.py", "build_editor.py",
-    "build_render.py", "build_quotes_viz.py",
+    "build_analysis.py",   # mtk38-v2/back/analysis.html
+    "build_editor.py",     # mtk38-v2/back/editor.html (validate.html — редирект на него)
+    "build_words_v3.py",   # mtk38-v3/fonts/faces.css
 ]
 fail = 0
 for g in GENS:

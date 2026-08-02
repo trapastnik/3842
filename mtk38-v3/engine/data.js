@@ -27,6 +27,60 @@ export async function loadWords(url = '../data/mtk38.json') {
   });
 }
 
+// Группировка языков по НАПИСАНИЮ — для композиций (глобус, дождь, студия).
+//
+// После расширения канона до 128 языков на 60 форм повторы стали доминировать:
+// «Ленин» пишут 36 языков, «Lenin» — 26, вместе это половина сферы. Зритель видел
+// стену одинаковых слов, а тап по ней давал формально верный, но случайный язык.
+// Поэтому в композициях одна ФОРМА = один объект; все её языки — в карточке.
+// Карта группировку НЕ использует: там точки разнесены географией и подписаны.
+//
+// Форма совместима по полям с языком (id, w, sc, wt, pr, un…), поэтому сцены,
+// атлас и карточка работают с ней без изменений; отличает её поле `langs`.
+export function groupByWriting(words) {
+  const byWriting = new Map();
+  for (const w of words) {
+    if (!byWriting.has(w.w)) byWriting.set(w.w, []);
+    byWriting.get(w.w).push(w);
+  }
+  return [...byWriting.values()].map((langs) => {
+    // «главный» язык формы — рабочий язык ООН, иначе самый весомый, иначе первый
+    const primary = [...langs].sort((a, b) => (b.un - a.un) || (b.wt - a.wt))[0];
+    return {
+      ...primary,
+      wt: Math.max(...langs.map((l) => l.wt)),
+      pr: langs.some((l) => l.pr),
+      un: langs.some((l) => l.un),
+      langs,
+    };
+  });
+}
+
+// Издания В.И. Ленина по языкам (data/mtk38-publications.json).
+// Один язык → N изданий, поэтому возвращаем Map: lang_id → [издание, …].
+// base — префикс к путям обложек: они записаны от корня репозитория.
+export async function loadPublications(url = '../data/mtk38-publications.json', base = '../') {
+  try {
+    const d = await (await fetch(url)).json();
+    const by = new Map();
+    for (const p of d.publications || []) {
+      if (!p.lang_id) continue;
+      const covers = (p.covers || []).map((c) => base + c);
+      if (!by.has(p.lang_id)) by.set(p.lang_id, []);
+      by.get(p.lang_id).push({
+        area: p.area || '', section: p.section || '',
+        titleNative: p.title_native || '', authorNative: p.author_native || '',
+        cityNative: p.city_native || '', publisherNative: p.publisher_native || '',
+        titleRu: p.title_ru || '', cityRu: p.city_ru || '', publisherRu: p.publisher_ru || '',
+        year: p.year || '', covers,
+        // координаты ГОРОДА ПЕЧАТИ — для слоя изданий на карте
+        cityLat: p.city_lat ?? null, cityLng: p.city_lng ?? null,
+      });
+    }
+    return by;
+  } catch (_) { return new Map(); }
+}
+
 export async function loadQuotes(url = '../data/mtk38-quotes.json') {
   try {
     const d = await (await fetch(url)).json();

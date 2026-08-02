@@ -20,6 +20,12 @@ scripts = sorted(json.load(open(FM, encoding="utf-8")).get("scripts", [])) if os
 faces = []
 faces.append('@font-face{font-family:"20 Kopeek";src:url("./kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}')
 faces.append('@font-face{font-family:"20 Kopeek";font-weight:600;src:url("./kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}')
+# 21 Cent — читаемый текст и описания, Nolde — только крупные заголовки
+# (дизайн-код 2026-05-12). Лежат локально в mtk38-v3/fonts/, а не ссылкой на
+# mtk38-globe/: v3 должен собираться в самодостаточный дистрибутив.
+faces.append('@font-face{font-family:"21 Cent";src:url("./cent/21Cent.woff") format("woff");font-display:swap}')
+faces.append('@font-face{font-family:"21 Cent";font-weight:700;src:url("./cent/21Cent-Bold.woff") format("woff");font-display:swap}')
+faces.append('@font-face{font-family:"Nolde";src:url("./nolde/nolde.otf") format("opentype");font-display:swap}')
 for s in scripts:
     faces.append(f'@font-face{{font-family:"noto-{s}";src:url("./noto/{s}.woff2") format("woff2");font-display:swap}}')
     faces.append(f'@font-face{{font-family:"noto-{s}";font-weight:700;src:url("./noto/{s}-700.woff2") format("woff2");font-display:swap}}')

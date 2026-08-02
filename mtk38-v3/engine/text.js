@@ -3,8 +3,8 @@
 // Латиница/кириллица → 20 Kopeek; иначе → Arial Unicode MS / noto-<ISO15924>.
 
 const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl')
-  ? `'20 Kopeek','Arial Unicode MS',sans-serif`
-  : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+  ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif`
+  : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 
 let _meas;
 function measureCtx() {

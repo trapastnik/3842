@@ -23,7 +23,6 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · дождь имён (GPU) · <b>веди/жми</b> — отталкивай · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -33,10 +32,11 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createTuner } from './tuner.js';
-import { makeWordAtlas } from './engine/atlas.js';
-import { createRain } from './scenes/rain.js';
-import { loadWords } from './engine/data.js';
+import { createUI, IS_SERVICE } from './engine/ui.js?v=20260806';
+import { makeWordAtlas } from './engine/atlas.js?v=20260802';
+import { createRain } from './scenes/rain.js?v=20260802';
+import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
+import { createCard } from './engine/card.js?v=20260803';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
 window.__rain = { ready: false };
@@ -44,6 +44,10 @@ try {
   const canvas = document.getElementById('c');
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
   const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+  // в композиции одна ФОРМА = один объект: 128 языков дают 60 написаний,
+  // «Ленин» пишут 36 языков — без группировки половина сцены была бы двумя строками
+  const FORMS = groupByWriting(WORDS);
+  const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x10141a });
 
@@ -53,7 +57,7 @@ try {
   const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
   camera.position.set(0, 0, 26); camera.lookAt(0, 0, 0);
 
-  const atlas = makeWordAtlas(THREE, WORDS, {});
+  const atlas = makeWordAtlas(THREE, FORMS, {});
   let rain = await createRain(THREE, renderer, { atlas, count: 500 });
   scene.add(rain.mesh);
 
@@ -68,7 +72,7 @@ try {
     try { base = dof(col, sp.getViewZNode(), uDofFocus, uDofRange, uDofBokeh); } catch (e) { console.warn('[dof off]', e); base = col; }
     const baseTex = convertToTexture(base);
     let out = baseTex;
-    try { bloomPass = bloom(baseTex, 0.45, 0.5, 0.62); out = baseTex.add(bloomPass); } catch (e) { console.warn('[bloom off]', e); out = baseTex; }
+    try { bloomPass = bloom(baseTex, 0.26, 0.55, 0.78); out = baseTex.add(bloomPass); } catch (e) { console.warn('[bloom off]', e); out = baseTex; }
     try { out = chromaticAberration(out, uCa, vec2(0.5, 0.5), 1.1); } catch (e) { console.warn('[ca off]', e); }
     post.outputNode = out;
   } catch (e) { console.warn('[post off]', e); post = null; }
@@ -79,11 +83,28 @@ try {
     const t = -ray.ray.origin.z / ray.ray.direction.z; return ray.ray.origin.clone().addScaledVector(ray.ray.direction, t); };
   let pr = 0;
   canvas.addEventListener('pointermove', (e) => { rain.setPointer(toWorld(e.clientX, e.clientY), pr || 5.5); pr = pr || 5.5; }, { passive: true });
-  canvas.addEventListener('pointerdown', (e) => { pr = 8.5; rain.setPointer(toWorld(e.clientX, e.clientY), pr); });
-  canvas.addEventListener('pointerup', () => { pr = 5.5; });
   canvas.addEventListener('pointerleave', () => { pr = 0; rain.setPointer(new THREE.Vector3(0, 0, 0), 0); });
 
-  const stats = createStats(renderer, { extra: () => `частиц    ${rain.count}` });
+  // Тап без протяжки → карточка ближайшего к лучу слова; протяжка остаётся отталкиванием.
+  const card = createCard({ publications: PUBS });
+  const T = { x: 0, y: 0, t: 0, moved: false };
+  canvas.addEventListener('pointerdown', (e) => {
+    pr = 8.5; rain.setPointer(toWorld(e.clientX, e.clientY), pr);
+    T.x = e.clientX; T.y = e.clientY; T.t = performance.now(); T.moved = false;
+  });
+  canvas.addEventListener('pointermove', (e) => {
+    if (Math.hypot(e.clientX - T.x, e.clientY - T.y) > 6) T.moved = true;
+  }, { passive: true });
+  canvas.addEventListener('pointerup', async (e) => {
+    pr = 5.5;
+    if (T.moved || performance.now() - T.t > 400) return;
+    ndc.set(e.clientX / globalThis.innerWidth * 2 - 1, -(e.clientY / globalThis.innerHeight * 2 - 1));
+    ray.setFromCamera(ndc, camera);
+    const wi = await rain.pick(ray.ray);
+    if (wi != null && FORMS[wi]) card.open(FORMS[wi]); else card.close();
+  });
+
+  const stats = IS_SERVICE && createStats(renderer, { extra: () => `частиц    ${rain.count}` });
 
   // количество — пересборка rain (debounce, async); переносим живые параметры
   let countTimer = 0;
@@ -116,19 +137,24 @@ try {
       case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
     }
   }
-  createTuner({
-    title: 'дождь v3',
+  createUI({
+    kicker: 'МТК 38 · Ленин на языках мира',
+    title: 'Дождь имён',
+    subtitle: `${FORMS.length} написаний всплывают снизу вверх. `
+      + 'Веди пальцем — расталкивай. Тап по слову — карточка языка и издания на нём.',
+    hint: 'веди / жми — отталкивай · <b>тап</b> → карточка · <b>⚙</b> — настройки',
     groups: [
-      { title: 'дождь', params: [
-        { key: 'count', label: 'количество', min: 100, max: 14000, step: 100, value: 500 },
-        { key: 'speed', label: 'скорость', min: 0, max: 6, step: .1, value: 2.4 },
-        { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
-        { key: 'size', label: 'размер', min: 0.4, max: 2.5, step: .05, value: 1 },
+      { params: [
+        { key: 'count', label: 'количество', min: 100, max: 4000, step: 50, value: 500 },
+        { key: 'speed', label: 'скорость', min: 0.4, max: 6, step: .1, value: 2.4 },
+        { key: 'size', label: 'размер', min: 0.4, max: 2.2, step: .05, value: 1 },
       ] },
-      { title: 'свет / пост', params: [
+      // инженерное — свет и пост-обработка
+      { title: 'свет / пост', service: true, params: [
+        { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
         { key: 'exposure', label: 'экспозиция', min: .4, max: 1.8, step: .02, value: 1 },
-        { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .45 },
-        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .62 },
+        { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .26 },
+        { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .78 },
         { key: 'dofBokeh', label: 'DOF боке', min: 0, max: 3, step: .05, value: 0 },
         { key: 'dofFocus', label: 'DOF фокус', min: 14, max: 40, step: .5, value: 26 },
         { key: 'ca', label: 'аберрация', min: 0, max: 2.5, step: .05, value: .3 },
@@ -148,7 +174,7 @@ try {
     const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
     await rain.update(dt);
     if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
-    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    stats && stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
     if (++n === 3) { window.__rain = { ready: true, backend }; document.title = 'rain READY:' + backend; }
   });
 } catch (e) { showErr((e && e.stack) || e); document.title = 'rain ERROR'; console.error(e); }

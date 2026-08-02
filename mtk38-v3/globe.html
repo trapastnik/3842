@@ -35,7 +35,6 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · кольцевой глобус · 52 написания «Ленин» · тяни — поворот · <b>тап</b> → карточка · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -45,11 +44,11 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createCard } from './engine/card.js';
-import { createTuner } from './tuner.js';
+import { createCard } from './engine/card.js?v=20260803';
+import { createUI, IS_SERVICE } from './engine/ui.js?v=20260806';
 import { createGlobe } from './scenes/globe-rings.js';
 import { createEarth } from './scenes/earth.js';
-import { loadWords } from './engine/data.js';
+import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
@@ -61,6 +60,10 @@ try {
   // шрифты обязаны быть готовы ДО растеризации глифов в текстуры
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
   const WORDS = await loadWords();          // канон из data/mtk38.json (единый источник с V2)
+  // в композиции одна ФОРМА = один объект: 128 языков дают 60 написаний,
+  // «Ленин» пишут 36 языков — без группировки половина сцены была бы двумя строками
+  const FORMS = groupByWriting(WORDS);
+  const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
 
   const { renderer, backend, webgpuAvailable } = await createRenderer({ canvas, tonemap: 'neutral', exposure: 1.0, clear: 0x12161a });
 
@@ -73,7 +76,7 @@ try {
   camera.lookAt(0, 0, 0);
 
   // глобус слов (структура v1) — без плоского тела: под именами ляжет Земля
-  let globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
+  let globe = createGlobe(THREE, { words: FORMS, radius: 2.5, maxInstances: 760, density: 1.0, withBody: false });
   scene.add(globe.group);
   let autoSpin = 0.06;
 
@@ -104,7 +107,7 @@ try {
     return sp;
   }
 
-  // живые юниформы пост-эффектов (крутятся из tuner)
+  // живые юниформы пост-эффектов (крутятся из панели настроек)
   const uDofFocus = uniform(8.2), uDofRange = uniform(6.0), uDofBokeh = uniform(0.0), uCa = uniform(0.4), uAtmo = uniform(1.0);
   let bloomPass = null;
 
@@ -139,13 +142,13 @@ try {
   } catch (err) { console.warn('[post off]', err); post = null; }
 
   // карточка языка Р2 (переиспользуемый модуль по образцу v2)
-  const card = createCard();
+  const card = createCard({ publications: PUBS });
   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2();
   function tapAt(cx, cy) {
     ndc.set((cx / globalThis.innerWidth) * 2 - 1, -(cy / globalThis.innerHeight) * 2 + 1);
     ray.setFromCamera(ndc, camera);
     const hit = ray.intersectObjects(globe.meshes, false)[0];   // FrontSide → только видимые (передние) слова
-    if (hit && hit.object.userData.wi != null) card.open(WORDS[hit.object.userData.wi]);
+    if (hit && hit.object.userData.wi != null) card.open(FORMS[hit.object.userData.wi]);
     else card.close();
   }
 
@@ -180,7 +183,7 @@ try {
       + '<div style="position:absolute;top:50%;left:0;height:1px;width:100%;background:rgba(255,80,80,.7)"></div>';
     document.body.appendChild(cr);
   }
-  const stats = createStats(renderer, {
+  const stats = IS_SERVICE && createStats(renderer, {
     extra: () => {
       let s = `слова     ${globe.count} (меш ${globe.drawWords})`;
       if (DEBUG) {
@@ -201,13 +204,13 @@ try {
     densityTimer = setTimeout(() => {
       const old = globe;
       scene.remove(old.group);
-      globe = createGlobe(THREE, { words: WORDS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
+      globe = createGlobe(THREE, { words: FORMS, radius: 2.5, maxInstances: Math.round(760 * d), density: d, withBody: false });
       scene.add(globe.group);
       old.dispose();
     }, 180);
   }
 
-  // живая панель параметров (переиспользуемый tuner.js)
+  // интерфейс сцены: титул, ⚙, панель настроек (engine/ui.js, как в МТК 41/42)
   function apply(k, v) {
     switch (k) {
       case 'spin': autoSpin = v; break;
@@ -228,18 +231,23 @@ try {
       case 'earthBorders': earthBorders = !!v; if (earth) earth.setMode(earthMode, earthBorders); break;
     }
   }
-  createTuner({
-    title: 'глобус v3',
+  createUI({
+    kicker: 'МТК 38 · Ленин на языках мира',
+    title: 'Имя, обернувшее планету',
+    subtitle: `${FORMS.length} написаний «Ленин» на ${WORDS.length} языках, кольцами по параллелям. `
+      + 'Тяни — поворот. Тап по слову — карточка языка и издания на нём.',
+    hint: 'тяни — поворот · <b>тап</b> → карточка · <b>⚙</b> — настройки',
+    // посетительское — что показывать
     segments: [
-      { key: 'earthMap', label: 'карта Земли', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
-      { key: 'earthBorders', label: 'границы на карте', options: [[0, 'выкл'], [1, 'вкл']], value: 0 },
+      { key: 'earthMap', label: 'карта Земли', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физическая']], value: 'countries' },
     ],
     groups: [
-      { title: 'сфера', params: [
+      { params: [
         { key: 'spin', label: 'вращение', min: 0, max: 1.2, step: .01, value: 0.06 },
-        { key: 'density', label: 'плотность', min: 0.5, max: 2.2, step: .05, value: 1 },
+        { key: 'density', label: 'плотность слов', min: 0.5, max: 2.2, step: .05, value: 1 },
       ] },
-      { title: 'свет / пост', params: [
+      // инженерное — свет и пост-обработка; посетителю крутить нечего
+      { title: 'свет / пост', service: true, params: [
         { key: 'exposure', label: 'экспозиция', min: 0.4, max: 1.8, step: .02, value: 1.0 },
         { key: 'bloom', label: 'свечение', min: 0, max: 2, step: .02, value: 0.5 },
         { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: 0.82 },
@@ -251,7 +259,8 @@ try {
         { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.07 },
         { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
       ] },
-      { title: 'земля', params: [
+      { title: 'земля', service: true, params: [
+        { key: 'earthBorders', label: 'границы на карте', min: 0, max: 1, step: 1, value: 0 },
         { key: 'earthSpin', label: 'скорость Земли', min: 0, max: 0.5, step: .005, value: 0.028 },
         { key: 'earthGlow', label: 'яркость линий', min: 0, max: 1.5, step: .05, value: 0.7 },
       ] },
@@ -278,7 +287,7 @@ try {
     globe.group.rotation.set(R.pitch, R.yaw, 0);
     if (earth) earth.group.rotation.set(R.pitch, earthYaw, 0);
     if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
-    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    stats && stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
     if (++n === 3) { window.__globe = { ready: true, backend, count: globe.count }; document.title = 'globe READY:' + backend; }
     requestAnimationFrame(frame);
   }

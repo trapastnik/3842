@@ -24,11 +24,14 @@
     "Olck",
     "Orya",
     "Sinh",
+    "Syrc",
     "Taml",
     "Telu",
     "Tfng",
     "Thaa",
-    "Tibt"
+    "Thai",
+    "Tibt",
+    "fallback"
   ],
   "bold": [
     "Arab",
@@ -54,10 +57,13 @@
     "Olck",
     "Orya",
     "Sinh",
+    "Syrc",
     "Taml",
     "Telu",
     "Thaa",
-    "Tibt"
+    "Thai",
+    "Tibt",
+    "fallback"
   ],
   "note": "subset-Noto (400+700) только для валидатора"
 }

@@ -19,15 +19,15 @@
 <canvas id="map"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>тап</b> → карточка · <b>T</b> параметры</div>
 <div id="err"></div>
+<script src="../assets/shared/lib/projection.js"></script>
 <script type="module">
-import { loadWords } from './engine/data.js';
-import { createCard } from './engine/card.js';
-import { createTuner } from './tuner.js';
+import { loadWords, loadPublications } from './engine/data.js?v=20260804';
+import { createCard } from './engine/card.js?v=20260804';
+import { createUI } from './engine/ui.js?v=20260806';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
-const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-${sc}',sans-serif`;
+const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 const PAL = { paper: '#F7F9EF', brass: '#D2B773', red: '#A02128', window: '#9DA3A8', graphite: '#435059' };
 const cc = (hex, a) => { const v = hex.replace('#', ''); return `rgba(${parseInt(v.slice(0,2),16)},${parseInt(v.slice(2,4),16)},${parseInt(v.slice(4,6),16)},${a})`; };
 
@@ -38,21 +38,38 @@ try {
   if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
 
   const WORDS = (await loadWords()).filter((w) => w.lat != null && w.lng != null);
-  const P = { base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
-  const card = createCard();
+  const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
+
+  // Слой ИЗДАНИЙ: точка по городу печати, а не по «дому» языка. Без него десять
+  // испанских изданий из десяти стран Латинской Америки сходились в одну точку в
+  // Мадриде, а Северная Америка пустовала — при том что там три издания.
+  const PLACES = [];
+  for (const [langId, arr] of PUBS) {
+    const w = WORDS.find((x) => x.id === langId);
+    arr.forEach((p, i) => {
+      if (p.cityLat == null) return;
+      PLACES.push({ lang: w || null, langId, pub: p, idx: i, lat: p.cityLat, lng: p.cityLng });
+    });
+  }
+  const P = { layer: 'lang', base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
+  const card = createCard({ publications: PUBS });
   let geojson = null, reliefImg = null, physicalImg = null;
   try { geojson = await (await fetch('../data/ne_110m_countries.geojson')).json(); } catch (_) {}
   const loadImg = (u) => new Promise((ok) => { const im = new Image(); im.onload = () => ok(im); im.onerror = () => ok(null); im.src = u; });
-  loadImg('../assets/mtk38/textures/earth-relief.jpg').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
-  loadImg('../assets/mtk38/textures/earth-physical.jpg').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-relief-wt.webp').then((im) => { reliefImg = im; if (P.base === 'relief') { rebuildCache(); draw(); } });
+  loadImg('../assets/mtk38/textures/earth-physical-wt.webp').then((im) => { physicalImg = im; if (P.base === 'physical') { rebuildCache(); draw(); } });
 
   let W = 0, H = 0, dpr = 1;
   const map = { worldW: 0, worldH: 0, baseW: 0, zoom: 1, camX: 0, camY: 0, camVX: 0, camVY: 0, camYAnchor: 0, dragging: false, cache: null };
-  const project = (lat, lng) => ({ x: ((lng + 180) / 360) * map.worldW, y: ((90 - lat) / 180) * map.worldH });
+  // Единая проекция проекта — Winkel Tripel из assets/shared/lib/projection.js (как в МТК 41).
+  // Аспект берём только из WT.ASPECT, локальной математики проекции здесь нет.
+  const WT = MtkProjection.WinkelTripel;
+  const project = (lat, lng) => WT.project(lat, lng, map.worldW, map.worldH);
 
   // подложка кэшируется в ФИКС. разрешении (масштабируется при зуме); текст векторный → чёткий
   function rebuildCache() {
-    const CW = 4096, CH = 2048;
+    const CW = 4096, CH = Math.round(CW / WT.ASPECT);
+    const proj = (lat, lng) => WT.project(lat, lng, CW, CH);
     const off = document.createElement('canvas'); off.width = CW; off.height = CH;
     const g = off.getContext('2d');
     const s = Math.round(P.bg);
@@ -71,23 +88,39 @@ try {
           if (!ring || ring.length < 2) continue;
           g.beginPath(); let px = null;
           for (let k = 0; k < ring.length; k++) {
-            const x = ((ring[k][0] + 180) / 360) * CW, y = ((90 - ring[k][1]) / 180) * CH;
-            if (px === null || Math.abs(x - px) > CW * 0.5) g.moveTo(x, y); else g.lineTo(x, y); px = x;
+            const pt = proj(ring[k][1], ring[k][0]);      // порядок (lat, lng) — обратен GeoJSON
+            if (px === null || Math.abs(pt.x - px) > CW * 0.5) g.moveTo(pt.x, pt.y); else g.lineTo(pt.x, pt.y);
+            px = pt.x;
           }
           if (P.base === 'countries') { g.closePath(); g.fill(); }
           g.stroke();
         }
       }
     }
+    // сетка: в Winkel Tripel меридианы и параллели — кривые, поэтому сэмплируем их,
+    // а не рисуем прямыми, как было в equirectangular
     g.strokeStyle = cc(PAL.brass, 0.09); g.lineWidth = 1.4; g.setLineDash([4, 26]);
-    g.beginPath(); g.moveTo(0, CH * 0.5); g.lineTo(CW, CH * 0.5); g.stroke();
-    for (let lng = -180; lng <= 180; lng += 30) { const x = ((lng + 180) / 360) * CW; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, CH); g.stroke(); }
+    g.beginPath();
+    for (let lng = -180; lng <= 180; lng += 2) { const p = proj(0, lng); lng === -180 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y); }
+    g.stroke();
+    for (let lng = -180; lng <= 180; lng += 30) {
+      g.beginPath();
+      for (let lat = -90; lat <= 90; lat += 2) { const p = proj(lat, lng); lat === -90 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y); }
+      g.stroke();
+    }
     g.setLineDash([]);
     map.cache = off;
   }
 
   // zoom=1 → весь мир по ширине вьюпорта; zoom>1 → крупнее (точки расходятся → деклаттер показывает больше подписей)
-  function applyWorld() { map.worldW = map.baseW * map.zoom; map.worldH = map.worldW / 2; }
+  function applyWorld() { map.worldW = map.baseW * map.zoom; map.worldH = map.worldW / WT.ASPECT; }
+  // Winkel Tripel — НЕ цилиндрическая: мир не заворачивается по долготе, поэтому
+  // камеру по X теперь зажимаем так же, как по Y (в equirect здесь был wrap).
+  function clampCamX() {
+    if (map.worldW <= W) { map.camX = (map.worldW - W) * 0.5; return; }
+    const m = map.worldW * 0.03;
+    map.camX = Math.max(-m, Math.min(map.worldW - W + m, map.camX));
+  }
   function clampCamY() {
     if (map.worldH < H) { map.camY = map.camYAnchor; }
     else { const maxY = map.worldH - H + map.worldH * 0.04, minY = -map.worldH * 0.04; map.camY = Math.max(minY, Math.min(maxY, map.camY)); }
@@ -102,9 +135,9 @@ try {
     map.camYAnchor = project(20, 0).y - H / 2;     // ВЕСЬ МИР: вертикаль сдвинута к северу (там масса языков)
     if (oldW < 2) { map.camX = 0; map.camY = map.camYAnchor; }   // старт — нулевой меридиан в центре
     else { map.camX *= map.worldW / oldW; map.camY = map.worldH < H ? map.camYAnchor : map.camY * map.worldW / oldW; }   // ресайз — сохранить позицию
-    clampCamY();
+    clampCamY(); clampCamX();
   }
-  addEventListener('resize', resize);
+  addEventListener("resize", resize);
 
   function dynamics(dt) {
     if (map.dragging) return;
@@ -112,23 +145,17 @@ try {
     map.camVX *= Math.pow(0.91, dt * 60); map.camVY *= Math.pow(0.91, dt * 60);
     if (Math.abs(map.camVX) < 0.5) map.camVX = 0; if (Math.abs(map.camVY) < 0.5) map.camVY = 0;
     if (map.worldH < H) map.camVY = 0;
-    clampCamY();
-    if (map.camX < 0) map.camX += map.worldW; if (map.camX >= map.worldW) map.camX -= map.worldW;
+    clampCamY(); clampCamX();
   }
   function toScreen(lat, lng) {
-    const w = project(lat, lng); let x = w.x - map.camX;
-    // привести к копии, ближайшей к ЦЕНТРУ вьюпорта (W/2), а не к нулю — иначе точки
-    // восточнее центра улетали за левый край и отсекались (появлялись только при панораме).
-    const c = W / 2, hw = map.worldW / 2;
-    while (x < c - hw) x += map.worldW;
-    while (x > c + hw) x -= map.worldW;
-    return { x, y: w.y - map.camY };
+    const w = project(lat, lng);
+    return { x: w.x - map.camX, y: w.y - map.camY };
   }
 
   function drawBase() {
     if (!map.cache) return;
     ctx.save(); ctx.globalAlpha = 0.9; ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high';
-    for (const off of [-map.worldW, 0, map.worldW]) ctx.drawImage(map.cache, off - map.camX, -map.camY, map.worldW, map.worldH);
+    ctx.drawImage(map.cache, -map.camX, -map.camY, map.worldW, map.worldH);
     ctx.restore();
   }
   function drawRoutes() {
@@ -154,8 +181,52 @@ try {
     ctx.restore();
   }
   let hits = [];
+
+  // Слой изданий: точка по городу печати. В режиме «оба» тянем волосяную линию
+  // к точке языка — видно, что напечатано вдали от «дома» языка (Гавана, Детройт).
+  function drawPlaces() {
+    const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
+    const drawn = [];
+    ctx.save();
+    for (const pl of PLACES) {
+      const s = toScreen(pl.lat, pl.lng);
+      if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) continue;
+      const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));
+
+      if (P.layer === 'both' && pl.lang && pl.lang.lat != null) {
+        const a = toScreen(pl.lang.lat, pl.lang.lng);
+        ctx.strokeStyle = cc(PAL.brass, 0.13); ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(s.x, s.y); ctx.stroke();
+      }
+      // кольцо, а не заливка — чтобы издания не путались с точками языков
+      const r = 3.4 + prox * 1.8;
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = cc(PAL.brass, 0.18); ctx.fill();
+      ctx.strokeStyle = cc(PAL.brass, 0.9); ctx.lineWidth = 1.4; ctx.stroke();
+
+      hits.push({ x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i: -1, place: pl, box: null });
+
+      const sz = (ss * 0.011 + prox * ss * 0.004) * P.label;
+      const label = [pl.pub.cityRu || pl.pub.cityNative, pl.pub.year].filter(Boolean).join(' · ');
+      if (!label) continue;
+      ctx.font = `400 ${sz}px "20 Kopeek",ui-monospace,monospace`;
+      const tw = ctx.measureText(label).width;
+      const box = { x: s.x + sz * 0.6, y: s.y - sz * 0.6, w: tw + 4, h: sz * 1.5 };
+      if (drawn.some((d) => box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y)) continue;
+      drawn.push(box);
+      hits[hits.length - 1].box = box;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = cc('#000', 0.8); ctx.shadowBlur = 4;
+      ctx.fillStyle = cc(PAL.brass, 0.55 + prox * 0.35);
+      ctx.fillText(label, s.x + sz * 0.6, s.y);
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
   function drawPoints() {
     hits = []; const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
+    if (P.layer === 'pub') { drawPlaces(); return; }
     const drawn = [];  // занятые прямоугольники подписей (деклаттер)
     // приоритет: языки ООН → крупные → мелкие. Маркеры — всем; подписи — без наложения.
     const order = WORDS.map((p, i) => i).sort((a, b) => (WORDS[b].un - WORDS[a].un) || (WORDS[b].wt - WORDS[a].wt));
@@ -190,6 +261,8 @@ try {
       ctx.globalAlpha = 1;
     }
   }
+  // в режиме «оба» издания рисуем поверх языков
+  const drawPointsAll = () => { drawPoints(); if (P.layer === "both") drawPlaces(); };
   // дешёвый bloom: даунскейл-блюр + lighter
   const bl = document.createElement('canvas'), blx = bl.getContext('2d');
   function bloom() {
@@ -203,7 +276,7 @@ try {
   function draw() {
     const now = performance.now(), dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000)); prev = now; dynamics(dt);
     ctx.clearRect(0, 0, W, H);
-    drawBase(); drawRoutes(); drawPoints(); bloom();
+    drawBase(); if (P.layer !== "pub") drawRoutes(); drawPointsAll(); bloom();
   }
   function frame() { draw(); requestAnimationFrame(frame); }
 
@@ -213,10 +286,10 @@ try {
     map.zoom = Math.max(1, Math.min(16, map.zoom * factor));
     applyWorld();
     map.camX = u * map.worldW - px; map.camY = v * map.worldH - py;
-    map.camVX = map.camVY = 0; clampCamY();
+    map.camVX = map.camVY = 0; clampCamY(); clampCamX();
   }
   canvas.addEventListener('wheel', (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0016)); }, { passive: false });
-  canvas.addEventListener('dblclick', (e) => { e.preventDefault(); map.zoom = 1; applyWorld(); map.camX = 0; map.camY = map.camYAnchor; clampCamY(); });
+  canvas.addEventListener('dblclick', (e) => { e.preventDefault(); map.zoom = 1; applyWorld(); map.camX = 0; map.camY = map.camYAnchor; clampCamY(); clampCamX(); });
 
   // pan (1 палец) + pinch-zoom (2 пальца) + тап
   const ptrs = new Map(); let pinchD = 0, dx0 = 0, dy0 = 0, dt0 = 0, moved = false, lx = 0, ly = 0, lt = 0;
@@ -244,14 +317,19 @@ try {
   const up = (e) => {
     if (ptrs.size === 1 && !moved && (performance.now() - dt0) < 450) {   // тап → карточка (только один палец)
       // ловим клик и по кружку-маркеру, и по прямоугольнику надписи; из кандидатов — ближайший к точке
-      let best = -1, bd = 1e9;
+      let best = null, bd = 1e9;
       for (const h of hits) {
         const dd = Math.hypot(e.clientX - h.x, e.clientY - h.y);
         const inDot = dd < h.r + 12;
         const b = h.box, inBox = b && e.clientX >= b.x - 4 && e.clientX <= b.x + b.w + 4 && e.clientY >= b.y - 4 && e.clientY <= b.y + b.h + 4;
-        if ((inDot || inBox) && dd < bd) { bd = dd; best = h.i; }
+        if ((inDot || inBox) && dd < bd) { bd = dd; best = h; }
       }
-      if (best >= 0) { card.open(WORDS[best]); map.camVX = 0; map.camVY = 0; } else card.close();
+      if (best) {
+        // точка города печати → карточка сразу на этом издании; точка языка → как раньше
+        if (best.place) card.open(best.place.lang, best.place.idx);
+        else card.open(WORDS[best.i]);
+        map.camVX = 0; map.camVY = 0;
+      } else card.close();
     }
     ptrs.delete(e.pointerId);
     if (ptrs.size < 2) pinchD = 0;
@@ -264,27 +342,37 @@ try {
 
   // панель
   function apply(k, v) {
-    if (k === 'base') { P.base = v; rebuildCache(); }
+    if (k === 'layer') { P.layer = v; }
+    else if (k === 'base') { P.base = v; rebuildCache(); }
     else if (k === 'borders') { P.borders = v; rebuildCache(); }
     else if (k === 'bg') { P.bg = v; rebuildCache(); }
     else if (k === 'grain') { P.grain = v; document.getElementById('grain').style.opacity = v; }
     else if (k === 'vign') { P.vign = v; document.getElementById('vign').style.opacity = v; }
     else P[k] = v;
   }
-  createTuner({
-    title: 'карта v3',
+  createUI({
+    kicker: 'МТК 38 · Ленин на языках мира',
+    title: 'Где напечатан «Ленин»',
+    subtitle: `${WORDS.length} языков и ${PLACES.length} изданий на карте мира. `
+      + 'Слой «издания» ставит точку по городу печати, «оба» — соединяет издание с его языком. Тап — карточка.',
+    hint: 'тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>⚙</b> — настройки',
+    // посетительское — что показывать
     segments: [
-      { key: 'base', label: 'подложка', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
-      { key: 'borders', label: 'границы на растре', options: [[0, 'выкл'], [1, 'вкл']], value: 1 },
+      { key: 'layer', label: 'слой', options: [['lang', 'языки'], ['pub', 'издания'], ['both', 'оба']], value: 'lang' },
+      { key: 'base', label: 'подложка', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физическая']], value: 'countries' },
+      { key: 'routes', label: 'связи с Москвой', options: [[0, 'скрыть'], [1, 'показать']], value: 1 },
     ],
-    groups: [{ title: 'карта', params: [
-      { key: 'label', label: 'размер подписей', min: 0.5, max: 2.2, step: .05, value: 1 },
-      { key: 'glow', label: 'свечение', min: 0, max: 1.5, step: .05, value: 0.5 },
-      { key: 'routes', label: 'маршруты', min: 0, max: 1, step: 1, value: 1 },
-      { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.05 },
-      { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
-      { key: 'bg', label: 'фон', min: 8, max: 40, step: 1, value: 15 },
-    ] }],
+    groups: [
+      { params: [{ key: 'label', label: 'размер подписей', min: 0.5, max: 2.2, step: .05, value: 1 }] },
+      // инженерное — свет, зерно, отладка подложки; посетителю не нужно
+      { title: 'изображение', service: true, params: [
+        { key: 'glow', label: 'свечение', min: 0, max: 1.5, step: .05, value: 0.5 },
+        { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.05 },
+        { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
+        { key: 'bg', label: 'фон', min: 8, max: 40, step: 1, value: 15 },
+        { key: 'borders', label: 'границы на растре', min: 0, max: 1, step: 1, value: 1 },
+      ] },
+    ],
     onChange: (k, v) => apply(k, v),
   });
 

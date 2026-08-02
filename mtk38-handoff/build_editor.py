@@ -26,7 +26,7 @@ import json, os, hashlib
 HERE = os.path.dirname(__file__)
 ROOT = os.path.normpath(os.path.join(HERE, ".."))
 SRC = os.path.join(ROOT, "data", "mtk38.json")
-OUT = os.path.join(ROOT, "mtk38-v2", "editor.html")
+OUT = os.path.join(ROOT, "mtk38-v2", "back", "editor.html")
 FM = os.path.join(ROOT, "mtk38-v2", "fonts", "noto", "manifest.json")
 SPEC_DIR = os.path.join(ROOT, "assets", "mtk38", "specimen")
 
@@ -45,7 +45,7 @@ countries = sorted({c for l in data["languages"]
                               + [a["country_iso"] for a in l["geo"].get("also", [])]) if c})
 
 faces = "\n".join(
-    f'@font-face{{font-family:"noto-{s}";src:url("./fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
+    f'@font-face{{font-family:"noto-{s}";src:url("../fonts/noto/{s}.woff2") format("woff2");font-display:swap}}'
     for s in sorted(embed))
 data_json = json.dumps(data, ensure_ascii=False)
 data_hash = hashlib.md5(data_json.encode("utf-8")).hexdigest()[:12]
@@ -57,8 +57,8 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 · данные и приёмка</title>
 <style>
 __FACE__
-  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
   :root{--brass:#D2B773;--red:#A02128;--green:#5D8970;--window:#9DA3A8;--graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
   *{box-sizing:border-box}
   body{margin:0;background:var(--paper);color:var(--graphite);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
@@ -166,8 +166,8 @@ __FACE__
 <body>
 <header>
   <nav>
-    <a href="./index.html">Главная</a>
-    <a href="./studio.html">Студия</a>
+    <a href="../index.html">Главная</a>
+    <a href="../studio/">Студия</a>
     <a href="./editor.html" class="active">Данные и приёмка</a>
     <a href="./analysis.html">Аналитика</a>
   </nav>
@@ -204,8 +204,8 @@ const VER = ['idml-source','machine-triangulated','needs-verification','unverifi
 const WEIGHTS = [[1,'1 — прочий'],[2,'2 — крупный региональный'],[3,'3 — мировой / ООН']];
 const KEY = 'mtk38-data-v1', RKEY='mtk38-reviewer';
 const RTL = new Set(['Arab','Hebr','Thaa','Nkoo']);
-const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','Arial Unicode MS',system-ui,sans-serif"
-                                               : "'Arial Unicode MS','noto-"+iso+"',system-ui,sans-serif";
+const ff = iso => (iso==='Latn'||iso==='Cyrl') ? "'20 Kopeek','noto-fallback','Arial Unicode MS',system-ui,sans-serif"
+                                               : "'Arial Unicode MS','noto-fallback','noto-"+iso+"',system-ui,sans-serif";
 const cps = s => [...String(s||'')].map(c=>'U+'+c.codePointAt(0).toString(16).toUpperCase().padStart(4,'0')).join(' ');
 const esc = s => (s==null?'':String(s)).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const clone = o => JSON.parse(JSON.stringify(o));
@@ -373,7 +373,7 @@ function renderReview(){
       return;
     }
     // ТЕХНИЧЕСКАЯ — сверка с листом музея + вердикты/контролы
-    const spec=SPEC.has(l.id)?'<img src="../assets/mtk38/specimen/'+l.id+'.png" alt="'+esc(l.name_ru)+'">':'<span class="nofile">нет вырезки с листа</span>';
+    const spec=SPEC.has(l.id)?'<img src="../../assets/mtk38/specimen/'+l.id+'.png" alt="'+esc(l.name_ru)+'">':'<span class="nofile">нет вырезки с листа</span>';
     card.className='rcard'+(l.verifier==='needs-verification'?' flag':'')+(rv.verdict==='ok'?' v-ok':'')+(rv.verdict==='bad'?' v-bad':'');
     card.innerHTML=
       '<div class="rlbl canon">лист музея · контуры (канон)</div>'
