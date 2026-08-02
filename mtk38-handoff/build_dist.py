@@ -21,7 +21,7 @@ OUT = ROOT / "mtk38-build"
 
 # Что кладём. Пути — от корня репозитория, в сборке остаются теми же.
 COPY = [
-    "mtk38-v3/globe.html", "mtk38-v3/rain.html", "mtk38-v3/map.html", "mtk38-v3/tuner.js",
+    "mtk38-v3/globe.html", "mtk38-v3/rain.html", "mtk38-v3/map.html",
     "mtk38-v3/engine", "mtk38-v3/scenes", "mtk38-v3/vendor", "mtk38-v3/fonts",
     "mtk38-v2/studio", "mtk38-v2/map", "mtk38-v2/shared", "mtk38-v2/vendor", "mtk38-v2/fonts",
     "data/mtk38.json", "data/mtk38-publications.json", "data/mtk38-quotes.json",

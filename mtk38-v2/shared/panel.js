@@ -38,7 +38,12 @@
 
   function create(opts) {
     opts = opts || {};
-    var groups = opts.groups || [], toggles = opts.toggles || [], segments = opts.segments || [];
+    // Инженерные группы (свет, пост-обработка, отладка) — только под ?service=1,
+    // тем же гейтом, что служебная кнопка ⚒ в хабе и панель v3. Раньше экспозиция
+    // и порог bloom лежали в одном списке с выбором композиции.
+    var IS_SERVICE = new URLSearchParams(location.search).get('service') === '1';
+    var groups = (opts.groups || []).filter(function (g) { return !g.service || IS_SERVICE; });
+    var toggles = opts.toggles || [], segments = opts.segments || [];
     var state = {}, defaults = {};
     var valEls = {}, inputEls = {}, togEls = {}, segEls = {}, grpDefs = [], segDefs = [], whenDefs = [];
 

@@ -82,10 +82,10 @@
 <script src="../vendor/three/js/postprocessing/ShaderPass.js"></script>
 <script src="../vendor/three/js/postprocessing/RenderPass.js"></script>
 <script src="../vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="../shared/data.js"></script>
-<script src="../shared/panel.js"></script>
-<script src="../shared/quotes.js"></script>
-<script src="../shared/publication.js"></script>
+<script src="../shared/data.js?v=20260806"></script>
+<script src="../shared/panel.js?v=20260806"></script>
+<script src="../shared/quotes.js?v=20260806"></script>
+<script src="../shared/publication.js?v=20260806"></script>
 <script>
 const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
 const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-fallback','noto-"+iso+"',sans-serif";
@@ -248,13 +248,16 @@ function boot(WORDS, QUOTES, source){
         ['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],['ticker','Лента'],['wall','Стена'],['map','Карта']]},
     ],
     groups:[
+      // посетительское — темп и масштаб композиции
       {title:'Сцена',params:[
         {key:'speed',label:'Скорость',min:0,max:4,step:.05,value:P.speed},
-        {key:'size',label:'Размер слов',min:.4,max:2.4,step:.05,value:P.size},
+        {key:'size',label:'Размер слов',min:.4,max:2.4,step:.05,value:P.size}]},
+      // инженерное: цветовой баланс и пост-обработка — под ?service=1
+      {title:'Цвет и глубина',service:true,params:[
         {key:'depth',label:'Затухание дальних',min:0,max:1,step:.02,value:P.depth},
         {key:'brass',label:'Доля латуни',min:0,max:80,step:1,value:P.brass,unit:'%'},
         {key:'red',label:'Доля красного',min:0,max:25,step:1,value:P.red,unit:'%'}]},
-      {title:'Пост-обработка',params:[
+      {title:'Пост-обработка',service:true,params:[
         {key:'bloom',label:'Свечение (bloom)',min:0,max:2.5,step:.01,value:P.bloom},
         {key:'radius',label:'Радиус bloom',min:0,max:1,step:.01,value:P.radius},
         {key:'thresh',label:'Порог bloom',min:0,max:1,step:.01,value:P.thresh},

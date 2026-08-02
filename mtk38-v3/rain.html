@@ -23,7 +23,6 @@
 <canvas id="c"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · дождь имён (GPU) · <b>веди/жми</b> — отталкивай · <b>T</b> параметры · <b>P</b> нагрузка</div>
 <div id="err"></div>
 <script type="module">
 import * as THREE from 'three';
@@ -33,7 +32,7 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createTuner } from './tuner.js';
+import { createUI, IS_SERVICE } from './engine/ui.js?v=20260806';
 import { makeWordAtlas } from './engine/atlas.js?v=20260802';
 import { createRain } from './scenes/rain.js?v=20260802';
 import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
@@ -105,7 +104,7 @@ try {
     if (wi != null && FORMS[wi]) card.open(FORMS[wi]); else card.close();
   });
 
-  const stats = createStats(renderer, { extra: () => `частиц    ${rain.count}` });
+  const stats = IS_SERVICE && createStats(renderer, { extra: () => `частиц    ${rain.count}` });
 
   // количество — пересборка rain (debounce, async); переносим живые параметры
   let countTimer = 0;
@@ -138,16 +137,21 @@ try {
       case 'vign': { const g = document.getElementById('vign'); if (g) g.style.opacity = v; break; }
     }
   }
-  createTuner({
-    title: 'дождь v3',
+  createUI({
+    kicker: 'МТК 38 · Ленин на языках мира',
+    title: 'Дождь имён',
+    subtitle: `${FORMS.length} написаний всплывают снизу вверх. `
+      + 'Веди пальцем — расталкивай. Тап по слову — карточка языка и издания на нём.',
+    hint: 'веди / жми — отталкивай · <b>тап</b> → карточка · <b>⚙</b> — настройки',
     groups: [
-      { title: 'дождь', params: [
-        { key: 'count', label: 'количество', min: 100, max: 14000, step: 100, value: 500 },
-        { key: 'speed', label: 'скорость', min: 0, max: 6, step: .1, value: 2.4 },
-        { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
-        { key: 'size', label: 'размер', min: 0.4, max: 2.5, step: .05, value: 1 },
+      { params: [
+        { key: 'count', label: 'количество', min: 100, max: 4000, step: 50, value: 500 },
+        { key: 'speed', label: 'скорость', min: 0.4, max: 6, step: .1, value: 2.4 },
+        { key: 'size', label: 'размер', min: 0.4, max: 2.2, step: .05, value: 1 },
       ] },
-      { title: 'свет / пост', params: [
+      // инженерное — свет и пост-обработка
+      { title: 'свет / пост', service: true, params: [
+        { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
         { key: 'exposure', label: 'экспозиция', min: .4, max: 1.8, step: .02, value: 1 },
         { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .26 },
         { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: .78 },
@@ -170,7 +174,7 @@ try {
     const now = performance.now(), dt = Math.min(0.05, (now - prev) / 1000); prev = now;
     await rain.update(dt);
     if (post) await post.renderAsync(); else await renderer.renderAsync(scene, camera);
-    stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
+    stats && stats.update(backend + (webgpuAvailable ? '' : ' (фоллбэк)'));
     if (++n === 3) { window.__rain = { ready: true, backend }; document.title = 'rain READY:' + backend; }
   });
 } catch (e) { showErr((e && e.stack) || e); document.title = 'rain ERROR'; console.error(e); }
