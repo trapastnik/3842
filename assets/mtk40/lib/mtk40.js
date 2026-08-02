@@ -57,6 +57,46 @@
   }
 
   /**
+   * Разбивает строку по словам под заданную ширину.
+   * Названия в корпусе длинные («Что такое „друзья народа“ и как они воюют
+   * против социал-демократов?»), одной строкой они растягиваются на треть
+   * кадра. Меряем по фактической ширине глифов: в корпусе кириллица
+   * вперемешку с латиницей, посимвольный лимит врёт.
+   * Шрифт должен быть выставлен в ctx до вызова.
+   */
+  function wrapLines(ctx, text, maxW, maxLines) {
+    const fits = (t) => ctx.measureText(t).width <= maxW;
+    // слово длиннее строки рубим по буквам, иначе оно вылезет за габарит
+    const cut = (word) => {
+      let lo = 1, hi = word.length;
+      while (lo < hi) {
+        const mid = (lo + hi + 1) >> 1;
+        if (fits(word.slice(0, mid) + "…")) lo = mid; else hi = mid - 1;
+      }
+      return word.slice(0, lo) + "…";
+    };
+    const lines = [];
+    let cur = "";
+    for (const word of String(text).split(/\s+/)) {
+      if (!word) continue;
+      const probe = cur ? cur + " " + word : word;
+      if (fits(probe)) { cur = probe; continue; }
+      if (cur) lines.push(cur);
+      if (lines.length >= maxLines) { cur = ""; break; }
+      cur = fits(word) ? word : cut(word);
+    }
+    if (cur && lines.length < maxLines) lines.push(cur);
+    if (!lines.length) return [];
+    // не поместившийся хвост обозначаем многоточием на последней строке
+    const used = lines.join(" ");
+    if (used.length < String(text).replace(/\s+/g, " ").length) {
+      const last = lines[lines.length - 1];
+      lines[lines.length - 1] = fits(last + "…") ? last + "…" : cut(last);
+    }
+    return lines;
+  }
+
+  /**
    * Подгоняет бэкинг канвы под кадр и считает масштаб.
    * Возвращает { W, H, dpr, s } в пикселях канвы; `s` — одна дизайн-единица.
    * Тем же коэффициентом (--zoom) тянется HTML-обвязка.
@@ -130,6 +170,6 @@
 
   root.MTK40 = {
     DESIGN_W, COLORS, BUCKET_META, BUCKETS, CONN_STYLE, TYPE_LABEL, LANG_LABEL,
-    rgba, adjustHex, fitCanvas, pickDpr, loadCorpus, Card,
+    rgba, adjustHex, wrapLines, fitCanvas, pickDpr, loadCorpus, Card,
   };
 })(window);

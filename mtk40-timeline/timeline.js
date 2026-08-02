@@ -19,38 +19,19 @@
  * провал внутрь, тап на пустоту — шаг назад.
  */
 
-// Базовая ширина, под которую подобраны все размеры. Реальный кадр — киоск
-// 3840×2160 (49", dpr 1). `s` приводит одно к другому, `dpr` остаётся только
-// для css→canvas.
-const DESIGN_W = 1280;
+// Общее для вариантов МТК 40 — в assets/mtk40/lib/mtk40.js: палитра, оси
+// корпуса, типы связей, масштаб под киоск, карточка. Здесь только псевдонимы,
+// чтобы не расходились четыре копии одних и тех же констант.
+const M = window.MTK40;
+const COLORS = M.COLORS;
+const BUCKET_META = M.BUCKET_META;
+const adjustHex = M.adjustHex;
+const DESIGN_W = M.DESIGN_W;
+const CONN_STYLE = M.CONN_STYLE;
 
-const COLORS = {
-  paper: "#F7F9EF",
-  brass: "#D2B773",
-  red: "#A02128",
-  graphite: "#435059",
-  slate: "#5D6970",
-  ink: "#0C1012",
-};
-
-const BUCKET_META = {
-  "by-lenin":    { label: "ИМ",    accent: "#A02128", note: "что писал сам Ленин" },
-  "in-library":  { label: "ЧИТАЛ", accent: "#5D6970", note: "что читал из чужого" },
-  "about-lenin": { label: "О НЁМ", accent: "#D2B773", note: "что писали о нём"    },
-};
 // Сверху вниз. Середина — то, что он читал; из неё растёт верх, на неё
 // откликается низ.
 const LANES = ["by-lenin", "in-library", "about-lenin"];
-
-const CONN_STYLE = {
-  "title-borrowing": { color: "#D2B773", width: 2.5, dash: [],       label: "заглавие"  },
-  "polemic":         { color: "#A02128", width: 2,   dash: [10, 6],  label: "против"    },
-  "source":          { color: "#F7F9EF", width: 1.6, dash: [],       label: "источник"  },
-  "framework":       { color: "#7BA3C0", width: 1.6, dash: [],       label: "рамка"     },
-  "conspectus":      { color: "#D2B773", width: 2,   dash: [2, 4],   label: "конспект"  },
-  "wrote-about":     { color: "#7BA3C0", width: 1.6, dash: [10, 6],  label: "статья о"  },
-  "parallel":        { color: "#9DA3A6", width: 1.6, dash: [3, 3],   label: "параллель" },
-};
 
 // Ось покрывает 1800–2025: в этот отрезок попадает 98 из 99 книг. Аристотель
 // (−350) в шкалу не влезает — он живёт в «кармане» слева за разрывом оси,
@@ -68,26 +49,60 @@ const TIMELINE_TICKS = [
   { year: 1870, label: "рожд. Ленина",    rank: 2 },
   { year: 1924, label: "† Ленин",         rank: 3 },
   { year: 1848, label: "Манифест",        rank: 4 },
-  { year: 1991, label: "распад СССР",     rank: 5 },
-  { year: 1895, label: "Союз борьбы",     rank: 6 },
-  { year: 1958, label: "ПСС, 5-е изд.",   rank: 7 },
+  { year: 1991, label: "распад СССР",     rank: 6 },
+  { year: 1895, label: "Союз борьбы",     rank: 7 },
+  { year: 1956, label: "XX съезд",        rank: 5 },
+  { year: 1958, label: "ПСС, 5-е изд.",   rank: 8 },
   { year: 1903, label: "II съезд",        rank: 8 },
   { year: 1914, label: "I мировая",       rank: 9 },
   { year: 2017, label: "100 лет Октября", rank: 10 },
 ];
 
+// Фоновые зоны эпох: без них ось — просто числа, и непонятно, эмиграция это
+// или уже советский канон.
+//
+// Границы зон — НЕ отдельная сетка: каждая совпадает с датой из
+// TIMELINE_TICKS выше, то есть зона начинается ровно там, где стоит её
+// штрих. Поэтому собственной линии у границы нет — её роль играет пунктир
+// даты. Две несовпадающие сетки читались бы как ошибка, и правильно.
+const PERIODS = [
+  { from: -1000, to: 1870, label: "до Ленина" },            // → рожд. Ленина
+  { from: 1870,  to: 1895, label: "до марксизма" },         // → Союз борьбы
+  { from: 1895,  to: 1917, label: "подполье и эмиграция" }, // → Октябрь
+  { from: 1917,  to: 1924, label: "у власти" },             // → † Ленин
+  { from: 1924,  to: 1956, label: "канон" },                // → XX съезд
+  { from: 1956,  to: 1991, label: "поздний СССР" },         // → распад СССР
+  { from: 1991,  to: 3000, label: "после СССР" },
+];
+
 const SETTINGS_KEY = "mtk40-timeline-settings";
+// Три способа разложить подписи книг. На плотных годах (1917-18) их
+// физически больше, чем места под дорожкой, и вопрос лишь в том, чем
+// платить: отброшенными подписями, вертикальным местом или поводками.
+// Ширина подписи книги и предел строк: подобраны так, чтобы длинное
+// название заняло угол кадра, а не треть его ширины.
+const LABEL_MAX_W = 132;      // дизайн-px
+const LABEL_MAX_LINES = 3;
+
+const LABEL_MODES = [
+  { id: "place",   label: "по месту" },   // одна строка, налезающие отброшены
+  { id: "stagger", label: "шахматка" },   // через одну над и под дорожкой
+  { id: "leader",  label: "выносные" },   // несколько строк + поводок к кружку
+];
+
 const DEFAULT_SETTINGS = {
+  labelMode: "place",
   thrDecade: 1.8,
   thrYear: 6.0,
   labelScale: 1.0,
   showEvents: true,
+  showPeriods: true,
   showConns: true,
   crossfade: true,
 };
 
 // Границы поля графика в долях кадра.
-const PLOT_L = 0.135;
+const PLOT_L = 0.19;
 const PLOT_R = 0.97;
 
 const MIN_ZOOM = 1.0;
@@ -95,15 +110,7 @@ const MAX_ZOOM = 30;
 const FADE_HALF = 0.15;
 const TAP_THRESHOLD = 8;
 
-function rgba(hex, a) {
-  const v = hex.replace("#", "");
-  return `rgba(${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}, ${a})`;
-}
-function adjustHex(hex, delta) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const c = (v) => Math.max(0, Math.min(255, v | 0));
-  return `rgb(${c((n >> 16) + delta)},${c(((n >> 8) & 0xff) + delta)},${c((n & 0xff) + delta)})`;
-}
+const rgba = M.rgba;
 
 class TimelineApp {
   constructor() {
@@ -514,6 +521,7 @@ class TimelineApp {
     const ctx = this.ctx;
     ctx.clearRect(0, 0, this.W, this.H);
     if (!this.items.length) return;
+    if (this.settings.showPeriods) this.drawPeriods();
     this.drawLanes();
     if (this.settings.showEvents) this.drawEvents();
     this.drawAxis();
@@ -522,6 +530,51 @@ class TimelineApp {
     if (this.settings.showConns) this.drawConnections();
     this.drawHud();
   }
+
+  // Полосы эпох. «Лёгкие» — заливка чуть заметная, вся работа на границах
+  // и подписи; иначе фон начинает спорить с кружками.
+  drawPeriods() {
+    const ctx = this.ctx;
+    const s = this.s;
+    const top = this.laneY("by-lenin") - this.H * 0.145;
+    const axisY = this.laneY("about-lenin") + this.H * 0.115;
+    const L = this.plotL(), R = this.plotR();
+
+    // заливка и границы — в поле графика
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(L, top, R - L, axisY - top);
+    ctx.clip();
+    PERIODS.forEach((p, i) => {
+      const x0 = Math.max(L, this.yearToX(p.from));
+      const x1 = Math.min(R, this.yearToX(p.to));
+      if (x1 <= x0) return;
+      if (i % 2 === 0) {
+        ctx.fillStyle = rgba(COLORS.paper, 0.028);
+        ctx.fillRect(x0, top, x1 - x0, axisY - top);
+      }
+    });
+    ctx.restore();
+
+    // Подписи эпох — под осью лет. Вверху уже живут исторические даты, и
+    // две группы подписей в одной строке слипались в кашу.
+    ctx.save();
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const fs = 10 * s * this.settings.labelScale;
+    ctx.font = `600 ${fs}px "20 Kopeek", monospace`;
+    ctx.fillStyle = rgba(COLORS.paper, 0.3);
+    const cy = axisY + 34 * s;
+    for (const p of PERIODS) {
+      const x0 = Math.max(L, this.yearToX(p.from));
+      const x1 = Math.min(R, this.yearToX(p.to));
+      if (x1 - x0 < 60 * s) continue;
+      const text = M.wrapLines(ctx, p.label.toUpperCase(), x1 - x0 - 12 * s, 1)[0];
+      if (text) ctx.fillText(text, (x0 + x1) / 2, cy);
+    }
+    ctx.restore();
+  }
+
 
   drawLanes() {
     const ctx = this.ctx;
@@ -544,7 +597,10 @@ class TimelineApp {
       ctx.fillText(meta.label, this.W * 0.028, y - 14 * this.s);
       ctx.fillStyle = rgba(COLORS.paper, 0.45);
       ctx.font = `400 ${9.5 * this.s * this.settings.labelScale}px "20 Kopeek", monospace`;
-      ctx.fillText(meta.note.toUpperCase(), this.W * 0.028, y - 3 * this.s);
+      // держим подпись внутри отступа: справа от неё карман вне шкалы
+      const noteMax = this.plotL() - this.W * 0.028 - 74 * this.s;
+      const note = M.wrapLines(ctx, meta.note.toUpperCase(), noteMax, 1)[0] || "";
+      ctx.fillText(note, this.W * 0.028, y - 3 * this.s);
     }
     ctx.restore();
   }
@@ -694,35 +750,107 @@ class TimelineApp {
     }
     ctx.globalAlpha = 1;
 
-    // Подписи: крупные кружки забирают место первыми, налезающие отбрасываются.
-    const drawn = [];
-    const order = clusters.slice().sort((a, b) => b.r - a.r);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for (const cl of order) {
+    this.drawLabels(clusters, alpha, level, dimming, related);
+    ctx.restore();
+  }
+
+  // Подписи книг. Режим выбирается в настройках, см. LABEL_MODES.
+  drawLabels(clusters, alpha, level, dimming, related) {
+    const ctx = this.ctx;
+    const s = this.s;
+    const mode = this.settings.labelMode;
+
+    // общий разбор кандидатов: что вообще подписываем и какой ширины
+    const cands = [];
+    for (const cl of clusters) {
       cl.labelRect = null;
       if (!cl.label) continue;
       if (cl.x < this.plotL() || cl.x > this.plotR()) continue;
+      if (dimming && !cl.indices.some((i) => related.has(this.items[i].id))) continue;
       const sel = cl.indices.some((i) => this.items[i].id === this.selectedId);
-      const dim = dimming && !cl.indices.some((i) => related.has(this.items[i].id));
-      if (dim) continue;
-      const fs = Math.max(11 * this.s, Math.min(24 * this.s, cl.r * 0.62)) * this.settings.labelScale;
+      const fs = Math.max(11 * s, Math.min(24 * s, cl.r * 0.62)) * this.settings.labelScale;
       ctx.font = `${sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
-      let text = cl.label;
-      if (level === "LEAF" && text.length > 30) text = text.slice(0, 29) + "…";
-      const w = ctx.measureText(text).width;
-      const py = cl.y + cl.r + fs * 0.75;
-      const rect = [cl.x - w / 2 - 4 * this.s, py - fs * 0.6, cl.x + w / 2 + 4 * this.s, py + fs * 0.6];
-      if (drawn.some((r) => !(rect[2] < r[0] || rect[0] > r[2] || rect[3] < r[1] || rect[1] > r[3]))) continue;
+      // Названия книг длинные — переносим по словам, а не режем в одну
+      // строку: иначе подпись растягивается на треть кадра.
+      const maxW = (level === "LEAF" ? LABEL_MAX_W : 999) * s * this.settings.labelScale;
+      const lines = M.wrapLines(ctx, cl.label, maxW, level === "LEAF" ? LABEL_MAX_LINES : 1);
+      if (!lines.length) continue;
+      const w = Math.max(...lines.map((t) => ctx.measureText(t).width));
+      cands.push({ cl, sel, fs, lines, w, lh: fs * 1.16 });
+    }
+
+    const drawn = [];
+    const free = (r) => !drawn.some((d) =>
+      !(r[2] < d[0] || r[0] > d[2] || r[3] < d[1] || r[1] > d[3]));
+    // py — центр ПЕРВОЙ строки блока; блок растёт вниз
+    const put = (c, py, leaderFrom) => {
+      const { cl, fs, w, lines, lh } = c;
+      const bottom = py + (lines.length - 1) * lh;
+      const rect = [cl.x - w / 2 - 4 * s, py - fs * 0.6, cl.x + w / 2 + 4 * s, bottom + fs * 0.6];
+      if (!free(rect)) return false;
       drawn.push(rect);
       cl.labelRect = rect;
       ctx.globalAlpha = alpha;
-      ctx.fillStyle = rgba(COLORS.ink, 0.7);
-      ctx.fillText(text, cl.x + 1 * this.s, py + 1 * this.s);
-      ctx.fillStyle = sel ? COLORS.brass : rgba(COLORS.paper, 0.86);
-      ctx.fillText(text, cl.x, py);
+      ctx.font = `${c.sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
+      if (leaderFrom != null && Math.abs(py - leaderFrom) > 4 * s) {
+        ctx.strokeStyle = c.sel ? COLORS.brass : rgba(COLORS.paper, 0.32);
+        ctx.lineWidth = 1 * s;
+        ctx.beginPath();
+        ctx.moveTo(cl.x, leaderFrom);
+        ctx.lineTo(cl.x, py - fs * 0.55);
+        ctx.stroke();
+      }
+      for (let i = 0; i < lines.length; i++) {
+        const ly = py + i * lh;
+        ctx.fillStyle = rgba(COLORS.ink, 0.7);
+        ctx.fillText(lines[i], cl.x + 1 * s, ly + 1 * s);
+        ctx.fillStyle = c.sel ? COLORS.brass : rgba(COLORS.paper, 0.86);
+        ctx.fillText(lines[i], cl.x, ly);
+      }
+      return true;
+    };
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    if (mode === "stagger") {
+      // Через одну над и под дорожкой — вдвое больше места почти даром.
+      for (const lane of LANES) {
+        const inLane = cands.filter((c) => c.cl.lane === lane).sort((a, b) => a.cl.x - b.cl.x);
+        inLane.forEach((c, i) => {
+          const below = i % 2 === 0;
+          const block = (c.lines.length - 1) * c.lh;
+          const py = below
+            ? c.cl.y + c.cl.r + c.fs * 0.75
+            : c.cl.y - c.cl.r - c.fs * 0.75 - block;   // вверх блок растёт от нижней строки
+          put(c, py, null);
+        });
+      }
+    } else if (mode === "leader") {
+      // Несколько строк под дорожкой: подпись съезжает в первую свободную,
+      // к кружку тянется волосок. Строк не больше трёх — дальше начинается
+      // соседняя дорожка.
+      const MAX_ROWS = 3;
+      for (const lane of LANES) {
+        const inLane = cands.filter((c) => c.cl.lane === lane).sort((a, b) => a.cl.x - b.cl.x);
+        const rowEnd = new Array(MAX_ROWS).fill(-Infinity);
+        for (const c of inLane) {
+          const half = c.w / 2 + 6 * s;
+          let row = 0;
+          while (row < MAX_ROWS && c.cl.x - half < rowEnd[row]) row++;
+          if (row >= MAX_ROWS) continue;
+          rowEnd[row] = c.cl.x + half;
+          const anchorY = c.cl.y + c.cl.r;
+          put(c, anchorY + c.fs * 0.75 + row * (c.lh * LABEL_MAX_LINES * 0.62), anchorY);
+        }
+      }
+    } else {
+      // По месту: крупные кружки забирают место первыми, налезающие отброшены.
+      for (const c of cands.slice().sort((a, b) => b.cl.r - a.cl.r)) {
+        put(c, c.cl.y + c.cl.r + c.fs * 0.75, null);
+      }
     }
-    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   // Книги, не влезающие в шкалу (Аристотель, −350). Карман слева за разрывом
@@ -730,20 +858,25 @@ class TimelineApp {
   drawOutliers() {
     if (!this.outliers.length) return;
     const ctx = this.ctx;
+    const s = this.s;
     const axisStart = this.yearToX(AXIS_MIN);
-    const x = axisStart - 62 * this.s;
-    if (x < -40 * this.s || x > this.W) return;
+    const x = axisStart - 46 * s;
+    if (x < -40 * s || x > this.W) return;
 
     ctx.save();
-    // знак разрыва оси между карманом и началом шкалы
-    ctx.strokeStyle = rgba(COLORS.paper, 0.35);
-    ctx.lineWidth = 1.4 * this.s;
-    for (const off of [-6, 0]) {
+    // Знак разрыва — на самой оси лет, где разрыву и место. Раньше он висел
+    // по центру кадра, а это ровно высота дорожки «ЧИТАЛ», и получалась каша
+    // из подписи дорожки, кружка и штрихов.
+    const axisY = this.laneY("about-lenin") + this.H * 0.115;
+    ctx.strokeStyle = rgba(COLORS.paper, 0.4);
+    ctx.lineWidth = 1.4 * s;
+    for (const off of [-5, 1]) {
       ctx.beginPath();
-      ctx.moveTo(axisStart - 30 * this.s + off * this.s, this.H * 0.5 - 8 * this.s);
-      ctx.lineTo(axisStart - 22 * this.s + off * this.s, this.H * 0.5 + 8 * this.s);
+      ctx.moveTo(axisStart - 20 * s + off * s, axisY - 6 * s);
+      ctx.lineTo(axisStart - 12 * s + off * s, axisY + 6 * s);
       ctx.stroke();
     }
+
     for (const i of this.outliers) {
       const it = this.items[i];
       const y = this.laneY(it.bucket);
@@ -754,14 +887,21 @@ class TimelineApp {
       ctx.fillStyle = it.cover_color;
       ctx.fill();
       ctx.strokeStyle = sel ? COLORS.brass : rgba(COLORS.paper, 0.5);
-      ctx.lineWidth = (sel ? 2.5 : 1) * this.s;
+      ctx.lineWidth = (sel ? 2.5 : 1) * s;
       ctx.stroke();
-      const fs = 11 * this.s * this.settings.labelScale;
+
+      // подпись в две строки — так карман остаётся узким и не наползает
+      // ни на подписи дорожек слева, ни на начало шкалы справа
+      const fs = 10.5 * s * this.settings.labelScale;
       ctx.font = `400 ${fs}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
-      ctx.fillStyle = rgba(COLORS.paper, 0.7);
-      ctx.fillText(`${it.year_first} · ${it.title}`, x, y + r + fs * 0.9);
+      ctx.fillStyle = rgba(COLORS.paper, 0.45);
+      ctx.fillText(String(it.year_first), x, y + r + fs * 0.95);
+      ctx.fillStyle = rgba(COLORS.paper, 0.72);
+      const title = M.wrapLines(ctx, it.title, 84 * s * this.settings.labelScale, 1)[0] || "";
+      ctx.fillText(title, x, y + r + fs * 2.15);
+
       this.lastClusters.push({
         x, y, r, count: 1, indices: [i], lane: it.bucket,
         label: it.title, labelRect: null, timeCenter: it.year_first, timeSpan: 1,
@@ -769,6 +909,7 @@ class TimelineApp {
     }
     ctx.restore();
   }
+
 
   // Позиция книги на экране сейчас — сама книга, если она отдельный кружок,
   // либо кластер, внутри которого она свёрнута.
@@ -882,10 +1023,35 @@ class TimelineApp {
         this.saveSettings();
       });
     };
+    // сегментированный переключатель раскладки подписей
+    const modeBox = document.getElementById("label-mode");
+    const paintModes = () => {
+      for (const b of modeBox.children) {
+        const on = b.dataset.mode === this.settings.labelMode;
+        b.setAttribute("aria-checked", String(on));
+      }
+    };
+    for (const m of LABEL_MODES) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "radio");
+      b.dataset.mode = m.id;
+      b.textContent = m.label;
+      b.addEventListener("click", () => {
+        this.settings.labelMode = m.id;
+        this.saveSettings();
+        paintModes();
+      });
+      modeBox.appendChild(b);
+    }
+    paintModes();
+    this.paintLabelModes = paintModes;
+
     range("thr-decade", "thrDecade", (v) => v.toFixed(2) + "×");
     range("thr-year", "thrYear", (v) => v.toFixed(2) + "×");
     range("opt-label-scale", "labelScale", (v) => v.toFixed(2) + "×");
     check("opt-events", "showEvents");
+    check("opt-periods", "showPeriods");
     check("opt-conns", "showConns");
     check("opt-crossfade", "crossfade");
     document.getElementById("opt-reset").addEventListener("click", () => {
@@ -897,7 +1063,9 @@ class TimelineApp {
         const out = this.settingsPanel.querySelector(`[data-value-for="${id}"]`);
         if (out) out.textContent = this.settings[key].toFixed(2) + "×";
       }
+      if (this.paintLabelModes) this.paintLabelModes();
       document.getElementById("opt-events").checked = this.settings.showEvents;
+      document.getElementById("opt-periods").checked = this.settings.showPeriods;
       document.getElementById("opt-conns").checked = this.settings.showConns;
       document.getElementById("opt-crossfade").checked = this.settings.crossfade;
     });
