@@ -1,36 +1,12 @@
-const COLORS = {
-  paper: "#F7F9EF",
-  brass: "#D2B773",
-  red: "#A02128",
-  graphite: "#435059",
-  ink: "#0C1012",
-  slateBlue: "#5D6970",
-};
-
-const BUCKET_META = {
-  "by-lenin":    { label: "ИМ",    accent: "#A02128", note: "что писал сам Ленин"  },
-  "about-lenin": { label: "О НЁМ", accent: "#D2B773", note: "что писали о нём"      },
-  "in-library":  { label: "ЧИТАЛ", accent: "#5D6970", note: "что читал из чужого"   },
-};
-
-const CONN_STYLE = {
-  "title-borrowing": { color: "#D2B773", width: 3, dash: [],          label: "заглавие"  },
-  "polemic":         { color: "#A02128", width: 2, dash: [10, 6],     label: "против"     },
-  "source":          { color: "#F7F9EF", width: 2, dash: [],          label: "источник"  },
-  "framework":       { color: "#7BA3C0", width: 2, dash: [],          label: "рамка"     },
-  "conspectus":      { color: "#D2B773", width: 2.5, dash: [2, 4],    label: "конспект"  },
-  "wrote-about":     { color: "#7BA3C0", width: 2, dash: [10, 6],     label: "статья о"  },
-  "parallel":        { color: "#9DA3A6", width: 2, dash: [3, 3],      label: "параллель" },
-};
-
-function adjustHex(hex, delta) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const r = clamp((n >> 16) + delta);
-  const g = clamp(((n >> 8) & 0xff) + delta);
-  const b = clamp((n & 0xff) + delta);
-  return `rgb(${r},${g},${b})`;
-}
-function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
+// Общее для вариантов МТК 40 — в assets/mtk40/lib/mtk40.js: палитра, оси
+// корпуса, типы связей, масштаб под киоск, карточка. Здесь только псевдонимы,
+// чтобы не расходились четыре копии одних и тех же констант.
+const M = window.MTK40;
+const COLORS = M.COLORS;
+const BUCKET_META = M.BUCKET_META;
+const adjustHex = M.adjustHex;
+const DESIGN_W = M.DESIGN_W;
+const CONN_STYLE = M.CONN_STYLE;
 
 function spineWidthBase(item) {
   const p = Math.max(8, item.pages_approx || 80);
@@ -90,6 +66,10 @@ class MirrorApp {
 
   resize() {
     const rect = this.canvas.getBoundingClientRect();
+    const scale = rect.width / DESIGN_W;
+    this.s = this.dpr * scale;
+    // тем же коэффициентом тянется HTML-обвязка (zoom в styles.css)
+    document.documentElement.style.setProperty("--zoom", scale);
     this.W = Math.round(rect.width * this.dpr);
     this.H = Math.round(rect.height * this.dpr);
     this.canvas.width = this.W;
@@ -98,8 +78,8 @@ class MirrorApp {
   }
 
   computeLayout() {
-    const titleArea = 130 * this.dpr;
-    const margin = 40 * this.dpr;
+    const titleArea = 130 * this.s;
+    const margin = 40 * this.s;
     const usableH = this.H - titleArea - margin;
     // by-lenin: 38%, in-library: 22%, about-lenin: 38%, gaps: 2%
     const sectionHs = {
@@ -116,22 +96,16 @@ class MirrorApp {
       y += sectionHs[b] + gap;
     }
     // place items into grid per bucket
-    const sideMargin = 50 * this.dpr;
+    const sideMargin = 50 * this.s;
     const usableW = this.W - 2 * sideMargin;
 
-    const portrait = this.H > this.W;
     for (const b of order) {
       const items = this.data.items
         .filter((i) => i.bucket === b)
         .sort((a, c) => (a.year_first || 0) - (c.year_first || 0));
       const sec = sections[b];
-      // rows: в портрете теснее по ширине → больше рядов; in-library — пропорционально
-      let rows;
-      if (b === "in-library") {
-        rows = portrait ? Math.ceil(items.length / 10) : Math.ceil(items.length / 18);
-      } else {
-        rows = portrait ? 3 : 2;
-      }
+      // in-library — по 18 в ряд, остальные секции — в два ряда
+      const rows = b === "in-library" ? Math.ceil(items.length / 18) : 2;
       const cols = Math.ceil(items.length / rows);
       const cellW = usableW / cols;
       const cellH = sec.height / rows;
@@ -145,8 +119,8 @@ class MirrorApp {
         const row = Math.floor(i / cols);
         const col = i % cols;
         const cellCx = sideMargin + col * cellW + cellW / 2;
-        const baselineY = sec.top + (row + 1) * cellH - 8 * this.dpr;
-        const sw = Math.min(cellW * 0.78, spineWidthBase(item) * this.dpr);
+        const baselineY = sec.top + (row + 1) * cellH - 8 * this.s;
+        const sw = Math.min(cellW * 0.78, spineWidthBase(item) * this.s);
         const sh = Math.min(cellH * 0.82, cellH * 0.65 * Math.max(0.7, Math.min(1.18, (item.height_cm || 22) / 22)));
         sec.items.push({
           item,
@@ -225,14 +199,14 @@ class MirrorApp {
       const meta = BUCKET_META[b];
       ctx.save();
       ctx.fillStyle = meta.accent;
-      ctx.font = `600 ${13 * this.dpr}px "20 Kopeek", monospace`;
+      ctx.font = `600 ${13 * this.s}px "20 Kopeek", monospace`;
       ctx.textBaseline = "top";
-      ctx.fillText(meta.label, 28 * this.dpr, sec.top + 6 * this.dpr);
+      ctx.fillText(meta.label, 28 * this.s, sec.top + 6 * this.s);
       ctx.fillStyle = "rgba(247,249,239,0.5)";
-      ctx.font = `400 ${10 * this.dpr}px "20 Kopeek", monospace`;
-      ctx.fillText(meta.note.toUpperCase(), 28 * this.dpr, sec.top + 24 * this.dpr);
+      ctx.font = `400 ${10 * this.s}px "20 Kopeek", monospace`;
+      ctx.fillText(meta.note.toUpperCase(), 28 * this.s, sec.top + 24 * this.s);
       ctx.textAlign = "right";
-      ctx.fillText(`${sec.items.length} ед.`, this.W - 28 * this.dpr, sec.top + 6 * this.dpr);
+      ctx.fillText(`${sec.items.length} ед.`, this.W - 28 * this.s, sec.top + 6 * this.s);
       ctx.textAlign = "left";
       ctx.restore();
     }
@@ -241,9 +215,9 @@ class MirrorApp {
     for (const b of this.layout.order) {
       const sec = this.layout.sections[b];
       for (let r = 1; r <= sec.rows; r++) {
-        const y = sec.top + r * sec.cellH - 8 * this.dpr;
+        const y = sec.top + r * sec.cellH - 8 * this.s;
         ctx.fillStyle = "rgba(210,183,115,0.18)";
-        ctx.fillRect(40 * this.dpr, y, this.W - 80 * this.dpr, 1 * this.dpr);
+        ctx.fillRect(40 * this.s, y, this.W - 80 * this.s, 1 * this.s);
       }
     }
 
@@ -293,27 +267,27 @@ class MirrorApp {
     ctx.globalAlpha = opacity;
 
     ctx.fillStyle = "rgba(0,0,0,0.34)";
-    ctx.fillRect(x + 1 * this.dpr, y + 3 * this.dpr, w, h);
+    ctx.fillRect(x + 1 * this.s, y + 3 * this.s, w, h);
 
     ctx.fillStyle = item.cover_color;
     ctx.fillRect(x, y, w, h);
     ctx.fillStyle = adjustHex(item.cover_color, 26);
-    ctx.fillRect(x, y, 1.5 * this.dpr, h);
+    ctx.fillRect(x, y, 1.5 * this.s, h);
     ctx.fillStyle = adjustHex(item.cover_color, -26);
-    ctx.fillRect(x + w - 1.5 * this.dpr, y, 1.5 * this.dpr, h);
+    ctx.fillRect(x + w - 1.5 * this.s, y, 1.5 * this.s, h);
     ctx.fillStyle = adjustHex(item.cover_color, 18);
-    ctx.fillRect(x, y, w, 3 * this.dpr);
+    ctx.fillRect(x, y, w, 3 * this.s);
 
-    if (w >= 22 * this.dpr) {
+    if (w >= 22 * this.s) {
       ctx.save();
-      ctx.translate(cx, baselineY - 12 * this.dpr);
+      ctx.translate(cx, baselineY - 12 * this.s);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = adjustHex(item.cover_color, 95);
-      const fs = Math.min(11 * this.dpr, w * 0.34);
+      const fs = Math.min(11 * this.s, w * 0.34);
       ctx.font = `400 ${fs}px Nolde, Georgia, serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      const maxChars = Math.floor((h - 28 * this.dpr) / (fs * 0.55));
+      const maxChars = Math.floor((h - 28 * this.s) / (fs * 0.55));
       let title = item.title;
       if (title.length > maxChars) title = title.slice(0, Math.max(3, maxChars - 1)) + "…";
       ctx.fillText(title, 0, 0);
@@ -321,7 +295,7 @@ class MirrorApp {
     }
     if (item.significance === 5) {
       ctx.fillStyle = COLORS.brass;
-      ctx.fillRect(cx - 2 * this.dpr, y + h - 8 * this.dpr, 4 * this.dpr, 4 * this.dpr);
+      ctx.fillRect(cx - 2 * this.s, y + h - 8 * this.s, 4 * this.s, 4 * this.s);
     }
     ctx.globalAlpha = 1;
   }
@@ -332,11 +306,11 @@ class MirrorApp {
     const x = cx - w / 2;
     const y = baselineY - h;
     ctx.strokeStyle = COLORS.brass;
-    ctx.lineWidth = 2 * this.dpr;
-    ctx.strokeRect(x - 4 * this.dpr, y - 4 * this.dpr, w + 8 * this.dpr, h + 8 * this.dpr);
+    ctx.lineWidth = 2 * this.s;
+    ctx.strokeRect(x - 4 * this.s, y - 4 * this.s, w + 8 * this.s, h + 8 * this.s);
     ctx.fillStyle = COLORS.brass;
     ctx.beginPath();
-    ctx.arc(cx, baselineY + 4 * this.dpr, 3 * this.dpr, 0, Math.PI * 2);
+    ctx.arc(cx, baselineY + 4 * this.s, 3 * this.s, 0, Math.PI * 2);
     ctx.fill();
   }
 
@@ -356,10 +330,10 @@ class MirrorApp {
 
     ctx.save();
     ctx.strokeStyle = style.color;
-    ctx.lineWidth = style.width * this.dpr;
-    ctx.setLineDash(style.dash.map((d) => d * this.dpr));
+    ctx.lineWidth = style.width * this.s;
+    ctx.setLineDash(style.dash.map((d) => d * this.s));
     ctx.shadowColor = style.color;
-    ctx.shadowBlur = 6 * this.dpr;
+    ctx.shadowBlur = 6 * this.s;
     ctx.beginPath();
     ctx.moveTo(ax, ay);
     ctx.bezierCurveTo(c1x, c1y, c2x, c2y, bx, by);
@@ -371,12 +345,12 @@ class MirrorApp {
     const my = midY;
     ctx.save();
     ctx.fillStyle = "rgba(12,16,18,0.8)";
-    ctx.fillRect(mx - 38 * this.dpr, my - 9 * this.dpr, 76 * this.dpr, 18 * this.dpr);
+    ctx.fillRect(mx - 38 * this.s, my - 9 * this.s, 76 * this.s, 18 * this.s);
     ctx.fillStyle = style.color;
-    ctx.font = `600 ${10 * this.dpr}px "20 Kopeek", monospace`;
+    ctx.font = `600 ${10 * this.s}px "20 Kopeek", monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-    ctx.fillText(style.label.toUpperCase(), mx, my + 1 * this.dpr);
+    ctx.fillText(style.label.toUpperCase(), mx, my + 1 * this.s);
     ctx.restore();
   }
 }

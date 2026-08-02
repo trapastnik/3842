@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Прилив и отлив</title>
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <main class="stage">
+      <canvas id="map"></canvas>
+
+      <header class="head">
+        <span class="eyebrow">МТК · 39</span>
+        <h1 class="title">Прилив и отлив</h1>
+        <p class="sub">
+          Столетие имени на карте мира: точка загорается в год, когда объект получил
+          имя Ленина, и гаснет в год, когда его лишился.
+        </p>
+      </header>
+
+      <div class="year" aria-live="off">
+        <div class="year__num" data-year>1900</div>
+        <div class="year__counts" data-counts></div>
+      </div>
+
+      <div class="timeline">
+        <button class="play" type="button" data-play aria-label="Пауза">❚❚</button>
+        <input class="scrub" type="range" data-scrub min="1900" max="2025" step="1" value="1900"
+               aria-label="Год" />
+        <div class="ticks" data-ticks></div>
+      </div>
+
+      <aside class="legend">
+        <div class="legend__row"><span class="legend__dot legend__dot--live"></span>носит имя</div>
+        <div class="legend__row"><span class="legend__dot legend__dot--gone"></span>имя снято</div>
+        <div class="legend__row"><span class="legend__dot legend__dot--bg"></span>объекты без даты в материалах</div>
+      </aside>
+
+      <p class="note" data-note></p>
+    </main>
+
+    <script src="../assets/shared/lib/projection.js"></script>
+    <script type="module" src="./wave.js?v=2"></script>
+  </body>
+</html>

@@ -1,0 +1,235 @@
+/* Картотека. База — assets/mtk40/lib/base.css. */
+
+/* Раскладка потоком, а не фиксированными отступами: строка фильтров переносится
+   и её высота заранее не известна — на фиксированных top карточки уезжали под
+   панель. Масштаб под киоск живёт на .sheet; у .title/.toolbar/.catalog он
+   снимается, иначе вложенный zoom перемножился бы. */
+.sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  zoom: var(--zoom, 1);
+  /* Фильтры съезжают в левую колонку: строкой сверху они забирали треть
+     высоты, и на карточки оставалось меньше, чем на меню к ним. */
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas: "head head" "side idx" "side grid";
+  column-gap: 22px;
+  row-gap: 14px;
+  padding: 28px 32px 58px;
+  min-height: 0;
+}
+.title { grid-area: head; }
+.toolbar { grid-area: side; }
+.catalog { grid-area: grid; }
+
+/* Указатель по природе горизонтальный: 20+ букв в узкой колонке рвались бы
+   на пять рядов и выталкивали остальные фильтры за край панели. */
+.index-bar {
+  grid-area: idx;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border: 1px solid rgba(247, 249, 239, 0.12);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.45);
+}
+.index-bar .tool-legend { flex: none; }
+.title, .toolbar, .catalog, .index-bar { zoom: 1; }
+.title { position: static; }
+
+/* ---------- панель фильтров ---------- */
+.toolbar {
+  position: static;
+  align-self: start;
+  max-height: 100%;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 11px;
+  padding: 14px 13px 12px;
+  border: 1px solid rgba(247, 249, 239, 0.14);
+  border-radius: 14px;
+  background: rgba(12, 16, 18, 0.55);
+  backdrop-filter: blur(6px);
+}
+.tool-group { display: flex; flex-direction: column; gap: 6px; }
+.tool-group--wide { min-width: 0; }
+.tool-legend {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.42);
+}
+.chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.chips--alpha { gap: 3px; }
+.tool-tail {
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+}
+.tool-tail .counter { text-align: left; }
+.counter {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  color: var(--brass);
+  white-space: nowrap;
+}
+
+.toolbar .chip { font-size: 9px; padding: 5px 9px; letter-spacing: 0.06em; }
+.toolbar .chip__n { margin-left: 4px; }
+
+.chip {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.66);
+  padding: 6px 11px;
+  border: 1px solid rgba(247, 249, 239, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.chip:active { border-color: var(--brass-soft); }
+.chip[aria-pressed="true"] {
+  color: var(--night);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+.chip[data-accent][aria-pressed="true"] {
+  background: var(--chip-accent);
+  border-color: var(--chip-accent);
+  color: var(--night);
+}
+.chip--alpha { padding: 5px 7px; letter-spacing: 0; font-size: 10px; }
+.chip--alpha[disabled] { opacity: 0.22; cursor: default; }
+.chip__n { opacity: 0.55; margin-left: 5px; }
+
+.reset-btn {
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+  padding: 6px 12px;
+  border: 1px solid rgba(247, 249, 239, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  cursor: pointer;
+}
+.reset-btn:active { color: var(--brass); border-color: var(--brass-soft); }
+
+/* ---------- сетка карточек ---------- */
+.catalog {
+  position: static;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(184px, 1fr));
+  gap: 12px;
+  align-content: start;
+  padding-right: 6px;
+}
+.catalog::-webkit-scrollbar { width: 6px; }
+.catalog::-webkit-scrollbar-thumb {
+  background: rgba(210, 183, 115, 0.4);
+  border-radius: 999px;
+}
+
+.entry {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-height: 132px;
+  padding: 13px 14px 12px 18px;
+  border: 1px solid rgba(247, 249, 239, 0.12);
+  border-radius: 10px;
+  background: rgba(12, 16, 18, 0.5);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.entry::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  background: var(--spine);
+}
+.entry[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: rgba(210, 183, 115, 0.1);
+}
+.entry__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: rgba(247, 249, 239, 0.5);
+}
+.entry__year { color: var(--brass); }
+.entry__name {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 400;
+  line-height: 1.22;
+  color: var(--paper-white);
+}
+.entry__author {
+  font-size: 12px;
+  font-style: italic;
+  line-height: 1.3;
+  color: rgba(247, 249, 239, 0.7);
+}
+.entry__meta {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.42);
+}
+.entry__star { color: var(--brass); }
+
+.empty {
+  grid-column: 1 / -1;
+  padding: 40px 0;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.4);
+}
+
+/* Заголовок буквы в алфавитном порядке */
+.alpha-head {
+  grid-column: 1 / -1;
+  margin: 10px 0 -2px;
+  font-family: var(--font-display);
+  font-size: 20px;
+  color: var(--brass);
+  border-bottom: 1px solid rgba(210, 183, 115, 0.25);
+  padding-bottom: 4px;
+}

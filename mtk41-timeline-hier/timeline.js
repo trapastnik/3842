@@ -67,7 +67,6 @@
     labelScale: 1.4,
     showEvents: true,
     crossfade: true,
-    show3D: true,
   };
   function loadSettings() {
     try {
@@ -124,19 +123,50 @@
   }
 
   // ---------- Coord ----------
-  const PAD_LEFT_FRAC  = 0.05;
-  const PAD_RIGHT_FRAC = 0.03;
+  // Отступы в пикселях, а не в долях ширины. Левый обязан вмещать подписи
+  // дорожек («сохранились» — самая длинная), иначе они рисуются в
+  // отрицательных координатах и обрезаются краем экрана; правый — держать
+  // крайний кружок 2020-х и метку последнего события целиком в кадре.
+  const LANE_LABELS = ["сохранились", "судьба ?", "снесены"];
+  let padLeftPx = 80;
+  let padRightPx = 40;
+
+  /** Пересчитать отступы по фактической ширине текста при текущем шрифте. */
+  function measurePads() {
+    const fontPx = Math.max(11, Math.min(height * 0.020, 24)) * settings.labelScale;
+    ctx.save();
+    ctx.font = `600 ${fontPx * 0.85}px "20 Kopeek", "Courier New", monospace`;
+    let maxLane = 0;
+    for (const t of LANE_LABELS) maxLane = Math.max(maxLane, ctx.measureText(t).width);
+    ctx.restore();
+    padLeftPx = Math.min(width * 0.22, maxLane + 28);
+    // Справа держим половину самой длинной подписи события плюс поле.
+    padRightPx = Math.min(width * 0.14, Math.max(48, fontPx * 3.2));
+  }
+
   function usableWidth() {
-    return width * (1 - PAD_LEFT_FRAC - PAD_RIGHT_FRAC);
+    return Math.max(50, width - padLeftPx - padRightPx);
+  }
+  // Центр рабочей области, а не экрана: при разных отступах слева и справа
+  // центрирование по width*0.5 сдвигало всю ленту вправо, и последние
+  // десятилетия выходили за край.
+  function usableCenterX() {
+    return padLeftPx + usableWidth() * 0.5;
   }
   function pxPerYear() {
     return (usableWidth() / TOTAL_YEARS) * view.zoom;
   }
   function yearToScreen(y) {
-    return width * 0.5 + (y - view.yearCenter) * pxPerYear();
+    return usableCenterX() + (y - view.yearCenter) * pxPerYear();
   }
   function screenToYear(sx) {
-    return view.yearCenter + (sx - width * 0.5) / pxPerYear();
+    return view.yearCenter + (sx - usableCenterX()) / pxPerYear();
+  }
+
+  /** Зажать центр текста так, чтобы он целиком помещался в экран. */
+  function clampLabelX(x, textWidth) {
+    const half = textWidth * 0.5 + 6;
+    return Math.min(width - half, Math.max(half, x));
   }
 
   function clampZoom(z) {
@@ -214,14 +244,21 @@
         for (const lane of LANE_ORDER) {
           const idx = laneMap[lane];
           if (!idx.length) continue;
-          const x = yearToScreen(decade + 5);
+          // Кружок декады ставим на СРЕДНИЙ год её памятников, а не на
+          // середину десятилетия: у 1910-х в корпусе один Осташков 1919, и
+          // при decade+5 = 1915 кружок уезжал левее начала оси, наползая на
+          // подпись дорожки.
+          let sum = 0;
+          for (const i of idx) sum += items[i].year;
+          const meanYear = sum / idx.length;
+          const x = yearToScreen(meanYear);
           const y = laneY(lane);
           const r = idx.length > 1 ? sizeFor(idx.length) : shortSide() * LEAF_R_FRAC;
           out.push({
             x, y, r, count: idx.length,
             indices: idx.slice(),
             lane, label: decade + "s",
-            timeCenter: decade + 5,
+            timeCenter: meanYear,
             timeSpan: 10,
           });
         }
@@ -296,8 +333,8 @@
     for (const lane of LANE_ORDER) {
       const y = laneY(lane);
       ctx.beginPath();
-      ctx.moveTo(width * PAD_LEFT_FRAC, y);
-      ctx.lineTo(width * (1 - PAD_RIGHT_FRAC), y);
+      ctx.moveTo(padLeftPx, y);
+      ctx.lineTo(width - padRightPx, y);
       ctx.stroke();
     }
 
@@ -327,15 +364,16 @@
     const yLabels = laneY("demolished") + height * 0.06;
     for (let y = Math.ceil(YEAR_MIN / labelStep) * labelStep; y <= YEAR_MAX; y += labelStep) {
       const sx = yearToScreen(y);
-      if (sx < width * PAD_LEFT_FRAC - 30 || sx > width * (1 - PAD_RIGHT_FRAC) + 30) continue;
-      ctx.fillText(String(y), sx, yLabels);
+      if (sx < -30 || sx > width + 30) continue;
+      const yt = String(y);
+      ctx.fillText(yt, clampLabelX(sx, ctx.measureText(yt).width), yLabels);
     }
 
     // Lane labels (left edge)
     ctx.font = `600 ${fontPx * 0.85}px "20 Kopeek", "Courier New", monospace`;
     ctx.textAlign = "right";
     ctx.textBaseline = "middle";
-    const lx = width * PAD_LEFT_FRAC - 12;
+    const lx = padLeftPx - 12;
     ctx.fillStyle = cssColor(palette.red, 0.7);
     ctx.fillText("сохранились", lx, laneY("extant"));
     ctx.fillStyle = cssColor(palette.window, 0.6);
@@ -358,17 +396,39 @@
     ctx.lineWidth = 1.2;
     const yTop = laneY("extant") - height * 0.08;
     const yBottom = laneY("demolished") + height * 0.08;
+    // Занятые подписями отрезки по X на каждой строке. «Крым в РФ 2014» и
+    // «4 области в РФ 2022» разделяют 8 лет — на общем зуме это уже меньше
+    // ширины самих подписей, и они наезжали друг на друга. Пересеклись —
+    // уводим следующую на строку выше.
+    const rows = [];
     for (const ev of HISTORICAL_EVENTS) {
       const sx = yearToScreen(ev.year);
-      if (sx < width * PAD_LEFT_FRAC - 30 || sx > width * (1 - PAD_RIGHT_FRAC) + 30) continue;
+      if (sx < -30 || sx > width + 30) continue;
       ctx.beginPath();
       ctx.moveTo(sx, yTop);
       ctx.lineTo(sx, yBottom);
       ctx.stroke();
-      ctx.fillStyle = cssColor(palette.red, 0.75);
-      ctx.fillText(ev.label, sx, yTop - fontPx * 1.6);
-      ctx.fillStyle = cssColor(palette.red, 0.55);
-      ctx.fillText(String(Math.floor(ev.year)), sx, yTop - fontPx * 0.4);
+      // Линия события стоит на своём годе, а подпись зажимается в экран:
+      // «4 области в РФ» у 2022 иначе уезжала за правый край целиком.
+      const lw = ctx.measureText(ev.label).width;
+      const cx = clampLabelX(sx, lw);
+      const span = [cx - lw * 0.5 - 8, cx + lw * 0.5 + 8];
+      let row = 0;
+      while (rows[row] && rows[row].some(r => span[0] < r[1] && span[1] > r[0])) row += 1;
+      if (!rows[row]) rows[row] = [];
+      rows[row].push(span);
+      const yLabel = yTop - fontPx * (1.6 + row * 2.4);
+
+      // Тень обязательна: справа подписи попадают на красную фоновую полосу,
+      // и красный текст на красном фоне («4 области в РФ») исчезал совсем.
+      ctx.shadowColor = cssColor(palette.black, 0.85);
+      ctx.shadowBlur = 6;
+      ctx.fillStyle = cssColor(palette.red, 0.9);
+      ctx.fillText(ev.label, cx, yLabel);
+      ctx.fillStyle = cssColor(palette.red, 0.7);
+      const ys = String(Math.floor(ev.year));
+      ctx.fillText(ys, clampLabelX(sx, ctx.measureText(ys).width), yLabel + fontPx * 1.2);
+      ctx.shadowBlur = 0;
     }
     ctx.setLineDash([]);
     ctx.restore();
@@ -467,7 +527,8 @@
         cl.labelRect = null;   // rotated — hit-test via dot only
       } else {
         // Straight label
-        const rect = [px - w * 0.5 - 4, py - fontVpx * 0.6, px + w * 0.5 + 4, py + fontVpx * 0.6];
+        const cx = clampLabelX(px, w);
+        const rect = [cx - w * 0.5 - 4, py - fontVpx * 0.6, cx + w * 0.5 + 4, py + fontVpx * 0.6];
         if (drawn.some(r => overlap(r, rect))) { cl.labelRect = null; continue; }
         drawn.push(rect);
         cl.labelRect = rect;
@@ -475,10 +536,10 @@
         ctx.fillStyle = cssColor(palette.black, 0.75 * layerAlpha);
         ctx.shadowColor = cssColor(palette.black, 0.6 * layerAlpha);
         ctx.shadowBlur = 4;
-        ctx.fillText(text, px + 1, py + 1);
+        ctx.fillText(text, cx + 1, py + 1);
         ctx.shadowBlur = 0;
         ctx.fillStyle = isSel ? palette.brass : cssColor(palette.paper, 0.88 * layerAlpha);
-        ctx.fillText(text, px, py);
+        ctx.fillText(text, cx, py);
       }
     }
 
@@ -647,16 +708,6 @@
   }
   wireCheck("opt-events", "showEvents");
   wireCheck("opt-crossfade", "crossfade");
-  (function () {
-    const el = document.getElementById("opt-show3d");
-    el.checked = !!settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    el.addEventListener("change", () => {
-      settings.show3D = !!el.checked;
-      saveSettings();
-      if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
-    });
-  })();
   document.getElementById("opt-reset").addEventListener("click", () => {
     Object.assign(settings, DEFAULT_SETTINGS);
     saveSettings();
@@ -665,8 +716,6 @@
     document.getElementById("opt-label-scale").value = settings.labelScale;
     document.getElementById("opt-events").checked = settings.showEvents;
     document.getElementById("opt-crossfade").checked = settings.crossfade;
-    document.getElementById("opt-show3d").checked = settings.show3D;
-    if (window.MtkCard && window.MtkCard.setShow3D) window.MtkCard.setShow3D(settings.show3D);
     settingsPanel.querySelectorAll("[data-size-mode]").forEach(b => {
       b.classList.toggle("active", b.dataset.sizeMode === settings.sizeMode);
     });
@@ -835,6 +884,7 @@
     canvas.width = Math.floor(width * dpr);
     canvas.height = Math.floor(height * dpr);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    measurePads();
     clampCamera();
   }
   window.addEventListener("resize", resize);
@@ -843,6 +893,10 @@
   function loadAll() {
     return fetch("../data/mtk41.json").then(r => r.json()).then(data => {
       items = (data.items || []).filter(it => typeof it.year === "number");
+      Mtk41Stats.setSubtitle(items, s =>
+        `${s.count} ${Mtk41Stats.plural(s.count, ["памятник", "памятника", "памятников"])}, `
+        + `${s.years}. Тап на кружок — распадается на подкружки: декада → год → отдельные `
+        + `памятники. Верх — сохранились, низ — снесены.`);
       rebuildAggregates();
     });
   }

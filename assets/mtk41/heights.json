@@ -875,5 +875,137 @@
   "addis-1983": {
     "statue": 6.9,
     "pedestal": 1.1
+  },
+  "zhitomir-1922": {
+    "statue": 0.8,
+    "pedestal": 2.2
+  },
+  "noginsk-1924": {
+    "statue": 2.0,
+    "pedestal": 2.0
+  },
+  "odessa-1924": {
+    "statue": 1.93,
+    "pedestal": 1.57
+  },
+  "ivanovo-voznesensk-1924": {
+    "statue": 1.8,
+    "pedestal": 1.62
+  },
+  "kazan-leninskiy-sad-1925": {
+    "statue": 1.64,
+    "pedestal": 1.86
+  },
+  "kolchugino-1925": {
+    "statue": 2.17,
+    "pedestal": 1.78
+  },
+  "nizhny-tagil-1925": {
+    "statue": 1.8,
+    "pedestal": 1.62
+  },
+  "elabuga-1925": {
+    "statue": 0.7,
+    "pedestal": 3.0
+  },
+  "moscow-oktyabrskaya-1925": {
+    "statue": 2.2,
+    "pedestal": 1.8
+  },
+  "blagoveshchensk-amur-1925": {
+    "statue": 1.64,
+    "pedestal": 1.36
+  },
+  "ufa-1924-larionov": {
+    "statue": 2.9,
+    "pedestal": 2.61
+  },
+  "tashkent-teplovozny-1925": {
+    "statue": 2.0,
+    "pedestal": 1.8
+  },
+  "zaslavl-1924": {
+    "statue": 1.7,
+    "pedestal": 1.8
+  },
+  "orenburg-1925": {
+    "statue": 1.8,
+    "pedestal": 2.2
+  },
+  "kulebaki-1925": {
+    "statue": 0.6,
+    "pedestal": 1.4
+  },
+  "shuya-1925": {
+    "statue": 1.8,
+    "pedestal": 1.62
+  },
+  "tver-proletarka-1925": {
+    "statue": 2.0,
+    "pedestal": 3.5
+  },
+  "omsk-1925": {
+    "statue": 1.7,
+    "pedestal": 1.53
+  },
+  "vladimir-sobornaya-1925": {
+    "statue": 2.1,
+    "pedestal": 4.06
+  },
+  "kaluga-1925": {
+    "statue": 2.8,
+    "pedestal": 2.95
+  },
+  "chelyabinsk-aloe-pole-1925": {
+    "statue": 1.55,
+    "pedestal": 7.7
+  },
+  "volgograd-pavshikh-1925": {
+    "statue": 3.0,
+    "pedestal": 3.0
+  },
+  "krasnoyarsk-1925": {
+    "statue": 1.5,
+    "pedestal": 1.35
+  },
+  "vyshniy-volochek-1926": {
+    "statue": 2.8,
+    "pedestal": 1.7
+  },
+  "zlatoust-1926": {
+    "statue": 1.78,
+    "pedestal": 1.6
+  },
+  "vladikavkaz-1926": {
+    "statue": 2.0,
+    "pedestal": 1.8
+  },
+  "sankt-peterburg-obukhovskoy-1926": {
+    "statue": 3.0,
+    "pedestal": 3.5
+  },
+  "sankt-peterburg-smolnyy-1927": {
+    "statue": 2.15,
+    "pedestal": 3.8
+  },
+  "nizhniy-novgorod-sormovo-1927": {
+    "statue": 2.15,
+    "pedestal": 1.94
+  },
+  "belgorod-1927": {
+    "statue": 1.7,
+    "pedestal": 3.3
+  },
+  "vin-2024": {
+    "statue": 3.6,
+    "pedestal": 4.0
+  },
+  "karakas-2017": {
+    "statue": 0.55,
+    "pedestal": 2.1
+  },
+  "kharare-1980": {
+    "statue": 2.0,
+    "pedestal": 0.8
   }
 }

@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 40 · Картотека</title>
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802t" />
+    <link rel="stylesheet" href="./styles.css?v=20260802t" />
+  </head>
+  <body>
+    <main class="stage">
+     <div class="sheet">
+      <header class="title">
+        <span class="title__num">МТК · 40 · ВАРИАНТ 04</span>
+        <h1 class="title__h">Картотека</h1>
+        <p class="title__sub">Весь корпус разом · фильтры по оси, типу и языку · сортировка · алфавитный указатель</p>
+      </header>
+
+      <section class="toolbar" aria-label="Фильтры">
+        <div class="tool-group" data-group="bucket">
+          <span class="tool-legend">Ось</span>
+          <div class="chips" id="f-bucket"></div>
+        </div>
+        <div class="tool-group" data-group="type">
+          <span class="tool-legend">Тип</span>
+          <div class="chips" id="f-type"></div>
+        </div>
+        <div class="tool-group" data-group="lang">
+          <span class="tool-legend">Язык оригинала</span>
+          <div class="chips" id="f-lang"></div>
+        </div>
+        <div class="tool-group" data-group="sort">
+          <span class="tool-legend">Порядок</span>
+          <div class="chips" id="f-sort"></div>
+        </div>
+        <div class="tool-tail">
+          <span id="count" class="counter"></span>
+          <button type="button" id="reset" class="reset-btn">сбросить</button>
+        </div>
+      </section>
+
+      <div class="index-bar" data-group="alpha">
+        <span class="tool-legend">Указатель</span>
+        <div class="chips chips--alpha" id="f-alpha"></div>
+      </div>
+
+      <div class="catalog" id="catalog"></div>
+     </div>
+
+      <aside id="card" class="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__cat" data-bind="cat"></div>
+        <h2 class="card__name" data-bind="name"></h2>
+        <p class="card__author" data-bind="author"></p>
+        <p class="card__where" data-bind="where"></p>
+        <p class="card__text" data-bind="short"></p>
+        <ul id="card-conns" class="card__conns" hidden></ul>
+      </aside>
+
+      <a class="back" href="../">← все МТК</a>
+    </main>
+
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260802t"></script>
+    <script src="./catalog.js?v=20260802t"></script>
+  </body>
+</html>

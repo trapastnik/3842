@@ -1,0 +1,69 @@
+/* ============================================================
+ * BMK 38-42 · Тач-стандарт киоска — общий кит (зона координатора)
+ * Подключение из прототипа:
+ *   <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css">
+ * Все величины — CSS-переменные: прототип использует их в своих
+ * стилях, а не хардкодит числа. Канон чисел — COORDINATION.md →
+ * «Тач-стандарт киоска». Панель 49″ 3840×2160, палец ≈ 15 мм ≈ 53 px.
+ * ============================================================ */
+
+:root {
+  /* Тач-таргеты */
+  --touch-min:     64px;  /* минимум для любого интерактива */
+  --touch-primary: 96px;  /* основные контролы (навигация, режимы) */
+  --touch-gap:     16px;  /* зазор между соседними таргетами */
+
+  /* Безопасные отступы от кромки тач-панели (рамка + ладонь) */
+  --edge-safe:        64px;
+  --edge-safe-bottom: 80px; /* нижняя кромка — хуже всего доступна */
+
+  /* Видимый скролл */
+  --scrollbar-w: 18px;
+
+  /* Кегли на 3840 (для clamp-формул прототипов) */
+  --type-min-label: 24px;  /* подписи, легенды */
+  --type-min-ui:    32px;  /* текст на кнопках/чипах */
+}
+
+/* ---- Утилиты (опциональны — можно брать только переменные) ---- */
+
+/* Контейнер контента с безопасными полями от кромки */
+.kiosk-safe {
+  padding: var(--edge-safe);
+  padding-bottom: var(--edge-safe-bottom);
+}
+
+/* Минимальный тач-таргет (вешать на кнопки/чипы/точки) */
+.kiosk-touch {
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  touch-action: manipulation;
+}
+.kiosk-touch--primary {
+  min-width: var(--touch-primary);
+  min-height: var(--touch-primary);
+}
+
+/* Всегда видимая полоса прокрутки (Chromium-киоск).
+ * Вешать на КАЖДЫЙ скроллируемый контейнер: class="kiosk-scroll" */
+.kiosk-scroll {
+  scrollbar-width: auto;                       /* Firefox fallback */
+  scrollbar-color: rgba(210, 183, 115, 0.75) rgba(247, 249, 239, 0.08);
+}
+.kiosk-scroll::-webkit-scrollbar {
+  width: var(--scrollbar-w);
+  height: var(--scrollbar-w);
+}
+.kiosk-scroll::-webkit-scrollbar-track {
+  background: rgba(247, 249, 239, 0.08);
+  border-radius: calc(var(--scrollbar-w) / 2);
+}
+.kiosk-scroll::-webkit-scrollbar-thumb {
+  background: rgba(210, 183, 115, 0.75);       /* латунь */
+  border-radius: calc(var(--scrollbar-w) / 2);
+  border: 3px solid rgba(0, 0, 0, 0.35);
+  min-height: 96px;
+}
+.kiosk-scroll::-webkit-scrollbar-thumb:active {
+  background: var(--brass, #D2B773);
+}

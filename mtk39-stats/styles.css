@@ -1,0 +1,411 @@
+/* МТК 39 · «Имени Ленина» — корпус в цифрах.
+   Целевой формат — горизонталь 3840×2160 (49" тач, директива 2026-07-22).
+
+   Палитра — брендбук музея (COORDINATION.md → «Шрифтово-цветовые правила»).
+   Цвет данных: латунь = величина, красный = «имя ушло», серый = «утрачено».
+   Латунь и серое окно рядом неразличимы (ΔE 12.6) — поэтому в одной диаграмме
+   не соседствуют; идентичность везде продублирована подписью, а не только цветом. */
+
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+
+@font-face {
+  font-family: "21 Cent";
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+}
+
+:root {
+  --amber-black: #000000;
+  --paper: #f7f9ef;
+  --brass: #d2b773;
+  --brass-dim: rgba(210, 183, 115, 0.34);
+  --red: #a02128;
+  --red-mark: #c9545a;      /* осветлённый сигнальный: контраст ≥ 3:1 на графите */
+  --blue-grey: #5d8970;
+  --window: #9da3a8;
+  --graphite: #435059;
+  --graphite-deep: #2b3338;
+  --night: #0c1012;
+  --telegrey: #cfd0cf;
+
+  --font-display: "Nolde", Georgia, serif;
+  --font-body: "21 Cent", Georgia, serif;
+  --font-mono: "20 Kopeek", "Courier New", monospace;
+
+  /* базовая единица: одинаковая логика на 4K-горизонтали и в превью хаба */
+  --u: clamp(11px, 1.15vw, 46px);
+  --pad: calc(var(--u) * 2.4);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: var(--graphite);
+  color: var(--paper);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+.stage {
+  position: fixed;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% 30%, rgba(67, 80, 89, 0.4), rgba(12, 16, 18, 0.96)),
+    var(--graphite);
+}
+
+/* Диагональные брендполосы. Яркостью управляет хаб (⚙ → «Полосы на фоне»)
+   через --stripe-opacity; без хаба рисуются на штатной яркости. */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  /* декор держится краёв: середина экрана — под данные */
+  background:
+    linear-gradient(105deg, transparent 0, transparent 95.4%, rgba(160, 33, 40, 0.62) 95.4%, rgba(160, 33, 40, 0.62) 99%, transparent 99.2%),
+    linear-gradient(105deg, transparent 0, transparent 1.5%, rgba(157, 163, 166, 0.1) 1.5%, rgba(157, 163, 166, 0.1) 9%, transparent 9.2%),
+    linear-gradient(105deg, transparent 0, transparent 93.6%, rgba(210, 183, 115, 0.6) 93.6%, rgba(210, 183, 115, 0.6) 93.75%, transparent 93.95%);
+}
+
+.stage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    0deg,
+    rgba(247, 249, 239, 0.03) 0,
+    rgba(247, 249, 239, 0.03) 1px,
+    transparent 1px,
+    transparent 5px
+  );
+  mix-blend-mode: soft-light;
+}
+
+/* ------------------------------------------------------------------ раскладка */
+
+.scroll {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  overflow-x: scroll;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.screen {
+  position: relative;
+  flex: 0 0 100%;
+  display: grid;
+  grid-template-columns: 0.86fr 1.14fr;
+  align-items: center;
+  gap: calc(var(--pad) * 1.2);
+  width: 100%;
+  height: 100%;
+  padding: calc(var(--pad) * 1.1) calc(var(--pad) * 1.4) calc(var(--pad) * 1.8);
+  scroll-snap-align: start;
+  scroll-snap-stop: always;
+}
+
+.screen__text {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+}
+
+.screen__vis {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  min-width: 0;
+  max-height: 100%;
+}
+
+.screen + .screen::before {
+  content: "";
+  position: absolute;
+  top: calc(var(--pad) * 1.4);
+  bottom: calc(var(--pad) * 1.4);
+  left: 0;
+  width: 1px;
+  background: linear-gradient(180deg, transparent, var(--brass-dim) 30%, transparent);
+}
+
+/* ------------------------------------------------------------------ типографика */
+
+.eyebrow {
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 1.15);
+  font-weight: 600;
+  letter-spacing: 0.34em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.display {
+  margin: calc(var(--u) * 0.8) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 6.4);
+  font-weight: 400;
+  line-height: 0.94;
+  letter-spacing: -0.01em;
+}
+
+.head {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 3.4);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.sub {
+  margin: calc(var(--u) * 1) 0 0;
+  max-width: 46em;
+  font-size: calc(var(--u) * 1.34);
+  line-height: 1.42;
+  color: rgba(247, 249, 239, 0.74);
+}
+
+.lede {
+  margin: calc(var(--u) * 1.6) 0 0;
+  max-width: 40em;
+  font-size: calc(var(--u) * 1.5);
+  line-height: 1.5;
+  color: rgba(247, 249, 239, 0.8);
+}
+
+.foot {
+  margin: calc(var(--u) * 1.4) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 1);
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  color: rgba(157, 163, 168, 0.9);
+}
+
+.foot b {
+  color: var(--brass);
+  font-weight: 400;
+}
+
+.foot i {
+  color: var(--red-mark);
+  font-style: normal;
+}
+
+/* ------------------------------------------------------------------ титул */
+
+.hero {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: calc(var(--u) * 2.2) calc(var(--u) * 2.6);
+  padding-left: calc(var(--u) * 2.4);
+  border-left: 1px solid var(--brass-dim);
+}
+
+.hero__item {
+  min-width: calc(var(--u) * 9);
+}
+
+.hero__num {
+  font-family: var(--font-display);
+  font-size: calc(var(--u) * 4.2);
+  line-height: 1;
+  color: var(--brass);
+}
+
+.hero__cap {
+  margin-top: calc(var(--u) * 0.5);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.98);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.62);
+}
+
+.hint {
+  position: absolute;
+  left: calc(var(--pad) * 1.4);
+  bottom: calc(var(--u) * 1.6);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.92);
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.6);
+  animation: breathe 3.4s ease-in-out infinite;
+}
+
+@keyframes breathe {
+  0%, 100% { opacity: 0.25; transform: translateX(0); }
+  50% { opacity: 0.9; transform: translateX(calc(var(--u) * 0.5)); }
+}
+
+/* ------------------------------------------------------------------ графики */
+
+.chart {
+  flex: 0 1 auto;
+  max-height: 100%;
+}
+
+.chart svg {
+  display: block;
+  width: 100%;
+  max-height: calc(100vh - var(--pad) * 4);
+  height: auto;
+  overflow: visible;
+}
+
+.mass {
+  width: 100%;
+  height: 78%;
+  flex: 0 0 auto;
+}
+
+/* подписи внутри svg */
+.t-label {
+  font-family: var(--font-body);
+  fill: var(--paper);
+}
+
+.t-value {
+  font-family: var(--font-mono);
+  fill: var(--brass);
+}
+
+.t-axis {
+  font-family: var(--font-mono);
+  fill: rgba(157, 163, 168, 0.85);
+}
+
+.t-mute {
+  font-family: var(--font-mono);
+  fill: rgba(157, 163, 168, 0.6);
+}
+
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--u) * 1.6);
+  margin-top: calc(var(--u) * 1.2);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 1);
+  color: rgba(247, 249, 239, 0.8);
+}
+
+.legend__item {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--u) * 0.6);
+}
+
+.legend__swatch {
+  width: calc(var(--u) * 1.1);
+  height: calc(var(--u) * 1.1);
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ навигация */
+
+.dots {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--u) * 1.5);
+  z-index: 4;
+  display: flex;
+  gap: calc(var(--u) * 0.9);
+  transform: translateX(-50%);
+}
+
+.dots__dot {
+  width: calc(var(--u) * 0.62);
+  height: calc(var(--u) * 0.62);
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: rgba(157, 163, 168, 0.34);
+  transition: background 0.25s, transform 0.25s;
+}
+
+.dots__dot[aria-current="true"] {
+  background: var(--brass);
+  transform: scale(1.5);
+}
+
+/* появление содержимого экрана */
+.screen [data-anim] {
+  opacity: 0;
+  transform: translateY(calc(var(--u) * 0.9));
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+
+.screen.is-live [data-anim] {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .screen [data-anim],
+  .screen.is-live [data-anim] {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+  .hint { animation: none; }
+}
+
+.chart__note {
+  margin: calc(var(--u) * 0.5) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.86);
+  letter-spacing: 0.06em;
+  color: rgba(157, 163, 168, 0.62);
+}

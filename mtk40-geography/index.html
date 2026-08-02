@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 40 · География изданий</title>
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802p" />
+    <link rel="stylesheet" href="./styles.css?v=20260802p" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="title">
+        <span class="title__num">МТК · 40 · ВАРИАНТ 06</span>
+        <h1 class="title__h">География изданий</h1>
+        <p class="title__sub">Где книга вышла впервые · 99 книг, 16 городов. Тап на кружок — распадается: город → оси корпуса → отдельные книги.</p>
+      </header>
+
+      <canvas id="view" class="view"></canvas>
+
+      <div class="filters" id="filters" aria-label="Фильтр по оси"></div>
+
+      <button id="home-chip" class="home-chip" type="button" hidden>← вся карта</button>
+
+      <aside id="city" class="city-panel" hidden>
+        <button class="city-panel__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="city-panel__name" id="city-name"></div>
+        <div class="city-panel__sub" id="city-sub"></div>
+        <ul class="city-panel__list" id="city-list"></ul>
+      </aside>
+
+      <aside id="card" class="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="card__cat" data-bind="cat"></div>
+        <h2 class="card__name" data-bind="name"></h2>
+        <p class="card__author" data-bind="author"></p>
+        <p class="card__where" data-bind="where"></p>
+        <p class="card__text" data-bind="short"></p>
+        <ul id="card-conns" class="card__conns" hidden></ul>
+      </aside>
+
+      <div class="legend" aria-hidden="true">
+        <div class="legend-row"><span class="dot" style="background:#A02128"></span><span>ИМ</span></div>
+        <div class="legend-row"><span class="dot" style="background:#5D6970"></span><span>ЧИТАЛ</span></div>
+        <div class="legend-row"><span class="dot" style="background:#D2B773"></span><span>О НЁМ</span></div>
+        <div class="legend-row"><span>КОЛЬЦО — СОСТАВ ГОРОДА · РАЗМЕР ~ ЧИСЛО КНИГ · КОЛЕСО = МАСШТАБ</span></div>
+      </div>
+
+      <a class="back" href="../">← все МТК</a>
+    </main>
+
+    <script src="../assets/shared/lib/projection.js"></script>
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260802p"></script>
+    <script src="../assets/mtk40/lib/places.js?v=20260802p"></script>
+    <script src="./geography.js?v=20260802p"></script>
+  </body>
+</html>

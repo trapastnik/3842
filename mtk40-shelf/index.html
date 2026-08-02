@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 40 · Полка</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802t" />
+    <link rel="stylesheet" href="./styles.css?v=20260802t" />
   </head>
   <body>
     <main class="stage">
@@ -14,7 +15,7 @@
         <p class="title__sub">Три полки: им · о нём · читал · drag по горизонтали</p>
       </header>
 
-      <canvas id="shelf"></canvas>
+      <canvas id="shelf" class="view"></canvas>
 
       <aside id="card" class="card" hidden>
         <button class="card__close" type="button" aria-label="Закрыть">✕</button>
@@ -28,6 +29,7 @@
       <a class="back" href="../">← все МТК</a>
     </main>
 
-    <script type="module" src="./shelf.js?v=1"></script>
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260802t"></script>
+    <script src="./shelf.js?v=20260802t"></script>
   </body>
 </html>

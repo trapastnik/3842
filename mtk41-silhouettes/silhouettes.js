@@ -31,6 +31,40 @@
   const PAD_LEFT = 0.13;
   const MIN_SLOT_W = 84;
 
+  // Навигация — та же, что в mtk41-scale: 283 силуэта при слоте 84 px дают
+  // ленту в 23 772 px, шесть экранов драга без единого ориентира. Механика
+  // общая, но живёт копией в каждом прототипе: они самостоятельные папки,
+  // и общий модуль связал бы их сильнее, чем нужно на стадии эскизов.
+  const MODES = [
+    { id: "scrubber", label: "Скраббер" },
+    { id: "zoom", label: "Зум" },
+    { id: "decades", label: "Десятилетия" },
+  ];
+  const STORAGE_KEY = "mtk41-silhouettes-mode";
+  const STRIP_H = 74;
+  const STRIP_PAD = 28;
+  const FRICTION = 0.93;
+  const MIN_VELOCITY = 0.4;
+  const SLOT_MAX = 120;
+  const LABEL_MIN_SLOT = 34;
+  const YEAR_MIN_SLOT = 16;
+  const TAP_MIN_SLOT = 26;
+  const DOUBLE_TAP_MS = 320;
+
+  let mode = "scrubber";
+  let slotWZoom = 0;
+  let fitSlotW = 0;
+  let activeDecade = null;
+  let globalMaxTotal = 0;
+  let onStrip = false;
+  let velocityX = 0;
+  const pointers = new Map();
+  let pinchStartDist = 0, pinchStartSlot = 0, pinchAnchorX = 0;
+  let lastTapAt = 0;
+
+  function hasStrip() { return mode === "scrubber"; }
+  function stripTop() { return height - STRIP_H; }
+
 
   // --- Card delegation ----------------------------------------------------
   // All card UI lives in assets/mtk41/lib/card.{css,js}. Delegate to it.
@@ -87,7 +121,7 @@
     if (!monuments.length) return;
 
     // Sort chronologically (null years assigned to their decade midpoint)
-    const items = monuments.map((m, i) => {
+    const all = monuments.map((m, i) => {
       let y = m.year;
       if (typeof y !== "number") {
         if (m.id && m.id.includes("1920s")) y = 1925;
@@ -97,18 +131,36 @@
       return { m, i, year: y };
     }).sort((a, b) => a.year - b.year);
 
+    // Масштаб метра — по ВСЕМУ корпусу, а не по видимому: иначе на странице
+    // 1920-х бюст занял бы столько же, сколько колосс 57 м, и сравнение
+    // силуэтов в общем масштабе перестало бы работать.
+    globalMaxTotal = 0;
+    for (const it of all) globalMaxTotal = Math.max(globalMaxTotal, totalHeight(it.m.id));
+
+    const items = (mode === "decades" && activeDecade !== null)
+      ? all.filter(it => Math.floor(it.year / 10) * 10 === activeDecade)
+      : all;
+    if (!items.length) return;
+
     const left = width * PAD_LEFT;
     const right = width * 0.98;
     const viewportW = right - left;
-    const baseY = height * 0.86;
+    const baseY = hasStrip() ? (height - STRIP_H) * 0.84 : height * 0.86;
     const skyTop = height * 0.20;
     const usableHeight = baseY - skyTop;
+    const mPx = (usableHeight * 0.9) / globalMaxTotal;
 
-    let maxTotal = 0;
-    for (const it of items) maxTotal = Math.max(maxTotal, totalHeight(it.m.id));
-    const mPx = (usableHeight * 0.9) / maxTotal;
-
-    const slotW = Math.max(MIN_SLOT_W, viewportW / items.length);
+    fitSlotW = viewportW / items.length;
+    let slotW;
+    if (mode === "zoom") {
+      if (!slotWZoom) slotWZoom = fitSlotW;
+      slotWZoom = Math.min(SLOT_MAX, Math.max(fitSlotW, slotWZoom));
+      slotW = slotWZoom;
+    } else if (mode === "decades") {
+      slotW = Math.max(30, Math.min(MIN_SLOT_W * 1.6, fitSlotW));
+    } else {
+      slotW = Math.max(MIN_SLOT_W, fitSlotW);
+    }
     const figureW = Math.min(slotW * 0.55, 80);
 
     for (let k = 0; k < items.length; k += 1) {
@@ -125,6 +177,7 @@
         w: figureW,
         statueH, pedestalH, totalH,
         h_statue: h.statue, h_pedestal: h.pedestal,
+        estimated: !HEIGHTS[m.id],
       });
     }
 
@@ -136,6 +189,7 @@
     layout.left = left;
     layout.right = right;
     layout.baseY = baseY;
+    layout.slotW = slotW;
   }
 
   function clampPan() {
@@ -294,7 +348,11 @@
     // Labels (city + year + height) below pedestal, rotated -60° in
     // portrait or any narrow viewport so long names don't collide.
     const isPortrait = height > width;
-    const slotW = placed.length > 1 ? (placed[1].worldX - placed[0].worldX) : 60;
+    const slotW = layout.slotW || 60;
+    // На обзорных масштабах подписи сливаются в кашу и мешают увидеть форму
+    // корпуса, ради которой в мелкий масштаб и уходят.
+    if (slotW < YEAR_MIN_SLOT) return;
+    const showCity = slotW >= LABEL_MIN_SLOT;
     const needRotate = isPortrait || slotW < 90;
 
     for (const pm of placed) {
@@ -309,8 +367,12 @@
       const cityRaw = m.city || m.country || "";
       const city = cityRaw.length > 18 ? cityRaw.slice(0, 16) + "…" : cityRaw;
       const yearLabel = pm.year ? String(pm.year) : "—";
-      const heightLabel = ((pm.h_statue + pm.h_pedestal).toFixed(
-        pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
+      // «нет данных» вместо подставной высоты: у 52 памятников габаритов в
+      // таблице куратора нет вовсе, и FALLBACK_HEIGHT выдавал их за измеренные.
+      const heightLabel = pm.estimated
+        ? "нет данных"
+        : ((pm.h_statue + pm.h_pedestal).toFixed(
+            pm.h_statue + pm.h_pedestal < 10 ? 1 : 0)) + " м";
 
       if (needRotate) {
         ctx.translate(screenX(pm.worldX), y);
@@ -318,29 +380,239 @@
         ctx.textAlign = "right";
         ctx.textBaseline = "middle";
         ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.85);
-        ctx.fillText(city, 0, 0);
+        let row = 0;
+        if (showCity) { ctx.fillText(city, 0, 0); row += 1; }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.95 : 0.6);
-        ctx.fillText(yearLabel, 0, fontSize * 1.25);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        ctx.fillText(yearLabel, 0, fontSize * 1.25 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, 0, fontSize * 2.5);
+        }
       } else {
         ctx.textAlign = "center";
         ctx.textBaseline = "top";
-        ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
-        ctx.fillText(city, screenX(pm.worldX), y);
+        let row = 0;
+        if (showCity) {
+          ctx.fillStyle = isSelected ? palette.brass : cssColor(palette.paper, 0.78);
+          ctx.fillText(city, screenX(pm.worldX), y);
+          row += 1;
+        }
         ctx.fillStyle = cssColor(palette.brass, isSelected ? 0.9 : 0.55);
-        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4);
-        ctx.fillStyle = cssColor(palette.paper, 0.55);
-        ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        ctx.fillText(yearLabel, screenX(pm.worldX), y + fontSize * 1.4 * row);
+        if (showCity) {
+          ctx.fillStyle = cssColor(palette.paper, 0.55);
+          ctx.fillText(heightLabel, screenX(pm.worldX), y + fontSize * 2.8);
+        }
       }
       ctx.restore();
     }
   }
 
+  // --- Полоса-скраббер -----------------------------------------------------
+
+  function scrollFraction() {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const span = contentW - viewportW;
+    if (span <= 0) return 0;
+    return Math.min(1, Math.max(0, -viewOffsetX / span));
+  }
+
+  function scrollToFraction(f) {
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const span = contentW - viewportW;
+    if (span <= 0) return;
+    viewOffsetX = -Math.min(1, Math.max(0, f)) * span;
+    clampPan();
+  }
+
+  function drawStrip() {
+    if (!hasStrip() || !placed.length) return;
+    const top = stripTop();
+    const x0 = STRIP_PAD;
+    const w = (width - STRIP_PAD) - x0;
+    const barsTop = top + 20;
+    const barsH = STRIP_H - 30;
+
+    ctx.save();
+    ctx.fillStyle = cssColor(palette.graphite, 0.5);
+    ctx.fillRect(0, top, width, STRIP_H);
+    ctx.strokeStyle = cssColor(palette.paper, 0.12);
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(0, top); ctx.lineTo(width, top); ctx.stroke();
+
+    const barW = Math.max(1, w / placed.length - 0.6);
+    for (let k = 0; k < placed.length; k += 1) {
+      const pm = placed[k];
+      const bx = x0 + (w * k) / placed.length;
+      const total = pm.h_statue + pm.h_pedestal;
+      // sqrt — иначе 57-метровый Волгоград прижимает все остальные к нулю
+      const bh = Math.max(2, barsH * Math.sqrt(total / globalMaxTotal));
+      ctx.fillStyle = pm.i === selectedIndex
+        ? palette.brass
+        : cssColor(statusColor(pm.m.status), pm.estimated ? 0.35 : 0.75);
+      ctx.fillRect(bx, barsTop + barsH - bh, barW, bh);
+    }
+
+    ctx.font = `400 11px "20 Kopeek", "Courier New", monospace`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    let lastLabelX = -Infinity;
+    for (let k = 0; k < placed.length; k += 1) {
+      const year = placed[k].year;
+      if (!year) continue;
+      const decade = Math.floor(year / 10) * 10;
+      const prevDecade = k > 0 && placed[k - 1].year
+        ? Math.floor(placed[k - 1].year / 10) * 10 : -1;
+      if (decade === prevDecade) continue;
+      const bx = x0 + (w * k) / placed.length;
+      if (bx - lastLabelX < 46) continue;
+      lastLabelX = bx;
+      ctx.strokeStyle = cssColor(palette.paper, 0.18);
+      ctx.beginPath(); ctx.moveTo(bx, barsTop); ctx.lineTo(bx, barsTop + barsH); ctx.stroke();
+      ctx.fillStyle = cssColor(palette.paper, 0.5);
+      ctx.fillText(String(decade), bx, top + 4);
+    }
+
+    const contentW = contentRight - contentLeft;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const winW = Math.max(10, w * Math.min(1, viewportW / contentW));
+    const winX = x0 + (w - winW) * scrollFraction();
+    ctx.fillStyle = cssColor(palette.paper, 0.10);
+    ctx.fillRect(winX, barsTop - 4, winW, barsH + 8);
+    ctx.strokeStyle = palette.brass;
+    ctx.lineWidth = 1.5;
+    ctx.strokeRect(winX, barsTop - 4, winW, barsH + 8);
+    ctx.restore();
+  }
+
+  function stripFractionAt(clientX) {
+    const x0 = STRIP_PAD;
+    const w = (width - STRIP_PAD) - x0;
+    const viewportW = (layout.right || width) - (layout.left || 0);
+    const contentW = contentRight - contentLeft;
+    const winW = Math.max(10, w * Math.min(1, viewportW / contentW));
+    return (clientX - x0 - winW / 2) / Math.max(1, w - winW);
+  }
+
+  // --- Зум -----------------------------------------------------------------
+
+  function setSlotW(next, anchorScreenX) {
+    if (mode !== "zoom") return;
+    const clamped = Math.min(SLOT_MAX, Math.max(fitSlotW, next));
+    if (clamped === slotWZoom) return;
+    const worldBefore = (anchorScreenX - viewOffsetX - (layout.left || 0)) / slotWZoom;
+    slotWZoom = clamped;
+    layout();
+    viewOffsetX = anchorScreenX - (layout.left || 0) - worldBefore * slotWZoom;
+    clampPan();
+    syncControls();
+  }
+
+  // --- Панель управления ---------------------------------------------------
+
+  function mkButton(label, count, onClick) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    if (count != null) {
+      const sp = document.createElement("span");
+      sp.className = "n";
+      sp.textContent = String(count);
+      b.appendChild(sp);
+    }
+    b.addEventListener("click", onClick);
+    return b;
+  }
+
+  function setMode(next) {
+    if (mode === next) return;
+    mode = next;
+    viewOffsetX = 0;
+    velocityX = 0;
+    slotWZoom = 0;
+    activeDecade = null;
+    hideMonument();
+    try { localStorage.setItem(STORAGE_KEY, mode); } catch (e) {}
+    buildControls();
+    resize();
+  }
+
+  function buildControls() {
+    const bar = document.getElementById("nav-modes");
+    const sub = document.getElementById("nav-sub");
+    if (!bar || !sub) return;
+    bar.textContent = "";
+    for (const m of MODES) {
+      const b = mkButton(m.label, null, () => setMode(m.id));
+      b.dataset.mode = m.id;
+      bar.appendChild(b);
+    }
+    sub.textContent = "";
+    if (mode === "zoom") {
+      const all = mkButton("Весь корпус", null, () => setSlotW(fitSlotW, width / 2));
+      all.dataset.zoom = "all";
+      const zin = mkButton("Крупно", null, () => setSlotW(SLOT_MAX * 0.7, width / 2));
+      zin.dataset.zoom = "in";
+      sub.append(all, zin);
+    } else if (mode === "decades") {
+      const counts = new Map();
+      for (const m of monuments) {
+        const y = typeof m.year === "number" ? m.year : 1930;
+        const d = Math.floor(y / 10) * 10;
+        counts.set(d, (counts.get(d) || 0) + 1);
+      }
+      const b = mkButton("Все", monuments.length, () => {
+        activeDecade = null; viewOffsetX = 0; hideMonument(); layout(); syncControls();
+      });
+      b.dataset.decade = "all";
+      sub.appendChild(b);
+      for (const d of [...counts.keys()].sort((a, b2) => a - b2)) {
+        const btn = mkButton(`${d}-е`, counts.get(d), () => {
+          activeDecade = d; viewOffsetX = 0; hideMonument(); layout(); syncControls();
+        });
+        btn.dataset.decade = String(d);
+        sub.appendChild(btn);
+      }
+    }
+    syncControls();
+  }
+
+  function syncControls() {
+    const bar = document.getElementById("nav-modes");
+    const sub = document.getElementById("nav-sub");
+    if (bar) {
+      for (const b of bar.querySelectorAll("button")) {
+        b.classList.toggle("is-on", b.dataset.mode === mode);
+      }
+    }
+    if (!sub) return;
+    if (mode === "zoom") {
+      const atFit = slotWZoom <= fitSlotW + 0.5;
+      for (const b of sub.querySelectorAll("button")) {
+        b.classList.toggle("is-on", b.dataset.zoom === (atFit ? "all" : "in"));
+      }
+    } else if (mode === "decades") {
+      const want = activeDecade === null ? "all" : String(activeDecade);
+      for (const b of sub.querySelectorAll("button")) {
+        b.classList.toggle("is-on", b.dataset.decade === want);
+      }
+    }
+  }
+
   function render() {
+    if (!pointerDown && Math.abs(velocityX) > MIN_VELOCITY) {
+      viewOffsetX += velocityX;
+      velocityX *= FRICTION;
+      const before = viewOffsetX;
+      clampPan();
+      if (viewOffsetX !== before) velocityX = 0;
+    }
     ctx.clearRect(0, 0, width, height);
     drawScene();
     if (placed.length) drawMonuments();
+    drawStrip();
     requestAnimationFrame(render);
   }
 
@@ -363,44 +635,91 @@
   let lastPointerX = 0;
 
   canvas.addEventListener("pointerdown", event => {
+    pointers.set(event.pointerId, event.clientX);
+    if (mode === "zoom" && pointers.size === 2) {
+      const [a, b] = [...pointers.values()];
+      pinchStartDist = Math.abs(a - b);
+      pinchStartSlot = slotWZoom;
+      pinchAnchorX = (a + b) / 2;
+      pointerDown = false;
+      return;
+    }
     pointerDown = true;
     didDrag = false;
+    velocityX = 0;
     pressStartX = event.clientX;
     pressStartY = event.clientY;
     lastPointerX = event.clientX;
+    onStrip = hasStrip() && event.clientY >= stripTop();
+    if (onStrip) scrollToFraction(stripFractionAt(event.clientX));
     if (canvas.setPointerCapture) {
       try { canvas.setPointerCapture(event.pointerId); } catch (e) {}
     }
   });
 
   canvas.addEventListener("pointermove", event => {
+    if (pointers.has(event.pointerId)) pointers.set(event.pointerId, event.clientX);
+    if (mode === "zoom" && pointers.size === 2 && pinchStartDist > 0) {
+      const [a, b] = [...pointers.values()];
+      setSlotW(pinchStartSlot * (Math.abs(a - b) / pinchStartDist), pinchAnchorX);
+      return;
+    }
     if (!pointerDown) return;
+    if (onStrip) {
+      scrollToFraction(stripFractionAt(event.clientX));
+      lastPointerX = event.clientX;
+      return;
+    }
     if (!didDrag &&
         Math.hypot(event.clientX - pressStartX, event.clientY - pressStartY) > TAP_THRESHOLD) {
       didDrag = true;
     }
     if (didDrag) {
-      viewOffsetX += event.clientX - lastPointerX;
+      const dx = event.clientX - lastPointerX;
+      viewOffsetX += dx;
+      velocityX = dx;
       clampPan();
     }
     lastPointerX = event.clientX;
   }, { passive: true });
 
   function endPointer(event) {
+    pointers.delete(event.pointerId);
+    if (pointers.size < 2) pinchStartDist = 0;
     if (canvas.releasePointerCapture) {
       try { canvas.releasePointerCapture(event.pointerId); } catch (e) {}
     }
-    if (pointerDown && !didDrag) {
-      const hit = findAt(event.clientX, event.clientY);
-      if (hit >= 0) showMonument(hit);
-      else hideMonument();
+    if (pointerDown && !didDrag && !onStrip) {
+      const now = performance.now();
+      if (mode === "zoom" && now - lastTapAt < DOUBLE_TAP_MS) {
+        setSlotW(slotWZoom > fitSlotW + 0.5 ? fitSlotW : SLOT_MAX * 0.7, event.clientX);
+        lastTapAt = 0;
+      } else {
+        lastTapAt = now;
+        // На обзорном зуме силуэт уже 5 px — попасть в него пальцем нельзя.
+        if ((layout.slotW || 0) >= TAP_MIN_SLOT) {
+          const hit = findAt(event.clientX, event.clientY);
+          if (hit >= 0) showMonument(hit);
+          else hideMonument();
+        }
+      }
     }
     pointerDown = false;
+    onStrip = false;
   }
 
   canvas.addEventListener("pointerup", endPointer);
   canvas.addEventListener("pointercancel", endPointer);
-  canvas.addEventListener("pointerleave", () => { pointerDown = false; });
+  canvas.addEventListener("pointerleave", event => {
+    pointers.delete(event.pointerId);
+    pointerDown = false;
+  });
+
+  canvas.addEventListener("wheel", event => {
+    if (mode !== "zoom") return;
+    event.preventDefault();
+    setSlotW(slotWZoom * (event.deltaY < 0 ? 1.12 : 1 / 1.12), event.clientX);
+  }, { passive: false });
 
   window.addEventListener("resize", resize);
 
@@ -418,6 +737,11 @@
       .catch(() => {});
   }
 
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved && MODES.some(m => m.id === saved)) mode = saved;
+  } catch (e) {}
+
   Promise.all([
     fetch("../data/mtk41.json").then(r => r.json()),
     fetch("../assets/mtk41/heights.json").then(r => r.json()).catch(() => ({})),
@@ -425,6 +749,7 @@
   ]).then(([mtk, heights]) => {
     HEIGHTS = heights || {};
     monuments = mtk.items || [];
+    buildControls();
     resize();
     requestAnimationFrame(render);
   }).catch(err => {
