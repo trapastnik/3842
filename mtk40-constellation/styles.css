@@ -1,0 +1,14 @@
+/* Созвездие влияний. База — assets/mtk40/lib/base.css. */
+
+.legend {
+  left: 170px;
+  bottom: 20px;
+  max-width: 62%;
+}
+.legend .swatch {
+  width: 30px;
+  height: 0;
+  border-top-width: 2px;
+  border-top-style: solid;
+  flex: none;
+}

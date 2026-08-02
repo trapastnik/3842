@@ -38,6 +38,14 @@
 
 *, *::before, *::after { box-sizing: border-box; }
 
+/* HTML-обвязка задана в px под ширину 1280 (см. DESIGN_W в JS). На киоске
+   3840×2160 кадр втрое шире — zoom приводит её к тем же пропорциям, что и
+   отрисованную канву. Коэффициент ставит JS в resize(): посчитать его в CSS
+   нельзя, calc(100vw / 1280) даёт длину, а zoom требует число. */
+.title, .card, .back, .home-chip, .settings-toggle, .settings-panel, .legend {
+  zoom: var(--zoom, 1);
+}
+
 html, body {
   width: 100%;
   height: 100%;
@@ -105,7 +113,7 @@ html, body {
   margin: 0;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: clamp(28px, 4vw, 56px);
+  font-size: 52px;
   letter-spacing: 0.01em;
   color: var(--paper-white);
 }
@@ -117,10 +125,6 @@ html, body {
   text-transform: uppercase;
   color: rgba(247, 249, 239, 0.62);
 }
-@media (orientation: portrait) {
-  .title__sub { display: none; }
-}
-
 .card {
   position: absolute;
   right: 32px;
@@ -229,3 +233,155 @@ html, body {
   background: rgba(0, 0, 0, 0.34);
 }
 .back:active { color: var(--brass); }
+
+/* ---------- «вся хронология» ---------- */
+.home-chip {
+  position: absolute;
+  top: 24px;
+  right: 74px;
+  z-index: 5;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  padding: 9px 15px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.72);
+  cursor: pointer;
+}
+.home-chip[hidden] { display: none; }
+.home-chip:active { background: rgba(210, 183, 115, 0.18); }
+
+/* ---------- настройки ---------- */
+.settings-toggle {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 5;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(247, 249, 239, 0.2);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.72);
+  color: var(--paper-white);
+  font-size: 16px;
+  cursor: pointer;
+}
+.settings-toggle:active { border-color: var(--brass); }
+
+.settings-panel {
+  position: absolute;
+  top: 72px;
+  right: 24px;
+  z-index: 6;
+  width: 280px;
+  padding: 18px 20px 20px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 14px;
+  background: rgba(12, 16, 18, 0.94);
+  backdrop-filter: blur(8px);
+  box-shadow: 0 24px 56px rgba(0, 0, 0, 0.5);
+}
+.settings-panel[hidden] { display: none; }
+.settings-panel h2 {
+  margin: 0 0 14px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+.settings-row {
+  margin: 0 0 14px;
+  padding: 0;
+  border: none;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+.settings-row legend {
+  padding: 0;
+  width: 100%;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.6);
+}
+.settings-row input[type="range"] {
+  flex: 1;
+  min-width: 0;
+  accent-color: var(--brass);
+}
+.settings-row span[data-value-for] {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--brass);
+  min-width: 46px;
+  text-align: right;
+}
+.settings-checks { flex-direction: column; align-items: flex-start; gap: 8px; }
+.settings-checks label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 239, 0.78);
+  cursor: pointer;
+}
+.settings-checks input { accent-color: var(--brass); }
+.reset-btn {
+  width: 100%;
+  margin-top: 4px;
+  padding: 9px 0;
+  border: 1px solid rgba(247, 249, 239, 0.2);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.7);
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.reset-btn:active { color: var(--brass); border-color: var(--brass-soft); }
+
+/* ---------- легенда ---------- */
+/* В одну строку внизу: колонкой слева она наезжала на подписи лет. */
+.legend {
+  position: absolute;
+  left: 170px;
+  bottom: 22px;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 20px;
+  pointer-events: none;
+}
+.legend-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+}
+.legend .dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 249, 239, 0.45);
+  flex: none;
+}
+.legend .dot--sm { width: 7px; height: 7px; background: rgba(247, 249, 239, 0.35); }
+.legend .dot--lg { width: 16px; height: 16px; background: rgba(247, 249, 239, 0.35); }
+.legend-size { gap: 6px; }

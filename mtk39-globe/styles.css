@@ -88,12 +88,24 @@ body {
   overflow: hidden;
   isolation: isolate;
   background:
+    radial-gradient(ellipse 120% 85% at 50% 38%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.95)),
+    var(--graphite);
+}
+
+/* Диагональные брендполосы вынесены из заливки сцены: яркостью управляет хаб
+   (⚙ → «Полосы на фоне») через --stripe-opacity; без хаба — штатная яркость. */
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  opacity: var(--stripe-opacity, 1);
+  background:
     linear-gradient(105deg, transparent 0, transparent 72%, var(--signal-red) 72%, var(--signal-red) 86%, transparent 86.2%),
     linear-gradient(105deg, transparent 0, transparent 2%, rgba(157, 163, 166, 0.18) 2%, rgba(157, 163, 166, 0.18) 14%, transparent 14.2%),
     linear-gradient(105deg, transparent 0, transparent 62%, var(--brass) 62%, var(--brass) 62.18%, transparent 62.36%),
-    linear-gradient(105deg, transparent 0, transparent 89%, rgba(210, 183, 115, 0.55) 89%, rgba(210, 183, 115, 0.55) 89.15%, transparent 89.35%),
-    radial-gradient(ellipse 120% 85% at 50% 38%, rgba(67, 80, 89, 0.35), rgba(12, 16, 18, 0.95)),
-    var(--graphite);
+    linear-gradient(105deg, transparent 0, transparent 89%, rgba(210, 183, 115, 0.55) 89%, rgba(210, 183, 115, 0.55) 89.15%, transparent 89.35%);
 }
 
 .stage::before {
@@ -629,78 +641,6 @@ body {
   background: rgba(160, 33, 40, 0.18);
 }
 
-/* Kiosk portrait (49" stand 2160×3840 = 9:16) and tablet portrait.
- * Excludes phones — they fall under `max-width: 640px` below. */
-@media (orientation: portrait) and (min-width: 720px) {
-  .title__num {
-    font-size: 15px;
-  }
-  .title__h {
-    font-size: clamp(44px, 5.5vw, 84px);
-  }
-
-  /* Heavy interaction controls move to mid-right — easier reach on a
-   * tall kiosk (bottom of a 49" vertical display is below most adults'
-   * waists). */
-  .zoom-controls {
-    top: 40%;
-    bottom: auto;
-    right: 32px;
-    gap: 12px;
-  }
-  .zoom-button {
-    width: 64px;
-    height: 64px;
-    font-size: 26px;
-  }
-  .settings-toggle {
-    top: calc(40% + 152px);
-    bottom: auto;
-    right: 32px;
-    width: 64px;
-    height: 64px;
-    font-size: 26px;
-  }
-
-  /* Card slightly wider in portrait, still clears the offmap column. */
-  .card {
-    width: min(480px, calc(100% - 80px));
-    max-height: calc(100vh - 80px);
-    padding: 30px 30px 28px;
-  }
-  .card__name {
-    font-size: 24px;
-  }
-  .card__text {
-    font-size: 16px;
-  }
-  .card__img {
-    height: 240px;
-  }
-
-  /* Offmap pill panel can take slightly more horizontal room. */
-  .offmap {
-    width: min(420px, calc(100% - 80px));
-  }
-  .offmap__item {
-    padding: 8px 14px;
-    font-size: 12px;
-    min-height: 32px;
-  }
-
-  /* Settings drawer: keep right-side, slightly wider for finger reach. */
-  .settings {
-    width: min(400px, 100%);
-  }
-  .settings__row {
-    min-height: 44px;
-  }
-  .settings__row input[type="checkbox"] {
-    width: 22px;
-    height: 22px;
-  }
-}
-
 @media (max-width: 640px) {
   .title {
     top: 22px;
@@ -749,5 +689,21 @@ body {
   }
   .settings {
     width: 100%;
+  }
+}
+
+/* 49" 4K (3840×2160): вся обвязка задана в фиксированных пикселях под ~1600 px
+   ширины, на стенде это микротекст. Масштабируем панели целиком — заодно
+   растут отступы и ширины, а не только кегль. (Задача координатора, 4K-смоук
+   2026-07-22; точки и подписи на самом канвасе масштабирует globe.js.) */
+@media (min-width: 2400px) {
+  .title,
+  .offmap,
+  .card,
+  .zoom-controls,
+  .settings-toggle,
+  .settings,
+  .hint {
+    zoom: 2;
   }
 }

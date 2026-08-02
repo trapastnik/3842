@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Имени Ленина — корпус в цифрах</title>
+    <link rel="stylesheet" href="./styles.css?v=3" />
+  </head>
+  <body>
+    <main class="stage">
+      <div class="scroll" id="scroll">
+
+        <section class="screen screen--title" data-screen="0">
+          <div class="screen__text">
+            <span class="eyebrow">МТК · 39</span>
+            <h1 class="display">Имени Ленина</h1>
+            <p class="lede">
+              Объекты, носившие или носящие имя Владимира Ильича Ленина, —
+              от улицы в бразильском посёлке до канала длиной в полторы тысячи километров.
+            </p>
+            <p class="foot">Свод собран по материалам музея: «Ленинские улицы, вне СССР» и «СССР».</p>
+          </div>
+          <div class="screen__vis">
+            <div class="hero" data-hero></div>
+          </div>
+          <div class="hint" aria-hidden="true">листайте вправо</div>
+        </section>
+
+        <section class="screen" data-screen="1">
+          <div class="screen__text">
+            <h2 class="head">Где искать</h2>
+            <p class="sub">Шесть частей света. Две трети свода — бывший Советский Союз, но имя разошлось далеко за его пределы.</p>
+            <p class="foot" data-foot="continents"></p>
+          </div>
+          <div class="screen__vis"><div class="chart" data-chart="continents"></div></div>
+        </section>
+
+        <section class="screen" data-screen="2">
+          <div class="screen__text">
+            <h2 class="head">Семьдесят четыре страны</h2>
+            <p class="sub">Двадцать стран с самым плотным следом. Остальные — длинный хвост по одной-две записи.</p>
+            <p class="foot" data-foot="countries"></p>
+          </div>
+          <div class="screen__vis"><div class="chart" data-chart="countries"></div></div>
+        </section>
+
+        <section class="screen" data-screen="3">
+          <div class="screen__text">
+            <h2 class="head">Имя на карте и имя в деле</h2>
+            <p class="sub">За границей именем Ленина называли улицы и площади. В Советском Союзе — заводы, станции, институты, целые города.</p>
+            <p class="foot" data-foot="kinds"></p>
+          </div>
+          <div class="screen__vis"><div class="chart" data-chart="kinds"></div></div>
+        </section>
+
+        <section class="screen" data-screen="4">
+          <div class="screen__text">
+            <h2 class="head">Прилив и отлив</h2>
+            <p class="sub">Годы, когда имя приходило, и годы, когда уходило. Две волны с интервалом в семьдесят лет.</p>
+            <p class="foot" data-foot="years"></p>
+          </div>
+          <div class="screen__vis"><div class="chart" data-chart="years"></div></div>
+        </section>
+
+        <section class="screen" data-screen="5">
+          <div class="screen__text">
+            <h2 class="head">Где осталось, где ушло</h2>
+            <p class="sub">Имя исчезло прежде всего там, где его насаждали, — и осталось там, где его выбирали.</p>
+            <p class="foot" data-foot="status"></p>
+          </div>
+          <div class="screen__vis"><div class="chart" data-chart="status"></div></div>
+        </section>
+
+        <section class="screen screen--mass" data-screen="6">
+          <div class="screen__text">
+            <h2 class="head">Девять с половиной тысяч</h2>
+            <p class="sub">Улицы, переулки и площади Ленина в одной только России. Каждая точка — одна из них.</p>
+            <p class="foot" data-foot="mass"></p>
+          </div>
+          <div class="screen__vis"><canvas class="mass" data-chart="mass"></canvas></div>
+        </section>
+
+      </div>
+
+      <nav class="dots" data-dots aria-label="Разделы"></nav>
+    </main>
+
+    <script type="module" src="./stats.js?v=8"></script>
+  </body>
+</html>

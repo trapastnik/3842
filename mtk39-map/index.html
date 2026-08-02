@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Карта Союза</title>
+    <link rel="stylesheet" href="./styles.css?v=6" />
+  </head>
+  <body>
+    <main class="stage">
+      <canvas id="map"></canvas>
+
+      <aside class="rail">
+        <header class="rail__head">
+          <span class="eyebrow">МТК · 39</span>
+          <h1 class="title">Карта Союза</h1>
+          <p class="sub" data-sub></p>
+        </header>
+        <nav class="republics" data-republics aria-label="Республики"></nav>
+        <button class="chip chip--off" id="offmap-toggle" type="button" aria-pressed="false">
+          не на карте · <span data-off-count>0</span>
+        </button>
+      </aside>
+
+      <aside class="legend" data-legend></aside>
+
+      <nav class="filters" data-filters aria-label="Что показывать"></nav>
+
+      <aside class="offmap" id="offmap" hidden>
+        <div class="offmap__box">
+          <header class="offmap__head">
+            <div>
+              <h2 class="offmap__title">Не на карте · <span data-off-total>0</span></h2>
+              <p class="offmap__note">
+                Записи свода, для которых не нашлось координат: русская транслитерация
+                чужого топонима не ищется, а у части объектов точки нет вовсе.
+              </p>
+            </div>
+            <button class="offmap__close" type="button" aria-label="Закрыть">✕</button>
+          </header>
+          <nav class="offmap__groups" data-off-groups aria-label="Группировка"></nav>
+          <div class="offmap__wall" data-off-wall></div>
+        </div>
+      </aside>
+
+      <aside class="card" id="card" hidden>
+        <button class="card__close" type="button" aria-label="Закрыть">✕</button>
+        <figure class="card__fig" data-fig hidden></figure>
+        <div class="card__orig" data-orig></div>
+        <h2 class="card__name" data-name></h2>
+        <p class="card__where" data-where></p>
+        <p class="card__text" data-desc></p>
+        <dl class="card__facts" data-facts></dl>
+      </aside>
+
+      <div class="hint" data-hint aria-hidden="true">выберите республику · тяните карту · коснитесь точки</div>
+    </main>
+
+    <script src="../assets/shared/lib/projection.js"></script>
+    <script type="module" src="./map.js?v=9"></script>
+  </body>
+</html>

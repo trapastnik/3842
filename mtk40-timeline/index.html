@@ -4,14 +4,14 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 40 · Таймлайн</title>
-    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./styles.css?v=20260801g" />
   </head>
   <body>
     <main class="stage">
       <header class="title">
-        <span class="title__num">МТК · 40 · ВАРИАНТ 04</span>
+        <span class="title__num">МТК · 40 · ВАРИАНТ 03</span>
         <h1 class="title__h">Таймлайн</h1>
-        <p class="title__sub">1848 → 2018 · три полки во времени · кластеры видны сразу</p>
+        <p class="title__sub">99 книг, 1800 → 2018. Тап на кружок — распадается: декада → год → отдельные книги. Тап на книгу — её связи с прочитанным.</p>
       </header>
 
       <canvas id="timeline"></canvas>
@@ -26,9 +26,49 @@
         <ul id="card-conns" class="card__conns" hidden></ul>
       </aside>
 
+      <button id="home-chip" class="home-chip" type="button" hidden>← вся хронология</button>
+
+      <button id="settings-toggle" class="settings-toggle" type="button" aria-label="Настройки">⚙</button>
+      <aside id="settings-panel" class="settings-panel" hidden>
+        <h2>Настройки</h2>
+
+        <fieldset class="settings-row">
+          <legend>Порог ДЕКАДЫ → ГОДЫ</legend>
+          <input type="range" id="thr-decade" min="1.2" max="3.0" step="0.05" value="1.8" />
+          <span data-value-for="thr-decade">1.80×</span>
+        </fieldset>
+
+        <fieldset class="settings-row">
+          <legend>Порог ГОДЫ → КНИГИ</legend>
+          <input type="range" id="thr-year" min="3.0" max="12.0" step="0.1" value="6.0" />
+          <span data-value-for="thr-year">6.00×</span>
+        </fieldset>
+
+        <fieldset class="settings-row">
+          <legend>Размер подписей</legend>
+          <input type="range" id="opt-label-scale" min="0.5" max="2.5" step="0.05" value="1.0" />
+          <span data-value-for="opt-label-scale">1.00×</span>
+        </fieldset>
+
+        <fieldset class="settings-row settings-checks">
+          <label><input type="checkbox" id="opt-events" checked /> исторические даты на оси</label>
+          <label><input type="checkbox" id="opt-conns" checked /> связи при выборе книги</label>
+          <label><input type="checkbox" id="opt-crossfade" checked /> плавный переход между уровнями</label>
+        </fieldset>
+
+        <button type="button" id="opt-reset" class="reset-btn">сбросить настройки</button>
+      </aside>
+
+      <div class="legend" aria-hidden="true">
+        <div class="legend-row"><span class="dot" style="background:#A02128"></span><span>ИМ · верхняя дорожка</span></div>
+        <div class="legend-row"><span class="dot" style="background:#5D6970"></span><span>ЧИТАЛ · центр</span></div>
+        <div class="legend-row"><span class="dot" style="background:#D2B773"></span><span>О НЁМ · нижняя дорожка</span></div>
+        <div class="legend-row legend-size"><span class="dot dot--sm"></span>→<span class="dot dot--lg"></span> размер ~ число книг</div>
+      </div>
+
       <a class="back" href="../">← все МТК</a>
     </main>
 
-    <script type="module" src="./timeline.js?v=1"></script>
+    <script type="module" src="./timeline.js?v=20260801g"></script>
   </body>
 </html>
