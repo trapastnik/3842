@@ -23,7 +23,7 @@ OUT = ROOT / "mtk38-build"
 COPY = [
     "mtk38-v3/globe.html", "mtk38-v3/rain.html", "mtk38-v3/map.html",
     "mtk38-v3/engine", "mtk38-v3/scenes", "mtk38-v3/vendor", "mtk38-v3/fonts",
-    "mtk38-v2/studio", "mtk38-v2/map", "mtk38-v2/shared", "mtk38-v2/vendor", "mtk38-v2/fonts",
+    "mtk38-v2/studio", "mtk38-v2/shared", "mtk38-v2/vendor", "mtk38-v2/fonts",
     "data/mtk38.json", "data/mtk38-publications.json", "data/mtk38-quotes.json",
     "data/ne_110m_countries.geojson",
     "assets/mtk38/covers", "assets/mtk38/textures",
@@ -39,7 +39,6 @@ VARIANTS = [
     ("v3", "rain",  "Дождь",  "mtk38-v3/rain.html",  "Слова всплывают, GPU-частицы"),
     ("v3", "map",   "Карта",  "mtk38-v3/map.html",   "Написания по миру, Winkel Tripel"),
     ("v2", "studio", "Студия", "mtk38-v2/studio/",   "7 композиций в одном движке"),
-    ("v2", "map2",   "Карта v2", "mtk38-v2/map/",    "Карта на старом стеке"),
 ]
 
 INDEX = """<!doctype html>
