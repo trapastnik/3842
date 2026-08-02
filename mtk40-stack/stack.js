@@ -55,6 +55,7 @@ class StackApp {
     this.cardEl = document.getElementById("card");
     this.cardEl.querySelector(".card__close").addEventListener("click", () => this.deselect());
     this.W = 0; this.H = 0;
+    this.fit = 1;
     this.panX = 0;
     this.panY = 0;
     this.dragging = null;
@@ -131,16 +132,47 @@ class StackApp {
       // запомним высоту для рендера подписи
     }
 
-    // Сцена: начало координат (0,0,0) — по центру, ниже середины кадра
-    this.cx = this.W / 2;
-    this.cy = this.H * 0.72;
     this.towerSpacingX = towerSpacingX;
+    this.fitScene();
+  }
+
+  // Сцена вписывается в кадр по габаритам самих стопок. Раньше начало
+  // координат просто ставилось в 0.72 высоты при постоянном масштабе —
+  // башни одинаково вылезали за кадр на любом разрешении, потому что их
+  // высота зависит от данных (34 книги в самой длинной колонке), а не от
+  // размера экрана.
+  fitScene() {
+    if (!this.books.length) return;
+    this.fit = 1; this.cx = 0; this.cy = 0; this.panX = 0; this.panY = 0;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const b of this.books) {
+      for (const dx of [-b.w / 2, b.w / 2]) {
+        for (const dz of [-b.d / 2, b.d / 2]) {
+          for (const dy of [0, b.t]) {
+            const p = this.project(b.x + dx, b.y + dy, b.z + dz);
+            x0 = Math.min(x0, p.sx); x1 = Math.max(x1, p.sx);
+            y0 = Math.min(y0, p.sy); y1 = Math.max(y1, p.sy);
+          }
+        }
+      }
+    }
+    const marginTop = 168 * this.s;      // заголовок
+    const marginBottom = 96 * this.s;    // подписи башен и кнопка «назад»
+    const marginSide = 56 * this.s;
+    const availW = Math.max(1, this.W - 2 * marginSide);
+    const availH = Math.max(1, this.H - marginTop - marginBottom);
+    const bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+    this.fit = Math.max(0.15, Math.min(1.4, Math.min(availW / bw, availH / bh)));
+    this.cx = this.W / 2 - ((x0 + x1) / 2) * this.fit;
+    this.cy = (marginTop + availH / 2) - ((y0 + y1) / 2) * this.fit;
+    // низ сцены в экранных координатах — к нему прижимаются подписи башен
+    this.sceneBottom = this.cy + y1 * this.fit;
   }
 
   project(x, y, z) {
     return {
-      sx: this.cx + this.panX + (x - z) * ISO_COS,
-      sy: this.cy + this.panY + (x + z) * ISO_SIN - y,
+      sx: this.cx + this.panX + (x - z) * ISO_COS * this.fit,
+      sy: this.cy + this.panY + ((x + z) * ISO_SIN - y) * this.fit,
     };
   }
 
@@ -271,12 +303,14 @@ class StackApp {
     for (let bi = 0; bi < towers.length; bi++) {
       const towerX = (bi - 1) * this.towerSpacingX;
       const meta = BUCKET_META[towers[bi]];
-      const baseProj = this.project(towerX, 0, 130 * this.s);
+      // Подпись под всей сценой, а не у нуля мира: высота башен зависит от
+      // данных, и привязанная к основанию подпись оказывалась поверх книг.
+      const baseProj = this.project(towerX, 0, 0);
       ctx.save();
       ctx.fillStyle = meta.accent;
       ctx.font = `600 ${18 * this.s}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
-      ctx.fillText(meta.label, baseProj.sx, baseProj.sy + 22 * this.s);
+      ctx.fillText(meta.label, baseProj.sx, this.sceneBottom + this.panY + 30 * this.s);
       ctx.restore();
     }
 
@@ -294,7 +328,9 @@ class StackApp {
       ctx.save();
       ctx.fillStyle = "rgba(0,0,0,0.5)";
       ctx.beginPath();
-      ctx.ellipse(center.sx, center.sy + 6 * this.s, 210 * this.s, 56 * this.s, 0, 0, Math.PI * 2);
+      // тень масштабируется вместе со сценой, иначе на подгонке разъезжается
+      ctx.ellipse(center.sx, center.sy + 6 * this.s * this.fit,
+        210 * this.s * this.fit, 56 * this.s * this.fit, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
     }
