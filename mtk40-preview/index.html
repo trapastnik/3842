@@ -1,0 +1,211 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>МТК 40 · все варианты (контактный лист)</title>
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802" />
+    <style>
+      /* Служебная страница для просмотра, НЕ вариант экспозиции.
+         В HUB_VARIANTS не добавляется — см. заявку в COORDINATION.md. */
+      /* База рассчитана на киоск: html/body ровно в экран, overflow скрыт,
+         сцена position:fixed. Контактному листу нужна обычная длинная
+         страница, поэтому снимаем и высоту, и фиксацию. */
+      html, body { height: auto; min-height: 100%; overflow: auto; }
+      .stage { position: static; min-height: 100%; }
+      .sheet { padding: 30px 34px 60px; }
+      .head { margin-bottom: 22px; }
+      .head h1 {
+        margin: 0 0 4px;
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: 40px;
+      }
+      .head .num {
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.3em;
+        text-transform: uppercase;
+        color: var(--brass);
+      }
+      .head p {
+        margin: 6px 0 0;
+        font-family: var(--font-mono);
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        color: rgba(247, 249, 239, 0.6);
+        max-width: 900px;
+        line-height: 1.6;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(430px, 1fr));
+        gap: 20px;
+      }
+      .cell {
+        display: flex;
+        flex-direction: column;
+        border: 1px solid rgba(247, 249, 239, 0.14);
+        border-radius: 12px;
+        overflow: hidden;
+        background: rgba(12, 16, 18, 0.5);
+        text-decoration: none;
+        color: inherit;
+      }
+      .cell:hover { border-color: var(--brass-soft); }
+      .shot {
+        position: relative;
+        height: 250px;
+        overflow: hidden;
+        background: #0c1012;
+        border-bottom: 1px solid rgba(247, 249, 239, 0.1);
+      }
+      /* Прототипы рассчитаны на ширину 1280 — показываем их целиком,
+         ужимая трансформом, а не сжимая вьюпорт iframe. */
+      .shot iframe {
+        position: absolute;
+        top: 0; left: 0;
+        width: 1280px;
+        height: 720px;
+        border: 0;
+        transform-origin: 0 0;
+        pointer-events: none;
+      }
+      .meta { padding: 12px 15px 14px; display: flex; flex-direction: column; gap: 5px; }
+      .meta .tag {
+        font-family: var(--font-mono);
+        font-size: 10px;
+        letter-spacing: 0.22em;
+        text-transform: uppercase;
+        color: var(--brass);
+      }
+      .meta h2 {
+        margin: 0;
+        font-family: var(--font-display);
+        font-weight: 400;
+        font-size: 19px;
+      }
+      .meta p {
+        margin: 0;
+        font-size: 13px;
+        line-height: 1.4;
+        color: rgba(247, 249, 239, 0.72);
+      }
+      .badge {
+        align-self: flex-start;
+        margin-top: 3px;
+        font-family: var(--font-mono);
+        font-size: 9px;
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+        padding: 3px 8px;
+        border-radius: 999px;
+        border: 1px solid;
+      }
+      .badge--new { color: #d2b773; border-color: rgba(210,183,115,0.5); }
+      .badge--fix { color: #7ba3c0; border-color: rgba(123,163,192,0.5); }
+    </style>
+  </head>
+  <body>
+    <main class="stage">
+      <div class="sheet">
+        <header class="head">
+          <div class="num">МТК · 40 · Библиотека Ленина</div>
+          <h1>Все варианты — контактный лист</h1>
+          <p>
+            Служебная страница, не вариант экспозиции. Показывает ветку
+            claude/flamboyant-cartwright-839223 целиком: четыре старых после правок и
+            четыре новых. После merge и добавления в хаб всё это будет листаться в /mtk40/.
+            Превью живые — прототипы работают внутри рамок; кликом открывается целиком.
+          </p>
+        </header>
+
+        <div class="grid" id="grid"></div>
+      </div>
+    </main>
+
+    <script>
+      const VARIANTS = [
+        { slug: "mtk40-shelf", tag: "01 · Полка", state: "fix",
+          note: "Три полки с корешками. Вычищена вертикаль, размеры привязаны к вьюпорту." },
+        { slug: "mtk40-mirror", tag: "02 · Зеркало", state: "fix",
+          note: "Им сверху, о нём снизу, читал между. Та же чистка и масштаб." },
+        { slug: "mtk40-stack", tag: "03 · Стопки", state: "fix",
+          note: "Изометрия. Сцена теперь вписывается в кадр — раньше башни срезало." },
+        { slug: "mtk40-timeline", tag: "04 · Таймлайн", state: "fix",
+          note: "Переписан на уровни: декады → годы → книги, связи, ось с 1800." },
+        { slug: "mtk40-catalog", tag: "05 · Картотека", state: "new",
+          note: "Перебрать корпус: фильтры, сортировки, алфавитный указатель." },
+        { slug: "mtk40-constellation", tag: "06 · Созвездие влияний", state: "new",
+          note: "Что прочитал → что написал. 15 нитей между 25 книгами." },
+        { slug: "mtk40-geography", tag: "07 · География изданий", state: "new",
+          note: "Где вышло впервые: 99 книг, 16 городов, эмиграция против метрополии." },
+        { slug: "mtk40-volume", tag: "08 · Объём написанного", state: "new",
+          note: "Площадь ~ страницам. 90 402 страницы, разброс от 4 до 30 000." },
+      ];
+
+      // У самих index.html прототипов версии нет — браузер отдаёт их из кеша
+      // и в рамке оказывается прошлая редакция. Метку ставим здесь.
+      const V = "?v=20260802";
+
+      const grid = document.getElementById("grid");
+      for (const v of VARIANTS) {
+        const a = document.createElement("a");
+        a.className = "cell";
+        a.href = "../" + v.slug + "/" + V;
+        a.innerHTML =
+          '<div class="shot"><iframe data-src="../' + v.slug + '/' + V + '"></iframe></div>' +
+          '<div class="meta">' +
+            '<span class="tag"></span>' +
+            "<h2></h2><p></p>" +
+            '<span class="badge badge--' + v.state + '">' +
+              (v.state === "new" ? "новый" : "исправлен") + "</span>" +
+          "</div>";
+        a.querySelector(".tag").textContent = v.tag;
+        a.querySelector("h2").textContent = v.tag.split(" · ")[1];
+        a.querySelector("p").textContent = v.note;
+        grid.appendChild(a);
+      }
+
+      // Прототип внутри рамки рисует кадр шириной 1280; ужимаем его под
+      // ширину ячейки, чтобы композиция была видна целиком, а не куском.
+      function scaleShots() {
+        for (const shot of document.querySelectorAll(".shot")) {
+          const k = shot.clientWidth / 1280;
+          const f = shot.querySelector("iframe");
+          f.style.transform = "scale(" + k + ")";
+          shot.style.height = 720 * k + "px";
+        }
+      }
+      window.addEventListener("resize", scaleShots);
+      window.addEventListener("load", scaleShots);
+      scaleShots();
+
+      // Каждый прототип крутит свой requestAnimationFrame. Восемь разом
+      // подвешивают страницу — прокрутка перестаёт отвечать. Поэтому рамка
+      // подключается, только когда карточка попала в кадр, и отцепляется,
+      // когда ушла: одновременно живут две-три.
+      const shots = [...document.querySelectorAll(".shot")];
+
+      // Первый экран грузим сразу и не выгружаем: если наблюдатель почему-то
+      // не сработает (нулевой вьюпорт, свёрнутая панель), страница всё равно
+      // не должна встретить пустыми рамками.
+      const EAGER = 4;
+      shots.slice(0, EAGER).forEach((shot) => {
+        const f = shot.querySelector("iframe");
+        f.src = f.dataset.src;
+        shot.dataset.eager = "1";
+      });
+
+      const io = new IntersectionObserver((entries) => {
+        for (const e of entries) {
+          const f = e.target.querySelector("iframe");
+          if (!f) continue;
+          if (e.isIntersecting) { if (!f.src) f.src = f.dataset.src; }
+          else if (f.src && !e.target.dataset.eager) f.removeAttribute("src");
+        }
+      }, { rootMargin: "300px 0px" });
+      shots.forEach((shot) => io.observe(shot));
+    </script>
+  </body>
+</html>
