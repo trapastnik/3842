@@ -32,7 +32,7 @@ import { dof } from 'three/addons/tsl/display/DepthOfFieldNode.js';
 import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberrationNode.js';
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
-import { createUI, IS_SERVICE } from './engine/ui.js?v=20260806';
+import { createUI, IS_SERVICE } from './engine/ui.js?v=20260807';
 import { makeWordAtlas } from './engine/atlas.js?v=20260802';
 import { createRain } from './scenes/rain.js?v=20260802';
 import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
@@ -142,15 +142,16 @@ try {
     title: 'Дождь имён',
     subtitle: `${FORMS.length} написаний всплывают снизу вверх. `
       + 'Веди пальцем — расталкивай. Тап по слову — карточка языка и издания на нём.',
-    hint: 'веди / жми — отталкивай · <b>тап</b> → карточка · <b>⚙</b> — настройки',
+    hint: 'веди / жми — отталкивай · <b>тап</b> → карточка · <b>⚙</b> — вид и картинка',
+    // КАК рисовать — в ⚙, открыто
     groups: [
-      { params: [
+      { title: 'дождь', params: [
         { key: 'count', label: 'количество', min: 100, max: 4000, step: 50, value: 500 },
         { key: 'speed', label: 'скорость', min: 0.4, max: 6, step: .1, value: 2.4 },
         { key: 'size', label: 'размер', min: 0.4, max: 2.2, step: .05, value: 1 },
       ] },
       // инженерное — свет и пост-обработка
-      { title: 'свет / пост', service: true, params: [
+      { title: 'свет / пост', params: [
         { key: 'repel', label: 'отталкивание', min: 0, max: 30, step: .5, value: 11 },
         { key: 'exposure', label: 'экспозиция', min: .4, max: 1.8, step: .02, value: 1 },
         { key: 'bloom', label: 'свечение', min: 0, max: 2.5, step: .02, value: .26 },

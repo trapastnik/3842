@@ -24,7 +24,7 @@
 <script type="module">
 import { loadWords, loadPublications } from './engine/data.js?v=20260804';
 import { createCard } from './engine/card.js?v=20260804';
-import { createUI } from './engine/ui.js?v=20260806';
+import { createUI } from './engine/ui.js?v=20260807';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
 const FAM = (sc) => (sc === 'Latn' || sc === 'Cyrl') ? `'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif` : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
@@ -355,22 +355,24 @@ try {
     title: 'Где напечатан «Ленин»',
     subtitle: `${WORDS.length} языков и ${PLACES.length} изданий на карте мира. `
       + 'Слой «издания» ставит точку по городу печати, «оба» — соединяет издание с его языком. Тап — карточка.',
-    hint: 'тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>⚙</b> — настройки',
-    // посетительское — что показывать
+    hint: 'тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>⚙</b> — вид карты',
+    // ЧТО показывать — на сцене, всегда на виду
+    stage: [
+      { key: 'layer', label: 'показать', options: [['lang', 'языки'], ['pub', 'издания'], ['both', 'оба']], value: 'lang' },
+    ],
+    // КАК рисовать — в ⚙, открыто
     segments: [
-      { key: 'layer', label: 'слой', options: [['lang', 'языки'], ['pub', 'издания'], ['both', 'оба']], value: 'lang' },
       { key: 'base', label: 'подложка', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физическая']], value: 'countries' },
       { key: 'routes', label: 'связи с Москвой', options: [[0, 'скрыть'], [1, 'показать']], value: 1 },
+      { key: 'borders', label: 'границы на растре', options: [[0, 'выкл'], [1, 'вкл']], value: 1 },
     ],
     groups: [
-      { params: [{ key: 'label', label: 'размер подписей', min: 0.5, max: 2.2, step: .05, value: 1 }] },
-      // инженерное — свет, зерно, отладка подложки; посетителю не нужно
-      { title: 'изображение', service: true, params: [
+      { title: 'изображение', params: [
+        { key: 'label', label: 'размер подписей', min: 0.5, max: 2.2, step: .05, value: 1 },
         { key: 'glow', label: 'свечение', min: 0, max: 1.5, step: .05, value: 0.5 },
         { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.05 },
         { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
         { key: 'bg', label: 'фон', min: 8, max: 40, step: 1, value: 15 },
-        { key: 'borders', label: 'границы на растре', min: 0, max: 1, step: 1, value: 1 },
       ] },
     ],
     onChange: (k, v) => apply(k, v),
