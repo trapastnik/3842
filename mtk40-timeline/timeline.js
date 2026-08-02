@@ -58,7 +58,17 @@ const TIMELINE_TICKS = [
 ];
 
 const SETTINGS_KEY = "mtk40-timeline-settings";
+// Три способа разложить подписи книг. На плотных годах (1917-18) их
+// физически больше, чем места под дорожкой, и вопрос лишь в том, чем
+// платить: отброшенными подписями, вертикальным местом или поводками.
+const LABEL_MODES = [
+  { id: "place",   label: "по месту" },   // одна строка, налезающие отброшены
+  { id: "stagger", label: "шахматка" },   // через одну над и под дорожкой
+  { id: "leader",  label: "выносные" },   // несколько строк + поводок к кружку
+];
+
 const DEFAULT_SETTINGS = {
+  labelMode: "place",
   thrDecade: 1.8,
   thrYear: 6.0,
   labelScale: 1.0,
@@ -667,35 +677,97 @@ class TimelineApp {
     }
     ctx.globalAlpha = 1;
 
-    // Подписи: крупные кружки забирают место первыми, налезающие отбрасываются.
-    const drawn = [];
-    const order = clusters.slice().sort((a, b) => b.r - a.r);
-    ctx.textAlign = "center";
-    ctx.textBaseline = "middle";
-    for (const cl of order) {
+    this.drawLabels(clusters, alpha, level, dimming, related);
+    ctx.restore();
+  }
+
+  // Подписи книг. Режим выбирается в настройках, см. LABEL_MODES.
+  drawLabels(clusters, alpha, level, dimming, related) {
+    const ctx = this.ctx;
+    const s = this.s;
+    const mode = this.settings.labelMode;
+
+    // общий разбор кандидатов: что вообще подписываем и какой ширины
+    const cands = [];
+    for (const cl of clusters) {
       cl.labelRect = null;
       if (!cl.label) continue;
       if (cl.x < this.plotL() || cl.x > this.plotR()) continue;
+      if (dimming && !cl.indices.some((i) => related.has(this.items[i].id))) continue;
       const sel = cl.indices.some((i) => this.items[i].id === this.selectedId);
-      const dim = dimming && !cl.indices.some((i) => related.has(this.items[i].id));
-      if (dim) continue;
-      const fs = Math.max(11 * this.s, Math.min(24 * this.s, cl.r * 0.62)) * this.settings.labelScale;
+      const fs = Math.max(11 * s, Math.min(24 * s, cl.r * 0.62)) * this.settings.labelScale;
       ctx.font = `${sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
       let text = cl.label;
       if (level === "LEAF" && text.length > 30) text = text.slice(0, 29) + "…";
-      const w = ctx.measureText(text).width;
-      const py = cl.y + cl.r + fs * 0.75;
-      const rect = [cl.x - w / 2 - 4 * this.s, py - fs * 0.6, cl.x + w / 2 + 4 * this.s, py + fs * 0.6];
-      if (drawn.some((r) => !(rect[2] < r[0] || rect[0] > r[2] || rect[3] < r[1] || rect[1] > r[3]))) continue;
+      cands.push({ cl, sel, fs, text, w: ctx.measureText(text).width });
+    }
+
+    const drawn = [];
+    const free = (r) => !drawn.some((d) =>
+      !(r[2] < d[0] || r[0] > d[2] || r[3] < d[1] || r[1] > d[3]));
+    const put = (c, py, leaderFrom) => {
+      const { cl, fs, w } = c;
+      const rect = [cl.x - w / 2 - 4 * s, py - fs * 0.6, cl.x + w / 2 + 4 * s, py + fs * 0.6];
+      if (!free(rect)) return false;
       drawn.push(rect);
       cl.labelRect = rect;
       ctx.globalAlpha = alpha;
+      ctx.font = `${c.sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
+      if (leaderFrom != null && Math.abs(py - leaderFrom) > 4 * s) {
+        ctx.strokeStyle = c.sel ? COLORS.brass : rgba(COLORS.paper, 0.32);
+        ctx.lineWidth = 1 * s;
+        ctx.beginPath();
+        ctx.moveTo(cl.x, leaderFrom);
+        ctx.lineTo(cl.x, py - fs * 0.55);
+        ctx.stroke();
+      }
       ctx.fillStyle = rgba(COLORS.ink, 0.7);
-      ctx.fillText(text, cl.x + 1 * this.s, py + 1 * this.s);
-      ctx.fillStyle = sel ? COLORS.brass : rgba(COLORS.paper, 0.86);
-      ctx.fillText(text, cl.x, py);
+      ctx.fillText(c.text, cl.x + 1 * s, py + 1 * s);
+      ctx.fillStyle = c.sel ? COLORS.brass : rgba(COLORS.paper, 0.86);
+      ctx.fillText(c.text, cl.x, py);
+      return true;
+    };
+
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+
+    if (mode === "stagger") {
+      // Через одну над и под дорожкой — вдвое больше места почти даром.
+      for (const lane of LANES) {
+        const inLane = cands.filter((c) => c.cl.lane === lane).sort((a, b) => a.cl.x - b.cl.x);
+        inLane.forEach((c, i) => {
+          const below = i % 2 === 0;
+          const py = below
+            ? c.cl.y + c.cl.r + c.fs * 0.75
+            : c.cl.y - c.cl.r - c.fs * 0.75;
+          put(c, py, null);
+        });
+      }
+    } else if (mode === "leader") {
+      // Несколько строк под дорожкой: подпись съезжает в первую свободную,
+      // к кружку тянется волосок. Строк не больше трёх — дальше начинается
+      // соседняя дорожка.
+      const MAX_ROWS = 3;
+      for (const lane of LANES) {
+        const inLane = cands.filter((c) => c.cl.lane === lane).sort((a, b) => a.cl.x - b.cl.x);
+        const rowEnd = new Array(MAX_ROWS).fill(-Infinity);
+        for (const c of inLane) {
+          const half = c.w / 2 + 6 * s;
+          let row = 0;
+          while (row < MAX_ROWS && c.cl.x - half < rowEnd[row]) row++;
+          if (row >= MAX_ROWS) continue;
+          rowEnd[row] = c.cl.x + half;
+          const anchorY = c.cl.y + c.cl.r;
+          put(c, anchorY + c.fs * (0.75 + row * 1.25), anchorY);
+        }
+      }
+    } else {
+      // По месту: крупные кружки забирают место первыми, налезающие отброшены.
+      for (const c of cands.slice().sort((a, b) => b.cl.r - a.cl.r)) {
+        put(c, c.cl.y + c.cl.r + c.fs * 0.75, null);
+      }
     }
-    ctx.restore();
+    ctx.globalAlpha = 1;
   }
 
   // Книги, не влезающие в шкалу (Аристотель, −350). Карман слева за разрывом
@@ -855,6 +927,30 @@ class TimelineApp {
         this.saveSettings();
       });
     };
+    // сегментированный переключатель раскладки подписей
+    const modeBox = document.getElementById("label-mode");
+    const paintModes = () => {
+      for (const b of modeBox.children) {
+        const on = b.dataset.mode === this.settings.labelMode;
+        b.setAttribute("aria-checked", String(on));
+      }
+    };
+    for (const m of LABEL_MODES) {
+      const b = document.createElement("button");
+      b.type = "button";
+      b.setAttribute("role", "radio");
+      b.dataset.mode = m.id;
+      b.textContent = m.label;
+      b.addEventListener("click", () => {
+        this.settings.labelMode = m.id;
+        this.saveSettings();
+        paintModes();
+      });
+      modeBox.appendChild(b);
+    }
+    paintModes();
+    this.paintLabelModes = paintModes;
+
     range("thr-decade", "thrDecade", (v) => v.toFixed(2) + "×");
     range("thr-year", "thrYear", (v) => v.toFixed(2) + "×");
     range("opt-label-scale", "labelScale", (v) => v.toFixed(2) + "×");
@@ -870,6 +966,7 @@ class TimelineApp {
         const out = this.settingsPanel.querySelector(`[data-value-for="${id}"]`);
         if (out) out.textContent = this.settings[key].toFixed(2) + "×";
       }
+      if (this.paintLabelModes) this.paintLabelModes();
       document.getElementById("opt-events").checked = this.settings.showEvents;
       document.getElementById("opt-conns").checked = this.settings.showConns;
       document.getElementById("opt-crossfade").checked = this.settings.crossfade;

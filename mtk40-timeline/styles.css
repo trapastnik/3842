@@ -120,6 +120,26 @@
 }
 .reset-btn:active { color: var(--brass); border-color: var(--brass-soft); }
 
+.segmented { display: flex; gap: 4px; width: 100%; }
+.segmented button {
+  flex: 1;
+  padding: 6px 4px;
+  border: 1px solid rgba(247, 249, 239, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.66);
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.segmented button[aria-checked="true"] {
+  color: var(--night);
+  background: var(--brass);
+  border-color: var(--brass);
+}
+
 /* ---------- легенда ---------- */
 /* Основное — в базе; здесь только размерная строка «размер ~ число книг». */
 .legend .dot--sm { width: 7px; height: 7px; background: rgba(247, 249, 239, 0.35); }
