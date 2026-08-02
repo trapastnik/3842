@@ -27,10 +27,19 @@
 
   <script>
     window.HUB_VARIANTS = [
-      { slug: "mtk40-shelf",    tag: "01 · Shelf",    name: "Полка" },
-      { slug: "mtk40-mirror",   tag: "02 · Mirror",   name: "Зеркало" },
-      { slug: "mtk40-stack",    tag: "03 · Stack",    name: "Стопки" },
-      { slug: "mtk40-timeline", tag: "04 · Timeline", name: "Таймлайн" },
+      { slug: "mtk40-shelf",         tag: "01 · Shelf",         name: "Полка" },
+      { slug: "mtk40-mirror",        tag: "02 · Mirror",        name: "Зеркало" },
+      { slug: "mtk40-timeline",      tag: "03 · Timeline",      name: "Таймлайн" },
+      { slug: "mtk40-catalog",       tag: "04 · Catalog",       name: "Картотека" },
+      { slug: "mtk40-constellation", tag: "05 · Constellation", name: "Созвездие влияний" },
+      { slug: "mtk40-geography",     tag: "06 · Geography",     name: "География изданий" },
+      { slug: "mtk40-volume",        tag: "07 · Volume",        name: "Объём написанного" },
+    ];
+
+    /* Служебное (не витрина): контактный лист всех вариантов на одной странице.
+     * Кнопка ⚒ — гейт ?service=1 или тройной тап по заголовку. */
+    window.HUB_TOOLS = [
+      { name: "Контактный лист", url: "../mtk40-preview/" },
     ];
   </script>
   <script src="../assets/shared/hub/hub.js?v=20260722"></script>
