@@ -295,8 +295,10 @@ async function main() {
     rail.appendChild(b);
   }
 
+  const nCountries = new Set(records.map((r) => r.country)).size;
   document.querySelector("[data-total]").textContent =
-    `${nf.format(records.length)} записей свода, ${new Set(records.map((r) => r.country)).size} стран. `
+    `${nf.format(records.length)} ${plural(records.length, "запись", "записи", "записей")} свода, `
+    + `${nCountries} ${plural(nCountries, "страна", "страны", "стран")}. `
     + "Полосой слева на карточке отмечена судьба имени: латунь — носит сегодня, "
     + "красный — переименовано, серый — утрачено.";
 

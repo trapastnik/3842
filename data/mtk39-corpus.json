@@ -992,6 +992,26 @@
    "region": "Ульяновская область"
   }
  ],
+ "summaries": [
+  {
+   "name": "Статистика по улицам Ленина",
+   "country": "Казахстан",
+   "text": "На 2017 год насчитывалось 352 улицы, число сокращается из-за переименований. Точная актуальная цифра постоянно обновляется местными акиматами.",
+   "link": null
+  },
+  {
+   "name": "Канал имени В.И. Ленина (статистика)",
+   "country": "Азербайджан",
+   "text": "В советское время в Азербайджане было 111 объектов, связанных с именем Ленина.",
+   "link": "https://ru.apa.az/vnutrennyaya-politika/-158878"
+  },
+  {
+   "name": "Декоммунизация (общий процесс)",
+   "country": "Украина",
+   "text": "В результате декоммунизационного законодательства переименовано около тысячи населённых пунктов, 25 административных районов и 27 районов в городах.",
+   "link": "https://life.ru/p/1742808"
+  }
+ ],
  "records": [
   {
    "id": "world-йемен-музей-ви-ленина-в-адене",
@@ -1599,7 +1619,7 @@
    "section": "АЗИЯ",
    "name": "Район Ленина",
    "name_orig": "Lenin Nagar",
-   "city": "Нандаванэм, Керала",
+   "city": "Тхируванантхапурам, Керала",
    "country": "Индия",
    "continent": "Азия",
    "kind": "район",
@@ -1610,9 +1630,9 @@
    "link": "https://www.google.com/maps/place/Observatory+Valley+Rd,+Nandavanam,+Palayam,+Thiruvananthapuram,+Kerala,+Индия/@8.5059892,76.9585545,21z/data=!4m6!3m5!1s0x3b05bbca23646597:0xfdbda25c5a1ee000!8m2!3d8.5060314!4d76.9586089!16s%2Fg%2F1tdq8_th?entry=ttu&g_ep=EgoyMDI2MDYxNi4wIKXMDSoASAFQAw%3D%3D",
    "link_kind": "other",
    "osm": null,
-   "lat": null,
-   "lng": null,
-   "geo_src": null
+   "lat": 8.48204,
+   "lng": 76.91906,
+   "geo_src": "nominatim"
   },
   {
    "id": "world-индия-район-ленина-4",
@@ -2413,13 +2433,10 @@
    "desc": "Улица Ленина в Корумбиаре, штат Рондония.",
    "link": "https://www.openstreetmap.org/way/28798507",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 28798507
-   },
-   "lat": -20.01044,
-   "lng": -44.01334,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-чили-ленинский-проезд",
@@ -2781,7 +2798,7 @@
    "section": "АМЕРИКА",
    "name": "Улица Ленина",
    "name_orig": "Calle Lenin",
-   "city": "Сьюдад- Лопес-Матеос, штат Мехико",
+   "city": "Сьюдад-Лопес-Матеос, штат Мехико",
    "country": "Мексика",
    "continent": "Америка",
    "kind": "улица",
@@ -2815,13 +2832,10 @@
    "desc": "Улица Ленина в переулке Ломас-де-Тепалькапа, Сьюдад-Лопес-Матеос, Атисапан-де-Сарагоса, Мексика",
    "link": "https://www.openstreetmap.org/way/778958585https://mexicoo.mx/miscelanea-lenin-2223222",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 778958585
-   },
-   "lat": 19.59199,
-   "lng": -99.24349,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-мексика-улица-ленина-6",
@@ -2978,7 +2992,7 @@
    "continent": "Западная Европа",
    "kind": "прочее",
    "status": "переименован",
-   "year_named": 1902,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Здание построено на месте дома, где Ленин жил в 1902–1903 годах, редактируя газету «Искра». Изначально планировалось назвать «Ленин-Корт», но переименовано в годы Холодной войны в честь Эрнеста Бевина.",
    "link": "https://en.wikipedia.org/wiki/Bevin_Court https://www.openstreetmap.org/way/30574798",
@@ -3940,13 +3954,10 @@
    "desc": "Проспект Ленина в Лорьяне, Бретань.",
    "link": "https://yandex.ru/maps/109131/lorient/geo/1809180348/?ll=-3.374157%2C47.762814&z=17https://www.openstreetmap.org/way/53033480",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 53033480
-   },
-   "lat": 47.76173,
-   "lng": -3.34604,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": 47.74773,
+   "lng": -3.36609,
+   "geo_src": "nominatim-alt"
   },
   {
    "id": "world-франция-улица-ленина-9",
@@ -4977,7 +4988,7 @@
    "section": "ЗАПАДНАЯ ЕВРОПА",
    "name": "Ленинбунд",
    "name_orig": "Leninbund",
-   "city": "Германия",
+   "city": "",
    "country": "Германия",
    "continent": "Западная Европа",
    "kind": "прочее",
@@ -4988,8 +4999,8 @@
    "link": "https://ru.ruwiki.ru/wiki/%D0%9B%D0%B5%D0%BD%D0%B8%D0%BD%D0%B1%D1%83%D0%BD%D0%B4",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 51.48244,
-   "lng": 11.9713,
+   "lat": 51.16382,
+   "lng": 10.44783,
    "geo_src": "nominatim"
   },
   {
@@ -5003,7 +5014,7 @@
    "continent": "Западная Европа",
    "kind": "памятник",
    "status": "переименован",
-   "year_named": 1900,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Открыт 5 мая 1956 г. в доме, где размещалась типография немецкого социал-демократа Германа Рау, в которой конце 1900 г. был нелегально отпечатан первый номер ленинской газеты «Искра». Перед зданием установлен мемориальный знак с барельефом В.И. Ленина и надписью: «В этом доме в 1900 году был отпечатан первый номер созданной В.И. Лениным первой общерусской марксистской газеты «Искра». Работал до 1991 года.",
    "link": "https://bildlexikon-leipzig.de/leipziger-kultur/iskra-gedenkstaette/",
@@ -5592,7 +5603,7 @@
    "section": "ЗАПАДНАЯ ЕВРОПА",
    "name": "Закон о запрете имени Ленина",
    "name_orig": null,
-   "city": "Испания",
+   "city": "",
    "country": "Испания",
    "continent": "Западная Европа",
    "kind": "прочее",
@@ -5603,8 +5614,8 @@
    "link": "https://www.intermonitor.ru/imena-lenin-i-xuanito-v-ispanii-zapretili/",
    "link_kind": "other",
    "osm": null,
-   "lat": 40.4448,
-   "lng": -3.68333,
+   "lat": 39.32607,
+   "lng": -4.83798,
    "geo_src": "nominatim"
   },
   {
@@ -5613,7 +5624,7 @@
    "section": "ЗАПАДНАЯ ЕВРОПА",
    "name": "Испанский Ленин",
    "name_orig": null,
-   "city": "Испания",
+   "city": "",
    "country": "Испания",
    "continent": "Западная Европа",
    "kind": "прочее",
@@ -5624,8 +5635,8 @@
    "link": "https://ru.wikipedia.org/wiki/Ларго_Кабальеро,_Франсиско",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 40.4448,
-   "lng": -3.68333,
+   "lat": 39.32607,
+   "lng": -4.83798,
    "geo_src": "nominatim"
   },
   {
@@ -6174,7 +6185,7 @@
    "section": "ЗАПАДНАЯ ЕВРОПА",
    "name": "Улица Ленина",
    "name_orig": "Via Lenin",
-   "city": "Лечче",
+   "city": "Мелендуньо",
    "country": "Италия",
    "continent": "Западная Европа",
    "kind": "улица",
@@ -6184,13 +6195,10 @@
    "desc": "Улица Ленина в коммуне Мелендуньо, провинция Лечче",
    "link": "https://www.openstreetmap.org/way/60139851 https://www.openstreetmap.org/way/171270925",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 60139851
-   },
-   "lat": 40.27587,
-   "lng": 18.33236,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-италия-улица-ленина-13",
@@ -6582,7 +6590,7 @@
    "section": "ЗАПАДНАЯ ЕВРОПА",
    "name": "ИРЛАНДСКИЙ ЛЕНИН Джеймс Конолли",
    "name_orig": "James Connolly",
-   "city": "Ирландия",
+   "city": "",
    "country": "Ирландия",
    "continent": "Западная Европа",
    "kind": "прочее",
@@ -6593,8 +6601,8 @@
    "link": "https://en.wikipedia.org/wiki/James_Connolly",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 53.4295,
-   "lng": -8.12275,
+   "lat": 52.8652,
+   "lng": -7.97946,
    "geo_src": "nominatim"
   },
   {
@@ -6685,10 +6693,10 @@
    "geo_src": "osm"
   },
   {
-   "id": "world-сербия-браничево",
+   "id": "world-сербия-улица-ленина-2",
    "src": "world",
    "section": "Восточная Европа",
-   "name": "",
+   "name": "Улица Ленина",
    "name_orig": null,
    "city": "Браничево",
    "country": "Сербия",
@@ -7374,7 +7382,7 @@
    "section": "Восточная Европа",
    "name": "Лењинова",
    "name_orig": null,
-   "city": "Бачка-Топола",
+   "city": "Бачка Топола",
    "country": "Сербия",
    "continent": "Восточная Европа",
    "kind": "улица",
@@ -7816,13 +7824,10 @@
    "desc": "Улица Ленина в городе Рума, административный центр общины Рума, Воеводина.",
    "link": "https://www.openstreetmap.org/way/48125194#map=17/44.987961/19.969462",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 48125194
-   },
-   "lat": 44.98676,
-   "lng": 19.967,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": 45.00783,
+   "lng": 19.81878,
+   "geo_src": "nominatim"
   },
   {
    "id": "world-сербия-лењинова-50",
@@ -7891,25 +7896,28 @@
    "geo_src": null
   },
   {
-   "id": "world-сербия-лењинова-53",
+   "id": "world-сербия-лењинова-67",
    "src": "world",
    "section": "Восточная Европа",
    "name": "Лењинова",
    "name_orig": null,
-   "city": "Селенча,",
+   "city": "Селенча",
    "country": "Сербия",
    "continent": "Восточная Европа",
    "kind": "улица",
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Селенча, община Бач, Южно-Бачский округ, Воеводина.",
-   "link": "https://yandex.ru/maps/105392/south-bačka-district/geo/3129427007/?ll=19.304409%2C45.405861&z=17",
-   "link_kind": "other",
-   "osm": null,
-   "lat": 45.40974,
-   "lng": 19.30055,
-   "geo_src": "nominatim"
+   "desc": "Улица Ленина в селе Селенча (повторная запись), община Бач, Южно-Бачский округ, Воеводина.",
+   "link": "https://www.openstreetmap.org/way/77120458",
+   "link_kind": "osm_object",
+   "osm": {
+    "type": "way",
+    "id": 77120458
+   },
+   "lat": 45.4056,
+   "lng": 19.30468,
+   "geo_src": "osm"
   },
   {
    "id": "world-сербия-лењинова-54",
@@ -8086,13 +8094,10 @@
    "desc": "Улица Ленина в городе Бечей, административный центр общины Бечей, Воеводина.",
    "link": "https://www.openstreetmap.org/way/497267284",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 497267284
-   },
-   "lat": 45.53122,
-   "lng": 20.01869,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": 45.61537,
+   "lng": 20.04901,
+   "geo_src": "nominatim"
   },
   {
    "id": "world-сербия-лењинова-62",
@@ -8212,30 +8217,6 @@
    },
    "lat": 45.4603,
    "lng": 19.67799,
-   "geo_src": "osm"
-  },
-  {
-   "id": "world-сербия-лењинова-67",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "Лењинова",
-   "name_orig": null,
-   "city": "Селенча",
-   "country": "Сербия",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Селенча (повторная запись), община Бач, Южно-Бачский округ, Воеводина.",
-   "link": "https://www.openstreetmap.org/way/77120458",
-   "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 77120458
-   },
-   "lat": 45.4056,
-   "lng": 19.30468,
    "geo_src": "osm"
   },
   {
@@ -8823,7 +8804,7 @@
    "section": "Восточная Европа",
    "name": "улица Ленинова",
    "name_orig": null,
-   "city": "",
+   "city": "Радовиш",
    "country": "Северная Македония",
    "continent": "Восточная Европа",
    "kind": "улица",
@@ -8834,8 +8815,8 @@
    "link": "https://nominatim.openstreetmap.org/ui/search.html?accept-language=ru%2Cen&extratags=1&format=html&q=Радовиш+Ленинова&viewbox=21.417079567909244%2C41.99900559680258%2C21.428076624870304%2C41.994440774030785",
    "link_kind": "osm_search",
    "osm": null,
-   "lat": 41.61712,
-   "lng": 21.71684,
+   "lat": 41.63983,
+   "lng": 22.46459,
    "geo_src": "nominatim"
   },
   {
@@ -8947,7 +8928,7 @@
    "geo_src": "osm"
   },
   {
-   "id": "world-болгария-улица-ленин-3",
+   "id": "world-болгария-улица-ленин-110",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -8959,15 +8940,15 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Крупник, Болгария.",
-   "link": "https://www.openstreetmap.org/way/257477018",
+   "desc": "Сейчас Хан Кубрат, ранее Улица Ленина в селе Крупник, Болгария.",
+   "link": "https://www.openstreetmap.org/way/182700510",
    "link_kind": "osm_object",
    "osm": {
     "type": "way",
-    "id": 257477018
+    "id": 182700510
    },
-   "lat": 41.84547,
-   "lng": 23.12365,
+   "lat": 44.09741,
+   "lng": 22.7595,
    "geo_src": "osm"
   },
   {
@@ -9058,10 +9039,10 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-крумово-градище",
+   "id": "world-болгария-улица-ленина",
    "src": "world",
    "section": "Восточная Европа",
-   "name": "",
+   "name": "Улица Ленина",
    "name_orig": null,
    "city": "Крумово Градище",
    "country": "Болгария",
@@ -9181,13 +9162,10 @@
    "desc": "Улица Ленина в селе Гара Орешец, Болгария.",
    "link": "https://www.openstreetmap.org/way/182700510",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 182700510
-   },
-   "lat": 44.09741,
-   "lng": 22.7595,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": 43.6554,
+   "lng": 22.73825,
+   "geo_src": "nominatim"
   },
   {
    "id": "world-болгария-улица-ленин-13",
@@ -9205,13 +9183,10 @@
    "desc": "Улица Ленина в селе Гъмзово, Болгария.",
    "link": "https://www.openstreetmap.org/way/182700510#map=17/44.096990/22.758940",
    "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 182700510
-   },
-   "lat": 44.09741,
-   "lng": 22.7595,
-   "geo_src": "osm"
+   "osm": null,
+   "lat": 44.09722,
+   "lng": 22.7611,
+   "geo_src": "nominatim"
   },
   {
    "id": "world-болгария-улица-ленин-14",
@@ -10713,7 +10688,7 @@
    "section": "Восточная Европа",
    "name": "улица Ленин",
    "name_orig": null,
-   "city": "Долна Златица",
+   "city": "Книжовник",
    "country": "Болгария",
    "continent": "Восточная Европа",
    "kind": "улица",
@@ -10724,117 +10699,12 @@
    "link": null,
    "link_kind": null,
    "osm": null,
-   "lat": 43.20195,
-   "lng": 26.14723,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "world-болгария-улица-ленин-74",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "улица Ленин",
-   "name_orig": null,
-   "city": "Камбурово",
-   "country": "Болгария",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Скобелево, Болгария.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
-   "lat": 43.10988,
-   "lng": 26.33714,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "world-болгария-улица-ленин-75",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "улица Ленин",
-   "name_orig": null,
-   "city": "Моравка",
-   "country": "Болгария",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Бяла река, Болгария.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
-   "lat": 43.18045,
-   "lng": 26.33404,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "world-болгария-улица-ленин-76",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "улица Ленин",
-   "name_orig": null,
-   "city": "Пиперков чифлик",
-   "country": "Болгария",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Васил Друмев, Болгария.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
-   "lat": 42.27542,
-   "lng": 22.736,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "world-болгария-улица-ленин-77",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "улица Ленин",
-   "name_orig": null,
-   "city": "Разделци",
-   "country": "Болгария",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Вехтово, Болгария.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
-   "lat": 43.19981,
-   "lng": 26.22452,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "world-болгария-улица-ленин-78",
-   "src": "world",
-   "section": "Восточная Европа",
-   "name": "улица Ленин",
-   "name_orig": null,
-   "city": "Книжовник",
-   "country": "Болгария",
-   "continent": "Восточная Европа",
-   "kind": "улица",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Улица Ленина в селе Дибич, Болгария.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
    "lat": 41.82574,
    "lng": 25.60761,
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-79",
+   "id": "world-болгария-улица-ленин-74",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10846,7 +10716,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Долина, Болгария.",
+   "desc": "Улица Ленина в селе Скобелево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10855,7 +10725,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-80",
+   "id": "world-болгария-улица-ленин-75",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10867,7 +10737,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Драгоево, Болгария.",
+   "desc": "Улица Ленина в селе Бяла река, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10876,7 +10746,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-81",
+   "id": "world-болгария-улица-ленин-76",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10888,7 +10758,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Друмево, Болгария.",
+   "desc": "Улица Ленина в селе Васил Друмев, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10897,7 +10767,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-82",
+   "id": "world-болгария-улица-ленин-77",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10909,7 +10779,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Замфирово, Болгария.",
+   "desc": "Улица Ленина в селе Вехтово, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10918,7 +10788,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-83",
+   "id": "world-болгария-улица-ленин-78",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10930,7 +10800,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Иваново, Болгария.",
+   "desc": "Улица Ленина в селе Дибич, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10939,7 +10809,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-84",
+   "id": "world-болгария-улица-ленин-79",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10951,7 +10821,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Каолиново, Болгария.",
+   "desc": "Улица Ленина в селе Долина, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10960,7 +10830,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-85",
+   "id": "world-болгария-улица-ленин-80",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10972,7 +10842,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Конево, Болгария.",
+   "desc": "Улица Ленина в селе Драгоево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -10981,7 +10851,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-86",
+   "id": "world-болгария-улица-ленин-81",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -10993,7 +10863,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Лятно, Болгария.",
+   "desc": "Улица Ленина в селе Друмево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11002,7 +10872,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-87",
+   "id": "world-болгария-улица-ленин-82",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11014,7 +10884,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Маломир, Болгария.",
+   "desc": "Улица Ленина в селе Замфирово, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11023,7 +10893,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-88",
+   "id": "world-болгария-улица-ленин-83",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11035,7 +10905,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Менгишево, Болгария.",
+   "desc": "Улица Ленина в селе Иваново, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11044,7 +10914,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-89",
+   "id": "world-болгария-улица-ленин-84",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11056,7 +10926,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Овчарово, Болгария.",
+   "desc": "Улица Ленина в селе Каолиново, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11065,7 +10935,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-90",
+   "id": "world-болгария-улица-ленин-85",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11077,7 +10947,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Омарчево, Болгария.",
+   "desc": "Улица Ленина в селе Конево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11086,7 +10956,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-91",
+   "id": "world-болгария-улица-ленин-86",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11098,7 +10968,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Пет-могили, Болгария.",
+   "desc": "Улица Ленина в селе Лятно, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11107,7 +10977,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-92",
+   "id": "world-болгария-улица-ленин-87",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11119,7 +10989,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Риш, Болгария.",
+   "desc": "Улица Ленина в селе Маломир, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11128,7 +10998,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-93",
+   "id": "world-болгария-улица-ленин-88",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11140,7 +11010,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Сини Вир, Болгария.",
+   "desc": "Улица Ленина в селе Менгишево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11149,7 +11019,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-94",
+   "id": "world-болгария-улица-ленин-89",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11161,7 +11031,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Суха река, Болгария.",
+   "desc": "Улица Ленина в селе Овчарово, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11170,7 +11040,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-95",
+   "id": "world-болгария-улица-ленин-90",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11182,7 +11052,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Тушовица, Болгария.",
+   "desc": "Улица Ленина в селе Омарчево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11191,7 +11061,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-96",
+   "id": "world-болгария-улица-ленин-91",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11203,7 +11073,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Тъкач, Болгария.",
+   "desc": "Улица Ленина в селе Пет-могили, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11212,7 +11082,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-97",
+   "id": "world-болгария-улица-ленин-92",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11224,7 +11094,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Църквица, Болгария.",
+   "desc": "Улица Ленина в селе Риш, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11233,7 +11103,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-98",
+   "id": "world-болгария-улица-ленин-93",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11245,7 +11115,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Чернооково, Болгария.",
+   "desc": "Улица Ленина в селе Сини Вир, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11254,7 +11124,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-99",
+   "id": "world-болгария-улица-ленин-94",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11266,7 +11136,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Воденичане, Болгария.",
+   "desc": "Улица Ленина в селе Суха река, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11275,7 +11145,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-100",
+   "id": "world-болгария-улица-ленин-95",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11287,7 +11157,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Иречеково, Болгария.",
+   "desc": "Улица Ленина в селе Тушовица, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11296,7 +11166,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-101",
+   "id": "world-болгария-улица-ленин-96",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11308,7 +11178,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Люлин, Болгария.",
+   "desc": "Улица Ленина в селе Тъкач, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11317,7 +11187,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-102",
+   "id": "world-болгария-улица-ленин-97",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11329,7 +11199,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Мелница, Болгария.",
+   "desc": "Улица Ленина в селе Църквица, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11338,7 +11208,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-103",
+   "id": "world-болгария-улица-ленин-98",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11350,7 +11220,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Божурово, Болгария.",
+   "desc": "Улица Ленина в селе Чернооково, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11359,7 +11229,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-104",
+   "id": "world-болгария-улица-ленин-99",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11371,7 +11241,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Дъбова Махала, Болгария.",
+   "desc": "Улица Ленина в селе Воденичане, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11380,7 +11250,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-105",
+   "id": "world-болгария-улица-ленин-100",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11392,7 +11262,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Брегово, Болгария.",
+   "desc": "Улица Ленина в селе Иречеково, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11401,7 +11271,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-106",
+   "id": "world-болгария-улица-ленин-101",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11413,7 +11283,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Балей, Болгария.",
+   "desc": "Улица Ленина в селе Люлин, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11422,7 +11292,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-107",
+   "id": "world-болгария-улица-ленин-102",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11434,7 +11304,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Киселево, Болгария.",
+   "desc": "Улица Ленина в селе Мелница, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11443,7 +11313,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-108",
+   "id": "world-болгария-улица-ленин-103",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11455,7 +11325,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Брежани, Болгария.",
+   "desc": "Улица Ленина в селе Божурово, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11464,7 +11334,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-109",
+   "id": "world-болгария-улица-ленин-104",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11476,7 +11346,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Добринище, Болгария.",
+   "desc": "Улица Ленина в селе Дъбова Махала, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11485,7 +11355,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-110",
+   "id": "world-болгария-улица-ленин-105",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11497,19 +11367,16 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Сейчас Хан Кубрат, ранее Улица Ленина в селе Крупник, Болгария.",
-   "link": "https://www.openstreetmap.org/way/182700510",
-   "link_kind": "osm_object",
-   "osm": {
-    "type": "way",
-    "id": 182700510
-   },
-   "lat": 44.09741,
-   "lng": 22.7595,
-   "geo_src": "osm"
+   "desc": "Улица Ленина в селе Брегово, Болгария.",
+   "link": null,
+   "link_kind": null,
+   "osm": null,
+   "lat": 44.15189,
+   "lng": 22.63863,
+   "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-111",
+   "id": "world-болгария-улица-ленин-106",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11521,7 +11388,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Кырналово, Болгария.",
+   "desc": "Улица Ленина в селе Балей, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11530,7 +11397,7 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-улица-ленин-112",
+   "id": "world-болгария-улица-ленин-107",
    "src": "world",
    "section": "Восточная Европа",
    "name": "улица Ленин",
@@ -11542,7 +11409,7 @@
    "status": "носит имя",
    "year_named": null,
    "year_renamed": null,
-   "desc": "Улица Ленина в селе Михнево, Болгария.",
+   "desc": "Улица Ленина в селе Киселево, Болгария.",
    "link": null,
    "link_kind": null,
    "osm": null,
@@ -11556,7 +11423,7 @@
    "section": "Восточная Европа",
    "name": "Жилищный квартал „Ленин“: В софийском районе Слатина",
    "name_orig": null,
-   "city": "Слатина",
+   "city": "Черниче",
    "country": "Болгария",
    "continent": "Восточная Европа",
    "kind": "район",
@@ -11567,16 +11434,16 @@
    "link": "https://pastvu.com/p/1858851https://pastvu.com/p/1811881",
    "link_kind": "other",
    "osm": null,
-   "lat": 43.25375,
-   "lng": 24.73013,
+   "lat": 41.85948,
+   "lng": 23.12672,
    "geo_src": "nominatim"
   },
   {
-   "id": "world-болгария-професионална-гимназия-по-ел",
+   "id": "world-болгария-профессиональная-гимназия-по",
    "src": "world",
    "section": "Восточная Европа",
-   "name": "Професионална гимназия по електротехника и електроника (ПГЕЕ)Профессиональная гимназия по электротехнике и электронике (бывший Техникум по электротехнике «Ленин»)",
-   "name_orig": null,
+   "name": "Профессиональная гимназия по электротехнике и электронике (бывший Техникум по электротехнике «Ленин»)",
+   "name_orig": "Професионална гимназия по електротехника и електроника (ПГЕЕ)",
    "city": "Пловдив",
    "country": "Болгария",
    "continent": "Восточная Европа",
@@ -11598,7 +11465,7 @@
    "section": "Восточная Европа",
    "name": "Ленинцы",
    "name_orig": "Lenin-fiúk",
-   "city": "Венгрия",
+   "city": "",
    "country": "Венгрия",
    "continent": "Восточная Европа",
    "kind": "прочее",
@@ -11609,8 +11476,8 @@
    "link": "https://ru.wikipedia.org/wiki/Ленинцы_(Венгрия)",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 47.41983,
-   "lng": 19.35367,
+   "lat": 47.18176,
+   "lng": 19.50609,
    "geo_src": "nominatim"
   },
   {
@@ -12642,7 +12509,7 @@
    "section": "Восточная Европа",
    "name": "Lenin utca",
    "name_orig": "Lenin utca",
-   "city": "Szatmárcseke",
+   "city": "Сатмарчеке",
    "country": "Венгрия",
    "continent": "Восточная Европа",
    "kind": "улица",
@@ -12708,7 +12575,7 @@
    "section": "Восточная Европа",
    "name": "Lenin utca",
    "name_orig": "Lenin utca",
-   "city": "Tiszabura",
+   "city": "Тисабура",
    "country": "Венгрия",
    "continent": "Восточная Европа",
    "kind": "улица",
@@ -14001,7 +13868,7 @@
    "section": "Восточная Европа",
    "name": "Ленинская комната в краеведческом музее г. Котки",
    "name_orig": null,
-   "city": "Котка",
+   "city": "Котка демонтировали последний памятник Ле",
    "country": "Финляндия",
    "continent": "Западная Европа",
    "kind": "памятник",
@@ -14012,9 +13879,9 @@
    "link": "https://www.kommersant.ru/doc/5594609",
    "link_kind": "other",
    "osm": null,
-   "lat": 60.46727,
-   "lng": 26.94595,
-   "geo_src": "nominatim"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "world-финляндия-парк-ленина-ленининпуисто",
@@ -14463,7 +14330,7 @@
    "section": "1КАЗАХСТАН",
    "name": "«Экспресс К» (бывш. «Ленинская смена»)",
    "name_orig": null,
-   "city": "Казахстан",
+   "city": "",
    "country": "Казахстан",
    "continent": "Бывший СССР",
    "kind": "прочее",
@@ -14474,8 +14341,8 @@
    "link": "https://ru.wikipedia.org/wiki/Экспресс_К",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 51.1689,
-   "lng": 53.00973,
+   "lat": 48.1013,
+   "lng": 66.77808,
    "geo_src": "nominatim"
   },
   {
@@ -16500,7 +16367,7 @@
    "section": "1КАЗАХСТАН",
    "name": "Ботакара (бывш. Ульяновский и др.)",
    "name_orig": null,
-   "city": "Казахстан",
+   "city": "",
    "country": "Казахстан",
    "continent": "Бывший СССР",
    "kind": "город",
@@ -16511,8 +16378,8 @@
    "link": "https://ru.wikipedia.org/wiki/Ботакара",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 51.1689,
-   "lng": 53.00973,
+   "lat": 48.1013,
+   "lng": 66.77808,
    "geo_src": "nominatim"
   },
   {
@@ -16723,27 +16590,6 @@
    "osm": null,
    "lat": 45.6322,
    "lng": 63.32092,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "ussr-казахстан-статистика-по-улицам-ленина",
-   "src": "ussr",
-   "section": "1КАЗАХСТАН",
-   "name": "Статистика по улицам Ленина",
-   "name_orig": null,
-   "city": "Казахстан",
-   "country": "Казахстан",
-   "continent": "Бывший СССР",
-   "kind": "улица",
-   "status": "переименован",
-   "year_named": null,
-   "year_renamed": 2017,
-   "desc": "На 2017 год насчитывалось 352 улицы, число сокращается из-за переименований. Точная актуальная цифра постоянно обновляется местными акиматами.",
-   "link": null,
-   "link_kind": null,
-   "osm": null,
-   "lat": 51.1689,
-   "lng": 53.00973,
    "geo_src": "nominatim"
   },
   {
@@ -17597,7 +17443,7 @@
    "continent": "Бывший СССР",
    "kind": "завод",
    "status": "носит имя",
-   "year_named": 1899,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Машиностроительное предприятие, основано в 1899. С 1970 – Завод союзного значения им. В.И. Ленина «Двигатель». В 1971 награждён орденом Октябрьской революции.",
    "link": "https://ru.ruwiki.ru/wiki/Завод_«Двигатель»_(Таллин)",
@@ -18301,54 +18147,12 @@
    "geo_src": null
   },
   {
-   "id": "ussr-азербайджан-мингечевирская-гэс-имени-ви--2",
-   "src": "ussr",
-   "section": "5АЗЕРБАЙДЖАН",
-   "name": "Мингечевирская ГЭС имени В.И. Ленина, ныне Мингечевирская ГЭС",
-   "name_orig": null,
-   "city": "Мингечевир",
-   "country": "Азербайджан",
-   "continent": "Бывший СССР",
-   "kind": "электростанция",
-   "status": "переименован",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Крупнейшая ГЭС Закавказья, введена в 1954 году, в советский период носила имя Ленина.",
-   "link": "https://www.flickr.com/photos/lenin_monuments/2247027818",
-   "link_kind": "other",
-   "osm": null,
-   "lat": 40.77259,
-   "lng": 47.02856,
-   "geo_src": "nominatim"
-  },
-  {
-   "id": "ussr-азербайджан-канал-имени-ви-ленина-статис",
-   "src": "ussr",
-   "section": "5АЗЕРБАЙДЖАН",
-   "name": "Канал имени В.И. Ленина (статистика)",
-   "name_orig": null,
-   "city": "Азербайджан",
-   "country": "Азербайджан",
-   "continent": "Бывший СССР",
-   "kind": "вода",
-   "status": "переименован",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "В советское время в Азербайджане было 111 объектов, связанных с именем Ленина.",
-   "link": "https://ru.apa.az/vnutrennyaya-politika/-158878",
-   "link_kind": "other",
-   "osm": null,
-   "lat": 41.19371,
-   "lng": 47.79008,
-   "geo_src": "nominatim"
-  },
-  {
    "id": "ussr-азербайджан-верхне-карабахский-ороситель",
    "src": "ussr",
    "section": "5АЗЕРБАЙДЖАН",
    "name": "Верхне-Карабахский оросительный канал (носил имя Ленина), ныне Карабахский оросительный канал",
    "name_orig": null,
-   "city": "Азербайджан",
+   "city": "",
    "country": "Азербайджан",
    "continent": "Бывший СССР",
    "kind": "проспект",
@@ -18359,8 +18163,8 @@
    "link": "https://ru.wikipedia.org/wiki/%D0%9A%D0%B0%D1%80%D0%B0%D0%B1%D0%B0%D1%85%D1%81%D0%BA%D0%B8%D0%B9_%D0%BE%D1%80%D0%BE%D1%81%D0%B8%D1%82%D0%B5%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%BA%D0%B0%D0%BD%D0%B0%D0%BB",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 41.19371,
-   "lng": 47.79008,
+   "lat": 40.39363,
+   "lng": 47.78725,
    "geo_src": "nominatim"
   },
   {
@@ -18831,7 +18635,7 @@
    "section": "7ГРУЗИЯ",
    "name": "Колхоз имени Ленина (в Ахалсопели)",
    "name_orig": null,
-   "city": "Ахалсопели (деревня)",
+   "city": "Ахалсопели действовал колхоз имени Ленина",
    "country": "Грузия",
    "continent": "Бывший СССР",
    "kind": "город",
@@ -18842,9 +18646,9 @@
    "link": "https://ru.wikipedia.org/wiki/Ахалсопели_(Зугдидский_муниципалитет)#История",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 42.01622,
-   "lng": 43.66991,
-   "geo_src": "nominatim"
+   "lat": null,
+   "lng": null,
+   "geo_src": null
   },
   {
    "id": "ussr-абхазия-сквер-ленина-современное-наз",
@@ -19403,7 +19207,7 @@
    "continent": "Бывший СССР",
    "kind": "завод",
    "status": "переименован",
-   "year_named": 1907,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Основано на базе лесопилки (1907). В 1958 – Минский приборостроительный завод им. Ленина. В 1971 – МПО им. Ленина. Позже реорганизовано в «БЕЛВАР».",
    "link": "https://amkodor-belvar.by/o-kompanii/",
@@ -19629,7 +19433,7 @@
    "section": "8БЕЛАРУСЬ",
    "name": "Количество улиц",
    "name_orig": null,
-   "city": "Беларусь",
+   "city": "",
    "country": "Беларусь",
    "continent": "Бывший СССР",
    "kind": "улица",
@@ -19640,8 +19444,8 @@
    "link": "https://www.belnovosti.by/obshchestvo/top-samyh-populyarnyh-nazvaniy-ulic-v-belarusi-uznayte-kto-v-liderah",
    "link_kind": "other",
    "osm": null,
-   "lat": 54.00871,
-   "lng": 27.28352,
+   "lat": 53.42506,
+   "lng": 27.69714,
    "geo_src": "nominatim"
   },
   {
@@ -20117,7 +19921,7 @@
    "continent": "Бывший СССР",
    "kind": "завод",
    "status": "переименован",
-   "year_named": 1884,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Основан в 1884 году. В 1924 году восстановлен как Госмашзавод им. Ленина. Ныне – Одесский завод радиально-сверлильных станков.",
    "link": "https://ru.wikipedia.org/wiki/Одесский_завод_радиально-сверлильных_станков",
@@ -20180,7 +19984,7 @@
    "continent": "Бывший СССР",
    "kind": "вуз",
    "status": "переименован",
-   "year_named": 1885,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Основан в 1885 году. В 1923 году присвоено имя Ленина, в 1929 преобразован в политехнический институт имени Ленина. Имя снято до 1994 года.",
    "link": "https://ru.wikipedia.org/wiki/Харьковский_политехнический_институт",
@@ -20989,27 +20793,6 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "ussr-украина-декоммунизация-общий-процесс",
-   "src": "ussr",
-   "section": "9УКРАИНА",
-   "name": "Декоммунизация (общий процесс)",
-   "name_orig": null,
-   "city": "Украина",
-   "country": "Украина",
-   "continent": "Бывший СССР",
-   "kind": "город",
-   "status": "переименован",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "В результате декоммунизационного законодательства переименовано около тысячи населённых пунктов, 25 административных районов и 27 районов в городах.",
-   "link": "https://life.ru/p/1742808",
-   "link_kind": "other",
-   "osm": null,
-   "lat": 50.44856,
-   "lng": 30.52716,
-   "geo_src": "nominatim"
-  },
-  {
    "id": "ussr-приднестровс-улица-ленина",
    "src": "ussr",
    "section": "10МОЛДАВИЯ",
@@ -21524,7 +21307,7 @@
    "continent": "Бывший СССР",
    "kind": "вуз",
    "status": "носит имя",
-   "year_named": 1914,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Один из старейших театров, создан в 1914 году. 31 мая 1937 года награждён орденом Ленина за выдающиеся успехи в развитии театрального искусства.",
    "link": "https://ru.wikipedia.org/wiki/%D0%A3%D0%B7%D0%B1%D0%B5%D0%BA%D1%81%D0%BA%D0%B8%D0%B9_%D0%BD%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%B0%D0%BB%D1%8C%D0%BD%D1%8B%D0%B9_%D0%B0%D0%BA%D0%B0%D0%B4%D0%B5%D0%BC%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D0%B4%D1%80%D0%B0%D0%BC%D0%B0%D1%82%D0%B8%D1%87%D0%B5%D1%81%D0%BA%D0%B8%D0%B9_%D1%82%D0%B5%D0%B0%D1%82%D1%80",
@@ -21871,27 +21654,6 @@
    "geo_src": "wiki"
   },
   {
-   "id": "ussr-таджикистан-проспект-ленина-проспект-руд-2",
-   "src": "ussr",
-   "section": "12ТАДЖИКИСТАН",
-   "name": "Проспект Ленина → проспект Рудаки (с 1992)",
-   "name_orig": null,
-   "city": "Душанбе",
-   "country": "Таджикистан",
-   "continent": "Бывший СССР",
-   "kind": "проспект",
-   "status": "переименован",
-   "year_named": null,
-   "year_renamed": 1992,
-   "desc": "Главная улица города. До 1992 года основная часть носила имя Ленина, затем переименована в честь поэта Рудаки.",
-   "link": "https://ru.wikipedia.org/wiki/%D0%9F%D1%80%D0%BE%D1%81%D0%BF%D0%B5%D0%BA%D1%82_%D0%A0%D1%83%D0%B4%D0%B0%D0%BA%D0%B8",
-   "link_kind": "wikipedia",
-   "osm": null,
-   "lat": 38.5767,
-   "lng": 68.78543,
-   "geo_src": "nominatim"
-  },
-  {
    "id": "ussr-таджикистан-ленинский-район-19612003-рай",
    "src": "ussr",
    "section": "12ТАДЖИКИСТАН",
@@ -22091,7 +21853,7 @@
    "continent": "Бывший СССР",
    "kind": "город",
    "status": "носит имя",
-   "year_named": 1907,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Село, основано в 1907 году. В 1919 году создана сельскохозяйственная коммуна «Ветка». Название сохранилось.",
    "link": null,
@@ -22574,7 +22336,7 @@
    "continent": "Бывший СССР",
    "kind": "парк",
    "status": "переименован",
-   "year_named": 1887,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Заложен в 1887 году, сначала Офицерский парк, затем городской сад. При СССР носил имя Ленина. В независимом Туркменистане переименован в «Ашхабад».",
    "link": "https://ru.wikipedia.org/wiki/%D0%90%D1%88%D1%85%D0%B0%D0%B1%D0%B0%D0%B4_(%D0%BF%D0%B0%D1%80%D0%BA)",
@@ -22658,7 +22420,7 @@
    "continent": "Бывший СССР",
    "kind": "город",
    "status": "переименован",
-   "year_named": 1891,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Посёлок, основан в 1891 году русскими переселенцами. После революции переименован в Путь Ленинизма.",
    "link": "https://ru.wikipedia.org/wiki/%D0%A1%D0%BA%D0%BE%D0%B1%D0%B5%D0%BB%D0%B5%D0%B2%D1%81%D0%BA%D0%B8%D0%B9_(%D0%A2%D1%83%D1%80%D0%BA%D0%BC%D0%B5%D0%BD%D0%B8%D1%81%D1%82%D0%B0%D0%BD)",
@@ -24506,7 +24268,7 @@
    "continent": "Бывший СССР",
    "kind": "завод",
    "status": "переименован",
-   "year_named": 1893,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Предприятие, основанное в 1893 году Филиппом фон Вогау. В советский период называлось Московской чаеразвесочной фабрикой им. Ленина.",
    "link": "https://ru.wikipedia.org/wiki/Московская_чайная_фабрика",
@@ -24926,7 +24688,7 @@
    "continent": "Бывший СССР",
    "kind": "космос",
    "status": "носит имя",
-   "year_named": 1916,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Открыт 2 апреля 1916 года Сергеем Белявским. Название присвоено в 1924 году в честь Владимира Ленина.",
    "link": "https://ru.wikipedia.org/wiki/(852)_Владилена",
@@ -25283,7 +25045,7 @@
    "continent": "Бывший СССР",
    "kind": "площадь",
    "status": "переименован",
-   "year_named": 1910,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Площадь в Калининском районе, вдоль зданий Финляндского вокзала. С 1910-х до 1924 года называлась площадью Финляндского вокзала, затем переименована в площадь Ленина.",
    "link": "https://ru.wikipedia.org/wiki/Площадь_Ленина_(Санкт-Петербург)",
@@ -26428,27 +26190,6 @@
    "geo_src": "wiki"
   },
   {
-   "id": "ussr-россия-мариинская-водная-система-18-2",
-   "src": "ussr",
-   "section": "РОССИЯ",
-   "name": "Мариинская водная система (1810–1963) → Волго-Балтийский водный путь имени В. И. Ленина (1964–1992) → Волго-Балтийский водный путь",
-   "name_orig": null,
-   "city": "Северо-запад России",
-   "country": "Россия",
-   "continent": "Бывший СССР",
-   "kind": "прочее",
-   "status": "переименован",
-   "year_named": 1964,
-   "year_renamed": 1992,
-   "desc": "Система каналов, рек и озёр, соединяющая бассейны Каспийского и Балтийского морей. В 1964–1992 годах носила имя Ленина.",
-   "link": "https://ru.ruwiki.ru/wiki/Волго-Балтийский_водный_путь",
-   "link_kind": "wikipedia",
-   "osm": null,
-   "lat": 59.917,
-   "lng": 30.26,
-   "geo_src": "wiki"
-  },
-  {
    "id": "ussr-россия-клуб-имени-товарища-ленина-о",
    "src": "ussr",
    "section": "РОССИЯ",
@@ -26743,27 +26484,6 @@
    "geo_src": "nominatim"
   },
   {
-   "id": "ussr-россия-лениногорск-2",
-   "src": "ussr",
-   "section": "РОССИЯ",
-   "name": "Лениногорск",
-   "name_orig": null,
-   "city": "Республика Татарстан",
-   "country": "Россия",
-   "continent": "Бывший СССР",
-   "kind": "город",
-   "status": "носит имя",
-   "year_named": null,
-   "year_renamed": null,
-   "desc": "Город с 1955 года, административный центр Лениногорского района.",
-   "link": "https://ru.wikipedia.org/wiki/Лениногорск",
-   "link_kind": "wikipedia",
-   "osm": null,
-   "lat": 54.59887,
-   "lng": 52.44227,
-   "geo_src": "wiki"
-  },
-  {
    "id": "ussr-россия-319-й-отдельный-вертолётный-",
    "src": "ussr",
    "section": "РОССИЯ",
@@ -26795,7 +26515,7 @@
    "continent": "Бывший СССР",
    "kind": "вуз",
    "status": "носит имя",
-   "year_named": 1909,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Основан 1 (14) октября 1909 года. С 1947 года носит имя В. И. Ленина.",
    "link": "https://ru.wikipedia.org/wiki/Военный_институт_физической_культуры",
@@ -26984,7 +26704,7 @@
    "continent": "Бывший СССР",
    "kind": "завод",
    "status": "переименован",
-   "year_named": 1874,
+   "year_named": null,
    "year_renamed": 1960,
    "desc": "Одно из старейших предприятий железнодорожного транспорта России, основано 3 мая 1874 года. В конце 1960-х годов переименован в честь В. И. Ленина. В апреле 1974 года награждён орденом Октябрьской Революции.",
    "link": "https://ru.wikipedia.org/wiki/Ростовский_электровозоремонтный_завод",
@@ -27168,7 +26888,7 @@
    "section": "КИТАЙ ДОБАВИТЬ",
    "name": "Гран-при Яна Мюрдаля – Ленинская премия",
    "name_orig": "Jan Myrdals stora pris – Leninpriset",
-   "city": "Швеция",
+   "city": "",
    "country": "Швеция",
    "continent": "Западная Европа",
    "kind": "награда",
@@ -27179,8 +26899,8 @@
    "link": "https://ru.wikipedia.org/wiki/Гран-при_Яна_Мюрдаля_—_Ленинская_премия",
    "link_kind": "wikipedia",
    "osm": null,
-   "lat": 55.58844,
-   "lng": 12.94595,
+   "lat": 59.67497,
+   "lng": 14.52086,
    "geo_src": "nominatim"
   },
   {
@@ -27194,7 +26914,7 @@
    "continent": "Бывший СССР",
    "kind": "судно",
    "status": "утрачен",
-   "year_named": 1909,
+   "year_named": null,
    "year_renamed": null,
    "desc": "Грузо-пассажирский пароход типа «Пенза», построен в Данциге в 1909 году по заказу «Добровольного флота». Первоначальное название — «Симбирскъ». Погиб 27 июля 1941 года южнее мыса Сарыч. Число погибших — от 650 до 2500 человек.",
    "link": "https://ru.wikipedia.org/wiki/Ленин_(пароход)",
@@ -27228,11 +26948,11 @@
  ],
  "geo": {
   "stats": {
-   "osm": 231,
-   "wiki": 122,
-   "nominatim": 747,
-   "none": 69,
-   "nominatim-alt": 47
+   "osm": 222,
+   "wiki": 120,
+   "nominatim": 740,
+   "none": 73,
+   "nominatim-alt": 48
   },
   "note": "координаты запечены офлайн, см. tools/geocode.py; каждая точка проверена на попадание в свою страну (Natural Earth 110m, допуск 1.2°)"
  }

@@ -130,6 +130,12 @@ def split_name(raw):
     if len(parts) == 2 and parts[0].strip() and re.search(r'[јљњћђџ]', parts[0]):
         return _tidy(parts[1]), _tidy(parts[0])
 
+    # «(ПГЕЕ)Профессиональная гимназия…», «…Steelworks)Металлургический комбинат…» —
+    # закрывающая скобка вплотную к русскому названию
+    m = re.match(r'^(.{10,}\))([А-ЯЁ][а-яё].{6,})$', raw, re.S)
+    if m:
+        return _tidy(m.group(2)), _tidy(m.group(1))
+
     # «Сейчас Хан Кубратулица Ленин» — слева нынешнее название, справа ленинское;
     # оба по-русски, разделителя нет
     m = re.match(r'^((?:Сейчас|Ныне|Сега)\b.*?)((?:улица|площад|булевард|бульвар|проспект)'
@@ -305,6 +311,31 @@ def link_info(url):
     return 'other', None
 
 
+# В колонке «Город» источник местами повторяет соседнюю строку, а настоящее место
+# названо в описании: «улица Ленин | Долна Златица» с текстом «Улица Ленина в селе
+# Книжовник». Из-за этого возникают ложные дубли. Доверяем описанию.
+PLACE_IN_DESC = re.compile(
+    r'\bв\s+(?:селе|городе|коммуне|посёлке|поселке|деревне|общине|местечке)\s+'
+    r'([А-ЯЁA-ZÀ-ÿ][^,.;:()]{1,40})')
+
+
+def refine_city(city, desc):
+    m = PLACE_IN_DESC.search(desc or '')
+    if not m:
+        return city
+    place = m.group(1).strip()
+    if not place or place.lower() in (city or '').lower():
+        return city
+    # колонку оставляем как уточнение (район, область), место ставим первым
+    tail = re.sub(r'^[^,]+,\s*', '', city or '') if ',' in (city or '') else ''
+    return '%s, %s' % (place, tail) if tail else place
+
+
+# Строки-агрегаты в исходниках выглядят как объекты, но объектами не являются:
+# «Статистика по улицам Ленина», «Декоммунизация (общий процесс)».
+SUMMARY_ROW = re.compile(r'статистик|декоммунизац|^всего\b', re.I)
+
+
 def slug(s, n=40):
     s = re.sub(r'[^\w\s-]', '', s.lower(), flags=re.U)
     s = re.sub(r'[\s_-]+', '-', s).strip('-')
@@ -338,7 +369,15 @@ def build():
                 continue
 
             name, name_orig = split_name(raw_name)
+            city = refine_city(city, desc)
+            if city and country and city.strip().lower() == country.strip().lower():
+                city = ''       # «Ленинбунд · Германия · Германия» — место не указано
+            if not name and desc:
+                # имя потерялось при разборе — восстанавливаем начало описания
+                name = re.split(r'\s+в\s+(?:селе|городе|коммуне)\b', desc)[0].strip(' .,')
             y_named, y_renamed = years(raw_name, desc)
+            if y_named and y_named < 1917:
+                y_named = None
             lk, _ = link_info(link)
             m = OSM_RE.search(link)
 
@@ -372,6 +411,62 @@ def build():
                 'geo_src': None,
             })
 
+    # агрегаты — отдельно от объектов
+    summaries = [r for r in records if SUMMARY_ROW.search(r['name'])]
+    records = [r for r in records if not SUMMARY_ROW.search(r['name'])]
+
+    # схлопываем настоящие дубли: совпали название, место, страна и описание
+    seen_rec, deduped, dropped = {}, [], 0
+    for r in records:
+        k = (re.sub(r'\W+', '', (r['name'] or '').lower()),
+             re.sub(r'\W+', '', (r['city'] or '').lower()),
+             re.sub(r'\W+', '', (r['country'] or '').lower()),
+             re.sub(r'\W+', '', (r['desc'] or '').lower()))
+        if k in seen_rec:
+            dropped += 1
+            continue
+        seen_rec[k] = True
+        deduped.append(r)
+    records = deduped
+
+    # один объект, записанный дважды с разными формулировками: источник сам метит
+    # такие как «(повторная запись)», а иногда вторая строка добавляет нынешнее имя
+    by_place = {}
+    order = []
+    merged = 0
+    for r in records:
+        k = (re.sub(r'\W+', '', (r['name'] or '').lower()),
+             re.sub(r'\W+', '', (r['city'] or '').lower()),
+             re.sub(r'\W+', '', (r['country'] or '').lower()))
+        if k in by_place:
+            merged += 1
+            keep = by_place[k]
+            # оставляем более содержательную запись
+            if len(r['desc'] or '') > len(keep['desc'] or ''):
+                by_place[k] = r
+                order[order.index(keep)] = r
+        else:
+            by_place[k] = r
+            order.append(r)
+    records = order
+
+    # один и тот же OSM-объект, прилепленный к разным местам, — ошибка источника:
+    # привязку оставляем первой записи, остальные пойдут геокодироваться по городу
+    osm_seen = set()
+    unlinked = 0
+    for r in records:
+        if not r['osm']:
+            continue
+        k = '%s/%s' % (r['osm']['type'], r['osm']['id'])
+        if k in osm_seen:
+            r['osm'] = None
+            unlinked += 1
+        else:
+            osm_seen.add(k)
+
+    print('дублей схлопнуто: %d (точных) + %d (по месту), агрегатов вынесено: %d, '
+          'повторных OSM-ссылок снято: %d' % (dropped, merged, len(summaries), unlinked))
+
     data = {
         'mtk': 39,
         'title': 'Имени Ленина — корпус',
@@ -388,6 +483,8 @@ def build():
             'source': 'Мы живём на улице Ленина — Борис Гиршберг / Strelka Mag',
         },
         'ru_streets_sample': ru_streets,
+        'summaries': [{'name': r['name'], 'country': r['country'], 'text': r['desc'],
+                       'link': r['link']} for r in summaries],
         'records': records,
     }
     with open(OUT, 'w', encoding='utf-8') as f:
