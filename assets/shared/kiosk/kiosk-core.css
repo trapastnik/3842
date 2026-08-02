@@ -192,6 +192,72 @@
 /* Спрятанные части хрома (состав из настроек МТК) */
 .kiosk-nav .is-hidden { display: none; }
 
+/* --------------------------------------------------------------- standby
+ * Аттрактор простоя. Общий (ядро рисует дуги на canvas) либо «голый»
+ * .is-bare — когда сцена ведёт собственную петлю через standby(). */
+
+.kiosk-standby {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.82);
+  opacity: 0;
+  transition: opacity 500ms ease;
+  pointer-events: none;              /* касание идёт сцене, выход ловит window */
+}
+.kiosk-standby.is-on { opacity: 1; }
+.kiosk-standby[hidden] { display: none; }
+
+.kiosk-standby.is-bare { background: rgba(0, 0, 0, 0.28); }
+.kiosk-standby.is-bare .kiosk-standby__canvas { display: none; }
+
+.kiosk-standby__canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.kiosk-standby__call {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 28px;
+  text-align: center;
+  transform: translateY(-8vh);       /* совпасть с центром дуг аттрактора */
+}
+
+/* В простое навигация не нужна — экран должен читаться как заставка. */
+.kiosk-app.is-standby .kiosk-nav {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 500ms ease;
+}
+.kiosk-standby__icon {
+  width: 160px;
+  height: 160px;
+  color: var(--brass, #D2B773);
+}
+.kiosk-standby__icon svg {
+  width: 100%;
+  height: 100%;
+  animation: kioskStandbyPulse 3.2s ease-in-out infinite;
+}
+.kiosk-standby__label {
+  font-family: "Nolde", "21 Cent", Georgia, serif;
+  font-size: clamp(36px, 3.4vw, 84px);
+  letter-spacing: 0.04em;
+  color: var(--paper, #F7F9EF);
+}
+
+@keyframes kioskStandbyPulse {
+  0%, 100% { transform: scale(1);    opacity: 0.85; }
+  50%      { transform: scale(0.92); opacity: 1; }
+}
+
 /* ---------------------------------------------------------------- сплэш */
 
 .kiosk-splash {
@@ -249,6 +315,8 @@
 @media (prefers-reduced-motion: reduce) {
   .kiosk-layer,
   .kiosk-splash,
+  .kiosk-standby,
   .kiosk-nav__arrow,
   .kiosk-nav__dot i { transition-duration: 1ms !important; }
+  .kiosk-standby__icon svg { animation: none; }
 }

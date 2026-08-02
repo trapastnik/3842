@@ -49,8 +49,21 @@
       angle: 105                 // градусы, канон бренда
     },
     a11y: { enabled: false },
-    service: { gear: "always" }  // always | tripleTap | hidden (решится позже)
+    service: { gear: "always" }, // always | tripleTap | hidden (решится позже)
+    watchdog: {
+      stallSec: 30,              // главный поток завис дольше → это авария
+      sceneTimeoutSec: 20,       // сцена с watchdog:true молчит дольше → авария
+      restart: true,             // перезапускать страницу при аварии
+      journalLimit: 200          // сколько записей журнала хранить
+    }
   };
+
+  var IDLE = { ACTIVE: "active", STANDBY: "standby" };
+
+  /* События, считающиеся присутствием посетителя. mousemove намеренно нет:
+   * на киоске мыши не бывает, а дрожь курсора при отладке держала бы
+   * машину вечно в ACTIVE. */
+  var ACTIVITY_EVENTS = ["pointerdown", "touchstart", "keydown", "wheel"];
 
   /* ------------------------------------------------------------- утилиты */
 
@@ -129,13 +142,18 @@
     }
   }
 
-  /* Журнал ошибок появится в следующем коммите; пока — консоль + хук. */
   function reportSceneError(rec, method, err) {
     var id = rec && rec.id;
-    if (typeof global.__kioskOnError === "function") {
-      try { global.__kioskOnError({ scene: id, method: method, error: err }); } catch (e) {}
-    }
     console.error("[kiosk] сцена «" + id + "»: ошибка в " + method + "()", err);
+    if (rec && rec.app) {
+      rec.app.log("error", "сцена «" + id + "»: " + method + "() — " + errText(err), { scene: id });
+    }
+  }
+
+  function errText(err) {
+    if (!err) return "неизвестная ошибка";
+    if (err.message) return err.message;
+    return String(err);
   }
 
   /* ------------------------------------------------- преролл: нормализация
@@ -221,6 +239,21 @@
     this._queue = Promise.resolve();      // сериализация переключений
     this._started = false;
     this._els = {};
+
+    /* idle-машина */
+    this.idleState = IDLE.ACTIVE;
+    this._lastActivity = Date.now();
+    this._didReset = false;               // RESET за текущий простой уже отработал
+    this._idleSuspended = 0;              // >0 — таймеры простоя заморожены (сервис-панель)
+    this._ticker = null;
+    this._standbyTimer = null;
+    this._standbyStop = null;             // стоп-функция собственной петли сцены
+    this._restartArmedFor = null;         // дата, на которую ночной рестарт уже отработал
+    this._restartPending = false;
+
+    /* watchdog */
+    this._lastTick = Date.now();
+    this._lastBeat = Date.now();
   }
 
   KioskApp.prototype = Object.create(Emitter.prototype);
@@ -235,6 +268,7 @@
 
     var rec = {
       id: def.id,
+      app: this,
       title: normLabel(def.title) || normLabel(def.id),
       scene: def,
       preload: normPreload(def.preload),
@@ -268,13 +302,16 @@
   /* ------------------------------------------------------------- контекст */
 
   KioskApp.prototype.context = function () {
+    var self = this;
     return {
       app: this,
       lang: this.lang,
       a11y: this.a11y,
       settings: this.config,
       data: this.data,
-      images: this.images
+      images: this.images,
+      /* Сцена с watchdog:true обязана звать это из своей петли. */
+      beat: function () { self._lastBeat = Date.now(); }
     };
   };
 
@@ -284,6 +321,9 @@
     var self = this;
     if (this._started) return Promise.resolve(this);
     this._started = true;
+
+    /* Журнал поднимаем первым — чтобы поймать и ошибки самого старта. */
+    this._initJournal();
 
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
@@ -301,11 +341,14 @@
       })
       .then(function () {
         self._hideSplash();
+        self._startIdle();
+        self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
         return self;
       })
       .catch(function (err) {
         self._splashError(err);
+        self.log("fatal", "старт не удался: " + errText(err));
         console.error("[kiosk] старт не удался", err);
         throw err;
       });
@@ -696,16 +739,377 @@
     rec.mounted = false;
   };
 
-  /* ------------------------------------------- заготовки след. коммитов */
-
-  /* Сброс всех смонтированных сцен (idle-машина вызовет это в RESET). */
+  /* Сброс всех смонтированных сцен (idle-машина вызывает это в RESET). */
   KioskApp.prototype.resetScenes = function () {
-    var self = this;
     this._records.forEach(function (rec) {
       if (rec.mounted) safeCall(rec, "reset");
     });
     this.emit("scenes-reset", { app: this });
-    return self;
+    return this;
+  };
+
+  /* Возобновить активную сцену (после standby, где все были на паузе). */
+  KioskApp.prototype._resumeActive = function () {
+    if (this._active) safeCall(this._active, "resume");
+  };
+
+  /* ==================================================== idle-машина =====
+   *
+   *   ACTIVE --T_reset (90 c)--> сцены.reset() + язык→дефолт (состояние ACTIVE)
+   *   ACTIVE --T_standby (180 c)--> STANDBY (аттрактор, FPS ≤ 10)
+   *   STANDBY --касание--> ACTIVE (дефолтная сцена, дефолтное состояние)
+   *
+   * Один тикер на приложение обслуживает и простой, и watchdog, и ночной
+   * рестарт — лишних таймеров ядро не заводит. */
+
+  KioskApp.prototype._startIdle = function () {
+    var self = this;
+    if (this._ticker) return;
+
+    this._onActivity = function () { self.poke(); };
+    ACTIVITY_EVENTS.forEach(function (ev) {
+      window.addEventListener(ev, self._onActivity, { passive: true, capture: true });
+    });
+
+    this._lastActivity = Date.now();
+    this._lastTick = Date.now();
+    this._lastBeat = Date.now();
+    this._ticker = setInterval(function () { self._tick(); }, 1000);
+  };
+
+  /* Отметка активности. Публичная: сцена может позвать её, если ловит
+   * взаимодействие, не всплывающее до window (например, внутри canvas
+   * с stopPropagation). */
+  KioskApp.prototype.poke = function () {
+    this._lastActivity = Date.now();
+    this._didReset = false;
+    if (this.idleState === IDLE.STANDBY) this._exitStandby();
+  };
+
+  /* Заморозить простой (сервис-панель открыта — киоск не должен уснуть
+   * под руками оператора). Счётчик, а не флаг: вложенные вызовы безопасны. */
+  KioskApp.prototype.suspendIdle = function (on) {
+    this._idleSuspended = Math.max(0, this._idleSuspended + (on ? 1 : -1));
+    if (!on) this.poke();
+    return this._idleSuspended;
+  };
+
+  KioskApp.prototype._tick = function () {
+    var now = Date.now();
+    var sinceTick = now - this._lastTick;
+    this._lastTick = now;
+
+    /* Тикер должен приходить раз в секунду. Опоздал сильно → главный поток
+     * стоял (тяжёлая сцена, утечка, зависший WebGL). */
+    var wd = this.config.watchdog || {};
+    var stallMs = (wd.stallSec || 30) * 1000;
+    if (sinceTick > stallMs) {
+      this.log("fatal", "главный поток стоял " + Math.round(sinceTick / 1000) + " с");
+      if (wd.restart !== false) return this.restart("зависание главного потока");
+    }
+
+    /* Сцена с watchdog:true обязана звать ctx.beat(). Молчит — авария. */
+    var rec = this._active;
+    if (rec && rec.scene.watchdog && this.idleState === IDLE.ACTIVE) {
+      var quiet = now - this._lastBeat;
+      if (quiet > (wd.sceneTimeoutSec || 20) * 1000) {
+        this.log("fatal", "сцена «" + rec.id + "» молчит " + Math.round(quiet / 1000) + " с");
+        if (wd.restart !== false) return this.restart("сцена не отвечает");
+      }
+    }
+
+    this._checkNightRestart(now);
+
+    if (this._idleSuspended) return;
+
+    var idleSec = (now - this._lastActivity) / 1000;
+    var t = this.config.timings || {};
+
+    if (!this._didReset && idleSec >= (t.reset || 90) && this.idleState === IDLE.ACTIVE) {
+      this._didReset = true;
+      this._doIdleReset();
+    }
+    if (this.idleState === IDLE.ACTIVE && idleSec >= (t.standby || 180)) {
+      this._enterStandby();
+    }
+  };
+
+  /* RESET: посетитель ушёл — снять его следы, но экран пока живой. */
+  KioskApp.prototype._doIdleReset = function () {
+    this.resetScenes();
+    var lang = (this.config.defaultLang) || "ru";
+    if (this.lang !== lang) this.setLang(lang);
+    if (this.a11y) this.setA11y(false);
+    this.emit("idle-reset", { app: this });
+    this.log("info", "idle-сброс");
+  };
+
+  /* ---------------------------------------------------------- STANDBY */
+
+  KioskApp.prototype._enterStandby = function () {
+    if (this.idleState === IDLE.STANDBY) return;
+    this.idleState = IDLE.STANDBY;
+
+    var rec = this._active;
+    var own = rec ? safeCall(rec, "standby") : null;
+
+    if (own) {
+      /* Сцена ведёт собственный аттрактор — она же его и остановит. */
+      this._standbyStop = typeof own === "function" ? own
+        : (typeof own.stop === "function" ? own.stop.bind(own) : null);
+    } else {
+      /* Общий аттрактор ядра: все сцены на паузу, GPU отдыхает. */
+      this._standbyStop = null;
+      this._records.forEach(function (r) { if (r.mounted) safeCall(r, "pause"); });
+    }
+
+    this._showStandby(!own);
+    this.emit("standby", { app: this, own: !!own });
+    this.log("info", "standby");
+  };
+
+  KioskApp.prototype._exitStandby = function () {
+    if (this.idleState !== IDLE.STANDBY) return;
+    this.idleState = IDLE.ACTIVE;
+    this._didReset = false;
+    this._lastActivity = Date.now();
+    this._lastBeat = Date.now();
+
+    if (this._standbyStop) {
+      try { this._standbyStop(); } catch (err) { this.log("error", "остановка аттрактора сцены: " + errText(err)); }
+      this._standbyStop = null;
+    }
+    this._hideStandby();
+
+    /* Возврат — на дефолтную сцену в дефолтном состоянии. */
+    this._doIdleReset();
+    var def = this._pickDefaultSceneId();
+    if (def && def !== this.activeSceneId) this.showScene(def);
+    else this._resumeActive();
+
+    /* Отложенный ночной рестарт снимаем: у экрана снова кто-то есть,
+     * перезагрузимся в следующее ночное окно. */
+    this._restartPending = false;
+    this.emit("standby-exit", { app: this });
+  };
+
+  KioskApp.prototype._showStandby = function (drawAttractor) {
+    var self = this;
+    if (!this._els.standby) this._buildStandby();
+    var el = this._els.standby;
+    el.classList.add("is-on");
+    el.hidden = false;
+    this._els.root.classList.add("is-standby");
+
+    if (!drawAttractor) {
+      /* Аттрактор рисует сама сцена — ядро оставляет только призыв. */
+      el.classList.add("is-bare");
+      return;
+    }
+    el.classList.remove("is-bare");
+
+    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var canvas = this._els.standbyCanvas;
+    var ctx = canvas.getContext("2d");
+    var t0 = Date.now();
+
+    /* setInterval, а не rAF: rAF будил бы композитор 60 раз в секунду,
+     * а канон standby — не выше 10 fps (GPU и выгорание панели). */
+    this._standbyTimer = setInterval(function () {
+      var w = canvas.clientWidth, h = canvas.clientHeight;
+      if (canvas.width !== w || canvas.height !== h) {
+        canvas.width = w; canvas.height = h;
+      }
+      self._drawAttractor(ctx, (Date.now() - t0) / 1000, w, h);
+    }, Math.round(1000 / fps));
+  };
+
+  KioskApp.prototype._hideStandby = function () {
+    if (this._standbyTimer) { clearInterval(this._standbyTimer); this._standbyTimer = null; }
+    if (this._els.root) this._els.root.classList.remove("is-standby");
+    var el = this._els.standby;
+    if (!el) return;
+    el.classList.remove("is-on");
+    setTimeout(function () { if (!el.classList.contains("is-on")) el.hidden = true; }, 500);
+  };
+
+  KioskApp.prototype._buildStandby = function () {
+    var doc = document;
+    var el = doc.createElement("div");
+    el.className = "kiosk-standby";
+    el.hidden = true;
+    el.innerHTML =
+      '<canvas class="kiosk-standby__canvas" aria-hidden="true"></canvas>' +
+      '<div class="kiosk-standby__call">' +
+      '<div class="kiosk-standby__icon" aria-hidden="true">' +
+      '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" ' +
+      'stroke-width="4" stroke-linecap="round"><circle cx="48" cy="40" r="10"/>' +
+      '<path d="M26 76 C26 60 36 52 48 52 C60 52 70 60 70 76"/>' +
+      '<circle cx="48" cy="40" r="24" opacity=".45"/></svg>' +
+      "</div>" +
+      '<div class="kiosk-standby__label"></div>' +
+      "</div>";
+    this._els.root.appendChild(el);
+    this._els.standby = el;
+    this._els.standbyCanvas = el.querySelector(".kiosk-standby__canvas");
+    this._els.standbyLabel = el.querySelector(".kiosk-standby__label");
+    this._syncStandbyLabel();
+  };
+
+  KioskApp.prototype._syncStandbyLabel = function () {
+    if (!this._els.standbyLabel) return;
+    this._els.standbyLabel.textContent = this.t("standby.call");
+  };
+
+  /* Общий аттрактор: медленные концентрические дуги в бренд-цветах.
+   * Намеренно скупой — материал МТК даёт сцена через свой standby(). */
+  KioskApp.prototype._drawAttractor = function (ctx, t, w, h) {
+    ctx.clearRect(0, 0, w, h);
+    var cx = w / 2, cy = h * 0.42;
+    var base = Math.min(w, h) * 0.08;
+    for (var i = 0; i < 7; i++) {
+      var phase = (t * 0.05 + i / 7) % 1;
+      var r = base + phase * Math.min(w, h) * 0.5;
+      var a = 0.3 * (1 - phase);
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, -0.9, 0.9 + Math.sin(t * 0.15) * 0.3);
+      ctx.strokeStyle = i % 3 === 0 ? "rgba(160,33,40," + a + ")" : "rgba(210,183,115," + a + ")";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, Math.PI - 0.9, Math.PI + 0.9 - Math.sin(t * 0.15) * 0.3);
+      ctx.stroke();
+    }
+  };
+
+  /* ------------------------------------------------ ночной авторестарт */
+
+  KioskApp.prototype._checkNightRestart = function (now) {
+    var at = (this.config.timings || {}).restartAt;
+    if (!at) return;
+    var m = /^(\d{1,2}):(\d{2})$/.exec(String(at));
+    if (!m) return;
+
+    var d = new Date(now);
+    var stamp = d.getFullYear() + "-" + (d.getMonth() + 1) + "-" + d.getDate();
+    var due = Number(m[1]) * 60 + Number(m[2]);
+    var cur = d.getHours() * 60 + d.getMinutes();
+
+    /* Окно в 5 минут: тикер мог пропустить точную минуту (сон/лаг). */
+    var inWindow = cur >= due && cur < due + 5;
+    if (!inWindow) {
+      if (this._restartArmedFor === stamp && cur < due) this._restartArmedFor = null;
+      return;
+    }
+    if (this._restartArmedFor === stamp) return;
+
+    /* Если у экрана кто-то стоит — не выдёргиваем стул: ждём standby. */
+    if (this.idleState !== IDLE.STANDBY) {
+      if (!this._restartPending) {
+        this._restartPending = true;
+        this.log("info", "ночной рестарт отложен: киоск занят");
+      }
+      return;
+    }
+    this._restartArmedFor = stamp;
+    this._restartPending = false;
+    this.restart("ночной рестарт " + at);
+  };
+
+  KioskApp.prototype.restart = function (reason) {
+    this.log("warn", "перезапуск: " + (reason || "по требованию"));
+    this.emit("restart", { app: this, reason: reason });
+    try { location.reload(); } catch (err) { console.error("[kiosk] reload не удался", err); }
+  };
+
+  /* ================================================ журнал ошибок ===== */
+
+  KioskApp.prototype.journalKey = function () {
+    return this.appId + "-kiosk-log";
+  };
+
+  KioskApp.prototype._initJournal = function () {
+    var self = this;
+    if (this._journalReady) return;
+    this._journalReady = true;
+
+    window.addEventListener("error", function (e) {
+      var where = e.filename ? " (" + e.filename + ":" + e.lineno + ")" : "";
+      self.log("error", "JS: " + (e.message || "ошибка") + where);
+    });
+    window.addEventListener("unhandledrejection", function (e) {
+      self.log("error", "promise: " + errText(e.reason));
+    });
+  };
+
+  /* level: info | warn | error | fatal */
+  KioskApp.prototype.log = function (level, message, extra) {
+    var entry = {
+      at: new Date().toISOString(),
+      level: level || "info",
+      msg: String(message),
+      scene: (extra && extra.scene) || this.activeSceneId
+    };
+    this.emit("log", entry);
+    try {
+      var limit = (this.config.watchdog || {}).journalLimit || 200;
+      var list = this.getLog();
+      list.push(entry);
+      if (list.length > limit) list = list.slice(list.length - limit);
+      localStorage.setItem(this.journalKey(), JSON.stringify(list));
+    } catch (err) {
+      /* Приватный режим / переполненное хранилище — журнал не критичен. */
+    }
+    return entry;
+  };
+
+  KioskApp.prototype.getLog = function () {
+    try {
+      var raw = localStorage.getItem(this.journalKey());
+      var list = raw ? JSON.parse(raw) : [];
+      return Array.isArray(list) ? list : [];
+    } catch (err) {
+      return [];
+    }
+  };
+
+  KioskApp.prototype.clearLog = function () {
+    try { localStorage.removeItem(this.journalKey()); } catch (err) {}
+    return this;
+  };
+
+  /* ------------------------------------------- заготовки след. коммитов */
+
+  /* Полноценный i18n — следующим коммитом; сейчас нужен рабочий фолбэк,
+   * чтобы аттрактор и хром уже ходили через t(). */
+  var FALLBACK_STRINGS = { "standby.call": "Коснитесь экрана" };
+
+  KioskApp.prototype.t = function (key) {
+    return FALLBACK_STRINGS[key] || key;
+  };
+
+  KioskApp.prototype.setLang = function (lang) {
+    if (!lang || lang === this.lang) return this;
+    this.lang = lang;
+    this._records.forEach(function (rec) {
+      if (rec.mounted) safeCall(rec, "setLang", lang);
+    });
+    this._syncNav();
+    this._syncStandbyLabel();
+    this.emit("lang", { lang: lang });
+    return this;
+  };
+
+  KioskApp.prototype.setA11y = function (on) {
+    on = !!on;
+    if (on === this.a11y) return this;
+    this.a11y = on;
+    document.documentElement.classList.toggle("a11y", on);
+    this._records.forEach(function (rec) {
+      if (rec.mounted) safeCall(rec, "setA11y", on);
+    });
+    this.emit("a11y", { on: on });
+    return this;
   };
 
   /* ------------------------------------------------------------ хелперы */
