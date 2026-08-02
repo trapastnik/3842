@@ -4,20 +4,22 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 40 · География изданий</title>
-    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260801" />
-    <link rel="stylesheet" href="./styles.css?v=20260801" />
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802p" />
+    <link rel="stylesheet" href="./styles.css?v=20260802p" />
   </head>
   <body>
     <main class="stage">
       <header class="title">
         <span class="title__num">МТК · 40 · ВАРИАНТ 06</span>
         <h1 class="title__h">География изданий</h1>
-        <p class="title__sub">Где книга вышла впервые · 99 книг, 16 городов · эмигрантские типографии против метрополии</p>
+        <p class="title__sub">Где книга вышла впервые · 99 книг, 16 городов. Тап на кружок — распадается: город → оси корпуса → отдельные книги.</p>
       </header>
 
       <canvas id="view" class="view"></canvas>
 
       <div class="filters" id="filters" aria-label="Фильтр по оси"></div>
+
+      <button id="home-chip" class="home-chip" type="button" hidden>← вся карта</button>
 
       <aside id="city" class="city-panel" hidden>
         <button class="city-panel__close" type="button" aria-label="Закрыть">✕</button>
@@ -47,8 +49,8 @@
     </main>
 
     <script src="../assets/shared/lib/projection.js"></script>
-    <script src="../assets/mtk40/lib/mtk40.js?v=20260801"></script>
-    <script src="../assets/mtk40/lib/places.js?v=20260801"></script>
-    <script src="./geography.js?v=20260801"></script>
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260802p"></script>
+    <script src="../assets/mtk40/lib/places.js?v=20260802p"></script>
+    <script src="./geography.js?v=20260802p"></script>
   </body>
 </html>

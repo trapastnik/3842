@@ -110,3 +110,24 @@
 }
 
 .legend { max-width: 58%; }
+
+/* ---------- «вся карта» ---------- */
+.home-chip { zoom: var(--zoom, 1); }
+.home-chip {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 5;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--brass);
+  padding: 9px 15px;
+  border: 1px solid var(--brass-soft);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.72);
+  cursor: pointer;
+}
+.home-chip[hidden] { display: none; }
+.home-chip:active { background: rgba(210, 183, 115, 0.18); }
