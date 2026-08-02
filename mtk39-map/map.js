@@ -64,7 +64,8 @@ let baseW = 0;             // ширина мира при zoom = 1
 let zoom = 1;
 let panX = 0;
 let panY = 0;
-let land = [];             // контуры стран: { ring, ussr }
+let land = [];             // контуры пятнадцати республик
+let unionBox = null;       // общая рамка Союза, считается из контуров
 let bboxes = new Map();    // название страны → географический bbox
 let points = [];
 let visible = [];
@@ -109,23 +110,25 @@ function project(lat, lng) {
 
 /* Приближение к географическому bbox: считаем нужный масштаб и сдвиг так,
    чтобы область заняла экран с полями под рубрикатор слева. */
-function viewFor([west, south, east, north]) {
-  const at1 = (lat, lng) => WT.project(lat, lng, baseW, baseW / WT.ASPECT);
-  const corners = [at1(north, west), at1(north, east), at1(south, west), at1(south, east),
-    at1((north + south) / 2, west), at1((north + south) / 2, east)];
-  const xs = corners.map((p) => p.x);
-  const ys = corners.map((p) => p.y);
-  const w = Math.max(1e-6, Math.max(...xs) - Math.min(...xs));
-  const h = Math.max(1e-6, Math.max(...ys) - Math.min(...ys));
-  const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM,
-    Math.min((width * 0.6) / w, (height * 0.78) / h)));
-  const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-  const cy = (Math.min(...ys) + Math.max(...ys)) / 2;
-  // центр области — правее середины экрана, слева живёт рубрикатор
+/* box — доли мира [minX, minY, maxX, maxY], посчитанные по самим контурам.
+   Вписываем в свободное поле справа от рубрикатора. */
+function viewFor(box) {
+  const baseH = baseW / WT.ASPECT;
+  const w = Math.max(1e-6, (box[2] - box[0]) * baseW);
+  const h = Math.max(1e-6, (box[3] - box[1]) * baseH);
+
+  const rail = document.querySelector(".rail").getBoundingClientRect();
+  const x0 = rail.right + width * 0.02;
+  const x1 = width * 0.985;
+  const y0 = height * 0.05;
+  const y1 = height * 0.88;
+  const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, Math.min((x1 - x0) / w, (y1 - y0) / h)));
+  const cx = ((box[0] + box[2]) / 2) * baseW;
+  const cy = ((box[1] + box[3]) / 2) * baseH;
   return {
     zoom: z,
-    panX: width * 0.6 - (width - baseW * z) / 2 - cx * z,
-    panY: height / 2 - (height - (baseW / WT.ASPECT) * z) / 2 - cy * z,
+    panX: (x0 + x1) / 2 - (width - baseW * z) / 2 - cx * z,
+    panY: (y0 + y1) / 2 - (height - baseH * z) / 2 - cy * z,
   };
 }
 
@@ -159,10 +162,12 @@ function stepFly(now) {
 function prepareLand(geo) {
   land = [];
   bboxes = new Map();
+  unionBox = null;
   for (const f of geo.features) {
     const iso = f.properties.ISO_A3 || f.properties.ADM0_A3;
     const name = f.properties.NAME_RU;
     const ussr = REPUBLIC_ISO.has(iso);
+    if (!ussr) continue;          // разговор только про Союз — остальной мир не рисуем
     const g = f.geometry;
     const polys = g.type === "Polygon" ? [g.coordinates]
       : g.type === "MultiPolygon" ? g.coordinates : [];
@@ -170,19 +175,26 @@ function prepareLand(geo) {
     for (const poly of polys) {
       for (const ring of poly) {
         if (ring.length < 4) continue;
-        land.push({ ring, ussr });
+        land.push({ ring });
         for (const [lng, lat] of ring) {
-          // Чукотка уходит за антимеридиан и растягивает bbox России на весь мир —
-          // считаем рамку только по восточному полушарию
-          if (ussr && lng < 0) continue;
+          // Чукотка уходит за антимеридиан и растянула бы рамку России на весь мир —
+          // считаем только по восточному полушарию
+          if (lng < 0) continue;
+          const q = WT.project(lat, lng, 1, 1);     // доли мира, независимо от масштаба
           box = box
-            ? [Math.min(box[0], lng), Math.min(box[1], lat),
-              Math.max(box[2], lng), Math.max(box[3], lat)]
-            : [lng, lat, lng, lat];
+            ? [Math.min(box[0], q.x), Math.min(box[1], q.y),
+              Math.max(box[2], q.x), Math.max(box[3], q.y)]
+            : [q.x, q.y, q.x, q.y];
         }
       }
     }
     if (name && box) bboxes.set(name, box);
+    if (box) {
+      unionBox = unionBox
+        ? [Math.min(unionBox[0], box[0]), Math.min(unionBox[1], box[1]),
+          Math.max(unionBox[2], box[2]), Math.max(unionBox[3], box[3])]
+        : box.slice();
+    }
   }
 }
 
@@ -193,25 +205,22 @@ const shown = (p) => (statusFilter === "all" || p.status === statusFilter)
 /* ------------------------------------------------------------------ отрисовка */
 
 function drawLand() {
-  for (const ussr of [false, true]) {
-    ctx.beginPath();
-    for (const item of land) {
-      if (item.ussr !== ussr) continue;
-      let started = false;
-      let prevX = 0;
-      for (const [lng, lat] of item.ring) {
-        const [x, y] = project(lat, lng);
-        if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
-        if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
-        prevX = x;
-      }
+  ctx.beginPath();
+  for (const item of land) {
+    let started = false;
+    let prevX = 0;
+    for (const [lng, lat] of item.ring) {
+      const [x, y] = project(lat, lng);
+      if (started && Math.abs(x - prevX) > worldW() * 0.5) started = false;
+      if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
+      prevX = x;
     }
-    ctx.fillStyle = ussr ? "rgba(96, 104, 92, 0.85)" : "rgba(58, 70, 78, 0.65)";
-    ctx.fill();
-    ctx.strokeStyle = ussr ? "rgba(210, 183, 115, 0.42)" : "rgba(247, 249, 239, 0.13)";
-    ctx.lineWidth = ussr ? 1 : 0.7;
-    ctx.stroke();
   }
+  ctx.fillStyle = "rgba(96, 104, 92, 0.9)";
+  ctx.fill();
+  ctx.strokeStyle = "rgba(210, 183, 115, 0.5)";
+  ctx.lineWidth = 1;
+  ctx.stroke();
 }
 
 function render() {
@@ -411,8 +420,6 @@ function buildLegend(host) {
   }
 }
 
-const UNION_BBOX = [19, 35, 180, 78];   // от Калининграда до Чукотки
-
 function buildRepublics(host, all, legendHost, subHost) {
   const counts = new Map();
   for (const r of all) counts.set(r.country, (counts.get(r.country) || 0) + 1);
@@ -424,8 +431,8 @@ function buildRepublics(host, all, legendHost, subHost) {
     showCard(null);
     [...host.children].forEach((c) => c.setAttribute("aria-pressed", String(c === btn)));
     buildLegend(legendHost);
-    const box = name ? bboxOf(name) : UNION_BBOX;
-    flyTo(viewFor(box || UNION_BBOX), first);
+    const box = (name ? bboxOf(name) : unionBox) || unionBox;
+    flyTo(viewFor(box), first);
     first = false;
     const inCorpus = all.filter((r) => !name || r.country === name).length;
     const onMap = points.filter(shown).length;
