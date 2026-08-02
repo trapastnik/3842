@@ -62,11 +62,11 @@ function render() {
   const inner = $("#timeline-inner");
   inner.innerHTML = "";
 
-  // Bar-area width is (container width - label column width) — read from CSS var.
-  const rootStyle = getComputedStyle(document.documentElement);
-  const labelCol = parseFloat(rootStyle.getPropertyValue("--label-col")) || 240;
-  const containerW = inner.clientWidth;
-  const barW = containerW - 4; // small buffer
+  // Полосы позиционируются внутри content-box, который начинается после
+  // padding-left = --label-col. Меряем именно вычисленный padding: сама
+  // переменная — clamp(), parseFloat по ней дал бы NaN.
+  const labelCol = parseFloat(getComputedStyle(inner).paddingLeft) || 240;
+  const barW = inner.clientWidth - labelCol - 4; // small buffer
 
   drawYearAxis(barW);
 
@@ -198,32 +198,62 @@ function openDetail(item) {
   }
   $('[data-bind="opened-note"]', d).textContent = item.opened_note || "";
   $('[data-bind="closed-note"]', d).textContent = item.closed_note || "";
+  renderPhotos($('[data-bind="photos"]', d), item.photos);
+}
+
+function renderPhotos(box, photos) {
+  box.textContent = "";
+  const list = photos || [];
+  box.hidden = list.length === 0;
+  for (const ph of list) {
+    const fig = document.createElement("figure");
+    fig.className = "detail__photo";
+    const img = document.createElement("img");
+    img.src = `../assets/mtk42/museums/${ph.file}`;
+    img.alt = ph.caption || "";
+    img.loading = "lazy";
+    fig.appendChild(img);
+    if (ph.caption) {
+      const cap = document.createElement("figcaption");
+      cap.textContent = ph.caption;
+      fig.appendChild(cap);
+    }
+    box.appendChild(fig);
+  }
 }
 
 function closeDetail() { $("#detail").hidden = true; }
 
 // ─── UI ─────────────────────────────────────────────────────
+// ─── 4K-масштаб кеглей (COORDINATION, смоук 2026-07-22) ─────
+// Значения из ⚙-панели нормированы на ширину 1920. На 3840 (канон 4K, 49")
+// множитель 2 — иначе подписи вырождаются в микротекст. Ниже 1920 — без изменений.
+function uiScale() {
+  return Math.min(2, Math.max(1, window.innerWidth / 1920));
+}
+function uiPx(v) { return (v * uiScale()).toFixed(1) + "px"; }
+
 // ─── Visual settings (CSS variables) ────────────────────────
 function applyVisualSettings() {
   const root = document.documentElement;
   const s = state.settings;
-  root.style.setProperty("--region-size",       s.regionSize + "px");
+  root.style.setProperty("--region-size",       uiPx(s.regionSize));
   root.style.setProperty("--region-opacity",   (s.regionOpacity / 100).toFixed(2));
   root.style.setProperty("--region-weight",     s.regionBold ? 700 : 400);
-  root.style.setProperty("--museum-size",       s.museumSize + "px");
+  root.style.setProperty("--museum-size",       uiPx(s.museumSize));
   root.style.setProperty("--museum-opacity",   (s.museumOpacity / 100).toFixed(2));
   root.style.setProperty("--museum-weight",     s.museumBold ? 700 : 400);
-  root.style.setProperty("--city-size",         s.citySize + "px");
+  root.style.setProperty("--city-size",         uiPx(s.citySize));
   root.style.setProperty("--city-opacity",     (s.cityOpacity / 100).toFixed(2));
   root.style.setProperty("--city-weight",       s.cityBold ? 700 : 400);
-  root.style.setProperty("--bar-label-size",    s.barLabelSize + "px");
+  root.style.setProperty("--bar-label-size",    uiPx(s.barLabelSize));
   root.style.setProperty("--bar-label-opacity",(s.barLabelOpacity / 100).toFixed(2));
   root.style.setProperty("--bar-label-weight",  s.barLabelBold ? 700 : 400);
-  root.style.setProperty("--axis-tick-size",    s.axisTickSize + "px");
+  root.style.setProperty("--axis-tick-size",    uiPx(s.axisTickSize));
   root.style.setProperty("--axis-tick-opacity",(s.axisTickOpacity / 100).toFixed(2));
   root.style.setProperty("--axis-tick-weight",  s.axisTickBold ? 700 : 400);
-  root.style.setProperty("--bar-height",        s.barHeight + "px");
-  root.style.setProperty("--row-height",        s.rowHeight + "px");
+  root.style.setProperty("--bar-height",        uiPx(s.barHeight));
+  root.style.setProperty("--row-height",        uiPx(s.rowHeight));
 }
 
 function syncControlsFromState() {
@@ -296,6 +326,6 @@ function bindUi() {
   let resizeTimer = null;
   window.addEventListener("resize", () => {
     clearTimeout(resizeTimer);
-    resizeTimer = setTimeout(render, 150);
+    resizeTimer = setTimeout(() => { applyVisualSettings(); render(); }, 150);
   });
 }

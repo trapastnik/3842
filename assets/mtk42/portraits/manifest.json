@@ -3,78 +3,105 @@
     "title": "Кржижановский, Глеб Максимилианович",
     "lang": "ru",
     "image": "q-krzhizhanovsky-1924.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Gleb_Maksimilianovich_Krzhizhanovskiy.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/77/Gleb_Maksimilianovich_Krzhizhanovskiy.jpg",
+    "w": 878,
+    "h": 1200
   },
   "bukharin": {
     "title": "Бухарин, Николай Иванович",
     "lang": "ru",
     "image": "q-bukharin-1924.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/N.I._Bukharin_%281888-1938%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/N.I._Bukharin_%281888-1938%29.jpg",
+    "w": 764,
+    "h": 1200
   },
   "chernov": {
     "title": "Чернов, Виктор Михайлович",
     "lang": "ru",
     "image": "q-chernov-1924.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Portrait_of_Minister_VM_Chernov_Trim_Edit.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Portrait_of_Minister_VM_Chernov_Trim_Edit.jpg",
+    "w": 929,
+    "h": 1200
   },
   "gorky": {
     "title": "Горький, Максим",
     "lang": "ru",
-    "image": "q-gorky-1934.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Maxim_Gorky_1927_%28cropped%29.png"
+    "image": "q-gorky-1934.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Maxim_Gorky_1927_%28cropped%29.png",
+    "w": 1006,
+    "h": 1200
   },
   "putin": {
     "title": "Путин, Владимир Владимирович",
     "lang": "ru",
     "image": "q-putin-2019.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%9F%D1%83%D1%82%D0%B8%D0%BD_%282025-09-30%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%9F%D1%83%D1%82%D0%B8%D0%BD_%282025-09-30%29.jpg",
+    "w": 906,
+    "h": 1160
   },
   "lebedev": {
     "title": "Лебедев, Олег Александрович",
     "lang": "ru",
     "image": "q-lebedev-2020.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/%D0%9E%D0%BB%D0%B5%D0%B3_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87%2C_%D0%9B%D0%B5%D0%B1%D0%B5%D0%B4%D0%B5%D0%B2.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/31/%D0%9E%D0%BB%D0%B5%D0%B3_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87%2C_%D0%9B%D0%B5%D0%B1%D0%B5%D0%B4%D0%B5%D0%B2.jpg",
+    "w": 480,
+    "h": 624
   },
   "zyuganov": {
     "title": "Зюганов, Геннадий Андреевич",
     "lang": "ru",
     "image": "q-zyuganov-2022.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Gennady_Zyuganov_2022-09-20_%28cropped%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/71/Gennady_Zyuganov_2022-09-20_%28cropped%29.jpg",
+    "w": 878,
+    "h": 1200
   },
   "volobuev": {
     "title": "Волобуев, Павел Васильевич",
     "lang": "ru",
     "image": "q-volobuev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/7/74/%D0%92%D0%BE%D0%BB%D0%BE%D0%B1%D1%83%D0%B5%D0%B2%2C_%D0%9F%D0%B0%D0%B2%D0%B5%D0%BB_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/7/74/%D0%92%D0%BE%D0%BB%D0%BE%D0%B1%D1%83%D0%B5%D0%B2%2C_%D0%9F%D0%B0%D0%B2%D0%B5%D0%BB_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg",
+    "w": 391,
+    "h": 554
   },
   "afanasyev": {
     "title": "Афанасьев, Юрий Николаевич",
     "lang": "ru",
     "image": "q-afanasyev-1988.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/RIAN_archive_418402_People%27s_Deputy_of_USSR_Yury_Afanasyev_attends_Moscow_meeting_to_support_Boris_Yeltsin_and_Russian_presidential_referendum.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/RIAN_archive_418402_People%27s_Deputy_of_USSR_Yury_Afanasyev_attends_Moscow_meeting_to_support_Boris_Yeltsin_and_Russian_presidential_referendum.jpg",
+    "w": 1024,
+    "h": 719
   },
   "volkogonov": {
     "title": "Волкогонов, Дмитрий Антонович",
     "lang": "ru",
-    "image": "r-volkogonov.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/0a/%D0%94%D0%BC%D0%B8%D1%82%D1%80%D0%B8%D0%B9_%D0%92%D0%BE%D0%BB%D0%BA%D0%BE%D0%B3%D0%BE%D0%BD%D0%BE%D0%B2.png"
+    "image": "r-volkogonov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/0a/%D0%94%D0%BC%D0%B8%D1%82%D1%80%D0%B8%D0%B9_%D0%92%D0%BE%D0%BB%D0%BA%D0%BE%D0%B3%D0%BE%D0%BD%D0%BE%D0%B2.png",
+    "w": 604,
+    "h": 694
   },
   "loginov": {
     "title": "Логинов, Владлен Терентьевич",
     "lang": "ru",
     "image": "r-loginov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cf/Vladlen_Loginov.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cf/Vladlen_Loginov.jpg",
+    "w": 856,
+    "h": 1200
   },
   "kotelenets": {
     "title": "Котеленец, Елена Анатольевна",
     "lang": "ru",
     "image": "kotelenets.jpg",
-    "source_url": "curator (2026-06)"
+    "source_url": "curator (2026-06)",
+    "w": 900,
+    "h": 1200
   },
   "subetto": {
     "title": "Субетто, Александр Иванович",
     "lang": "ru",
-    "image": null
+    "image": "c-subetto.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 825,
+    "h": 1200
   },
   "potseluev": {
     "title": "Поцелуев, Владимир Алексеевич",
@@ -85,270 +112,364 @@
     "title": "Славин, Борис Фёдорович",
     "lang": "ru",
     "image": "slavin.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 1024,
+    "h": 768
   },
   "sobolev": {
     "title": "Соболев, Геннадий Леонтьевич",
     "lang": "ru",
     "image": "sobolev.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 1000,
+    "h": 667
   },
   "kolganov": {
     "title": "Колганов, Андрей Иванович",
     "lang": "ru",
     "image": "r-kolganov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Kolganov_Andrey.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4e/Kolganov_Andrey.jpg",
+    "w": 375,
+    "h": 502
   },
   "plimak": {
     "title": "Плимак, Евгений Григорьевич",
     "lang": "ru",
     "image": "r-plimak.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c6/%D0%9F%D0%BB%D0%B8%D0%BC%D0%B0%D0%BA%2C_%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c6/%D0%9F%D0%BB%D0%B8%D0%BC%D0%B0%D0%BA%2C_%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg",
+    "w": 480,
+    "h": 640
   },
   "bordyugov": {
     "title": "Бордюгов, Геннадий Аркадьевич",
     "lang": "ru",
-    "image": null
+    "image": "c-bordyugov.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 799,
+    "h": 799
   },
   "danilkin": {
     "title": "Данилкин, Лев Александрович",
     "lang": "ru",
     "image": "r-danilkin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Lev_Danilkin_01.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/ec/Lev_Danilkin_01.jpg",
+    "w": 800,
+    "h": 1200
   },
   "valentinov": {
     "title": "Валентинов, Николай Владиславович",
     "lang": "ru",
     "image": "r-valentinov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/90/%D0%92%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%9D.%D0%92._1901_%D0%B3.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/90/%D0%92%D0%BE%D0%BB%D1%8C%D1%81%D0%BA%D0%B8%D0%B9_%D0%9D.%D0%92._1901_%D0%B3.jpg",
+    "w": 952,
+    "h": 1200
   },
   "ioffe": {
     "title": "Иоффе, Генрих Зиновьевич",
     "lang": "ru",
     "image": "ioffe.jpg",
-    "source_url": "curator (2026-06)"
+    "source_url": "curator (2026-06)",
+    "w": 837,
+    "h": 1200
   },
   "arutyunov": {
     "title": "Арутюнов, Аким Арутюнович",
     "lang": "ru",
     "image": "arutyunov.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 655,
+    "h": 842
   },
   "yerofeev": {
     "title": "Ерофеев, Венедикт Васильевич",
     "lang": "ru",
     "image": "r-yerofeev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f2/ErofeevV.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f2/ErofeevV.jpg",
+    "w": 336,
+    "h": 380
   },
   "soloukhin": {
     "title": "Солоухин, Владимир Алексеевич",
     "lang": "ru",
     "image": "r-soloukhin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cb/%D0%A1%D0%BE%D0%BB%D0%BE%D1%83%D1%85%D0%B8%D0%BD%2C_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/cb/%D0%A1%D0%BE%D0%BB%D0%BE%D1%83%D1%85%D0%B8%D0%BD%2C_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B5%D0%B5%D0%B2%D0%B8%D1%87.jpg",
+    "w": 331,
+    "h": 508
   },
   "shturman": {
     "title": "Штурман, Дора Моисеевна",
     "lang": "ru",
     "image": "r-shturman.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Shturman%2C_Dora.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/67/Shturman%2C_Dora.jpg",
+    "w": 718,
+    "h": 539
   },
   "avtorkhanov": {
     "title": "Авторханов, Абдурахман Геназович",
     "lang": "ru",
     "image": "r-avtorkhanov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%90%D0%B2%D1%82%D0%BE%D1%80%D1%85%D0%B0%D0%BD%D0%BE%D0%B2%2C_%D0%90%D0%B1%D0%B4%D1%83%D1%80%D0%B0%D1%85%D0%BC%D0%B0%D0%BD_%D0%93%D0%B5%D0%BD%D0%B0%D0%B7%D0%BE%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%90%D0%B2%D1%82%D0%BE%D1%80%D1%85%D0%B0%D0%BD%D0%BE%D0%B2%2C_%D0%90%D0%B1%D0%B4%D1%83%D1%80%D0%B0%D1%85%D0%BC%D0%B0%D0%BD_%D0%93%D0%B5%D0%BD%D0%B0%D0%B7%D0%BE%D0%B2%D0%B8%D1%87.jpg",
+    "w": 160,
+    "h": 224
   },
   "palamarchuk": {
     "title": "Паламарчук, Пётр Георгиевич",
     "lang": "ru",
     "image": "r-palamarchuk.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%9F%D1%91%D1%82%D1%80_%D0%9F%D0%B0%D0%BB%D0%B0%D0%BC%D0%B0%D1%80%D1%87%D1%83%D0%BA.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/92/%D0%9F%D1%91%D1%82%D1%80_%D0%9F%D0%B0%D0%BB%D0%B0%D0%BC%D0%B0%D1%80%D1%87%D1%83%D0%BA.jpg",
+    "w": 292,
+    "h": 400
   },
   "churchill": {
     "title": "Черчилль, Уинстон",
     "lang": "ru",
     "image": "churchill.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Sir_Winston_Churchill_-_19086236948.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/bc/Sir_Winston_Churchill_-_19086236948.jpg",
+    "w": 943,
+    "h": 1200
   },
   "gandhi": {
     "title": "Ганди, Махатма",
     "lang": "ru",
     "image": "gandhi.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/7a/Mahatma-Gandhi%2C_studio%2C_1931.jpg",
+    "w": 961,
+    "h": 1200
   },
   "ho-chi-minh": {
     "title": "Хо Ши Мин",
     "lang": "ru",
     "image": "ho-chi-minh.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Ho_Chi_Minh_-_1946_Portrait.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Ho_Chi_Minh_-_1946_Portrait.jpg",
+    "w": 899,
+    "h": 1200
   },
   "zetkin": {
     "title": "Цеткин, Клара",
     "lang": "ru",
     "image": "zetkin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/C_Zetkin_2.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/C_Zetkin_2.jpg",
+    "w": 476,
+    "h": 476
   },
   "krasnov": {
     "title": "Краснов, Пётр Николаевич",
     "lang": "ru",
     "image": "krasnov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Pyotr_Nikolayevich_Krasnov.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3e/Pyotr_Nikolayevich_Krasnov.jpg",
+    "w": 699,
+    "h": 1012
   },
   "roerich": {
     "title": "Рерих, Николай Константинович",
     "lang": "ru",
     "image": "roerich.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/51/N_Roerich.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/51/N_Roerich.jpg",
+    "w": 432,
+    "h": 600
   },
   "trotsky": {
     "title": "Троцкий, Лев Давидович",
     "lang": "ru",
     "image": "trotsky.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/%D0%9B%D0%B5%D0%B2_%D0%94%D0%B0%D0%B2%D0%B8%D0%B4%D0%BE%D0%B2%D0%B8%D1%87_%D0%A2%D1%80%D0%BE%D1%86%D0%BA%D0%B8%D0%B9.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1f/%D0%9B%D0%B5%D0%B2_%D0%94%D0%B0%D0%B2%D0%B8%D0%B4%D0%BE%D0%B2%D0%B8%D1%87_%D0%A2%D1%80%D0%BE%D1%86%D0%BA%D0%B8%D0%B9.jpg",
+    "w": 884,
+    "h": 1200
   },
   "wells": {
     "title": "Уэллс, Герберт",
     "lang": "ru",
     "image": "wells.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/H.G._Wells_by_Beresford.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4b/H.G._Wells_by_Beresford.jpg",
+    "w": 573,
+    "h": 800
   },
   "rolland": {
     "title": "Роллан, Ромен",
     "lang": "ru",
     "image": "rolland.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/ad/Romain_Rolland_1915.jpg"
+    "source_url": "https://commons.wikimedia.org/wiki/File:Romain_Rolland_de_face_au_balcon,_Meurisse,_1914_retouche.jpg",
+    "w": 760,
+    "h": 950,
+    "license": "Public domain · Agence Meurisse, 1914 (Gallica); кадрирован"
   },
   "keynes": {
     "title": "Кейнс, Джон Мейнард",
     "lang": "ru",
     "image": "keynes.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/04/Keynes_1933.jpg"
+    "source_url": "https://commons.wikimedia.org/wiki/File:John_Maynard_Keynes_(1929).jpg",
+    "w": 749,
+    "h": 999,
+    "license": "Public domain · 1929"
   },
   "einstein": {
     "title": "Эйнштейн, Альберт",
     "lang": "ru",
     "image": "einstein.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Albert_Einstein_Head_cleaned.jpg/3840px-Albert_Einstein_Head_cleaned.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/2/28/Albert_Einstein_Head_cleaned.jpg/3840px-Albert_Einstein_Head_cleaned.jpg",
+    "w": 969,
+    "h": 1200
   },
   "bunin": {
     "title": "Бунин, Иван Алексеевич",
     "lang": "ru",
     "image": "bunin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/00/%D0%98%D0%B2%D0%B0%D0%BD_%D0%91%D1%83%D0%BD%D0%B8%D0%BD_%281928%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/00/%D0%98%D0%B2%D0%B0%D0%BD_%D0%91%D1%83%D0%BD%D0%B8%D0%BD_%281928%29.jpg",
+    "w": 800,
+    "h": 1200
   },
   "vernadsky": {
     "title": "Вернадский, Георгий Владимирович",
     "lang": "ru",
     "image": "vernadsky.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/George_Vernandsky_1909.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/5b/George_Vernandsky_1909.jpg",
+    "w": 239,
+    "h": 319
   },
   "kerensky": {
     "title": "Керенский, Александр Фёдорович",
     "lang": "ru",
     "image": "kerensky.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Alexander_Kerensky_1917_Crop.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/81/Alexander_Kerensky_1917_Crop.jpg",
+    "w": 900,
+    "h": 1200
   },
   "romanov-am": {
     "title": "Александр Михайлович (внук Николая I)",
     "lang": "ru",
     "image": "romanov-am.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Grand_Duke_Alexander_Mikhailovich_%28LOC%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/28/Grand_Duke_Alexander_Mikhailovich_%28LOC%29.jpg",
+    "w": 951,
+    "h": 1200
   },
   "struve": {
     "title": "Струве, Пётр Бернгардович",
     "lang": "ru",
     "image": "struve.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Piotr_Struve.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/3/3c/Piotr_Struve.jpg",
+    "w": 361,
+    "h": 459
   },
   "reed": {
     "title": "John_Reed_(journalist)",
     "lang": "en",
     "image": "reed.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg/3840px-John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg/3840px-John_Silas_Reed_by_Pirie_MacDonald%2C_c._1916%2C_gelatin_silver_print%2C_from_the_National_Portrait_Gallery_-_NPG-NPG_78_156Reed-000001.jpg",
+    "w": 799,
+    "h": 1200
   },
   "tsiolkovsky": {
     "title": "Циолковский, Константин Эдуардович",
     "lang": "ru",
     "image": "tsiolkovsky.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B0%D0%BD%D1%82%D0%B8%D0%BD_%D0%A6%D0%B8%D0%BE%D0%BB%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a8/%D0%9A%D0%BE%D0%BD%D1%81%D1%82%D0%B0%D0%BD%D1%82%D0%B8%D0%BD_%D0%A6%D0%B8%D0%BE%D0%BB%D0%BA%D0%BE%D0%B2%D1%81%D0%BA%D0%B8%D0%B9.jpg",
+    "w": 865,
+    "h": 1200
   },
   "shaw": {
     "title": "Шоу, Бернард",
     "lang": "ru",
     "image": "shaw.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/George_Bernard_Shaw_1909.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/George_Bernard_Shaw_1909.jpg",
+    "w": 650,
+    "h": 893
   },
   "zinovyev": {
     "title": "Зиновьев, Григорий Евсеевич",
     "lang": "ru",
     "image": "zinovyev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Grigorii_Zinovieff_1920.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e7/Grigorii_Zinovieff_1920.jpg",
+    "w": 977,
+    "h": 1200
   },
   "kautsky": {
     "title": "Каутский, Карл",
     "lang": "ru",
     "image": "kautsky.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Karl_Kautsky_01.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/09/Karl_Kautsky_01.jpg",
+    "w": 858,
+    "h": 1200
   },
   "potresov": {
     "title": "Потресов, Александр Николаевич",
     "lang": "ru",
     "image": "potresov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Alexander_Potresov.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/4a/Alexander_Potresov.jpg",
+    "w": 400,
+    "h": 514
   },
   "sun-yatsen": {
     "title": "Сунь Ятсен",
     "lang": "ru",
     "image": "sun-yatsen.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d9/%E5%AD%99%E4%B8%AD%E5%B1%B1%E8%82%96%E5%83%8F.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d9/%E5%AD%99%E4%B8%AD%E5%B1%B1%E8%82%96%E5%83%8F.jpg",
+    "w": 914,
+    "h": 1200
   },
   "herriot": {
     "title": "Эррио, Эдуар",
     "lang": "ru",
     "image": "herriot.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg/3840px-%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg/3840px-%C3%89douard_Herriot_-_Pr%C3%A9sident_du_Conseil_-_1924.jpeg",
+    "w": 881,
+    "h": 1200
   },
   "sukhanov": {
     "title": "Суханов, Николай Николаевич",
     "lang": "ru",
     "image": "sukhanov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c1/Suhanov.jpg"
+    "source_url": "https://commons.wikimedia.org/wiki/File:Nikolaj_N._Suchanov_Himmer.jpeg",
+    "w": 240,
+    "h": 375,
+    "license": "Public domain · ок. 1925"
   },
   "lukacs": {
     "title": "Лукач, Дьёрдь",
     "lang": "ru",
     "image": "lukacs.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Luk%C3%A1cs_Gy%C3%B6rgy.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/Luk%C3%A1cs_Gy%C3%B6rgy.jpg",
+    "w": 384,
+    "h": 465
   },
   "mann": {
     "title": "Манн, Томас",
     "lang": "ru",
     "image": "mann.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Thomas_Mann_1937.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Thomas_Mann_1937.jpg",
+    "w": 947,
+    "h": 1200
   },
   "kamenev": {
     "title": "Каменев, Лев Борисович",
     "lang": "ru",
     "image": "kamenev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Lev_Kamenev_1920s.jpg/3840px-Lev_Kamenev_1920s.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/9/97/Lev_Kamenev_1920s.jpg/3840px-Lev_Kamenev_1920s.jpg",
+    "w": 995,
+    "h": 1200
   },
   "skrypnyk": {
     "title": "Скрыпник, Николай Алексеевич",
     "lang": "ru",
     "image": "skrypnyk.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Skrypnyk_Mykola.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/0/07/Skrypnyk_Mykola.jpg",
+    "w": 460,
+    "h": 699
   },
   "stalin": {
     "title": "Сталин, Иосиф Виссарионович",
     "lang": "ru",
     "image": "stalin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Joseph_Stalin_official_portrait.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Joseph_Stalin_official_portrait.jpg",
+    "w": 888,
+    "h": 1200
   },
   "stepun": {
     "title": "Степун, Фёдор Августович",
     "lang": "ru",
     "image": "stepun.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c4/Fyodor_stepun.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/c/c4/Fyodor_stepun.jpg",
+    "w": 200,
+    "h": 298
   },
   "gindin": {
     "title": "Гиндин, Яков Ильич",
@@ -359,211 +480,282 @@
     "title": "Барбюс, Анри",
     "lang": "ru",
     "image": "barbusse.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/%D0%90%D0%BD%D1%80%D0%B8_%D0%91%D0%B0%D1%80%D0%B1%D1%8E%D1%81_%281928%29.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/91/%D0%90%D0%BD%D1%80%D0%B8_%D0%91%D0%B0%D1%80%D0%B1%D1%8E%D1%81_%281928%29.jpg",
+    "w": 326,
+    "h": 550
   },
   "kerzhentsev": {
     "title": "Керженцев, Платон Михайлович",
     "lang": "ru",
     "image": "kerzhentsev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/%D0%9F%D0%BB%D0%B0%D1%82%D0%BE%D0%BD_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87_%D0%9A%D0%B5%D1%80%D0%B6%D0%B5%D0%BD%D1%86%D0%B5%D0%B2.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/%D0%9F%D0%BB%D0%B0%D1%82%D0%BE%D0%BD_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87_%D0%9A%D0%B5%D1%80%D0%B6%D0%B5%D0%BD%D1%86%D0%B5%D0%B2.jpg",
+    "w": 675,
+    "h": 900
   },
   "feuchtwanger": {
     "title": "Фейхтвангер, Лион",
     "lang": "ru",
     "image": "feuchtwanger.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Lion_Feuchtwanger.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Lion_Feuchtwanger.jpg",
+    "w": 904,
+    "h": 1200
   },
   "berdyaev": {
     "title": "Бердяев, Николай Александрович",
     "lang": "ru",
     "image": "berdyaev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/NBerdyaev.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/a/a9/NBerdyaev.jpg",
+    "w": 800,
+    "h": 1060
   },
   "andersen-nexo": {
     "title": "Андерсен-Нексё, Мартин",
     "lang": "ru",
     "image": "andersen-nexo.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Martin_Andersen_Nex%C3%B82.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/fe/Martin_Andersen_Nex%C3%B82.jpg",
+    "w": 706,
+    "h": 928
   },
   "selsam": {
     "title": "Селзам, Говард",
     "lang": "ru",
-    "image": "selsam.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/President_of_Jefferson_School_of_Social_Science_%28Howard_Selsam%29._Feb_1944_Slide_3_Crop_Alt.png"
+    "image": "selsam.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/40/President_of_Jefferson_School_of_Social_Science_%28Howard_Selsam%29._Feb_1944_Slide_3_Crop_Alt.png",
+    "w": 900,
+    "h": 1200
   },
   "naumov-an": {
     "title": "Наумов, Александр Николаевич",
     "lang": "ru",
     "image": "naumov-an.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Alexander_N._Naumov.jpeg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/e/e4/Alexander_N._Naumov.jpeg",
+    "w": 576,
+    "h": 920
   },
   "pospelov": {
     "title": "Поспелов, Пётр Николаевич",
     "lang": "ru",
     "image": "pospelov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/%D0%9F%D0%BE%D1%87%D1%82%D0%BE%D0%B2%D0%B0%D1%8F_%D0%BC%D0%B0%D1%80%D0%BA%D0%B0_%D0%A1%D0%A1%D0%A1%D0%A0_%E2%84%96_5404._1983._85-%D0%BB%D0%B5%D1%82%D0%B8%D0%B5_%D1%81%D0%BE_%D0%B4%D0%BD%D1%8F_%D1%80%D0%BE%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D1%8F_%D0%9F._%D0%9D._%D0%9F%D0%BE%D1%81%D0%BF%D0%B5%D0%BB%D0%BE%D0%B2%D0%B0.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d1/%D0%9F%D0%BE%D1%87%D1%82%D0%BE%D0%B2%D0%B0%D1%8F_%D0%BC%D0%B0%D1%80%D0%BA%D0%B0_%D0%A1%D0%A1%D0%A1%D0%A0_%E2%84%96_5404._1983._85-%D0%BB%D0%B5%D1%82%D0%B8%D0%B5_%D1%81%D0%BE_%D0%B4%D0%BD%D1%8F_%D1%80%D0%BE%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D1%8F_%D0%9F._%D0%9D._%D0%9F%D0%BE%D1%81%D0%BF%D0%B5%D0%BB%D0%BE%D0%B2%D0%B0.jpg",
+    "w": 362,
+    "h": 524
   },
   "bernal": {
     "title": "Бернал, Джон Десмонд",
     "lang": "ru",
     "image": "bernal.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/b/b3/BERNAL_J_D.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/b/b3/BERNAL_J_D.jpg",
+    "w": 264,
+    "h": 313
   },
   "lindsay": {
     "title": "Линдсей, Джек",
     "lang": "ru",
     "image": "lindsay.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/8f/%D0%94%D0%B6%D0%B5%D0%BA_%D0%9B%D0%B8%D0%BD%D0%B4%D1%81%D0%B5%D0%B9.jpeg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/8f/%D0%94%D0%B6%D0%B5%D0%BA_%D0%9B%D0%B8%D0%BD%D0%B4%D1%81%D0%B5%D0%B9.jpeg",
+    "w": 390,
+    "h": 600
   },
   "furtseva": {
     "title": "Фурцева, Екатерина Алексеевна",
     "lang": "ru",
     "image": "furtseva.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Yekaterina_Furtseva_1964.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/6/66/Yekaterina_Furtseva_1964.jpg",
+    "w": 455,
+    "h": 616
   },
   "dubina": {
     "title": "Дубина, Кузьма Кондратьевич",
     "lang": "ru",
     "image": "dubina.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/83/%D0%94%D1%83%D0%B1%D0%B8%D0%BD%D0%B0%2C_%D0%9A%D1%83%D0%B7%D1%8C%D0%BC%D0%B0_%D0%9A%D0%BE%D0%BD%D0%B4%D1%80%D0%B0%D1%82%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/8/83/%D0%94%D1%83%D0%B1%D0%B8%D0%BD%D0%B0%2C_%D0%9A%D1%83%D0%B7%D1%8C%D0%BC%D0%B0_%D0%9A%D0%BE%D0%BD%D0%B4%D1%80%D0%B0%D1%82%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg",
+    "w": 472,
+    "h": 591
   },
   "karpinsky": {
     "title": "Карпинский, Вячеслав Алексеевич",
     "lang": "ru",
-    "image": "karpinsky.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Vyacheslav_Alekseevich_Karpinskiy.png"
+    "image": "karpinsky.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/ca/Vyacheslav_Alekseevich_Karpinskiy.png",
+    "w": 370,
+    "h": 519
   },
   "kuusinen": {
     "title": "Куусинен, Отто Вильгельмович",
     "lang": "ru",
     "image": "kuusinen.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Otto_Wille_Kuusinen.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/Otto_Wille_Kuusinen.jpg",
+    "w": 891,
+    "h": 1200
   },
   "payne": {
     "title": "Пэйн, Роберт",
     "lang": "ru",
     "image": "payne.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 450,
+    "h": 450
   },
   "possony": {
     "title": "Поссони, Стефан",
     "lang": "ru",
     "image": "possony.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/6e/Stefan_T._Possony.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/6e/Stefan_T._Possony.jpg",
+    "w": 715,
+    "h": 1081
   },
   "fischer": {
     "title": "Фишер, Луис",
     "lang": "ru",
-    "image": "fischer.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/50/%D0%9B%D1%83%D0%B8%D1%81_%D0%A4%D0%B8%D1%88%D0%B5%D1%80_%281896%E2%80%941970%29.png"
+    "image": "fischer.jpg",
+    "source_url": "https://commons.wikimedia.org/wiki/File:Louis_Fischer_1944.jpg",
+    "w": 472,
+    "h": 686,
+    "license": "Public domain · 1944; снята архивная рамка"
   },
   "schapiro": {
     "title": "Leonard_Schapiro",
     "lang": "en",
     "image": "schapiro.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Leonard_Schapiro.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Leonard_Schapiro.jpg",
+    "w": 600,
+    "h": 751
   },
   "pasternak": {
     "title": "Пастернак, Борис Леонидович",
     "lang": "ru",
     "image": "pasternak.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/Boris_Pasternak_1958_photo.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/5/55/Boris_Pasternak_1958_photo.jpg",
+    "w": 900,
+    "h": 1200
   },
   "cassin": {
     "title": "Кассен, Рене",
     "lang": "ru",
     "image": "cassin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Ren%C3%A9_Cassin_nobel.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Ren%C3%A9_Cassin_nobel.jpg",
+    "w": 280,
+    "h": 396
   },
   "nechkina": {
     "title": "Нечкина, Милица Васильевна",
     "lang": "ru",
     "image": "nechkina.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3d/%D0%9D%D0%B5%D1%87%D0%BA%D0%B8%D0%BD%D0%B0%2C_%D0%9C%D0%B8%D0%BB%D0%B8%D1%86%D0%B0_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%BD%D0%B0.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3d/%D0%9D%D0%B5%D1%87%D0%BA%D0%B8%D0%BD%D0%B0%2C_%D0%9C%D0%B8%D0%BB%D0%B8%D1%86%D0%B0_%D0%92%D0%B0%D1%81%D0%B8%D0%BB%D1%8C%D0%B5%D0%B2%D0%BD%D0%B0.jpg",
+    "w": 489,
+    "h": 649
   },
   "zhukov-em": {
     "title": "Жуков, Евгений Михайлович (историк)",
     "lang": "ru",
     "image": "zhukov-em.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 480,
+    "h": 627
   },
   "shapko": {
     "title": "Шапко, Виктор Михайлович",
     "lang": "ru",
     "image": "shapko.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 340,
+    "h": 510
   },
   "brezhnev": {
     "title": "Брежнев, Леонид Ильич",
     "lang": "ru",
     "image": "brezhnev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Leonid_Brezjnev%2C_leider_van_de_Sovjet-Unie%2C_Bestanddeelnr_925-6564.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/b/b9/Leonid_Brezjnev%2C_leider_van_de_Sovjet-Unie%2C_Bestanddeelnr_925-6564.jpg",
+    "w": 877,
+    "h": 1200
   },
   "gaponenko": {
     "title": "Гапоненко, Лука Семёнович",
     "lang": "ru",
     "image": "gaponenko.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 504,
+    "h": 756
   },
   "keldysh": {
     "title": "Келдыш, Мстислав Всеволодович",
     "lang": "ru",
     "image": "keldysh.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/02/MVKeldish.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/0/02/MVKeldish.jpg",
+    "w": 719,
+    "h": 891
   },
   "kedrov": {
     "title": "Кедров, Бонифатий Михайлович",
     "lang": "ru",
-    "image": "kedrov.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%9A%D0%B5%D0%B4%D1%80%D0%BE%D0%B2%2C_%D0%91%D0%BE%D0%BD%D0%B8%D1%84%D0%B0%D1%82%D0%B8%D0%B9_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87.png"
+    "image": "kedrov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%9A%D0%B5%D0%B4%D1%80%D0%BE%D0%B2%2C_%D0%91%D0%BE%D0%BD%D0%B8%D1%84%D0%B0%D1%82%D0%B8%D0%B9_%D0%9C%D0%B8%D1%85%D0%B0%D0%B9%D0%BB%D0%BE%D0%B2%D0%B8%D1%87.png",
+    "w": 447,
+    "h": 461
   },
   "solzhenitsyn": {
     "title": "Солженицын, Александр Исаевич",
     "lang": "ru",
     "image": "solzhenitsyn.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Aleksandr_Solzhenitsyn_1974.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/8c/Aleksandr_Solzhenitsyn_1974.jpg",
+    "w": 786,
+    "h": 1200
   },
   "iroshnikov": {
     "title": "Ирошников, Михаил Павлович",
     "lang": "ru",
     "image": "iroshnikov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3b/Mikhail_Iroshnikov.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/3b/Mikhail_Iroshnikov.jpg",
+    "w": 287,
+    "h": 421
   },
   "chernenko": {
     "title": "Черненко, Константин Устинович",
     "lang": "ru",
     "image": "chernenko.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Konstantin_Chernenko_official_portrait.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/7/70/Konstantin_Chernenko_official_portrait.jpg",
+    "w": 557,
+    "h": 711
   },
   "ambartsumov": {
     "title": "Амбарцумов, Евгений Аршакович",
     "lang": "ru",
     "image": "ambartsumov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%90%D1%80%D1%88%D0%B0%D0%BA%D0%BE%D0%B2%D0%B8%D1%87_%D0%90%D0%BC%D0%B1%D0%B0%D1%80%D1%86%D1%83%D0%BC%D0%BE%D0%B2.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/9/91/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9_%D0%90%D1%80%D1%88%D0%B0%D0%BA%D0%BE%D0%B2%D0%B8%D1%87_%D0%90%D0%BC%D0%B1%D0%B0%D1%80%D1%86%D1%83%D0%BC%D0%BE%D0%B2.jpg",
+    "w": 186,
+    "h": 207
   },
   "andropov": {
     "title": "Андропов, Юрий Владимирович",
     "lang": "ru",
     "image": "andropov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Yuri_Andropov.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Yuri_Andropov.jpg",
+    "w": 899,
+    "h": 1200
   },
   "yegorov-ag": {
     "title": "Егоров, Анатолий Григорьевич",
     "lang": "ru",
     "image": "yegorov-ag.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/5b/%D0%95%D0%B3%D0%BE%D1%80%D0%BE%D0%B2%2C_%D0%90%D0%BD%D0%B0%D1%82%D0%BE%D0%BB%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/5/5b/%D0%95%D0%B3%D0%BE%D1%80%D0%BE%D0%B2%2C_%D0%90%D0%BD%D0%B0%D1%82%D0%BE%D0%BB%D0%B8%D0%B9_%D0%93%D1%80%D0%B8%D0%B3%D0%BE%D1%80%D1%8C%D0%B5%D0%B2%D0%B8%D1%87.jpg",
+    "w": 311,
+    "h": 400
   },
   "yakovlev-ev": {
     "title": "Яковлев, Егор Владимирович",
     "lang": "ru",
     "image": "yakovlev-ev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f8/%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%2C_%D0%95%D0%B3%D0%BE%D1%80_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/f/f8/%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%2C_%D0%95%D0%B3%D0%BE%D1%80_%D0%92%D0%BB%D0%B0%D0%B4%D0%B8%D0%BC%D0%B8%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg",
+    "w": 320,
+    "h": 240
   },
   "sabanti": {
     "title": "Сабанти, Борис Михайлович",
     "lang": "ru",
-    "image": "sabanti.png",
-    "source_url": "curator (2026-07)"
+    "image": "sabanti.jpg",
+    "source_url": "curator (2026-07)",
+    "w": 645,
+    "h": 708
   },
   "resnick": {
     "title": "Resnick, Abraham",
@@ -573,31 +765,42 @@
   "clark": {
     "title": "Кларк, Рональд",
     "lang": "ru",
-    "image": null
+    "image": "c-clark.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 600,
+    "h": 600
   },
   "naumov-vp": {
     "title": "Наумов, Владимир Павлович (историк)",
     "lang": "ru",
-    "image": "naumov-vp.png",
-    "source_url": "curator (2026-07)"
+    "image": "naumov-vp.jpg",
+    "source_url": "curator (2026-07)",
+    "w": 181,
+    "h": 200
   },
   "gorbachev": {
     "title": "Горбачёв, Михаил Сергеевич",
     "lang": "ru",
     "image": "gorbachev.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/GorbachevMS.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/1/1b/GorbachevMS.jpg",
+    "w": 829,
+    "h": 1200
   },
   "korotich": {
     "title": "Коротич, Виталий Алексеевич",
     "lang": "ru",
     "image": "korotich.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/NovyVzglyadKorotich_cropped.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/d/d2/NovyVzglyadKorotich_cropped.jpg",
+    "w": 487,
+    "h": 484
   },
   "vasyutin": {
     "title": "Васютин, Юрий Семёнович",
     "lang": "ru",
     "image": "vasyutin.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 960,
+    "h": 916
   },
   "bobrov": {
     "title": "Бобров, Александр Викторович",
@@ -608,13 +811,17 @@
     "title": "Пайпс, Ричард",
     "lang": "ru",
     "image": "pipes.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/85/Richard_Pipes_2004.JPG"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/8/85/Richard_Pipes_2004.JPG",
+    "w": 427,
+    "h": 640
   },
   "gefter": {
     "title": "Гефтер, Михаил Яковлевич",
     "lang": "ru",
     "image": "gefter.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/33/%D0%9C%D0%B8%D1%85%D0%B0%D0%B8%D0%BB_%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%D0%B8%D1%87_%D0%93%D0%B5%D1%84%D1%82%D0%B5%D1%80.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/3/33/%D0%9C%D0%B8%D1%85%D0%B0%D0%B8%D0%BB_%D0%AF%D0%BA%D0%BE%D0%B2%D0%BB%D0%B5%D0%B2%D0%B8%D1%87_%D0%93%D0%B5%D1%84%D1%82%D0%B5%D1%80.jpg",
+    "w": 220,
+    "h": 220
   },
   "harding": {
     "title": "Harding, Neil",
@@ -625,134 +832,278 @@
     "title": "Тумаркин, Нина",
     "lang": "ru",
     "image": "tumarkin.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 640,
+    "h": 480
   },
   "ennker": {
     "title": "Эннкер, Бенно",
     "lang": "ru",
-    "image": null
+    "image": "c-ennker.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 200,
+    "h": 200
   },
   "service": {
     "title": "Сервис, Роберт",
     "lang": "ru",
     "image": "service.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Service%2C_Robert.IMG_1910.JPG"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/92/Service%2C_Robert.IMG_1910.JPG",
+    "w": 1200,
+    "h": 900
   },
   "sakharov-va": {
     "title": "Сахаров, Валентин Александрович",
     "lang": "ru",
-    "image": "sakharov-va.png",
-    "source_url": "curator (2026-07)"
+    "image": "sakharov-va.jpg",
+    "source_url": "curator (2026-07)",
+    "w": 546,
+    "h": 788
   },
   "oizerman": {
     "title": "Ойзерман, Теодор Ильич",
     "lang": "ru",
-    "image": "oizerman.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/46/Teodor_Ojzerman_foto.png"
+    "image": "oizerman.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/46/Teodor_Ojzerman_foto.png",
+    "w": 1200,
+    "h": 835
   },
   "stein": {
     "title": "Штейн, Михаил Гиршевич",
     "lang": "ru",
     "image": "stein.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 800,
+    "h": 1200
   },
   "guslyarov": {
     "title": "Гусляров, Евгений Николаевич",
     "lang": "ru",
     "image": "guslyarov.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 624,
+    "h": 468
   },
   "read-c": {
     "title": "Read, Christopher (historian)",
     "lang": "ru",
     "image": "read-c.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 1200,
+    "h": 870
   },
   "trofimov": {
     "title": "Трофимов, Жорес Александрович",
     "lang": "ru",
     "image": "trofimov.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/69/%D0%A2%D1%80%D0%BE%D1%84%D0%B8%D0%BC%D0%BE%D0%B2%2C_%D0%96%D0%BE%D1%80%D0%B5%D1%81_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/ru/6/69/%D0%A2%D1%80%D0%BE%D1%84%D0%B8%D0%BC%D0%BE%D0%B2%2C_%D0%96%D0%BE%D1%80%D0%B5%D1%81_%D0%90%D0%BB%D0%B5%D0%BA%D1%81%D0%B0%D0%BD%D0%B4%D1%80%D0%BE%D0%B2%D0%B8%D1%87.jpg",
+    "w": 226,
+    "h": 300
   },
   "krausz": {
     "title": "Krausz, Tamás",
     "lang": "ru",
     "image": "krausz.jpg",
-    "source_url": "curator (2026-07)"
+    "source_url": "curator (2026-07)",
+    "w": 772,
+    "h": 607
   },
   "carrere": {
     "title": "Каррер д'Анкосс, Элен",
     "lang": "ru",
     "image": "carrere.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/H%C3%A9l%C3%A8ne_Carr%C3%A8re_d%E2%80%99Encausse_par_Claude_Truong-Ngoc_sept_2013.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/2/24/H%C3%A9l%C3%A8ne_Carr%C3%A8re_d%E2%80%99Encausse_par_Claude_Truong-Ngoc_sept_2013.jpg",
+    "w": 800,
+    "h": 1200
   },
   "yesin": {
     "title": "Есин, Сергей Николаевич",
     "lang": "ru",
     "image": "yesin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/MIBF2013_img_10_Sergey_Esin.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/f/f5/MIBF2013_img_10_Sergey_Esin.jpg",
+    "w": 983,
+    "h": 1200
   },
   "wallerstein": {
     "title": "Валлерстайн, Иммануил",
     "lang": "ru",
     "image": "wallerstein.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/Immanuel_Wallerstein.2008.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/47/Immanuel_Wallerstein.2008.jpg",
+    "w": 600,
+    "h": 800
   },
   "yaroslavsky": {
     "image": "yaroslavsky.jpg",
     "source_url": "curator (2026-07)",
     "title": "yaroslavsky",
-    "lang": "ru"
+    "lang": "ru",
+    "w": 1000,
+    "h": 657
   },
   "yeremenko": {
     "image": "yeremenko.jpg",
     "source_url": "curator (2026-07)",
     "title": "yeremenko",
-    "lang": "ru"
+    "lang": "ru",
+    "w": 876,
+    "h": 876
   },
   "sokolov": {
     "image": "sokolov.jpg",
     "source_url": "curator (2026-07)",
     "title": "sokolov",
-    "lang": "ru"
+    "lang": "ru",
+    "w": 702,
+    "h": 767
   },
   "shalyapin": {
     "title": "Шаляпин, Фёдор Иванович",
     "lang": "ru",
     "image": "shalyapin.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/49/Feodor_Chaliapin_signed.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/4/49/Feodor_Chaliapin_signed.jpg",
+    "w": 897,
+    "h": 1200
   },
   "suslov": {
     "title": "Суслов, Михаил Андреевич",
     "lang": "ru",
-    "image": "suslov.png",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/1963_Press_Photo_Mikhail_Andreyevich_Suslov.png"
+    "image": "suslov.jpg",
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/c/c7/1963_Press_Photo_Mikhail_Andreyevich_Suslov.png",
+    "w": 864,
+    "h": 1184
   },
   "zizek": {
     "title": "Жижек, Славой",
     "lang": "ru",
     "image": "zizek.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Slavoj_%C5%BDi%C5%BEek_2015.jpg/3840px-Slavoj_%C5%BDi%C5%BEek_2015.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/thumb/f/fb/Slavoj_%C5%BDi%C5%BEek_2015.jpg/3840px-Slavoj_%C5%BDi%C5%BEek_2015.jpg",
+    "w": 1200,
+    "h": 808
   },
   "novoselov": {
     "title": "Новосёлов, Валерий Михайлович",
     "lang": "ru",
-    "image": null
+    "image": "c-novoselov.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1200,
+    "h": 800
   },
   "devyatov": {
     "title": "Девятов, Сергей Викторович",
     "lang": "ru",
-    "image": null
+    "image": "c-devyatov.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1000,
+    "h": 811
   },
   "gasparyan": {
     "title": "Гаспарян, Армен Сумбатович",
     "lang": "ru",
     "image": "gasparyan.jpg",
-    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Armen_Gasparyan_07.jpg"
+    "source_url": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Armen_Gasparyan_07.jpg",
+    "w": 768,
+    "h": 1080
   },
   "vakhitov": {
     "title": "Вахитов, Рустем Ринатович",
     "lang": "ru",
+    "image": "c-vakhitov.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1200,
+    "h": 795
+  },
+  "paleologue": {
+    "title": "Палеолог, Жорж Морис",
+    "lang": "ru",
+    "image": "c-paleologue.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 815,
+    "h": 750
+  },
+  "montagu": {
+    "title": "Монтегю, Айвор",
+    "lang": "ru",
+    "image": "c-montagu.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1200,
+    "h": 1035
+  },
+  "nimtz": {
+    "title": "Нимитц, Август",
+    "lang": "ru",
+    "image": "c-nimtz.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 480,
+    "h": 270
+  },
+  "brie": {
+    "title": "Бри, Михаэль",
+    "lang": "ru",
+    "image": "c-brie.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1025,
+    "h": 1130
+  },
+  "douds": {
+    "title": "Дудз, Лара",
+    "lang": "ru",
+    "image": "c-douds.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 223,
+    "h": 223
+  },
+  "egorov-vn": {
+    "title": "Егоров, В.Н.",
+    "lang": "ru",
+    "image": "c-egorov-vn.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 500,
+    "h": 449
+  },
+  "marshall": {
+    "title": "Маршалл, Алекс",
+    "lang": "ru",
+    "image": "c-marshall.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 140,
+    "h": 140
+  },
+  "perfilov": {
+    "title": "Перфилов, В.А.",
+    "lang": "ru",
+    "image": "c-perfilov.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 700,
+    "h": 525
+  },
+  "prokopenko": {
+    "title": "Прокопенко, С.А.",
+    "lang": "ru",
+    "image": "c-prokopenko.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1010,
+    "h": 1200
+  },
+  "jayatilleka": {
+    "title": "Джаятиллека, Даян",
+    "lang": "ru",
+    "image": "c-jayatilleka.jpg",
+    "source": "Материалы заказчика (08.2026)",
+    "w": 1200,
+    "h": 740
+  },
+  "krutov": {
+    "title": "Крутов, Владимир",
+    "lang": "ru",
     "image": null
+  },
+  "prilepin": {
+    "title": "Прилепин, Захар",
+    "lang": "ru",
+    "image": "prilepin.jpg",
+    "source_url": "https://commons.wikimedia.org/wiki/File:%D0%97%D0%B0%D1%85%D0%B0%D1%80_%D0%9F%D1%80%D0%B8%D0%BB%D0%B5%D0%BF%D0%B8%D0%BD_(Spravedlivo.ru)_(cropped).jpg",
+    "license": "CC BY 4.0 · Spravedlivo.ru",
+    "w": 876,
+    "h": 1200
   }
 }

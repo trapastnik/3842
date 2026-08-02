@@ -48,6 +48,17 @@ function applyDesign() {
   });
 }
 
+// Портрет в карточке рендерится во всю её ширину: 220 px на 1920, 440 px на
+// 3840. Апскейл больше двукратного даёт мыло на 49″ — такие портреты лучше не
+// показывать вовсе, монограмма честнее. Ширина берётся из manifest.json
+// (проставляется при укладке файла), чтобы решать до загрузки картинки.
+const MIN_PORTRAIT_PX = 220;
+function usablePortrait(meta) {
+  if (!meta.image) return null;
+  if (typeof meta.w === "number" && meta.w < MIN_PORTRAIT_PX) return null;
+  return `../assets/mtk42/portraits/${meta.image}`;
+}
+
 function buildItems(content, portraits) {
   const items = [];
   for (const p of content.people) {
@@ -65,7 +76,7 @@ function buildItems(content, portraits) {
       keyWork: p.key_work,
       summary: p.summary,
       quote: p.quote || null,
-      portrait: portraitMeta.image ? `../assets/mtk42/portraits/${portraitMeta.image}` : null,
+      portrait: usablePortrait(portraitMeta),
       initials: initials(p.short || p.name),
       tag: CATEGORY_TAG[p.category] || p.category,
     });
@@ -189,14 +200,21 @@ function openDetail(it) {
   }
   $('[data-bind="kind"]', d).textContent = it.tag;
   $('[data-bind="name"]', d).textContent = it.name;
-  $('[data-bind="meta"]', d).textContent = `${it.role} · ${it.yearsAlive}`;
+  $('[data-bind="meta"]', d).textContent = it.yearsAlive
+    ? `${it.role} · ${it.yearsAlive}`
+    : it.role;
   $('[data-bind="epoch"]', d).textContent = epochLabel(it.epoch);
   $('[data-bind="tone-label"]', d).textContent = toneLabel(it.tone);
 
   const workSection = $('[data-bind="work-section"]', d);
   if (it.keyWork) {
     workSection.hidden = false;
-    $('[data-bind="work"]', d).textContent = `${it.keyWork} · ${it.year}`;
+    // Год дописываем, только если в самой библиографии его нет: у 110 из 140
+    // записей он уже в конце ссылки, и выходило «М., 2025 · 2025». Там, где
+    // год записи и год издания расходятся (дневник 1917 / публикация 1922,
+    // высказывание 1930 / сборник 1971), приписка остаётся и несёт смысл.
+    const hasYear = new RegExp(`\\b${it.year}\\b`).test(it.keyWork);
+    $('[data-bind="work"]', d).textContent = hasYear ? it.keyWork : `${it.keyWork} · ${it.year}`;
   } else {
     workSection.hidden = true;
   }

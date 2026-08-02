@@ -84,6 +84,13 @@ const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
   bindUi();
   syncControlsFromState();
 
+  // Кегли/точки нормированы на 1920 — пересчитать при смене вьюпорта (4K).
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => { applyVisualSettings(); rebuildChart(); }, 150);
+  });
+
   // Initial scroll close to 1988 (entry to back-to-lenin) for visual interest.
   requestAnimationFrame(() => {
     const chart = $("#chart");
@@ -214,6 +221,16 @@ const CATEGORY_TAG = {
   writers: "Литература",
 };
 
+// Точка на маятнике — 112 px на 1920, 224 px на 3840. Апскейл больше
+// двукратного мылит на 49″; такие портреты заменяем монограммой. Ширина —
+// из manifest.json, чтобы решать до загрузки. См. тот же порог в картотеке.
+const MIN_PORTRAIT_PX = 220;
+function usablePortrait(meta) {
+  if (!meta.image) return null;
+  if (typeof meta.w === "number" && meta.w < MIN_PORTRAIT_PX) return null;
+  return `../assets/mtk42/portraits/${meta.image}`;
+}
+
 function collectItems(content, portraits) {
   const items = [];
   for (const p of content.people) {
@@ -224,13 +241,13 @@ function collectItems(content, portraits) {
       id: p.id,
       category: p.category,
       name: p.name,
-      meta: `${p.role} · ${p.years}`,
+      meta: p.years ? `${p.role} · ${p.years}` : p.role,
       year: p.year,
       tone: p.tone,
       text: p.summary || "",
       source: p.key_work ? `«${p.key_work}»` : "",
       quote: p.quote || null,
-      portrait: portraitMeta.image ? `../assets/mtk42/portraits/${portraitMeta.image}` : null,
+      portrait: usablePortrait(portraitMeta),
       initials: initialsFromName(p.short || p.name),
       tag: CATEGORY_TAG[p.category] || p.category,
     });
@@ -421,16 +438,24 @@ function closeCard() {
   }
 }
 
+// ─── 4K-масштаб кеглей (COORDINATION, смоук 2026-07-22) ─────
+// Значения из ⚙-панели нормированы на ширину 1920. На 3840 (канон 4K, 49")
+// множитель 2 — иначе подписи вырождаются в микротекст. Ниже 1920 — без изменений.
+function uiScale() {
+  return Math.min(2, Math.max(1, window.innerWidth / 1920));
+}
+function uiPx(v) { return (v * uiScale()).toFixed(1) + "px"; }
+
 // ─── Visual settings (CSS variables + body flags) ───────────
 function applyVisualSettings() {
   const root = document.documentElement;
   const s = state.settings;
-  root.style.setProperty("--dot-size", s.dotSize + "px");
+  root.style.setProperty("--dot-size", uiPx(s.dotSize));
   root.style.setProperty("--pendulum-stroke", s.strokeWidth);
   root.style.setProperty("--axis-size",  s.axisSize  + "px");
   root.style.setProperty("--axis-opacity", (s.axisOpacity / 100).toFixed(2));
   root.style.setProperty("--axis-weight", s.axisBold ? 700 : 400);
-  root.style.setProperty("--epoch-size", s.epochSize + "px");
+  root.style.setProperty("--epoch-size", uiPx(s.epochSize));
   root.style.setProperty("--epoch-opacity", (s.epochOpacity / 100).toFixed(2));
   root.style.setProperty("--epoch-weight", s.epochBold ? 700 : 400);
   root.style.setProperty("--year-size",  s.yearSize  + "px");
