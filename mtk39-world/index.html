@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 39 · Имя Ленина на карте мира</title>
-    <link rel="stylesheet" href="./styles.css?v=5" />
+    <link rel="stylesheet" href="./styles.css?v=6" />
   </head>
   <body>
     <main class="stage">
@@ -30,16 +30,20 @@
       </button>
 
       <aside class="offmap" id="offmap" hidden>
-        <header class="offmap__head">
-          <span>Не на карте</span>
-          <button class="offmap__close" type="button" aria-label="Закрыть">✕</button>
-        </header>
-        <p class="offmap__note">
-          Записи свода, для которых не нашлось координат: русская транслитерация
-          чужого топонима не ищется, а у части объектов точки нет вовсе.
-          Карточка открывается так же, как у точки на карте.
-        </p>
-        <ul class="offmap__list" data-off-list></ul>
+        <div class="offmap__box">
+          <header class="offmap__head">
+            <div>
+              <h2 class="offmap__title">Не на карте · <span data-off-total>0</span></h2>
+              <p class="offmap__note">
+                Записи свода, для которых не нашлось координат: русская транслитерация
+                чужого топонима не ищется, а у части объектов точки нет вовсе.
+              </p>
+            </div>
+            <button class="offmap__close" type="button" aria-label="Закрыть">✕</button>
+          </header>
+          <nav class="offmap__groups" data-off-groups aria-label="Группировка"></nav>
+          <div class="offmap__wall" data-off-wall></div>
+        </div>
       </aside>
 
       <aside class="card" id="card" hidden>
@@ -57,6 +61,6 @@
 
     <script src="./vendor/d3.v7.min.js"></script>
     <script src="../assets/shared/lib/projection.js"></script>
-    <script type="module" src="./world.js?v=9"></script>
+    <script type="module" src="./world.js?v=10"></script>
   </body>
 </html>

@@ -436,12 +436,35 @@ function resetView() {
 
    Часть записей свода не удалось привязать к точке: кириллические транслитерации
    итальянских, сербских и индийских топонимов не ищутся, а часть объектов точки
-   не имеет в принципе (премия, комсомол, послание в космос). Приём взят из
-   первой версии глобуса: они не пропадают молча, а лежат отдельным списком. */
+   не имеет в принципе (премия, комсомол, послание в космос). Они не пропадают
+   молча — открываются полноценной картотекой с теми же карточками, что и у точек
+   на карте, и с перегруппировкой по типу, судьбе имени и стране. */
+
+const KIND_LABEL = {
+  улица: "улицы", проспект: "проспекты и бульвары", площадь: "площади",
+  переулок: "переулки", город: "города и сёла", район: "районы и области",
+  завод: "заводы и фабрики", вуз: "институты и школы", культура: "музеи, театры, библиотеки",
+  парк: "парки", памятник: "памятники", электростанция: "электростанции",
+  колхоз: "колхозы и совхозы", транспорт: "транспорт", вода: "каналы и реки",
+  спорт: "стадионы", медицина: "больницы", судно: "суда", природа: "горы и заповедники",
+  награда: "ордена и премии", космос: "космос", прочее: "прочее",
+};
+const STATUS_CLASS = {
+  "носит имя": "offcard--live",
+  переименован: "offcard--gone",
+  утрачен: "offcard--lost",
+};
+const OFF_GROUPS = [
+  { key: "kind", label: "по типу", of: (r) => KIND_LABEL[r.kind] || r.kind },
+  { key: "status", label: "по судьбе имени",
+    of: (r) => (STATUS.find((s) => s.key === r.status) || {}).label || r.status },
+  { key: "country", label: "по стране", of: (r) => r.country || "—" },
+];
 
 function buildOffmap(all) {
   const panel = document.getElementById("offmap");
-  const list = panel.querySelector("[data-off-list]");
+  const wall = panel.querySelector("[data-off-wall]");
+  const tabs = panel.querySelector("[data-off-groups]");
   const toggle = document.getElementById("offmap-toggle");
   const off = all.filter((r) => r.lat === null || r.lng === null);
 
@@ -450,38 +473,86 @@ function buildOffmap(all) {
     return () => {};
   }
   toggle.querySelector("[data-off-count]").textContent = off.length;
+  panel.querySelector("[data-off-total]").textContent = off.length;
 
-  const byCountry = new Map();
-  for (const r of off) {
-    const key = r.country || "—";
-    if (!byCountry.has(key)) byCountry.set(key, []);
-    byCountry.get(key).push(r);
-  }
-  const groups = [...byCountry.entries()].sort((a, b) => b[1].length - a[1].length);
+  let groupBy = OFF_GROUPS[0];
 
-  list.replaceChildren();
-  for (const [country, recs] of groups) {
-    const head = document.createElement("li");
-    head.className = "offmap__country";
-    head.textContent = `${country} · ${recs.length}`;
-    list.appendChild(head);
-    for (const rec of recs) {
-      // в одной стране бывает по шесть «улиц Ленина» — различает город
-      const li = document.createElement("li");
-      li.className = "offmap__item";
-      const nm = document.createElement("div");
-      nm.textContent = rec.name;
-      li.appendChild(nm);
-      if (rec.city) {
-        const where = document.createElement("div");
-        where.className = "offmap__where";
-        where.textContent = rec.city;
-        li.appendChild(where);
-      }
-      li.addEventListener("click", () => showCard(rec));
-      list.appendChild(li);
+  const card = (rec) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = `offcard ${STATUS_CLASS[rec.status] || ""}`;
+
+    if (rec.name_orig && rec.name_orig !== rec.name) {
+      const o = document.createElement("div");
+      o.className = "offcard__orig";
+      o.textContent = rec.name_orig;
+      b.appendChild(o);
     }
+    const nm = document.createElement("div");
+    nm.className = "offcard__name";
+    nm.textContent = rec.name;
+    b.appendChild(nm);
+
+    const where = document.createElement("div");
+    where.className = "offcard__where";
+    where.textContent = [rec.city, rec.country].filter(Boolean).join(" · ");
+    b.appendChild(where);
+
+    const year = document.createElement("div");
+    year.className = "offcard__year";
+    year.textContent = rec.year_named && rec.year_renamed
+      ? `${rec.year_named} — ${rec.year_renamed}`
+      : rec.year_named ? `с ${rec.year_named}`
+        : rec.year_renamed ? `имя снято в ${rec.year_renamed}`
+          : (STATUS.find((s) => s.key === rec.status) || {}).label || "";
+    b.appendChild(year);
+
+    b.addEventListener("click", () => { setOpen(false); showCard(rec); });
+    return b;
+  };
+
+  const render = () => {
+    const groups = new Map();
+    for (const rec of off) {
+      const k = groupBy.of(rec);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(rec);
+    }
+    const sorted = [...groups.entries()]
+      .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ru"));
+
+    wall.replaceChildren();
+    for (const [title, recs] of sorted) {
+      const head = document.createElement("div");
+      head.className = "offgroup__head";
+      head.innerHTML = `<span class="offgroup__name">${title}</span>`
+        + `<span class="offgroup__n">${recs.length}</span>`
+        + '<span class="offgroup__line"></span>';
+      wall.appendChild(head);
+
+      const grid = document.createElement("div");
+      grid.className = "offcards";
+      for (const rec of recs) grid.appendChild(card(rec));
+      wall.appendChild(grid);
+    }
+    wall.scrollTop = 0;
+  };
+
+  tabs.replaceChildren();
+  for (const g of OFF_GROUPS) {
+    const b = document.createElement("button");
+    b.className = "chip chip--tab";
+    b.type = "button";
+    b.textContent = g.label;
+    b.setAttribute("aria-pressed", String(g === groupBy));
+    b.addEventListener("click", () => {
+      groupBy = g;
+      [...tabs.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
+      render();
+    });
+    tabs.appendChild(b);
   }
+  render();
 
   const setOpen = (open) => {
     panel.hidden = !open;
@@ -489,6 +560,7 @@ function buildOffmap(all) {
   };
   toggle.addEventListener("click", () => setOpen(panel.hidden));
   panel.querySelector(".offmap__close").addEventListener("click", () => setOpen(false));
+  panel.addEventListener("click", (e) => { if (e.target === panel) setOpen(false); });
   return () => setOpen(false);
 }
 
