@@ -128,7 +128,7 @@
         y.textContent = m.year ? String(m.year) : "—";
         const t = document.createElement("span");
         t.className = "work-title";
-        t.textContent = (m.city ? m.city + " · " : "") + (m.title || "").replace(/^Памятник Ленину /, "");
+        t.textContent = Mtk41Stats.label(m);
         textCol.appendChild(y);
         textCol.appendChild(t);
         w.appendChild(textCol);
@@ -165,6 +165,12 @@
   ]).then(([mtk, manifest]) => {
     monuments = mtk.items || [];
     photoManifest = manifest || {};
+    Mtk41Stats.setSubtitle(monuments, s => {
+      const P = Mtk41Stats.plural;
+      return `${s.sculptorCount} ${P(s.sculptorCount, ["скульптор", "скульптора", "скульпторов"])} `
+        + `на ${s.count} ${P(s.count, ["памятник", "памятника", "памятников"])}. `
+        + `Чаще всех — ${s.topSculptor.name}: ${s.topSculptor.count}.`;
+    });
     render();
   }).catch(err => {
     // eslint-disable-next-line no-console
