@@ -70,7 +70,9 @@ class ShelfApp {
   }
 
   titleAreaPx() {
-    return 110 * this.s;
+    // заголовок с подзаголовком занимает ~150 дизайн-px: с прежними 110
+    // метка первой полки налезала на подзаголовок
+    return 148 * this.s;
   }
 
   shelfBaseHeight() {
@@ -271,6 +273,42 @@ class ShelfApp {
     grR.addColorStop(1, "rgba(12,16,18,0.85)");
     ctx.fillStyle = grR;
     ctx.fillRect(this.W - fadeW, top + 60 * this.s, fadeW, baseline - top - 60 * this.s);
+
+    this.renderScrollbar(shelf, baseline, offsetX);
+  }
+
+  // Полка длиннее экрана, но об этом ничего не говорило: край просто
+  // затемнялся. Дорожка с бегунком показывает и что прокрутка есть, и
+  // сколько осталось.
+  renderScrollbar(shelf, baseline, offsetX) {
+    const ctx = this.ctx;
+    const s = this.s;
+    const trackL = offsetX;
+    const trackR = this.W - 96 * s;                   // справа место под подсказку
+    const trackW = trackR - trackL;
+    const total = shelf.totalWidth + offsetX + 60 * s;
+    if (total <= this.W + 1) return;                  // всё и так видно
+
+    const y = baseline + 18 * s;
+    ctx.save();
+    ctx.fillStyle = "rgba(247,249,239,0.10)";
+    ctx.fillRect(trackL, y, trackW, 2 * s);
+
+    const maxScroll = Math.max(1, total - this.W);
+    const frac = Math.min(1, this.W / total);
+    const thumbW = Math.max(28 * s, trackW * frac);
+    const t = Math.min(1, Math.max(0, shelf.scrollX / maxScroll));
+    ctx.fillStyle = "rgba(210,183,115,0.55)";
+    ctx.fillRect(trackL + (trackW - thumbW) * t, y - 1 * s, thumbW, 4 * s);
+
+    // подсказка — на одной строке с дорожкой, справа от неё: под дорожкой
+    // она попадала уже на следующую полку
+    ctx.fillStyle = "rgba(210,183,115,0.55)";
+    ctx.font = `400 ${10 * s}px "20 Kopeek", monospace`;
+    ctx.textBaseline = "middle";
+    ctx.textAlign = "right";
+    ctx.fillText(t < 0.98 ? "тяни →" : "← тяни", this.W - 26 * s, y + 1 * s);
+    ctx.restore();
   }
 
   renderSpine({ item, w, h }, x, baselineY) {
@@ -299,20 +337,27 @@ class ShelfApp {
     ctx.fillRect(x + 4 * this.s, y + 16 * this.s, w - 8 * this.s, 1 * this.s);
     ctx.fillRect(x + 4 * this.s, y + h - 22 * this.s, w - 8 * this.s, 1 * this.s);
 
-    // тиснение — заголовок вертикально
-    if (w >= 26 * this.s) {
+    // Тиснение. Меряем текст, а не считаем символы: кегль зависит от ширины
+    // корешка, а в корпусе кириллица вперемешку с латиницей — посимвольный
+    // лимит врал, и названия вылезали за корешок. Широкий корешок берёт две
+    // строки, узкий — одну с многоточием.
+    if (w >= 22 * this.s) {
       ctx.save();
-      ctx.translate(x + w / 2, y + h - 28 * this.s);
+      ctx.translate(x + w / 2, y + h - 26 * this.s);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = adjustHex(item.cover_color, 95);
-      const fs = Math.min(14 * this.s, w * 0.34);
+      const fs = Math.max(8 * this.s, Math.min(13 * this.s, w * 0.32));
       ctx.font = `400 ${fs}px Nolde, Georgia, serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      const maxChars = Math.floor((h - 60 * this.s) / (fs * 0.55));
-      let title = item.title;
-      if (title.length > maxChars) title = title.slice(0, Math.max(3, maxChars - 1)) + "…";
-      ctx.fillText(title, 0, 0);
+      const maxLen = h - 52 * this.s;                 // длина вдоль корешка
+      const twoLines = w >= fs * 2.6;                 // хватит ли ширины на две
+      const lines = M.wrapLines(ctx, item.title, maxLen, twoLines ? 2 : 1);
+      const step = fs * 1.05;
+      const off = -((lines.length - 1) * step) / 2;
+      for (let i = 0; i < lines.length; i++) {
+        ctx.fillText(lines[i], 0, off + i * step);
+      }
       ctx.restore();
     }
 

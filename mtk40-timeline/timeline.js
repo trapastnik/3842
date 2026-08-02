@@ -97,6 +97,10 @@ const DEFAULT_SETTINGS = {
   labelScale: 1.0,
   showEvents: true,
   showPeriods: true,
+  laneBand: 1,        // яркость подложки дорожек
+  showAxis: true,     // ось лет с делениями
+  showOutliers: true, // карман «вне шкалы»
+  dotScale: 1,        // размер кружков
   showConns: true,
   crossfade: true,
 };
@@ -233,11 +237,11 @@ class TimelineApp {
   radiusFor(count) {
     const base = 6 * this.s;
     const cap = 46 * this.s;
-    return Math.min(cap, base + 5 * this.s * Math.sqrt(count));
+    return Math.min(cap, base + 5 * this.s * Math.sqrt(count)) * this.settings.dotScale;
   }
   leafRadius(item) {
     const sig = item.significance || 3;
-    return (6 + (sig >= 5 ? 3.5 : sig >= 4 ? 2 : 0)) * this.s;
+    return (6 + (sig >= 5 ? 3.5 : sig >= 4 ? 2 : 0)) * this.s * this.settings.dotScale;
   }
 
   // ---------- кластеры ----------
@@ -524,9 +528,9 @@ class TimelineApp {
     if (this.settings.showPeriods) this.drawPeriods();
     this.drawLanes();
     if (this.settings.showEvents) this.drawEvents();
-    this.drawAxis();
+    if (this.settings.showAxis) this.drawAxis();
     this.drawClusters();
-    this.drawOutliers();
+    if (this.settings.showOutliers) this.drawOutliers();
     if (this.settings.showConns) this.drawConnections();
     this.drawHud();
   }
@@ -576,34 +580,53 @@ class TimelineApp {
   }
 
 
+  // Дорожки читались как три одинаковые серые линии: понять, где «ИМ», а
+  // где «О НЁМ», можно было только по мелкой подписи слева. Теперь у каждой
+  // своя подложка в цвете оси, толстая закладка на левом крае и крупная
+  // подпись — сама полоса говорит, чья она.
   drawLanes() {
     const ctx = this.ctx;
-    ctx.save();
+    const s = this.s;
+    const L = this.plotL(), R = this.plotR();
+    const halfBand = this.H * 0.075 * this.settings.laneBand;
+
     for (const lane of LANES) {
       const y = this.laneY(lane);
       const meta = BUCKET_META[lane];
-      ctx.strokeStyle = rgba(COLORS.paper, 0.14);
-      ctx.lineWidth = 1 * this.s;
+      ctx.save();
+      if (this.settings.laneBand > 0.01) {
+        const g = ctx.createLinearGradient(0, y - halfBand, 0, y + halfBand);
+        g.addColorStop(0, rgba(meta.accent, 0));
+        g.addColorStop(0.5, rgba(meta.accent, 0.13));
+        g.addColorStop(1, rgba(meta.accent, 0));
+        ctx.fillStyle = g;
+        ctx.fillRect(this.W * 0.02, y - halfBand, R - this.W * 0.02, halfBand * 2);
+      }
+      // закладка на левом крае — цветной корешок дорожки
+      ctx.fillStyle = meta.accent;
+      ctx.fillRect(this.W * 0.02, y - halfBand * 0.55, 4 * s, halfBand * 1.1);
+      // сама линия
+      ctx.strokeStyle = rgba(meta.accent, 0.5);
+      ctx.lineWidth = 1 * s;
       ctx.beginPath();
-      ctx.moveTo(this.plotL(), y);
-      ctx.lineTo(this.plotR(), y);
+      ctx.moveTo(L, y);
+      ctx.lineTo(R, y);
       ctx.stroke();
 
-      // Подписи дорожек живут в левом отступе — под кружки не лезут.
       ctx.textAlign = "left";
       ctx.textBaseline = "bottom";
       ctx.fillStyle = meta.accent;
-      ctx.font = `600 ${14 * this.s * this.settings.labelScale}px "20 Kopeek", monospace`;
-      ctx.fillText(meta.label, this.W * 0.028, y - 14 * this.s);
-      ctx.fillStyle = rgba(COLORS.paper, 0.45);
-      ctx.font = `400 ${9.5 * this.s * this.settings.labelScale}px "20 Kopeek", monospace`;
-      // держим подпись внутри отступа: справа от неё карман вне шкалы
-      const noteMax = this.plotL() - this.W * 0.028 - 74 * this.s;
+      ctx.font = `600 ${17 * s * this.settings.labelScale}px "20 Kopeek", monospace`;
+      ctx.fillText(meta.label, this.W * 0.028 + 8 * s, y - 14 * s);
+      ctx.fillStyle = rgba(COLORS.paper, 0.5);
+      ctx.font = `400 ${9.5 * s * this.settings.labelScale}px "20 Kopeek", monospace`;
+      const noteMax = this.plotL() - this.W * 0.028 - 74 * s;
       const note = M.wrapLines(ctx, meta.note.toUpperCase(), noteMax, 1)[0] || "";
-      ctx.fillText(note, this.W * 0.028, y - 3 * this.s);
+      ctx.fillText(note, this.W * 0.028 + 8 * s, y - 3 * s);
+      ctx.restore();
     }
-    ctx.restore();
   }
+
 
   drawAxis() {
     const ctx = this.ctx;
@@ -1050,14 +1073,20 @@ class TimelineApp {
     range("thr-decade", "thrDecade", (v) => v.toFixed(2) + "×");
     range("thr-year", "thrYear", (v) => v.toFixed(2) + "×");
     range("opt-label-scale", "labelScale", (v) => v.toFixed(2) + "×");
+    range("opt-lane-band", "laneBand", (v) => Math.round(v * 100) + "%");
+    range("opt-dot-scale", "dotScale", (v) => v.toFixed(2) + "×");
     check("opt-events", "showEvents");
     check("opt-periods", "showPeriods");
+    check("opt-axis", "showAxis");
+    check("opt-outliers", "showOutliers");
     check("opt-conns", "showConns");
     check("opt-crossfade", "crossfade");
     document.getElementById("opt-reset").addEventListener("click", () => {
       Object.assign(this.settings, DEFAULT_SETTINGS);
       this.saveSettings();
-      for (const [id, key] of [["thr-decade", "thrDecade"], ["thr-year", "thrYear"], ["opt-label-scale", "labelScale"]]) {
+      for (const [id, key] of [["thr-decade", "thrDecade"], ["thr-year", "thrYear"],
+                               ["opt-label-scale", "labelScale"], ["opt-lane-band", "laneBand"],
+                               ["opt-dot-scale", "dotScale"]]) {
         const el = document.getElementById(id);
         el.value = String(this.settings[key]);
         const out = this.settingsPanel.querySelector(`[data-value-for="${id}"]`);
@@ -1066,6 +1095,8 @@ class TimelineApp {
       if (this.paintLabelModes) this.paintLabelModes();
       document.getElementById("opt-events").checked = this.settings.showEvents;
       document.getElementById("opt-periods").checked = this.settings.showPeriods;
+      document.getElementById("opt-axis").checked = this.settings.showAxis;
+      document.getElementById("opt-outliers").checked = this.settings.showOutliers;
       document.getElementById("opt-conns").checked = this.settings.showConns;
       document.getElementById("opt-crossfade").checked = this.settings.crossfade;
     });
