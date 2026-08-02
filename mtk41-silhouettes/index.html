@@ -5,8 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>МТК 41 · Силуэты</title>
   <link rel="icon" href="data:,">
-  <link rel="stylesheet" href="./styles.css?v=20260802">
-  <link rel="stylesheet" href="../assets/mtk41/lib/card.css?v=20260802">
+  <link rel="stylesheet" href="./styles.css?v=20260802c">
+  <link rel="stylesheet" href="../assets/mtk41/lib/card.css?v=20260802c">
 </head>
 <body>
   <main class="stage" aria-label="МТК 41 Скульптуры Ленина — реальные силуэты в одном масштабе">
@@ -16,12 +16,16 @@
       <h1>Силуэты в одном масштабе</h1>
       <div class="subtitle">Реальные фигуры — вырезаны из фото (rembg / U²-Net), масштаб настоящий. Слева — человек 1.75 м.</div>
     </header>
+    <div class="nav-controls" aria-hidden="true">
+      <div class="nav-row" id="nav-modes"></div>
+      <div class="nav-row nav-row--sub" id="nav-sub"></div>
+    </div>
     <aside id="card" class="card" data-mtk-card hidden></aside>
   </main>
   <script type="module">
-    import { initMtkCard } from "../assets/mtk41/lib/card.js?v=20260802";
+    import { initMtkCard } from "../assets/mtk41/lib/card.js?v=20260802c";
     initMtkCard();
   </script>
-  <script src="./silhouettes.js?v=20260802"></script>
+  <script src="./silhouettes.js?v=20260802c"></script>
 </body>
 </html>
