@@ -1,0 +1,27 @@
+{
+  "defaultScene": "pulse",
+  "defaultLang": "ru",
+  "timings": {
+    "fade": 350,
+    "reset": 90,
+    "standby": 180,
+    "restartAt": "04:00",
+    "standbyFps": 10
+  },
+  "nav": {
+    "show": true,
+    "position": "bottom",
+    "size": 96,
+    "opacity": 0.92,
+    "showTitle": true,
+    "showArrows": true,
+    "showDots": true
+  },
+  "stripes": {
+    "on": true,
+    "opacity": 1,
+    "angle": 105
+  },
+  "a11y": { "enabled": false },
+  "service": { "gear": "always" }
+}

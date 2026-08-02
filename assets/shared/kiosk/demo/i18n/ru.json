@@ -1,0 +1,7 @@
+{
+  "cards.filter.all": "Все",
+  "cards.filter.документ": "Документы",
+  "cards.filter.фотография": "Фотографии",
+  "cards.filter.плакат": "Плакаты",
+  "cards.state": "фильтр: {filter} · показано {shown} из {total}"
+}

@@ -1,0 +1,7 @@
+{
+  "cards.filter.all": "全部",
+  "cards.filter.документ": "文件",
+  "cards.filter.фотография": "照片",
+  "cards.filter.плакат": "海报",
+  "cards.state": "筛选：{filter} · 显示 {shown} / {total}"
+}
