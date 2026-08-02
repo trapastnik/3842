@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 42 · Осмысление наследия</title>
+    <!-- ?v=N обязателен: Chrome кеширует агрессивно, без версии правка не доедет до киоска. -->
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1" />
+    <link rel="stylesheet" href="./styles.css?v=2" />
+  </head>
+  <body>
+    <!-- Канон проекции (COORDINATION 2026-07-08) — классический скрипт,
+         подключается ДО модуля, чтобы window.MtkProjection был готов. -->
+    <script src="../assets/shared/lib/projection.js?v=1"></script>
+    <!-- Единый призыв к жесту (тач-стандарт, п. 4): window.KioskHint. -->
+    <script src="../assets/shared/kiosk/hint.js?v=1"></script>
+    <!-- Разметку строит ядро: подложка, слои сцен, навигация, сплэш, сервис-панель. -->
+    <script type="module" src="./app.js?v=2"></script>
+  </body>
+</html>
