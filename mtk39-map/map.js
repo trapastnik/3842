@@ -190,6 +190,22 @@ function stepFly(now) {
 
 /* ------------------------------------------------------------------ данные */
 
+/* Площадь контура в квадратных градусах — по формуле шнурков. */
+function ringArea(ring) {
+  let a = 0;
+  for (let i = 1; i < ring.length; i++) {
+    a += ring[i - 1][0] * ring[i][1] - ring[i][0] * ring[i - 1][1];
+  }
+  return Math.abs(a) / 2;
+}
+
+// В файле границ 54 контура из 82 — вырожденные обрезки по 4–5 точек с нулевой
+// площадью, и лежат они парами Россия/Украина: следы спорных участков в самих
+// данных. На приближении они читаются как случайный сор у берега, поэтому
+// отсеиваются. Порог с большим запасом: следующий по величине контур крупнее в
+// сотни раз, настоящие острова не страдают.
+const MIN_RING_AREA = 0.05;
+
 function prepareLand(geo) {
   land = [];
   bboxes = new Map();
@@ -205,7 +221,7 @@ function prepareLand(geo) {
     let box = null;
     for (const poly of polys) {
       for (const ring of poly) {
-        if (ring.length < 4) continue;
+        if (ring.length < 6 || ringArea(ring) < MIN_RING_AREA) continue;
         land.push({ ring, name });
         for (const [lng, lat] of ring) {
           // Чукотка уходит за антимеридиан и растянула бы рамку России на весь мир —
