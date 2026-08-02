@@ -5,15 +5,17 @@
 // панель настроек с сегментами-радиогруппами и слайдерами, внизу «сбросить».
 // Разметка и вид повторяют mtk41-map-hier / mtk42-museums-map.
 //
-// Главное отличие от прежнего тюнера: настройки РАЗДЕЛЕНЫ.
-//   · посетительские (что показывать) — видны всегда;
-//   · инженерные (свет, пост-обработка, отладка) — только под ?service=1,
-//     тем же гейтом, что служебная кнопка ⚒ в хабе.
-// Раньше экспозиция и DOF лежали в одном списке со слоями карты.
+// Разделение — по образцу МТК 42, где на сцене висят фильтры контента, а в ⚙
+// лежат проекция и пресеты вида:
+//   · ЧТО показывать — на сцене, пилюлей внизу слева, всегда на виду (stage);
+//   · КАК рисовать (подложка, свет, пост-обработка, фон) — в ⚙, тоже открыто:
+//     это рабочие настройки картинки, а не отладка;
+//   · только отладочное (монитор нагрузки) — под ?service=1.
 //
 // API:
 //   createUI({ kicker, title, subtitle, hint,
-//              segments:[{key,label,options:[[v,label],…],value,service?}],
+//              stage:[{key,label,options:[[v,label],…],value}],   // на сцене
+//              segments:[{key,label,options,value,service?}],     // в ⚙
 //              groups:[{title,service?,params:[{key,label,min,max,step,value,unit?}]}],
 //              onChange })
 //   → { values, set, get, dom, isService }
@@ -71,13 +73,26 @@ const CSS = `
 .mtk-reset{width:100%;margin-top:.4em;padding:.7em;background:transparent;border:1px solid rgba(210,183,115,.4);
   border-radius:8px;color:var(--brass);font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;
   letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+/* Выбор «что показывать» — на сцене, как фильтры МТК 42: пилюля внизу слева,
+   зона нажатия 44px под тач. Прятать это в ⚙ нельзя — это и есть интерфейс. */
+.mtk-stage-ctl{position:fixed;left:clamp(20px,3vw,52px);bottom:clamp(52px,7vh,84px);z-index:6;
+  display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.mtk-pills{display:flex;padding:8px;border:1px solid rgba(210,183,115,.45);border-radius:999px;
+  background:rgba(0,0,0,.55);box-shadow:0 18px 48px rgba(0,0,0,.36);backdrop-filter:blur(8px)}
+.mtk-pills>span{align-self:center;padding:0 12px 0 8px;font-family:'20 Kopeek',ui-monospace,monospace;
+  font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--window)}
+.mtk-pill{min-height:44px;padding:0 18px;border:1px solid transparent;border-radius:999px;background:transparent;
+  color:rgba(247,249,239,.78);font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;
+  letter-spacing:.2em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+.mtk-pill[aria-checked="true"]{border-color:rgba(210,183,115,.72);background:var(--brass);color:#12161a}
+
 .mtk-hint{position:fixed;left:clamp(20px,3vw,52px);bottom:12px;z-index:5;pointer-events:none;isolation:isolate;
   font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;color:var(--window);opacity:.6}
 .mtk-hint b{color:var(--brass)}
 `;
 
 export function createUI({ kicker = '', title = '', subtitle = '', hint = '',
-                           segments = [], groups = [], onChange } = {}) {
+                           stage = [], segments = [], groups = [], onChange } = {}) {
   if (!document.getElementById('mtk-ui-css')) {
     const st = document.createElement('style'); st.id = 'mtk-ui-css'; st.textContent = CSS;
     document.head.appendChild(st);
@@ -99,7 +114,7 @@ export function createUI({ kicker = '', title = '', subtitle = '', hint = '',
   }
 
   const defaults = {}, values = {};
-  for (const s of segments) { defaults[s.key] = s.value; values[s.key] = s.value; }
+  for (const s of [...stage, ...segments]) { defaults[s.key] = s.value; values[s.key] = s.value; }
   for (const g of groups) for (const p of g.params) { defaults[p.key] = p.value; values[p.key] = p.value; }
 
   const panel = document.createElement('div');
@@ -148,25 +163,15 @@ export function createUI({ kicker = '', title = '', subtitle = '', hint = '',
     row.appendChild(lab); row.appendChild(inp); panel.appendChild(row);
   };
 
-  // сперва посетительское, затем — если открыт сервисный режим — инженерное
-  segments.filter((s) => !s.service).forEach(addSegment);
-  groups.filter((g) => !g.service).forEach((g) => {
+  // Настройки картинки лежат в ⚙ открыто: подложка, свет, пост-обработка, фон —
+  // это рабочие регулировки, а не отладка. Под ?service=1 прячется только то,
+  // что посетителю смысла не имеет (сейчас — монитор нагрузки на страницах).
+  const shown = (x) => !x.service || IS_SERVICE;
+  segments.filter(shown).forEach(addSegment);
+  groups.filter(shown).forEach((g) => {
     if (g.title) { const t = document.createElement('div'); t.className = 'mtk-sect'; t.textContent = g.title; panel.appendChild(t); }
     g.params.forEach(addSlider);
   });
-
-  const svcSegments = segments.filter((s) => s.service);
-  const svcGroups = groups.filter((g) => g.service);
-  if (IS_SERVICE && (svcSegments.length || svcGroups.length)) {
-    const t = document.createElement('div');
-    t.className = 'mtk-sect'; t.textContent = 'инженерные · ?service=1';
-    panel.appendChild(t);
-    svcSegments.forEach(addSegment);
-    svcGroups.forEach((g) => {
-      if (g.title) { const s = document.createElement('div'); s.className = 'mtk-sect'; s.textContent = g.title; panel.appendChild(s); }
-      g.params.forEach(addSlider);
-    });
-  }
 
   const reset = document.createElement('button');
   reset.type = 'button'; reset.className = 'mtk-reset'; reset.textContent = 'сбросить настройки';
@@ -178,6 +183,34 @@ export function createUI({ kicker = '', title = '', subtitle = '', hint = '',
     }
   };
   panel.appendChild(reset);
+
+  // «что показывать» — пилюлей на сцене, а не в панели
+  if (stage.length) {
+    const bar = document.createElement('div');
+    bar.className = 'mtk-stage-ctl';
+    for (const s of stage) {
+      const grp = document.createElement('nav');
+      grp.className = 'mtk-pills';
+      grp.setAttribute('role', 'radiogroup');
+      grp.setAttribute('aria-label', s.label);
+      if (s.label) grp.innerHTML = `<span>${s.label}</span>`;
+      s.options.forEach(([val, lab]) => {
+        const b = document.createElement('button');
+        b.type = 'button'; b.className = 'mtk-pill'; b.textContent = lab; b.setAttribute('role', 'radio');
+        b._sync = () => b.setAttribute('aria-checked', values[s.key] === val ? 'true' : 'false');
+        b.onclick = () => {
+          values[s.key] = val;
+          [...grp.querySelectorAll('.mtk-pill')].forEach((c) => c._sync());
+          onChange && onChange(s.key, val, values);
+        };
+        b._sync();
+        grp.appendChild(b);
+      });
+      setters[s.key] = () => [...grp.querySelectorAll('.mtk-pill')].forEach((c) => c._sync());
+      bar.appendChild(grp);
+    }
+    document.body.appendChild(bar);
+  }
 
   const gear = document.createElement('button');
   gear.type = 'button'; gear.className = 'mtk-gear'; gear.setAttribute('aria-label', 'Настройки');

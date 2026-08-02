@@ -45,7 +45,7 @@ import { chromaticAberration } from 'three/addons/tsl/display/ChromaticAberratio
 import { createRenderer, fit } from './engine/renderer.js';
 import { createStats } from './engine/stats.js';
 import { createCard } from './engine/card.js?v=20260803';
-import { createUI, IS_SERVICE } from './engine/ui.js?v=20260806';
+import { createUI, IS_SERVICE } from './engine/ui.js?v=20260807';
 import { createGlobe } from './scenes/globe-rings.js';
 import { createEarth } from './scenes/earth.js';
 import { loadWords, loadPublications, groupByWriting } from './engine/data.js?v=20260802';
@@ -236,18 +236,19 @@ try {
     title: 'Имя, обернувшее планету',
     subtitle: `${FORMS.length} написаний «Ленин» на ${WORDS.length} языках, кольцами по параллелям. `
       + 'Тяни — поворот. Тап по слову — карточка языка и издания на нём.',
-    hint: 'тяни — поворот · <b>тап</b> → карточка · <b>⚙</b> — настройки',
-    // посетительское — что показывать
-    segments: [
-      { key: 'earthMap', label: 'карта Земли', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физическая']], value: 'countries' },
+    hint: 'тяни — поворот · <b>тап</b> → карточка · <b>⚙</b> — вид и картинка',
+    // ЧТО показывать — на сцене
+    stage: [
+      { key: 'earthMap', label: 'земля', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физическая']], value: 'countries' },
     ],
+    // КАК рисовать — в ⚙, открыто
     groups: [
-      { params: [
+      { title: 'сфера', params: [
         { key: 'spin', label: 'вращение', min: 0, max: 1.2, step: .01, value: 0.06 },
         { key: 'density', label: 'плотность слов', min: 0.5, max: 2.2, step: .05, value: 1 },
       ] },
       // инженерное — свет и пост-обработка; посетителю крутить нечего
-      { title: 'свет / пост', service: true, params: [
+      { title: 'свет / пост', params: [
         { key: 'exposure', label: 'экспозиция', min: 0.4, max: 1.8, step: .02, value: 1.0 },
         { key: 'bloom', label: 'свечение', min: 0, max: 2, step: .02, value: 0.5 },
         { key: 'bloomThr', label: 'порог свеч.', min: 0, max: 1, step: .02, value: 0.82 },
@@ -259,7 +260,7 @@ try {
         { key: 'grain', label: 'зерно', min: 0, max: 0.2, step: .005, value: 0.07 },
         { key: 'vign', label: 'виньетка', min: 0, max: 1, step: .02, value: 1 },
       ] },
-      { title: 'земля', service: true, params: [
+      { title: 'земля', params: [
         { key: 'earthBorders', label: 'границы на карте', min: 0, max: 1, step: 1, value: 0 },
         { key: 'earthSpin', label: 'скорость Земли', min: 0, max: 0.5, step: .005, value: 0.028 },
         { key: 'earthGlow', label: 'яркость линий', min: 0, max: 1.5, step: .05, value: 0.7 },

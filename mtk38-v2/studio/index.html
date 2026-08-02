@@ -57,6 +57,16 @@
   #card .ver.ver-warn::before{background:var(--red)}
   @media (max-width:560px){ #card{padding:24px 20px 22px} }
 
+  /* выбор композиции — на сцене, как фильтры МТК 42; прятать его в ⚙ нельзя */
+  .comps{position:fixed;left:clamp(20px,3vw,52px);bottom:clamp(52px,7vh,84px);z-index:6;display:flex;
+    padding:8px;border:1px solid rgba(210,183,115,.45);border-radius:999px;background:rgba(0,0,0,.55);
+    box-shadow:0 18px 48px rgba(0,0,0,.36);backdrop-filter:blur(8px);flex-wrap:wrap}
+  .comps>span{align-self:center;padding:0 12px 0 8px;font-family:'20 Kopeek',ui-monospace,monospace;
+    font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--window)}
+  .comp{min-height:44px;padding:0 16px;border:1px solid transparent;border-radius:999px;background:transparent;
+    color:rgba(247,249,239,.78);font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;
+    letter-spacing:.18em;text-transform:uppercase;cursor:pointer;touch-action:manipulation}
+  .comp[aria-checked="true"]{border-color:rgba(210,183,115,.72);background:var(--brass);color:#12161a}
   .hint{position:fixed;left:16px;bottom:11px;z-index:4;font-size:11px;color:var(--window);opacity:.55;pointer-events:none;max-width:70vw}
   .hint b{color:var(--brass)}
   #boot{position:fixed;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;background:#222a30;color:var(--window);font-size:14px}
@@ -72,6 +82,7 @@
   <div class="head"><span class="n" id="c_n"></span><span class="e" id="c_e"></span></div>
   <div class="many" id="c_many"><div class="many-n" id="c_manyn"></div><div class="chips" id="c_chips"></div></div>
   <div class="rows" id="c_rows"></div><span class="ver" id="c_ver"></span></div>
+<nav class="comps" id="comps" role="radiogroup" aria-label="Композиция"><span>композиция</span></nav>
 <div class="hint">Арт-объект МТК 38 · тяни мышью — поворот · <b>тап по слову</b> → карточка: языки этой формы и издания · настройки и композиции — панель <b>справа</b> (клавиша <b>H</b>)</div>
 <div id="boot">Загрузка канона…</div>
 <script src="../vendor/three/three.min.js"></script>
@@ -82,10 +93,10 @@
 <script src="../vendor/three/js/postprocessing/ShaderPass.js"></script>
 <script src="../vendor/three/js/postprocessing/RenderPass.js"></script>
 <script src="../vendor/three/js/postprocessing/UnrealBloomPass.js"></script>
-<script src="../shared/data.js?v=20260806"></script>
-<script src="../shared/panel.js?v=20260806"></script>
-<script src="../shared/quotes.js?v=20260806"></script>
-<script src="../shared/publication.js?v=20260806"></script>
+<script src="../shared/data.js?v=20260807"></script>
+<script src="../shared/panel.js?v=20260807"></script>
+<script src="../shared/quotes.js?v=20260807"></script>
+<script src="../shared/publication.js?v=20260807"></script>
 <script>
 const PAPER='#F7F9EF',TELE='#CFD0CF',BRASS='#D2B773',RED='#A02128';
 const FF=iso=>(iso==='Latn'||iso==='Cyrl')?"'20 Kopeek','noto-fallback','Arial Unicode MS',sans-serif":"'Arial Unicode MS','noto-fallback','noto-"+iso+"',sans-serif";
@@ -228,6 +239,17 @@ function boot(WORDS, QUOTES, source){
     card.scrollTop=0;card.classList.add('show');}
   document.getElementById('cardx').onclick=()=>card.classList.remove('show');
 
+  // композиция — на сцене, а не в настройках: это главный выбор посетителя
+  const COMPS=[['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],
+               ['ticker','Лента'],['wall','Стена'],['map','Карта']];
+  const compsEl=document.getElementById('comps');
+  COMPS.forEach(([val,lab])=>{const b=document.createElement('button');
+    b.type='button';b.className='comp';b.textContent=lab;b.setAttribute('role','radio');
+    b.setAttribute('aria-checked',P.layout===val?'true':'false');
+    b.onclick=()=>{setLayout(val);
+      [...compsEl.querySelectorAll('.comp')].forEach(c=>c.setAttribute('aria-checked',c===b?'true':'false'));};
+    compsEl.appendChild(b);});
+
   // — слой цитат (переиспользуемый модуль shared/quotes.js) —
   const quotes=Quotes.create({quotes:QUOTES,on:false,mode:'center'});
 
@@ -243,21 +265,17 @@ function boot(WORDS, QUOTES, source){
   // — панель (единый компонент, выезжает справа) —
   const panel=Panel.create({
     title:'Арт-объект · параметры', open:false, hotkey:'h', handleLabel:'Настройки',
-    segments:[
-      {key:'layout',label:'Композиция',value:P.layout,options:[
-        ['globe','Глобус'],['cloud','Облако'],['mandala','Мандала'],['rain','Дождь'],['ticker','Лента'],['wall','Стена'],['map','Карта']]},
-    ],
     groups:[
       // посетительское — темп и масштаб композиции
       {title:'Сцена',params:[
         {key:'speed',label:'Скорость',min:0,max:4,step:.05,value:P.speed},
         {key:'size',label:'Размер слов',min:.4,max:2.4,step:.05,value:P.size}]},
       // инженерное: цветовой баланс и пост-обработка — под ?service=1
-      {title:'Цвет и глубина',service:true,params:[
+      {title:'Цвет и глубина',params:[
         {key:'depth',label:'Затухание дальних',min:0,max:1,step:.02,value:P.depth},
         {key:'brass',label:'Доля латуни',min:0,max:80,step:1,value:P.brass,unit:'%'},
         {key:'red',label:'Доля красного',min:0,max:25,step:1,value:P.red,unit:'%'}]},
-      {title:'Пост-обработка',service:true,params:[
+      {title:'Пост-обработка',params:[
         {key:'bloom',label:'Свечение (bloom)',min:0,max:2.5,step:.01,value:P.bloom},
         {key:'radius',label:'Радиус bloom',min:0,max:1,step:.01,value:P.radius},
         {key:'thresh',label:'Порог bloom',min:0,max:1,step:.01,value:P.thresh},
