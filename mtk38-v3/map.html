@@ -19,12 +19,12 @@
 <canvas id="map"></canvas>
 <div id="vign"></div>
 <div id="grain"></div>
-<div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>тап</b> → карточка · <b>T</b> параметры</div>
+<div id="hint">МТК 38 v3 · карта · написания «Ленин» по миру (<b>◉</b> = язык ООН) · тяни — двигай · <b>колесо / пинч</b> — зум · <b>2× клик</b> — весь мир · <b>тап</b> → карточка · слой <b>языки / издания</b> в <b>T</b></div>
 <div id="err"></div>
 <script src="../assets/shared/lib/projection.js"></script>
 <script type="module">
-import { loadWords, loadPublications } from './engine/data.js?v=20260802';
-import { createCard } from './engine/card.js?v=20260803';
+import { loadWords, loadPublications } from './engine/data.js?v=20260804';
+import { createCard } from './engine/card.js?v=20260804';
 import { createTuner } from './tuner.js';
 
 const showErr = (m) => { const e = document.getElementById('err'); e.style.display = 'block'; e.textContent = 'ОШИБКА: ' + m; };
@@ -40,7 +40,19 @@ try {
 
   const WORDS = (await loadWords()).filter((w) => w.lat != null && w.lng != null);
   const PUBS = await loadPublications();   // издания по языкам → нижний блок карточки
-  const P = { base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
+
+  // Слой ИЗДАНИЙ: точка по городу печати, а не по «дому» языка. Без него десять
+  // испанских изданий из десяти стран Латинской Америки сходились в одну точку в
+  // Мадриде, а Северная Америка пустовала — при том что там три издания.
+  const PLACES = [];
+  for (const [langId, arr] of PUBS) {
+    const w = WORDS.find((x) => x.id === langId);
+    arr.forEach((p, i) => {
+      if (p.cityLat == null) return;
+      PLACES.push({ lang: w || null, langId, pub: p, idx: i, lat: p.cityLat, lng: p.cityLng });
+    });
+  }
+  const P = { layer: 'lang', base: 'countries', borders: 1, label: 1.0, glow: 0.5, routes: 1, grain: 0.05, vign: 1.0, bg: 15 };
   const card = createCard({ publications: PUBS });
   let geojson = null, reliefImg = null, physicalImg = null;
   try { geojson = await (await fetch('../data/ne_110m_countries.geojson')).json(); } catch (_) {}
@@ -170,8 +182,52 @@ try {
     ctx.restore();
   }
   let hits = [];
+
+  // Слой изданий: точка по городу печати. В режиме «оба» тянем волосяную линию
+  // к точке языка — видно, что напечатано вдали от «дома» языка (Гавана, Детройт).
+  function drawPlaces() {
+    const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
+    const drawn = [];
+    ctx.save();
+    for (const pl of PLACES) {
+      const s = toScreen(pl.lat, pl.lng);
+      if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) continue;
+      const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));
+
+      if (P.layer === 'both' && pl.lang && pl.lang.lat != null) {
+        const a = toScreen(pl.lang.lat, pl.lang.lng);
+        ctx.strokeStyle = cc(PAL.brass, 0.13); ctx.lineWidth = 0.8;
+        ctx.beginPath(); ctx.moveTo(a.x, a.y); ctx.lineTo(s.x, s.y); ctx.stroke();
+      }
+      // кольцо, а не заливка — чтобы издания не путались с точками языков
+      const r = 3.4 + prox * 1.8;
+      ctx.beginPath(); ctx.arc(s.x, s.y, r, 0, Math.PI * 2);
+      ctx.fillStyle = cc(PAL.brass, 0.18); ctx.fill();
+      ctx.strokeStyle = cc(PAL.brass, 0.9); ctx.lineWidth = 1.4; ctx.stroke();
+
+      hits.push({ x: s.x, y: s.y, r: Math.max(13, ss * 0.013), i: -1, place: pl, box: null });
+
+      const sz = (ss * 0.011 + prox * ss * 0.004) * P.label;
+      const label = [pl.pub.cityRu || pl.pub.cityNative, pl.pub.year].filter(Boolean).join(' · ');
+      if (!label) continue;
+      ctx.font = `400 ${sz}px "20 Kopeek",ui-monospace,monospace`;
+      const tw = ctx.measureText(label).width;
+      const box = { x: s.x + sz * 0.6, y: s.y - sz * 0.6, w: tw + 4, h: sz * 1.5 };
+      if (drawn.some((d) => box.x < d.x + d.w && box.x + box.w > d.x && box.y < d.y + d.h && box.y + box.h > d.y)) continue;
+      drawn.push(box);
+      hits[hits.length - 1].box = box;
+      ctx.textAlign = 'left'; ctx.textBaseline = 'middle';
+      ctx.shadowColor = cc('#000', 0.8); ctx.shadowBlur = 4;
+      ctx.fillStyle = cc(PAL.brass, 0.55 + prox * 0.35);
+      ctx.fillText(label, s.x + sz * 0.6, s.y);
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
   function drawPoints() {
     hits = []; const cx = W * 0.5, cy = H * 0.5, ss = Math.min(W, H);
+    if (P.layer === 'pub') { drawPlaces(); return; }
     const drawn = [];  // занятые прямоугольники подписей (деклаттер)
     // приоритет: языки ООН → крупные → мелкие. Маркеры — всем; подписи — без наложения.
     const order = WORDS.map((p, i) => i).sort((a, b) => (WORDS[b].un - WORDS[a].un) || (WORDS[b].wt - WORDS[a].wt));
@@ -206,6 +262,8 @@ try {
       ctx.globalAlpha = 1;
     }
   }
+  // в режиме «оба» издания рисуем поверх языков
+  const drawPointsAll = () => { drawPoints(); if (P.layer === "both") drawPlaces(); };
   // дешёвый bloom: даунскейл-блюр + lighter
   const bl = document.createElement('canvas'), blx = bl.getContext('2d');
   function bloom() {
@@ -219,7 +277,7 @@ try {
   function draw() {
     const now = performance.now(), dt = Math.min(0.05, Math.max(0.001, (now - prev) / 1000)); prev = now; dynamics(dt);
     ctx.clearRect(0, 0, W, H);
-    drawBase(); drawRoutes(); drawPoints(); bloom();
+    drawBase(); if (P.layer !== "pub") drawRoutes(); drawPointsAll(); bloom();
   }
   function frame() { draw(); requestAnimationFrame(frame); }
 
@@ -260,14 +318,19 @@ try {
   const up = (e) => {
     if (ptrs.size === 1 && !moved && (performance.now() - dt0) < 450) {   // тап → карточка (только один палец)
       // ловим клик и по кружку-маркеру, и по прямоугольнику надписи; из кандидатов — ближайший к точке
-      let best = -1, bd = 1e9;
+      let best = null, bd = 1e9;
       for (const h of hits) {
         const dd = Math.hypot(e.clientX - h.x, e.clientY - h.y);
         const inDot = dd < h.r + 12;
         const b = h.box, inBox = b && e.clientX >= b.x - 4 && e.clientX <= b.x + b.w + 4 && e.clientY >= b.y - 4 && e.clientY <= b.y + b.h + 4;
-        if ((inDot || inBox) && dd < bd) { bd = dd; best = h.i; }
+        if ((inDot || inBox) && dd < bd) { bd = dd; best = h; }
       }
-      if (best >= 0) { card.open(WORDS[best]); map.camVX = 0; map.camVY = 0; } else card.close();
+      if (best) {
+        // точка города печати → карточка сразу на этом издании; точка языка → как раньше
+        if (best.place) card.open(best.place.lang, best.place.idx);
+        else card.open(WORDS[best.i]);
+        map.camVX = 0; map.camVY = 0;
+      } else card.close();
     }
     ptrs.delete(e.pointerId);
     if (ptrs.size < 2) pinchD = 0;
@@ -280,7 +343,8 @@ try {
 
   // панель
   function apply(k, v) {
-    if (k === 'base') { P.base = v; rebuildCache(); }
+    if (k === 'layer') { P.layer = v; }
+    else if (k === 'base') { P.base = v; rebuildCache(); }
     else if (k === 'borders') { P.borders = v; rebuildCache(); }
     else if (k === 'bg') { P.bg = v; rebuildCache(); }
     else if (k === 'grain') { P.grain = v; document.getElementById('grain').style.opacity = v; }
@@ -290,6 +354,7 @@ try {
   createTuner({
     title: 'карта v3',
     segments: [
+      { key: 'layer', label: 'слой', options: [['lang', 'языки'], ['pub', 'издания'], ['both', 'оба']], value: 'lang' },
       { key: 'base', label: 'подложка', options: [['countries', 'страны'], ['relief', 'рельеф'], ['physical', 'физ.']], value: 'countries' },
       { key: 'borders', label: 'границы на растре', options: [[0, 'выкл'], [1, 'вкл']], value: 1 },
     ],

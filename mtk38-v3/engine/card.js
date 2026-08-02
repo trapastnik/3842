@@ -134,7 +134,7 @@ export function createCard(opts = {}) {
 
   const q = (s) => el.querySelector(s);
   const close = () => el.classList.remove('show');
-  let list = [], idx = 0;
+  let list = [], idx = 0, startIdx = 0;
 
   q('.x').onclick = close;
   addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
@@ -194,15 +194,22 @@ export function createCard(opts = {}) {
       : `написание выверено · ${w.src}`;
 
     list = pubs.get(w.id) || [];
-    idx = 0;
+    // startIdx — тап по точке города печати на карте открывает сразу это издание
+    idx = Math.min(Math.max(0, startIdx), Math.max(0, list.length - 1));
+    startIdx = 0;
     renderPub();
   }
 
   const plural = (n) => n % 10 === 1 && n % 100 !== 11 ? 'язык'
     : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'языка' : 'языков';
 
-  function open(w) {
+  /**
+   * @param w         язык или форма (см. groupByWriting)
+   * @param pubIndex  какое издание раскрыть сразу (тап по точке города печати)
+   */
+  function open(w, pubIndex) {
     if (!w) return;
+    startIdx = Number.isInteger(pubIndex) ? pubIndex : 0;
     const cw = q('.w'); cw.textContent = w.w; cw.style.fontFamily = FAM(w.sc);
 
     const langs = (w.langs && w.langs.length > 1) ? w.langs : null;

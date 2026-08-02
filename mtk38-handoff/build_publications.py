@@ -11,6 +11,9 @@
 import json, re, sys, struct, unicodedata
 from pathlib import Path
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from cities import CITY          # noqa: E402  — координаты городов печати
+
 ROOT = Path(__file__).resolve().parent.parent
 DOC = ROOT / "assets/mtk38/sources/Ленин на языках народов мира.doc"
 OUT = ROOT / "data/mtk38-publications.json"
@@ -308,7 +311,7 @@ def main():
         raise SystemExit(f"нет исходника: {DOC}")
     rows = repair(read_doc_cells(DOC))
 
-    pubs, section, unknown = [], None, set()
+    pubs, section, unknown, unknown_city = [], None, set(), set()
     for kind, payload in rows:
         if kind == "SECTION":
             section = payload; continue
@@ -332,9 +335,16 @@ def main():
             "family": family.replace("\n", " "),
             "area": area.replace("\n", ", "),
             "section": section,
-            "cover": None,                     # проставляется в Э0c
+            "cover": None,                     # проставляется в build_covers.py
             **parse_book(book, writings[0] if writings else ""),
         })
+        # координаты ГОРОДА ПЕЧАТИ — второй слой карты. Без них десять испанских
+        # изданий из десяти стран схлопывались в одну точку языка в Мадриде.
+        city = (pubs[-1].get("city_ru") or pubs[-1].get("city_native") or "").strip()
+        if city in CITY:
+            pubs[-1]["city_lat"], pubs[-1]["city_lng"] = CITY[city]
+        elif city:
+            unknown_city.add(city)
 
     doc = {
         "mtk": 38,
@@ -352,6 +362,8 @@ def main():
     for p in pubs:
         langs.setdefault(p["lang_id"] or p["name_ru"], []).append(p)
     print(f"изданий: {len(pubs)}   языков: {len(langs)}   → {OUT.relative_to(ROOT)}")
+    if unknown_city:
+        print(f"⚠ городов без координат ({len(unknown_city)}): {', '.join(sorted(unknown_city))}", file=sys.stderr)
     if unknown:
         print(f"⚠ без ISO-кода ({len(unknown)}): {', '.join(sorted(unknown))}", file=sys.stderr)
     multi = {k: len(v) for k, v in langs.items() if len(v) > 1}

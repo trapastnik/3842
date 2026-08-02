@@ -73,6 +73,8 @@ export async function loadPublications(url = '../data/mtk38-publications.json', 
         cityNative: p.city_native || '', publisherNative: p.publisher_native || '',
         titleRu: p.title_ru || '', cityRu: p.city_ru || '', publisherRu: p.publisher_ru || '',
         year: p.year || '', covers,
+        // координаты ГОРОДА ПЕЧАТИ — для слоя изданий на карте
+        cityLat: p.city_lat ?? null, cityLng: p.city_lng ?? null,
       });
     }
     return by;
