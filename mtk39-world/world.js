@@ -94,6 +94,7 @@ let visible = [];
 let selected = null;
 let rotation = DEFAULT_ROTATE.slice();
 let tilt = DEFAULT_ROTATE[1];   // наклон шара; на карте гасится до нуля
+let panY = 0;                   // сдвиг полотна карты по вертикали
 let scaleFactor = DEFAULT_SCALE;
 let lastFrame = 0;
 let lastInteraction = performance.now();
@@ -124,9 +125,18 @@ function applyProjection() {
   const mapK = (Math.min(width * 0.94, height * 0.78 * WT.ASPECT) * scaleFactor)
     / (2 * WT_HALF_X);
   rotation[1] = tilt * (1 - alpha);
+  const k = globeK + (mapK - globeK) * alpha;
+
+  // На шаре вертикаль отдана наклону полюсов, на карте наклон бессмыслен —
+  // там та же протяжка двигает само полотно. Иначе после зума верх и низ карты
+  // становятся недосягаемы: по горизонтали выручает вращение, по вертикали нет.
+  const mapH = k * Math.PI;                       // высота мира при этом масштабе
+  const limit = Math.max(0, (mapH - height) / 2 + height * 0.08);
+  panY = Math.max(-limit, Math.min(limit, panY));
+
   projection
-    .scale(globeK + (mapK - globeK) * alpha)
-    .translate([width / 2, height / 2])
+    .scale(k)
+    .translate([width / 2, height / 2 + panY * alpha])
     .rotate(rotation)
     // на полностью развёрнутой карте складки нет — отсечение выключаем,
     // иначе край отсечения даёт шов поперёк мира
@@ -257,6 +267,7 @@ function stepMorph(now) {
 function setMode(next) {
   if (mode === next) return;
   mode = next;
+  if (next === "globe") panY = 0;
   morph = { from: alpha, to: next === "map" ? 1 : 0, t0: performance.now() };
   showCard(null);
   syncModeUI();
@@ -313,8 +324,10 @@ function bindInput() {
         moved += Math.abs(e.dx) + Math.abs(e.dy);
         const k = 0.26 / Math.sqrt(scaleFactor);
         rotation[0] += e.dx * k * 1.6;
-        // наклон полюсов имеет смысл только у шара
+        // вертикаль: у шара — наклон, у карты — сдвиг полотна; на промежуточных
+        // кадрах морфинга работают оба, пропорционально степени разворачивания
         tilt = Math.max(-89, Math.min(89, tilt - e.dy * k * 1.6 * (1 - alpha)));
+        panY += e.dy * alpha;
         applyProjection();
         touched();
       })
@@ -477,6 +490,7 @@ function resetView() {
   hideUssr = false;
   scaleFactor = DEFAULT_SCALE;
   tilt = DEFAULT_ROTATE[1];
+  panY = 0;
   rotation = DEFAULT_ROTATE.slice();
   showCard(null);
   closeOffmapRef();
