@@ -29,6 +29,44 @@ const adjustHex = M.adjustHex;
 const DESIGN_W = M.DESIGN_W;
 const CONN_STYLE = M.CONN_STYLE;
 
+// Сверху вниз. Середина — то, что он читал; из неё растёт верх, на неё
+// откликается низ.
+const LANES = ["by-lenin", "in-library", "about-lenin"];
+
+// Ось покрывает 1800–2025: в этот отрезок попадает 98 из 99 книг. Аристотель
+// (−350) в шкалу не влезает — он живёт в «кармане» слева за разрывом оси,
+// см. drawOutliers(). Прежняя версия начинала ось с 1840 и молча теряла
+// Гегеля (1812) и Клаузевица (1832) — они отсекались culling'ом.
+const AXIS_MIN = 1800;
+const AXIS_MAX = 2025;
+const TOTAL_YEARS = AXIS_MAX - AXIS_MIN;
+
+// rank — приоритет подписи при тесноте: на общем плане в кадр влезает
+// пять-шесть, и решать, какие, должна значимость, а не порядок в массиве.
+// Вертикальные штрихи рисуются для всех дат независимо от подписи.
+const TIMELINE_TICKS = [
+  { year: 1917, label: "Октябрь",         rank: 1 },
+  { year: 1870, label: "рожд. Ленина",    rank: 2 },
+  { year: 1924, label: "† Ленин",         rank: 3 },
+  { year: 1848, label: "Манифест",        rank: 4 },
+  { year: 1991, label: "распад СССР",     rank: 5 },
+  { year: 1895, label: "Союз борьбы",     rank: 6 },
+  { year: 1958, label: "ПСС, 5-е изд.",   rank: 7 },
+  { year: 1903, label: "II съезд",        rank: 8 },
+  { year: 1914, label: "I мировая",       rank: 9 },
+  { year: 2017, label: "100 лет Октября", rank: 10 },
+];
+
+const SETTINGS_KEY = "mtk40-timeline-settings";
+const DEFAULT_SETTINGS = {
+  thrDecade: 1.8,
+  thrYear: 6.0,
+  labelScale: 1.0,
+  showEvents: true,
+  showConns: true,
+  crossfade: true,
+};
+
 // Границы поля графика в долях кадра.
 const PLOT_L = 0.135;
 const PLOT_R = 0.97;
