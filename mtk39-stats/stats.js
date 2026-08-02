@@ -424,7 +424,9 @@ function renderMass(canvas, foot, data) {
   const s = data.russia_summary;
   foot.innerHTML = `<b>${nf.format(s.streets)}</b> улиц и <b>${nf.format(s.lanes)}</b> переулков — `
     + `всего ${nf.format(s.total_all)} на ${s.year} год. Весь остальной свод, все семьдесят четыре страны, `
-    + `— это ${nf.format(1216)} записей: меньше, чем ленинских улиц в одной Ульяновской области.`;
+    + `— это ${nf.format(data.records.length)} ${plural(data.records.length, "запись", "записи", "записей")}: `
+    + "меньше, чем ленинских улиц "
+    + "в одной Ульяновской области.";
 }
 
 
