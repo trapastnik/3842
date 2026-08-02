@@ -19,72 +19,15 @@
  * провал внутрь, тап на пустоту — шаг назад.
  */
 
-// Базовая ширина, под которую подобраны все размеры. Реальный кадр — киоск
-// 3840×2160 (49", dpr 1). `s` приводит одно к другому, `dpr` остаётся только
-// для css→canvas.
-const DESIGN_W = 1280;
-
-const COLORS = {
-  paper: "#F7F9EF",
-  brass: "#D2B773",
-  red: "#A02128",
-  graphite: "#435059",
-  slate: "#5D6970",
-  ink: "#0C1012",
-};
-
-const BUCKET_META = {
-  "by-lenin":    { label: "ИМ",    accent: "#A02128", note: "что писал сам Ленин" },
-  "in-library":  { label: "ЧИТАЛ", accent: "#5D6970", note: "что читал из чужого" },
-  "about-lenin": { label: "О НЁМ", accent: "#D2B773", note: "что писали о нём"    },
-};
-// Сверху вниз. Середина — то, что он читал; из неё растёт верх, на неё
-// откликается низ.
-const LANES = ["by-lenin", "in-library", "about-lenin"];
-
-const CONN_STYLE = {
-  "title-borrowing": { color: "#D2B773", width: 2.5, dash: [],       label: "заглавие"  },
-  "polemic":         { color: "#A02128", width: 2,   dash: [10, 6],  label: "против"    },
-  "source":          { color: "#F7F9EF", width: 1.6, dash: [],       label: "источник"  },
-  "framework":       { color: "#7BA3C0", width: 1.6, dash: [],       label: "рамка"     },
-  "conspectus":      { color: "#D2B773", width: 2,   dash: [2, 4],   label: "конспект"  },
-  "wrote-about":     { color: "#7BA3C0", width: 1.6, dash: [10, 6],  label: "статья о"  },
-  "parallel":        { color: "#9DA3A6", width: 1.6, dash: [3, 3],   label: "параллель" },
-};
-
-// Ось покрывает 1800–2025: в этот отрезок попадает 98 из 99 книг. Аристотель
-// (−350) в шкалу не влезает — он живёт в «кармане» слева за разрывом оси,
-// см. drawOutliers(). Прежняя версия начинала ось с 1840 и молча теряла
-// Гегеля (1812) и Клаузевица (1832) — они отсекались culling'ом.
-const AXIS_MIN = 1800;
-const AXIS_MAX = 2025;
-const TOTAL_YEARS = AXIS_MAX - AXIS_MIN;
-
-// rank — приоритет подписи при тесноте: на общем плане в кадр влезает
-// пять-шесть, и решать, какие, должна значимость, а не порядок в массиве.
-// Вертикальные штрихи рисуются для всех дат независимо от подписи.
-const TIMELINE_TICKS = [
-  { year: 1917, label: "Октябрь",         rank: 1 },
-  { year: 1870, label: "рожд. Ленина",    rank: 2 },
-  { year: 1924, label: "† Ленин",         rank: 3 },
-  { year: 1848, label: "Манифест",        rank: 4 },
-  { year: 1991, label: "распад СССР",     rank: 5 },
-  { year: 1895, label: "Союз борьбы",     rank: 6 },
-  { year: 1958, label: "ПСС, 5-е изд.",   rank: 7 },
-  { year: 1903, label: "II съезд",        rank: 8 },
-  { year: 1914, label: "I мировая",       rank: 9 },
-  { year: 2017, label: "100 лет Октября", rank: 10 },
-];
-
-const SETTINGS_KEY = "mtk40-timeline-settings";
-const DEFAULT_SETTINGS = {
-  thrDecade: 1.8,
-  thrYear: 6.0,
-  labelScale: 1.0,
-  showEvents: true,
-  showConns: true,
-  crossfade: true,
-};
+// Общее для вариантов МТК 40 — в assets/mtk40/lib/mtk40.js: палитра, оси
+// корпуса, типы связей, масштаб под киоск, карточка. Здесь только псевдонимы,
+// чтобы не расходились четыре копии одних и тех же констант.
+const M = window.MTK40;
+const COLORS = M.COLORS;
+const BUCKET_META = M.BUCKET_META;
+const adjustHex = M.adjustHex;
+const DESIGN_W = M.DESIGN_W;
+const CONN_STYLE = M.CONN_STYLE;
 
 // Границы поля графика в долях кадра.
 const PLOT_L = 0.135;
@@ -95,15 +38,7 @@ const MAX_ZOOM = 30;
 const FADE_HALF = 0.15;
 const TAP_THRESHOLD = 8;
 
-function rgba(hex, a) {
-  const v = hex.replace("#", "");
-  return `rgba(${parseInt(v.slice(0, 2), 16)}, ${parseInt(v.slice(2, 4), 16)}, ${parseInt(v.slice(4, 6), 16)}, ${a})`;
-}
-function adjustHex(hex, delta) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const c = (v) => Math.max(0, Math.min(255, v | 0));
-  return `rgb(${c((n >> 16) + delta)},${c(((n >> 8) & 0xff) + delta)},${c((n & 0xff) + delta)})`;
-}
+const rgba = M.rgba;
 
 class TimelineApp {
   constructor() {

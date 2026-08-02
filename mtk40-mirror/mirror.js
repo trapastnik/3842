@@ -1,42 +1,12 @@
-const COLORS = {
-  paper: "#F7F9EF",
-  brass: "#D2B773",
-  red: "#A02128",
-  graphite: "#435059",
-  ink: "#0C1012",
-  slateBlue: "#5D6970",
-};
-
-const BUCKET_META = {
-  "by-lenin":    { label: "ИМ",    accent: "#A02128", note: "что писал сам Ленин"  },
-  "about-lenin": { label: "О НЁМ", accent: "#D2B773", note: "что писали о нём"      },
-  "in-library":  { label: "ЧИТАЛ", accent: "#5D6970", note: "что читал из чужого"   },
-};
-
-const CONN_STYLE = {
-  "title-borrowing": { color: "#D2B773", width: 3, dash: [],          label: "заглавие"  },
-  "polemic":         { color: "#A02128", width: 2, dash: [10, 6],     label: "против"     },
-  "source":          { color: "#F7F9EF", width: 2, dash: [],          label: "источник"  },
-  "framework":       { color: "#7BA3C0", width: 2, dash: [],          label: "рамка"     },
-  "conspectus":      { color: "#D2B773", width: 2.5, dash: [2, 4],    label: "конспект"  },
-  "wrote-about":     { color: "#7BA3C0", width: 2, dash: [10, 6],     label: "статья о"  },
-  "parallel":        { color: "#9DA3A6", width: 2, dash: [3, 3],      label: "параллель" },
-};
-
-// Базовая ширина, под которую подобраны все размеры ниже. Реальный кадр —
-// киоск 3840×2160 (49", dpr 1); превью в браузере обычно уже. Масштаб `this.s`
-// приводит одно к другому: композиция на обоих одинакова, меняется только
-// количество пикселей. `this.dpr` остаётся только для css→canvas.
-const DESIGN_W = 1280;
-
-function adjustHex(hex, delta) {
-  const n = parseInt(hex.replace("#", ""), 16);
-  const r = clamp((n >> 16) + delta);
-  const g = clamp(((n >> 8) & 0xff) + delta);
-  const b = clamp((n & 0xff) + delta);
-  return `rgb(${r},${g},${b})`;
-}
-function clamp(v) { return Math.max(0, Math.min(255, v | 0)); }
+// Общее для вариантов МТК 40 — в assets/mtk40/lib/mtk40.js: палитра, оси
+// корпуса, типы связей, масштаб под киоск, карточка. Здесь только псевдонимы,
+// чтобы не расходились четыре копии одних и тех же констант.
+const M = window.MTK40;
+const COLORS = M.COLORS;
+const BUCKET_META = M.BUCKET_META;
+const adjustHex = M.adjustHex;
+const DESIGN_W = M.DESIGN_W;
+const CONN_STYLE = M.CONN_STYLE;
 
 function spineWidthBase(item) {
   const p = Math.max(8, item.pages_approx || 80);

@@ -4,7 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 40 · Зеркало</title>
-    <link rel="stylesheet" href="./styles.css?v=20260801" />
+    <link rel="stylesheet" href="../assets/mtk40/lib/base.css?v=20260802" />
+    <link rel="stylesheet" href="./styles.css?v=20260802" />
   </head>
   <body>
     <main class="stage">
@@ -14,7 +15,7 @@
         <p class="title__sub">им · о нём · читал · нити связей при касании</p>
       </header>
 
-      <canvas id="mirror"></canvas>
+      <canvas id="mirror" class="view"></canvas>
 
       <aside id="card" class="card" hidden>
         <button class="card__close" type="button" aria-label="Закрыть">✕</button>
@@ -121,6 +122,7 @@
       </div>
     </main>
 
-    <script type="module" src="./mirror.js?v=20260801"></script>
+    <script src="../assets/mtk40/lib/mtk40.js?v=20260802"></script>
+    <script src="./mirror.js?v=20260802"></script>
   </body>
 </html>
