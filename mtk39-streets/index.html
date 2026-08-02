@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>МТК 39 · Гербарий улиц Ленина</title>
+    <link rel="stylesheet" href="./styles.css?v=3" />
+  </head>
+  <body>
+    <main class="stage">
+      <header class="head">
+        <div class="head__left">
+          <span class="eyebrow">МТК · 39</span>
+          <h1 class="title">Гербарий улиц</h1>
+          <p class="sub">
+            Настоящие очертания улиц, площадей и парков, носящих имя Ленина, —
+            снятые из OpenStreetMap и разложенные, как гербарные листы.
+          </p>
+        </div>
+        <div class="head__right" data-totals></div>
+      </header>
+
+      <div class="wall" id="wall" aria-label="Листы гербария"></div>
+
+      <footer class="foot">
+        <span data-legend></span>
+        <span class="foot__src">© OpenStreetMap contributors · ODbL</span>
+      </footer>
+
+      <div class="sheet" id="sheet" hidden>
+        <button class="sheet__close" type="button" aria-label="Закрыть">✕</button>
+        <div class="sheet__plot" data-plot></div>
+        <div class="sheet__meta">
+          <div class="sheet__orig" data-orig></div>
+          <h2 class="sheet__name" data-name></h2>
+          <p class="sheet__where" data-where></p>
+          <dl class="sheet__facts" data-facts></dl>
+        </div>
+      </div>
+    </main>
+
+    <script type="module" src="./streets.js?v=3"></script>
+  </body>
+</html>
