@@ -1,0 +1,1221 @@
+/* МТК 39 · стили сцен киоск-приложения.
+ *
+ * Правила кита (kiosk README → «жёсткие правила»):
+ *  - контролы меряются от --touch-min / --touch-gap / --type-min-ui и растут
+ *    вместе с интерфейсом; контент — через --content-scale;
+ *  - верстаемся от полос ядра (--kiosk-safe-*), хардкода под хром нет;
+ *  - каждому скроллируемому контейнеру — класс .kiosk-scroll;
+ *  - косая подложка и фон — от ядра, свои .stage::after не заводим.
+ */
+
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400; font-display: swap;
+  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400; font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600; font-display: swap;
+  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+@font-face {
+  font-family: "21 Cent";
+  font-weight: 400; font-display: swap;
+  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+}
+
+:root {
+  --paper: #f7f9ef;
+  --brass: #d2b773;
+  --red: #a02128;
+  --red-mark: #c9545a;
+  --window: #9da3a8;
+  --graphite: #435059;
+  --night: #0c1012;
+
+  --font-display: "Nolde", Georgia, serif;
+  --font-body: "21 Cent", Georgia, serif;
+  --font-mono: "20 Kopeek", "Courier New", monospace;
+
+  /* Базовая единица кегля сцен: нормирована на 1920 и растёт к 3840,
+   * сверху ложится регулятор «Контент сцен» (и режим слабовидящих). */
+  --m39-u: calc(clamp(11px, 1.05vw, 44px) * var(--content-scale));
+  --m39-pad: calc(var(--m39-u) * 2);
+}
+
+/* ─── общее для сцен ─────────────────────────────────────────────────── */
+
+/* Ядро не задаёт box-sizing глобально, а половина раскладки здесь — «во всю
+ * ширину плюс поля»: без border-box экраны стори оказываются шире вьюпорта. */
+.m39-scene,
+.m39-scene *,
+.m39-scene *::before,
+.m39-scene *::after {
+  box-sizing: border-box;
+}
+
+.m39-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  color: var(--paper);
+  font-family: var(--font-body);
+}
+
+.m39-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+}
+
+.m39-head--over {
+  position: absolute;
+  top: var(--kiosk-safe-top);
+  left: var(--kiosk-safe-left);
+  z-index: 2;
+  max-width: 40vw;
+  pointer-events: none;
+}
+
+.m39-title,
+.m39-rail__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 2.6);
+  font-weight: 400;
+  line-height: 1.02;
+}
+
+.m39-sub {
+  margin: calc(var(--m39-u) * 0.6) 0 0;
+  max-width: 26em;
+  font-size: calc(var(--m39-u) * 1.02);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.72);
+}
+
+/* Подсказка о жесте — гаснет после первого касания. */
+.m39-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 0.4);
+  z-index: 2;
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.82));
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.55);
+  transform: translateX(-50%);
+  transition: opacity 0.5s;
+  pointer-events: none;
+}
+
+.m39-hint.is-off { opacity: 0; }
+
+/* ─── контролы ───────────────────────────────────────────────────────── */
+
+.m39-chip {
+  min-height: var(--touch-min);
+  padding: 0 calc(var(--touch-min) * 0.34);
+  border: 1px solid rgba(157, 163, 168, 0.4);
+  border-radius: calc(var(--touch-min) / 2);
+  background: rgba(12, 16, 18, 0.55);
+  color: rgba(247, 249, 239, 0.82);
+  font-family: var(--font-mono);
+  font-size: var(--type-min-ui);
+  letter-spacing: 0.03em;
+  touch-action: manipulation;
+}
+
+.m39-chip[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: rgba(210, 183, 115, 0.18);
+  color: var(--paper);
+}
+
+.m39-chip--toggle[aria-pressed="true"] {
+  border-color: var(--red-mark);
+  background: rgba(201, 84, 90, 0.18);
+}
+
+.m39-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--touch-gap);
+}
+
+.m39-filters {
+  position: absolute;
+  right: var(--kiosk-safe-right);
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: var(--touch-gap);
+  max-width: 46%;
+}
+
+.m39-modes {
+  position: absolute;
+  top: var(--kiosk-safe-top);
+  right: var(--kiosk-safe-right);
+  z-index: 3;
+  display: flex;
+  gap: calc(var(--touch-gap) / 2);
+  padding: calc(var(--touch-gap) / 2);
+  border: 1px solid rgba(157, 163, 168, 0.3);
+  border-radius: calc(var(--touch-primary) / 2);
+  background: rgba(12, 16, 18, 0.55);
+}
+
+.m39-modes .m39-chip {
+  border-color: transparent;
+  background: none;
+}
+
+.m39-modes .m39-chip[aria-pressed="true"] {
+  border-color: transparent;
+  background: rgba(210, 183, 115, 0.2);
+}
+
+.m39-zoom {
+  position: absolute;
+  right: var(--kiosk-safe-right);
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--touch-gap);
+  transform: translateY(-50%);
+}
+
+.m39-zoom__b {
+  width: var(--touch-primary);
+  height: var(--touch-primary);
+  border: 1px solid rgba(157, 163, 168, 0.4);
+  border-radius: 50%;
+  background: rgba(12, 16, 18, 0.6);
+  color: var(--paper);
+  font-family: var(--font-mono);
+  font-size: calc(var(--type-min-ui) * 1.2);
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+/* ─── легенда ────────────────────────────────────────────────────────── */
+
+.m39-legend {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--m39-u) * 0.5);
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.9));
+  color: rgba(247, 249, 239, 0.84);
+  pointer-events: none;
+}
+
+.m39-legend__row {
+  display: flex;
+  align-items: center;
+  gap: calc(var(--m39-u) * 0.6);
+}
+
+.m39-legend__dot {
+  width: calc(var(--m39-u) * 0.7);
+  height: calc(var(--m39-u) * 0.7);
+  border-radius: 50%;
+}
+
+.m39-legend__num { color: rgba(157, 163, 168, 0.9); }
+
+/* ─── карточка объекта ───────────────────────────────────────────────── */
+
+.m39-card {
+  position: absolute;
+  top: 50%;
+  right: var(--kiosk-safe-right);
+  z-index: 6;
+  width: min(calc(var(--m39-u) * 19), 36vw);
+  max-height: 80%;
+  padding: calc(var(--m39-u) * 1.5) calc(var(--m39-u) * 1.7) calc(var(--m39-u) * 1.6);
+  border: 1px solid rgba(210, 183, 115, 0.34);
+  border-radius: 3px;
+  background: rgba(12, 16, 18, 0.94);
+  transform: translateY(-50%);
+  animation: m39-rise 0.26s ease;
+}
+
+.m39-card[hidden] { display: none; }
+
+@keyframes m39-rise {
+  from { opacity: 0; transform: translate(0, calc(-50% + 14px)); }
+  to { opacity: 1; transform: translateY(-50%); }
+}
+
+.m39-card__body {
+  max-height: calc(80vh - var(--m39-u) * 4);
+  overflow-y: auto;
+  padding-right: calc(var(--scrollbar-w) / 2);
+}
+
+.m39-card__close,
+.m39-sheet__close,
+.m39-offmap__close {
+  position: absolute;
+  top: calc(var(--m39-u) * 0.7);
+  right: calc(var(--m39-u) * 0.7);
+  z-index: 2;
+  width: var(--touch-min);
+  height: var(--touch-min);
+  border: 1px solid rgba(157, 163, 168, 0.4);
+  border-radius: 50%;
+  background: rgba(12, 16, 18, 0.75);
+  color: var(--paper);
+  font-size: var(--type-min-ui);
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.m39-card__fig { margin: 0 0 calc(var(--m39-u) * 0.8); }
+
+.m39-card__fig img {
+  width: 100%;
+  max-height: calc(var(--m39-u) * 11);
+  object-fit: cover;
+  border-radius: 2px;
+  filter: saturate(0.75) contrast(1.04);
+}
+
+.m39-card__fig figcaption {
+  margin-top: calc(var(--m39-u) * 0.3);
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.72);
+  color: rgba(157, 163, 168, 0.7);
+}
+
+.m39-card__orig {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.95);
+  letter-spacing: 0.09em;
+  color: var(--brass);
+}
+
+.m39-card__orig:empty { display: none; }
+
+.m39-card__name {
+  margin: calc(var(--m39-u) * 0.45) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 1.85);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+/* Длинные «цепочки переименований» набирать Nolde нельзя — нечитаемо. */
+.m39-card__name--long {
+  font-family: var(--font-body);
+  font-size: calc(var(--m39-u) * 1.25);
+  line-height: 1.2;
+}
+
+.m39-card__name--xlong {
+  font-family: var(--font-body);
+  font-size: calc(var(--m39-u) * 1.02);
+  line-height: 1.25;
+}
+
+.m39-card__where {
+  margin: calc(var(--m39-u) * 0.45) 0 0;
+  font-size: calc(var(--m39-u) * 1.02);
+  color: rgba(247, 249, 239, 0.74);
+}
+
+.m39-card__text {
+  margin: calc(var(--m39-u) * 0.85) 0 0;
+  font-size: calc(var(--m39-u) * 0.98);
+  line-height: 1.45;
+  color: rgba(247, 249, 239, 0.88);
+}
+
+.m39-card__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(var(--m39-u) * 0.35) calc(var(--m39-u) * 1);
+  margin: calc(var(--m39-u) * 1) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.85);
+}
+
+.m39-card__facts dt { color: rgba(157, 163, 168, 0.8); }
+.m39-card__facts dd { margin: 0; }
+
+/* ─── «не на карте»: чип и картотека ─────────────────────────────────── */
+
+.m39-offhost { position: static; }
+
+.m39-chip--off {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 5.6);
+  z-index: 3;
+}
+
+.m39-union .m39-chip--off {
+  position: static;
+  flex: 0 0 auto;
+  margin-top: var(--touch-gap);
+  align-self: flex-start;
+}
+
+.m39-union .m39-offhost { flex: 0 0 auto; }
+
+.m39-offmap {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+  background: rgba(12, 16, 18, 0.9);
+  animation: m39-fade 0.24s ease;
+}
+
+.m39-offmap[hidden] { display: none; }
+
+@keyframes m39-fade { from { opacity: 0; } to { opacity: 1; } }
+
+.m39-offmap__box {
+  display: flex;
+  flex-direction: column;
+  width: min(calc(var(--m39-u) * 62), 94%);
+  max-height: 100%;
+  padding: calc(var(--m39-u) * 1.5) calc(var(--m39-u) * 1.7) calc(var(--m39-u) * 1.3);
+  border: 1px solid rgba(210, 183, 115, 0.34);
+  border-radius: 3px;
+  background: rgba(18, 24, 28, 0.98);
+}
+
+.m39-offmap__head {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(var(--m39-u) * 1.4);
+  flex: 0 0 auto;
+}
+
+.m39-offmap__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 1.9);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.m39-offmap__note {
+  margin: calc(var(--m39-u) * 0.55) 0 0;
+  max-width: 52em;
+  font-size: calc(var(--m39-u) * 0.95);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.66);
+}
+
+.m39-offmap__close { position: static; flex: 0 0 auto; }
+
+.m39-offmap__groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--touch-gap);
+  margin: calc(var(--m39-u) * 1) 0 calc(var(--m39-u) * 0.8);
+  flex: 0 0 auto;
+}
+
+.m39-offmap__wall {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.m39-offgroup {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--m39-u) * 0.8);
+  margin: calc(var(--m39-u) * 1.1) 0 calc(var(--m39-u) * 0.55);
+}
+
+.m39-offgroup:first-child { margin-top: 0; }
+
+.m39-offgroup__name {
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.9));
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.m39-offgroup__n {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.8);
+  color: rgba(157, 163, 168, 0.7);
+}
+
+.m39-offgroup__line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(210, 183, 115, 0.18);
+}
+
+.m39-offcards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(calc(var(--m39-u) * 13), 1fr));
+  gap: calc(var(--m39-u) * 0.6);
+}
+
+.m39-offcard,
+.m39-card2 {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--m39-u) * 0.22);
+  min-width: 0;
+  min-height: var(--touch-min);
+  padding: calc(var(--m39-u) * 0.7) calc(var(--m39-u) * 0.8);
+  border: 1px solid rgba(157, 163, 168, 0.16);
+  border-left-width: 4px;
+  border-radius: 2px;
+  background: rgba(247, 249, 239, 0.035);
+  color: inherit;
+  font-family: inherit;
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.m39-offcard.is-live, .m39-card2.is-live { border-left-color: var(--brass); }
+.m39-offcard.is-gone, .m39-card2.is-gone { border-left-color: var(--red-mark); }
+.m39-offcard.is-lost, .m39-card2.is-lost { border-left-color: var(--window); }
+
+.m39-offcard:active,
+.m39-card2:active { background: rgba(210, 183, 115, 0.12); }
+
+.m39-offcard__orig,
+.m39-card2__orig {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.74);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: var(--brass);
+}
+
+.m39-offcard__orig:empty,
+.m39-card2__orig:empty { display: none; }
+
+.m39-offcard__name,
+.m39-card2__name {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  font-size: calc(var(--m39-u) * 0.96);
+  line-height: 1.22;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.m39-offcard__where,
+.m39-card2__where {
+  overflow: hidden;
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.72);
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(157, 163, 168, 0.9);
+}
+
+.m39-offcard__year,
+.m39-card2__year {
+  margin-top: auto;
+  padding-top: calc(var(--m39-u) * 0.22);
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.72);
+  color: rgba(247, 249, 239, 0.55);
+}
+
+/* ─── сцена «Карта Союза» ────────────────────────────────────────────── */
+
+.m39-rail {
+  position: absolute;
+  top: var(--kiosk-safe-top);
+  left: var(--kiosk-safe-left);
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  width: min(calc(var(--m39-u) * 15), 26vw);
+  gap: calc(var(--m39-u) * 0.8);
+}
+
+.m39-rail__head { flex: 0 0 auto; }
+
+.m39-republics,
+.m39-rubrics {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) / 2);
+  overflow-y: auto;
+  padding-right: calc(var(--scrollbar-w) / 2);
+}
+
+.m39-republic,
+.m39-rubric {
+  flex: 0 0 auto;                       /* иначе двухстрочные пункты наезжают */
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: calc(var(--m39-u) * 0.6);
+  min-height: var(--touch-min);
+  padding: calc(var(--m39-u) * 0.35) calc(var(--m39-u) * 0.8);
+  border: 1px solid rgba(157, 163, 168, 0.22);
+  border-radius: 3px;
+  background: rgba(12, 16, 18, 0.45);
+  color: rgba(247, 249, 239, 0.86);
+  font-family: var(--font-body);
+  font-size: max(var(--type-min-ui), calc(var(--m39-u) * 1));
+  text-align: left;
+  touch-action: manipulation;
+}
+
+.m39-republic[aria-pressed="true"],
+.m39-rubric[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: rgba(210, 183, 115, 0.16);
+  color: var(--paper);
+}
+
+.m39-republic__n,
+.m39-rubric__n {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.82);
+  color: rgba(157, 163, 168, 0.85);
+}
+
+/* Рубрикатор стоит поверх карты — под ним затемнение, иначе точки лезут
+   в подписи и список читается как сор. */
+.m39-union .m39-rail::before {
+  content: "";
+  position: absolute;
+  inset: calc(var(--m39-u) * -1) calc(var(--m39-u) * -1.4);
+  z-index: -1;
+  background: linear-gradient(
+    90deg, rgba(12, 16, 18, 0.86) 0%, rgba(12, 16, 18, 0.78) 72%, rgba(12, 16, 18, 0) 100%);
+  pointer-events: none;
+}
+
+.m39-union .m39-legend { left: auto; right: var(--kiosk-safe-right); bottom: auto; top: var(--kiosk-safe-top); align-items: flex-end; }
+.m39-union .m39-legend__row { flex-direction: row-reverse; }
+
+/* ─── сцена «Прилив и отлив» ─────────────────────────────────────────── */
+
+.m39-year {
+  position: absolute;
+  top: var(--kiosk-safe-top);
+  right: var(--kiosk-safe-right);
+  z-index: 2;
+  text-align: right;
+  pointer-events: none;
+}
+
+.m39-year__num {
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 5.2);
+  line-height: 0.9;
+  color: var(--brass);
+}
+
+.m39-year__counts {
+  margin-top: calc(var(--m39-u) * 0.4);
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.9));
+  color: rgba(247, 249, 239, 0.78);
+}
+
+.m39-timeline {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  right: var(--kiosk-safe-right);
+  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 2.6);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: var(--touch-primary) 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+  gap: calc(var(--m39-u) * 0.5) calc(var(--m39-u) * 1);
+}
+
+.m39-play {
+  grid-row: span 2;
+  width: var(--touch-primary);
+  height: var(--touch-primary);
+  border: 1px solid rgba(210, 183, 115, 0.5);
+  border-radius: 50%;
+  background: rgba(12, 16, 18, 0.6);
+  color: var(--brass);
+  font-size: calc(var(--type-min-ui) * 1.1);
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.m39-scrub {
+  width: 100%;
+  height: var(--touch-min);
+  accent-color: var(--brass);
+  touch-action: manipulation;
+}
+
+.m39-ticks {
+  display: flex;
+  justify-content: space-between;
+  font-family: var(--font-mono);
+  font-size: var(--type-min-label);
+  color: rgba(157, 163, 168, 0.7);
+}
+
+.m39-note {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  right: 40%;
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 2;
+  margin: 0;
+  font-size: calc(var(--m39-u) * 0.86);
+  line-height: 1.4;
+  color: rgba(157, 163, 168, 0.75);
+  pointer-events: none;
+}
+
+.m39-wave .m39-legend {
+  left: auto;
+  right: var(--kiosk-safe-right);
+  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 5.4);
+  align-items: flex-end;
+}
+
+/* ─── сцена «Гербарий улиц» ──────────────────────────────────────────── */
+
+.m39-streets,
+.m39-catalog {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--m39-u) * 0.9);
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+}
+
+.m39-head--row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: calc(var(--m39-u) * 2);
+  flex: 0 0 auto;
+}
+
+.m39-totals {
+  display: flex;
+  gap: calc(var(--m39-u) * 2);
+  text-align: right;
+}
+
+.m39-total__num {
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 2.1);
+  line-height: 1;
+  color: var(--brass);
+}
+
+.m39-total__cap {
+  margin-top: calc(var(--m39-u) * 0.25);
+  font-family: var(--font-mono);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.8);
+}
+
+.m39-wall {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-template-rows: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: max-content;
+  gap: calc(var(--m39-u) * 0.9);
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: var(--scrollbar-w);
+}
+
+.m39-leaf {
+  display: flex;
+  flex-direction: column;
+  width: calc(var(--leaf-w, 200px) * var(--content-scale));
+  padding: calc(var(--m39-u) * 0.5);
+  border: 1px solid rgba(157, 163, 168, 0.16);
+  border-radius: 2px;
+  background: rgba(247, 249, 239, 0.03);
+  touch-action: manipulation;
+}
+
+.m39-leaf.is-active { border-color: var(--brass); background: rgba(210, 183, 115, 0.1); }
+
+.m39-leaf__plot { flex: 1 1 auto; min-height: 0; }
+.m39-leaf__plot svg { display: block; width: 100%; height: 100%; }
+
+.m39-leaf__name {
+  margin-top: calc(var(--m39-u) * 0.3);
+  overflow: hidden;
+  font-size: calc(var(--m39-u) * 0.9);
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.m39-leaf__where {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.7);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  color: rgba(157, 163, 168, 0.85);
+}
+
+.m39-leaf__len {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.7);
+  color: var(--brass);
+}
+
+.m39-foot {
+  flex: 0 0 auto;
+  display: flex;
+  justify-content: space-between;
+  gap: calc(var(--m39-u) * 2);
+  font-family: var(--font-mono);
+  font-size: var(--type-min-label);
+  color: rgba(157, 163, 168, 0.75);
+}
+
+/* ─── лист-карточка и карточка картотеки ─────────────────────────────── */
+
+.m39-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: 7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+  background: rgba(12, 16, 18, 0.9);
+  animation: m39-fade 0.24s ease;
+}
+
+.m39-sheet[hidden] { display: none; }
+
+.m39-sheet__box {
+  position: relative;
+  width: min(calc(var(--m39-u) * 26), 80%);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: calc(var(--m39-u) * 1.6) calc(var(--m39-u) * 1.8);
+  border: 1px solid rgba(210, 183, 115, 0.34);
+  border-radius: 3px;
+  background: rgba(18, 24, 28, 0.98);
+}
+
+.m39-streets .m39-sheet__box { display: flex; gap: calc(var(--m39-u) * 1.6); }
+.m39-sheet__plot { flex: 0 0 auto; width: min(calc(var(--m39-u) * 13), 34%); }
+.m39-sheet__plot svg { width: 100%; height: auto; }
+.m39-sheet__meta { flex: 1 1 auto; min-width: 0; }
+
+.m39-sheet__orig {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.95);
+  letter-spacing: 0.09em;
+  color: var(--brass);
+}
+
+.m39-sheet__orig:empty { display: none; }
+
+.m39-sheet__name {
+  margin: calc(var(--m39-u) * 0.4) 0 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 1.8);
+  font-weight: 400;
+  line-height: 1.08;
+}
+
+.m39-sheet__where {
+  margin: calc(var(--m39-u) * 0.4) 0 0;
+  font-size: calc(var(--m39-u) * 1);
+  color: rgba(247, 249, 239, 0.74);
+}
+
+.m39-sheet__facts {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: calc(var(--m39-u) * 0.35) calc(var(--m39-u) * 1);
+  margin: calc(var(--m39-u) * 1) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.85);
+}
+
+.m39-sheet__facts dt { color: rgba(157, 163, 168, 0.8); }
+.m39-sheet__facts dd { margin: 0; }
+
+/* ─── сцена «Картотека» ──────────────────────────────────────────────── */
+
+.m39-catalog {
+  flex-direction: row;
+  gap: calc(var(--m39-u) * 1.6);
+}
+
+.m39-catalog .m39-rail {
+  position: static;
+  flex: 0 0 auto;
+  width: min(calc(var(--m39-u) * 16), 26vw);
+}
+
+.m39-catalog .m39-rail::before { display: none; }
+
+.m39-rail__foot {
+  flex: 0 0 auto;
+  margin: 0;
+  font-size: calc(var(--m39-u) * 0.8);
+  line-height: 1.4;
+  color: rgba(157, 163, 168, 0.75);
+}
+
+.m39-wallbox {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--m39-u) * 0.7);
+}
+
+.m39-wall__head { flex: 0 0 auto; }
+
+.m39-wall__title {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 1.9);
+  font-weight: 400;
+  line-height: 1;
+}
+
+.m39-wall__note {
+  margin: calc(var(--m39-u) * 0.4) 0 0;
+  max-width: 60em;
+  font-size: calc(var(--m39-u) * 0.9);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.66);
+}
+
+.m39-cards {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: calc(var(--scrollbar-w) / 2);
+}
+
+.m39-group__head {
+  display: flex;
+  align-items: baseline;
+  gap: calc(var(--m39-u) * 0.8);
+  margin: calc(var(--m39-u) * 1.1) 0 calc(var(--m39-u) * 0.5);
+}
+
+.m39-group:first-child .m39-group__head { margin-top: 0; }
+
+.m39-group__name {
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.9));
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.m39-group__n {
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.8);
+  color: rgba(157, 163, 168, 0.7);
+}
+
+.m39-group__line {
+  flex: 1 1 auto;
+  height: 1px;
+  background: rgba(210, 183, 115, 0.18);
+}
+
+.m39-cards__grid {
+  display: grid;
+  grid-template-columns:
+    repeat(auto-fill, minmax(calc(var(--card-w, 260px) * var(--content-scale)), 1fr));
+  gap: calc(var(--m39-u) * 0.6);
+}
+
+.m39-card2.has-fig { padding-top: 0; padding-left: 0; }
+.m39-card2.has-fig .m39-card2__text { padding: 0 calc(var(--m39-u) * 0.8); }
+
+.m39-card2__fig {
+  margin-bottom: calc(var(--m39-u) * 0.5);
+  overflow: hidden;
+}
+
+.m39-card2__fig img {
+  display: block;
+  width: 100%;
+  height: calc(var(--m39-u) * 6);
+  object-fit: cover;
+  filter: saturate(0.75) contrast(1.04);
+}
+
+.m39-card2__text {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--m39-u) * 0.22);
+  min-height: 0;
+  flex: 1 1 auto;
+}
+
+/* ─── сцена «Свод в цифрах» ──────────────────────────────────────────── */
+
+.m39-stats { display: flex; }
+
+.m39-scroll {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+}
+
+.m39-screen {
+  flex: 0 0 100%;
+  scroll-snap-align: start;
+  display: grid;
+  grid-template-columns: minmax(0, 34%) minmax(0, 1fr);
+  align-items: center;
+  gap: calc(var(--m39-u) * 2.4);
+  /* справа — место под столбик точек экранов */
+  padding: var(--kiosk-safe-top) calc(var(--kiosk-safe-right) + var(--touch-min) * 1.4)
+           calc(var(--kiosk-safe-bottom) + var(--m39-u) * 2) var(--kiosk-safe-left);
+}
+
+.m39-screen--title { grid-template-columns: minmax(0, 46%) minmax(0, 1fr); }
+
+.m39-screen__text { min-width: 0; }
+
+.m39-display {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 4.2);
+  font-weight: 400;
+  line-height: 0.98;
+}
+
+.m39-lede {
+  margin: calc(var(--m39-u) * 0.9) 0 0;
+  font-size: calc(var(--m39-u) * 1.15);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.86);
+}
+
+.m39-srcnote,
+.m39-screen__foot {
+  margin: calc(var(--m39-u) * 0.9) 0 0;
+  font-size: calc(var(--m39-u) * 0.88);
+  line-height: 1.45;
+  color: rgba(157, 163, 168, 0.85);
+}
+
+.m39-screen__head {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 2.5);
+  font-weight: 400;
+  line-height: 1.02;
+}
+
+.m39-screen__sub {
+  margin: calc(var(--m39-u) * 0.6) 0 0;
+  font-size: calc(var(--m39-u) * 1.02);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.78);
+}
+
+.m39-screen__vis { min-width: 0; }
+.m39-screen__vis svg { width: 100%; height: auto; }
+
+.m39-hero {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: calc(var(--m39-u) * 1.6);
+}
+
+.m39-hero__num {
+  font-family: var(--font-display);
+  font-size: calc(var(--m39-u) * 3);
+  line-height: 1;
+  color: var(--brass);
+}
+
+.m39-hero__cap {
+  margin-top: calc(var(--m39-u) * 0.3);
+  font-family: var(--font-mono);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.85);
+}
+
+.m39-mass { width: 100%; height: 62vh; display: block; }
+
+.m39-chartlegend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--m39-u) * 1.2);
+  margin-top: calc(var(--m39-u) * 0.6);
+  font-family: var(--font-mono);
+  font-size: var(--type-min-label);
+  color: rgba(247, 249, 239, 0.8);
+}
+
+.m39-chartlegend__item { display: inline-flex; align-items: center; gap: calc(var(--m39-u) * 0.4); }
+
+.m39-chartlegend__swatch {
+  width: calc(var(--m39-u) * 0.7);
+  height: calc(var(--m39-u) * 0.7);
+  border-radius: 2px;
+}
+
+.m39-chart__note {
+  margin: calc(var(--m39-u) * 0.3) 0 0;
+  font-family: var(--font-mono);
+  font-size: calc(var(--m39-u) * 0.72);
+  color: rgba(157, 163, 168, 0.7);
+}
+
+.m39-t-label { fill: rgba(247, 249, 239, 0.88); font-family: "21 Cent", Georgia, serif; }
+.m39-t-value { fill: var(--brass); font-family: "20 Kopeek", monospace; }
+.m39-t-mute { fill: rgba(157, 163, 168, 0.8); font-family: "20 Kopeek", monospace; }
+.m39-t-axis { fill: rgba(157, 163, 168, 0.65); font-family: "20 Kopeek", monospace; }
+
+/* Точки экранов стори — по правому краю столбиком: внизу по центру уже стоит
+   точечный ряд навигации ядра, и два одинаковых ряда читались бы как один. */
+.m39-dots {
+  position: absolute;
+  right: var(--kiosk-safe-right);
+  top: 50%;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  gap: var(--touch-gap);
+  transform: translateY(-50%);
+}
+
+.m39-dots__dot {
+  width: calc(var(--touch-min) * 0.5);
+  height: calc(var(--touch-min) * 0.5);
+  border: 1px solid rgba(157, 163, 168, 0.5);
+  border-radius: 50%;
+  background: none;
+  touch-action: manipulation;
+}
+
+.m39-dots__dot[aria-current="true"] { background: var(--brass); border-color: var(--brass); }
+
+/* ─── сцена «Глобус избранного» ──────────────────────────────────────── */
+
+.m39-chips--wrap { justify-content: flex-end; max-width: 36vw; }
+
+.m39-offlist {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 3;
+  max-width: calc(var(--m39-u) * 13);
+}
+
+.m39-offlist[hidden] { display: none; }
+
+.m39-offlist__h {
+  margin: 0 0 calc(var(--m39-u) * 0.4);
+  font-family: var(--font-mono);
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.86));
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--brass);
+}
+
+.m39-offlist ul { margin: 0; padding: 0; list-style: none; }
+
+.m39-offlist__item {
+  display: flex;
+  align-items: center;
+  min-height: var(--touch-min);
+  padding: 0 calc(var(--m39-u) * 0.6);
+  border-left: 3px solid transparent;
+  font-size: calc(var(--m39-u) * 0.9);
+  color: rgba(247, 249, 239, 0.8);
+  touch-action: manipulation;
+}
+
+.m39-offlist__item.is-active {
+  border-left-color: var(--brass);
+  background: rgba(210, 183, 115, 0.12);
+  color: var(--paper);
+}
+
+/* ─── аттрактор ──────────────────────────────────────────────────────── */
+
+/* В простое сцена остаётся на экране, но интерфейс уходит: у стола никого,
+   а фон — картинка, а не рабочая панель. */
+.kiosk-app.is-standby .m39-head,
+.kiosk-app.is-standby .m39-modes,
+.kiosk-app.is-standby .m39-filters,
+.kiosk-app.is-standby .m39-legend,
+.kiosk-app.is-standby .m39-zoom,
+.kiosk-app.is-standby .m39-hint,
+.kiosk-app.is-standby .m39-chip--off,
+.kiosk-app.is-standby .m39-offlist,
+.kiosk-app.is-standby .m39-year,
+.kiosk-app.is-standby .m39-timeline,
+.kiosk-app.is-standby .m39-note,
+.kiosk-app.is-standby .m39-rail {
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
