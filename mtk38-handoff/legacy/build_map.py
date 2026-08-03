@@ -44,9 +44,9 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 v2 · Карта</title>
 <style>
 __FACES__
-  @font-face{font-family:"20 Kopeek";src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
-  @font-face{font-family:"20 Kopeek";font-weight:600;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
-  @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff")}
+  @font-face{font-family:"20 Kopeek";src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:600;src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype")}
+  @font-face{font-family:"21 Cent";src:url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff")}
   :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--red:#A02128}
   *{box-sizing:border-box}
   html,body{margin:0;height:100%;overflow:hidden;background:#2b343b;font-family:"20 Kopeek",system-ui,sans-serif}

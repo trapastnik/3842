@@ -41,8 +41,8 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 v2 · размещение + рендер цитат</title>
 <style>
 __FACES__
-  @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
-  @font-face{font-family:"20 Kopeek";src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"21 Cent";src:url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");font-display:swap}
+  @font-face{font-family:"20 Kopeek";src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
   :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;
     --glow:1;--blur:16;--scrim:1;--qscale:1}
   *{box-sizing:border-box}

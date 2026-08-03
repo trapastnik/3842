@@ -1,5 +1,5 @@
 /* Демо-сцена 2 «Сетка» — дрейфующая решётка. */
-import { createCanvasScene } from "./canvas-scene.js?v=14";
+import { createCanvasScene } from "./canvas-scene.js?v=19";
 
 export const gridScene = createCanvasScene({
   id: "grid",
@@ -10,9 +10,15 @@ export const gridScene = createCanvasScene({
       type: "range", min: 8, max: 40, step: 1, default: 18 },
     { key: "sparks", label: { ru: "Светлячки", en: "Sparks", zh: "光点" },
       type: "toggle", default: true },
+    /* Опции в форме {value, label:{ru,…}} — ядро нормализует подписи так
+     * же, как везде. Раньше этот формат рендерился «[object Object]». */
     { key: "tone", label: { ru: "Тон линий", en: "Line tone", zh: "线条色调" },
       type: "select", default: "paper",
-      options: [["paper", "Бумага"], ["brass", "Латунь"], ["red", "Красный"]] },
+      options: [
+        { value: "paper", label: { ru: "Бумага", en: "Paper", zh: "纸色" } },
+        { value: "brass", label: { ru: "Латунь", en: "Brass", zh: "黄铜" } },
+        { value: "red",   label: { ru: "Красный", en: "Red", zh: "红色" } },
+      ] },
   ],
 
   draw(ctx, { t, w, h, state }) {

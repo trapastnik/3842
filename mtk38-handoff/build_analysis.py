@@ -110,7 +110,7 @@ HTML = r"""<!doctype html>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>МТК 38 · аналитика языков и предложения</title>
 <style>
-  @font-face{font-family:"Nolde";src:url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"Nolde";src:url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");font-display:swap}
   :root{--brass:#D2B773;--red:#A02128;--blue-grey:#5D8970;--window:#9DA3A8;
     --graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
   *{box-sizing:border-box}

@@ -57,8 +57,8 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 · данные и приёмка</title>
 <style>
 __FACE__
-  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
   :root{--brass:#D2B773;--red:#A02128;--green:#5D8970;--window:#9DA3A8;--graphite:#435059;--telegrey:#CFD0CF;--paper:#F7F9EF;--white:#fff}
   *{box-sizing:border-box}
   body{margin:0;background:var(--paper);color:var(--graphite);font:14px/1.5 system-ui,-apple-system,Segoe UI,Roboto,sans-serif;height:100vh;overflow:hidden;display:flex;flex-direction:column}
