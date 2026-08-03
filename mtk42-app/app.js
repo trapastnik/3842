@@ -2,13 +2,12 @@
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
-import { installSettings } from "./scenes/settings-bridge.js?v=9";
-import { installChromeZones } from "./scenes/chrome-zones.js?v=9";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=13";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=9";
-import { archiveScene } from "./scenes/archive.js?v=9";
-import { timelineScene } from "./scenes/timeline.js?v=9";
-import { mapScene } from "./scenes/map.js?v=9";
+import { pendulumScene } from "./scenes/pendulum.js?v=13";
+import { archiveScene } from "./scenes/archive.js?v=13";
+import { timelineScene } from "./scenes/timeline.js?v=13";
+import { mapScene } from "./scenes/map.js?v=13";
 
 const app = createApp({
   appId: "mtk42",
@@ -23,11 +22,10 @@ app.registerScene(archiveScene);
 app.registerScene(timelineScene);
 app.registerScene(mapScene);
 
-/* Настройки сцен объявлены в самих сценах (схема v1.2, PLAN-KIOSK):
- * `settings:[...]` + `applySettings(values)`. Ядро 1.1.0 схему ещё не
- * исполняет, поэтому её разворачивает мост — он же уйдёт, когда ядро
- * научится. Императивных addSettings() для сцен здесь больше нет. */
-installSettings(app, [pendulumScene, archiveScene, timelineScene, mapScene]);
+/* Настройки сцен объявлены в самих сценах (`settings:[...]` +
+ * `applySettings(values)`). С ядра 1.5.0 их разворачивает само ядро:
+ * группирует в сервис-панели, сеет дефолты в config.scenes[id] и отдаёт
+ * значения сцене. Временный settings-bridge.js снят. */
 
 /* Реальные зоны хрома в CSS-переменные: ядро отдаёт только отступ от
  * кромки, а кнопки языков занимают заметно больше. Заявка на экспорт

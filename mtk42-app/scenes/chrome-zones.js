@@ -49,10 +49,13 @@ export function measureChrome() {
 }
 
 export function installChromeZones(app) {
-  let raf = 0;
+  /* Склейка через setTimeout, а не requestAnimationFrame: в неактивной
+   * вкладке кадры заморожены, и первый замер просто не случился бы —
+   * ровно та же ловушка, на которой спотыкалось ядро 1.0. */
+  let timer = 0;
   const schedule = () => {
-    if (raf) return;
-    raf = requestAnimationFrame(() => { raf = 0; measureChrome(); });
+    if (timer) return;
+    timer = setTimeout(() => { timer = 0; measureChrome(); }, 0);
   };
 
   app.on("started", schedule);
@@ -63,7 +66,8 @@ export function installChromeZones(app) {
   app.on("scene-changed", schedule);
   window.addEventListener("resize", schedule, { passive: true });
 
-  /* Первый замер — после того как ядро построило хром. */
+  /* Первый замер — сразу и синхронно: хром ядро строит до старта сцен. */
+  measureChrome();
   schedule();
   return { measure: measureChrome };
 }

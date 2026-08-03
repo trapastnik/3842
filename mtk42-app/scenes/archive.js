@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=9";
+} from "./shared.js?v=13";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -18,7 +18,7 @@ export const archiveScene = {
    * (опись SETTINGS-INVENTORY, класс А). Фильтры «Эпоха»/«Категория» —
    * класс Б, живут на сцене и сбрасываются по idle. */
   settings: [
-    { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "choice",
+    { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "select",
       default: "classic",
       options: [{ value: "classic", label: { ru: "Классика" } },
                 { value: "air", label: { ru: "Больше воздуха" } }] },
