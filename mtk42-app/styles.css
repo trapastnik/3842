@@ -125,7 +125,8 @@
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(clamp(220px, 11.46vw, 440px), 1fr));
   grid-auto-rows: min-content;
-  gap: 20px;
+  /* Расстояние между карточками — из сервис-панели (см. archive.applySettings). */
+  gap: var(--m42-grid-gap-y, 20px) var(--m42-grid-gap-x, 20px);
   padding-right: 8px;
   align-content: start;
 }

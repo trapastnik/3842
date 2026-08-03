@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js";
+} from "./shared.js?v=5";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -76,6 +76,7 @@ export const archiveScene = {
     this._gridEl.addEventListener("click", this._onCard);
 
     this._renderAll();
+    this.applySettings();
   },
 
   unmount() {
@@ -87,6 +88,16 @@ export const archiveScene = {
     this._root = this._gridEl = this._counterEl = null;
     this._epochRow = this._catRow = this._overlay = this._app = null;
     this._items = null;
+  },
+
+  /* Зовётся из app.js, когда оператор крутит настройки группы «Картотека».
+   * Расстояния — CSS-переменные, чтобы не пересобирать сетку. */
+  applySettings() {
+    if (!this._root) return;
+    const gx = Number(this._app.getSetting("archive.gapX"));
+    const gy = Number(this._app.getSetting("archive.gapY"));
+    if (gx > 0) this._root.style.setProperty("--m42-grid-gap-x", gx + "px");
+    if (gy > 0) this._root.style.setProperty("--m42-grid-gap-y", gy + "px");
   },
 
   pause() {},   // нет rAF и таймеров — останавливать нечего

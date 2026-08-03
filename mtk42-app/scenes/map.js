@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=5";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 const VIEW = { lonMin: -8, lonMax: 118, latMin: 22, latMax: 72 };
@@ -95,6 +95,9 @@ export const mapScene = {
     this._statusRow = this._resetBtn = this._overlay = this._app = null;
     this._data = this._geo = this._hint = null;
   },
+
+  /* Зовётся из app.js при правке настроек группы «Институции». */
+  applySettings() { this._draw(); },
 
   pause() {},   // петли нет: рисуем только по жесту
   resume() { this._draw(); },

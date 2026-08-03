@@ -22,18 +22,42 @@
     "opacity": 1,
     "angle": 105
   },
-  "i18n": { "langs": ["ru", "en", "zh"], "show": true },
-  "a11y": { "enabled": false, "show": true },
-  "tools": { "position": "top-left" },
-  "service": { "gear": "always" },
+  "i18n": {
+    "langs": [
+      "ru",
+      "en",
+      "zh"
+    ],
+    "show": true
+  },
+  "a11y": {
+    "enabled": false,
+    "show": true
+  },
+  "tools": {
+    "position": "top-left"
+  },
+  "service": {
+    "gear": "always"
+  },
   "watchdog": {
     "stallSec": 30,
     "sceneTimeoutSec": 20,
     "restart": true,
     "journalLimit": 200
   },
-
-  "archive": { "columns": 0 },
-  "pendulum": { "dotSize": 112, "showPendulum": true },
-  "museums": { "dotRadius": 10, "showCities": true }
+  "archive": {
+    "gapX": 20,
+    "gapY": 20
+  },
+  "pendulum": {
+    "dotSize": 112,
+    "pxPerYear": 42,
+    "minGap": 0,
+    "showPendulum": true
+  },
+  "museums": {
+    "dotRadius": 10,
+    "showCities": true
+  }
 }

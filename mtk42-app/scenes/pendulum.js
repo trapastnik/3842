@@ -6,7 +6,7 @@
  * Петля идёт на setInterval 100 мс = 10 fps, ровно потолок стандарта. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js";
+} from "./shared.js?v=5";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -138,6 +138,9 @@ export const pendulumScene = {
     if (this._driftTimer) { clearInterval(this._driftTimer); this._driftTimer = 0; }
   },
 
+  /* Зовётся из app.js, когда оператор крутит настройки группы «Маятник». */
+  applySettings() { this._build(); },
+
   /* ─── координаты ─────────────────────────────────────────────────────── */
 
   _segments() {
@@ -153,9 +156,16 @@ export const pendulumScene = {
     return segs;
   },
 
+  /* Вертикальный шаг ленты: сколько пикселей приходится на год.
+   * Он же — расстояние между портретами по высоте. Крутится оператором. */
+  _pxPerYear() {
+    const v = Number(this._app.getSetting("pendulum.pxPerYear"));
+    return (v > 0 ? v : PX_PER_YEAR);
+  },
+
   _yearToY(year) {
     const y = Math.max(YEAR_MIN, Math.min(YEAR_MAX, year));
-    const px = PX_PER_YEAR * this._scale();
+    const px = this._pxPerYear() * this._scale();
     let acc = TOP_PAD;
     for (const s of this._segs || []) {
       if (y >= s.to) acc += (s.to - s.from) * px * s.scale;
@@ -291,7 +301,13 @@ export const pendulumScene = {
   _drawDots(root) {
     const size = this._dotSize();
     const containerW = root.clientWidth || 1200;
-    const minDist = Math.max(40, size - 20);
+    /* Расстояние между портретами по ширине: насколько точки расталкиваются,
+     * когда попадают в одну горизонталь. 0 в настройках = «как раньше»
+     * (диаметр минус 20 px). */
+    const gapSetting = Number(this._app.getSetting("pendulum.minGap"));
+    const minDist = gapSetting > 0
+      ? gapSetting * this._scale()
+      : Math.max(40, size - 20);
     const vert = Math.max(60, size - 12);
     const halfPct = ((size / 2 + 4) / containerW) * 100;
     const placed = [];
