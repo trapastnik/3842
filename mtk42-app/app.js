@@ -2,11 +2,12 @@
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
+import { installSettings } from "./scenes/settings-bridge.js?v=8";
 
-import { pendulumScene } from "./scenes/pendulum.js";
-import { archiveScene } from "./scenes/archive.js";
-import { timelineScene } from "./scenes/timeline.js";
-import { mapScene } from "./scenes/map.js";
+import { pendulumScene } from "./scenes/pendulum.js?v=8";
+import { archiveScene } from "./scenes/archive.js?v=8";
+import { timelineScene } from "./scenes/timeline.js?v=8";
+import { mapScene } from "./scenes/map.js?v=8";
 
 const app = createApp({
   appId: "mtk42",
@@ -21,17 +22,31 @@ app.registerScene(archiveScene);
 app.registerScene(timelineScene);
 app.registerScene(mapScene);
 
-/* Операторские настройки сцен. Подписи здесь русские намеренно: панель
- * сидит за гейтом ?service=1 и посетителю не показывается. */
-app.addSettings("Маятник", [
-  { type: "range", path: "pendulum.dotSize", label: "Размер точек", min: 64, max: 200, step: 8, unit: " px" },
-  { type: "toggle", path: "pendulum.showPendulum", label: "Кривая маятника" },
+/* Настройки сцен объявлены в самих сценах (схема v1.2, PLAN-KIOSK):
+ * `settings:[...]` + `applySettings(values)`. Ядро 1.1.0 схему ещё не
+ * исполняет, поэтому её разворачивает мост — он же уйдёт, когда ядро
+ * научится. Императивных addSettings() для сцен здесь больше нет. */
+installSettings(app, [pendulumScene, archiveScene, timelineScene, mapScene]);
+
+/* Общеприкладная настройка, не принадлежащая ни одной сцене. */
+app.addSettings("Портреты", [
+  { type: "toggle", path: "photos.color", label: "Цвет фото" },
+  { type: "toggle", path: "photos.a11yColor",
+    label: "Цвет фото в режиме слабовидящих" },
 ]);
 
-app.addSettings("Институции", [
-  { type: "range", path: "museums.dotRadius", label: "Размер точек на карте", min: 6, max: 24, step: 1, unit: " px" },
-  { type: "toggle", path: "museums.showCities", label: "Названия городов" },
-]);
+/* Монохром — базовый вид экспозиции, но это кураторское решение, а не
+ * техническое: оба флага возвращают снимкам исходный цвет — отдельно для
+ * обычного режима и для режима слабовидящих. По умолчанию оба выключены. */
+function applyPhotoColor() {
+  const root = document.documentElement;
+  root.classList.toggle("m42-photo-color", app.getSetting("photos.color") === true);
+  root.classList.toggle("m42-a11y-color", app.getSetting("photos.a11yColor") === true);
+}
+app.on("started", applyPhotoColor);
+app.on("setting", ({ path }) => {
+  if (path.split(".")[0] === "photos") applyPhotoColor();
+});
 
 app.start();
 

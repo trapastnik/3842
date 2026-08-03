@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js";
+} from "./shared.js?v=8";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -13,6 +13,20 @@ const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
 export const archiveScene = {
   id: "archive",
   title: { ru: "Картотека", en: "Card index", zh: "卡片目录" },
+
+  /* Схема настроек v1.2. «Дизайн карточки героя» возвращён из прототипа
+   * (опись SETTINGS-INVENTORY, класс А). Фильтры «Эпоха»/«Категория» —
+   * класс Б, живут на сцене и сбрасываются по idle. */
+  settings: [
+    { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "choice",
+      default: "classic",
+      options: [{ value: "classic", label: { ru: "Классика" } },
+                { value: "air", label: { ru: "Больше воздуха" } }] },
+    { key: "gapX", label: { ru: "Расстояние по ширине" }, type: "range",
+      min: 8, max: 96, step: 4, unit: " px", default: 20 },
+    { key: "gapY", label: { ru: "Расстояние по высоте" }, type: "range",
+      min: 8, max: 96, step: 4, unit: " px", default: 20 },
+  ],
 
   preload: {
     data: { people: DATA.people, portraits: DATA.portraits },
@@ -75,7 +89,9 @@ export const archiveScene = {
     };
     this._gridEl.addEventListener("click", this._onCard);
 
+    this._cfg = this._cfg || this._defaults();
     this._renderAll();
+    this.applySettings(this._cfg);
   },
 
   unmount() {
@@ -87,6 +103,22 @@ export const archiveScene = {
     this._root = this._gridEl = this._counterEl = null;
     this._epochRow = this._catRow = this._overlay = this._app = null;
     this._items = null;
+  },
+
+  /* Схема v1.2: значения приходят готовыми. Расстояния — CSS-переменные,
+   * чтобы не пересобирать сетку из 140 плиток на каждый чих ползунка. */
+  applySettings(values) {
+    this._cfg = Object.assign(this._defaults(), values || {});
+    if (!this._root) return;
+    this._root.style.setProperty("--m42-grid-gap-x", this._cfg.gapX + "px");
+    this._root.style.setProperty("--m42-grid-gap-y", this._cfg.gapY + "px");
+    this._root.setAttribute("data-card", this._cfg.cardDesign);
+  },
+
+  _defaults() {
+    const d = {};
+    for (const row of this.settings) d[row.key] = row.default;
+    return d;
   },
 
   pause() {},   // нет rAF и таймеров — останавливать нечего

@@ -4,13 +4,52 @@
  * Полосы позиционируются в px внутри content-box, который начинается после
  * padding-left = --m42-label-col; ширину меряем по вычисленному padding
  * (переменная — clamp(), parseFloat по ней дал бы NaN). */
-import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js";
+import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=8";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 
 export const timelineScene = {
   id: "timeline",
   title: { ru: "Институции · Таймлайн", en: "Institutions · Timeline", zh: "机构 · 时间轴" },
+
+  /* Схема настроек v1.2. Вся типографика пяти блоков и высоты — из описи
+   * SETTINGS-INVENTORY (в пилоте эти 17 позиций были потеряны в CSS). */
+  settings: [
+    { key: "regionSize", label: { ru: "Регионы: размер" }, type: "range",
+      min: 14, max: 48, step: 1, unit: " px", default: 22 },
+    { key: "regionOpacity", label: { ru: "Регионы: непрозрачность" }, type: "range",
+      min: 30, max: 100, step: 5, unit: " %", default: 100 },
+    { key: "regionBold", label: { ru: "Регионы: жирный" }, type: "toggle", default: false },
+
+    { key: "museumSize", label: { ru: "Название музея: размер" }, type: "range",
+      min: 10, max: 26, step: 1, unit: " px", default: 13 },
+    { key: "museumOpacity", label: { ru: "Название музея: непрозрачность" }, type: "range",
+      min: 40, max: 100, step: 5, unit: " %", default: 92 },
+    { key: "museumBold", label: { ru: "Название музея: жирный" }, type: "toggle", default: false },
+
+    { key: "citySize", label: { ru: "Город: размер" }, type: "range",
+      min: 8, max: 20, step: 1, unit: " px", default: 9 },
+    { key: "cityOpacity", label: { ru: "Город: непрозрачность" }, type: "range",
+      min: 20, max: 100, step: 5, unit: " %", default: 50 },
+    { key: "cityBold", label: { ru: "Город: жирный" }, type: "toggle", default: false },
+
+    { key: "barLabelSize", label: { ru: "Год на бирке: размер" }, type: "range",
+      min: 8, max: 20, step: 1, unit: " px", default: 10 },
+    { key: "barLabelOpacity", label: { ru: "Год на бирке: непрозрачность" }, type: "range",
+      min: 40, max: 100, step: 5, unit: " %", default: 90 },
+    { key: "barLabelBold", label: { ru: "Год на бирке: жирный" }, type: "toggle", default: false },
+
+    { key: "axisTickSize", label: { ru: "Годы на оси: размер" }, type: "range",
+      min: 9, max: 24, step: 1, unit: " px", default: 11 },
+    { key: "axisTickOpacity", label: { ru: "Годы на оси: непрозрачность" }, type: "range",
+      min: 20, max: 100, step: 5, unit: " %", default: 55 },
+    { key: "axisTickBold", label: { ru: "Годы на оси: жирный" }, type: "toggle", default: false },
+
+    { key: "barHeight", label: { ru: "Высота полосы" }, type: "range",
+      min: 8, max: 48, step: 1, unit: " px", default: 24 },
+    { key: "rowHeight", label: { ru: "Высота строки" }, type: "range",
+      min: 24, max: 96, step: 2, unit: " px", default: 44 },
+  ],
 
   preload: { data: { museums: DATA.museums } },
 
@@ -73,7 +112,9 @@ export const timelineScene = {
     });
     this._ro.observe(this._scrollEl);
 
+    this._cfg = this._cfg || this._defaults();
     this._renderAll();
+    this.applySettings(this._cfg);
   },
 
   unmount() {
@@ -86,6 +127,42 @@ export const timelineScene = {
     this._ticksEl = this._scrollEl = this._innerEl = this._overlay = this._app = null;
     this._data = null;
   },
+
+  /* Схема v1.2: типографика и высоты — через CSS-переменные сцены. Кегли
+   * прототипа заданы для 1920 px, на 4K удваиваем тем же множителем, что
+   * и остальная вёрстка; a11y домножает сверху своим --a11y-scale. */
+  applySettings(values) {
+    this._cfg = Object.assign(this._defaults(), values || {});
+    if (!this._root) return;
+    const c = this._cfg, st = this._root.style;
+    const px = (v) => (v * this._scale()).toFixed(1) + "px";
+    st.setProperty("--tl-region-size", px(c.regionSize));
+    st.setProperty("--tl-region-opacity", (c.regionOpacity / 100).toFixed(2));
+    st.setProperty("--tl-region-weight", c.regionBold ? "700" : "400");
+    st.setProperty("--tl-museum-size", px(c.museumSize));
+    st.setProperty("--tl-museum-opacity", (c.museumOpacity / 100).toFixed(2));
+    st.setProperty("--tl-museum-weight", c.museumBold ? "700" : "400");
+    st.setProperty("--tl-city-size", px(c.citySize));
+    st.setProperty("--tl-city-opacity", (c.cityOpacity / 100).toFixed(2));
+    st.setProperty("--tl-city-weight", c.cityBold ? "700" : "400");
+    st.setProperty("--tl-barlabel-size", px(c.barLabelSize));
+    st.setProperty("--tl-barlabel-opacity", (c.barLabelOpacity / 100).toFixed(2));
+    st.setProperty("--tl-barlabel-weight", c.barLabelBold ? "700" : "400");
+    st.setProperty("--tl-axis-size", px(c.axisTickSize));
+    st.setProperty("--tl-axis-opacity", (c.axisTickOpacity / 100).toFixed(2));
+    st.setProperty("--tl-axis-weight", c.axisTickBold ? "700" : "400");
+    st.setProperty("--tl-bar-height", px(c.barHeight));
+    st.setProperty("--tl-row-height", px(c.rowHeight));
+    this._renderRows();
+  },
+
+  _defaults() {
+    const d = {};
+    for (const row of this.settings) d[row.key] = row.default;
+    return d;
+  },
+
+  _scale() { return Math.min(2, Math.max(1, window.innerWidth / 1920)); },
 
   pause() {},   // статичный DOM — ни rAF, ни таймеров
   resume() {},
