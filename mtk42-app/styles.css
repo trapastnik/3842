@@ -593,10 +593,16 @@
   color: rgba(247, 249, 239, 0.6);
 }
 
-/* Режим слабовидящих: убираем полупрозрачности и декоративный фильтр. */
+/* Режим слабовидящих: убираем полупрозрачности, но монохром сохраняем —
+ * иначе половина снимков (современные цветные, сепия) выпадает из общего
+ * ряда и сетка выглядит пёстрой. Вместо цвета поднимаем контраст: для
+ * слабого зрения это полезнее. Цвет возвращается флагом photos.a11yColor. */
 .a11y .m42-tile__portrait img,
 .a11y .m42-dot img,
-.a11y .m42-card__portrait img { filter: none; }
+.a11y .m42-card__portrait img { filter: grayscale(1) contrast(1.35); }
+.a11y.m42-a11y-color .m42-tile__portrait img,
+.a11y.m42-a11y-color .m42-dot img,
+.a11y.m42-a11y-color .m42-card__portrait img { filter: none; }
 .a11y .m42-detail { background: #000; backdrop-filter: none; }
 .a11y .m42-detail__panel { background: #000; border-color: var(--a11y-accent, #FFD24A); }
 .a11y .m42-card__kind,

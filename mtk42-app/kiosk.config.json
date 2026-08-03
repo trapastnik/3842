@@ -59,5 +59,8 @@
   "museums": {
     "dotRadius": 10,
     "showCities": true
+  },
+  "photos": {
+    "a11yColor": false
   }
 }

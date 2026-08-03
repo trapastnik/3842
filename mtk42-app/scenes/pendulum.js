@@ -6,7 +6,7 @@
  * Петля идёт на setInterval 100 мс = 10 fps, ровно потолок стандарта. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=5";
+} from "./shared.js?v=6";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;

@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=5";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=6";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 const VIEW = { lonMin: -8, lonMax: 118, latMin: 22, latMax: 72 };

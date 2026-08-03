@@ -3,10 +3,10 @@
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=5";
-import { archiveScene } from "./scenes/archive.js?v=5";
-import { timelineScene } from "./scenes/timeline.js?v=5";
-import { mapScene } from "./scenes/map.js?v=5";
+import { pendulumScene } from "./scenes/pendulum.js?v=6";
+import { archiveScene } from "./scenes/archive.js?v=6";
+import { timelineScene } from "./scenes/timeline.js?v=6";
+import { mapScene } from "./scenes/map.js?v=6";
 
 const app = createApp({
   appId: "mtk42",
@@ -35,14 +35,28 @@ app.addSettings("Картотека", [
   { type: "range", path: "archive.gapY", label: "Расстояние по высоте", min: 8, max: 96, step: 4, unit: " px" },
 ]);
 
+app.addSettings("Портреты", [
+  { type: "toggle", path: "photos.a11yColor",
+    label: "Цвет фото в режиме слабовидящих" },
+]);
+
 app.addSettings("Институции", [
   { type: "range", path: "museums.dotRadius", label: "Размер точек на карте", min: 6, max: 24, step: 1, unit: " px" },
   { type: "toggle", path: "museums.showCities", label: "Названия городов" },
 ]);
 
+/* Монохром — общий вид экспозиции. Флаг возвращает исходный цвет снимков
+ * в режиме слабовидящих (решение куратора, по умолчанию выключен). */
+function applyPhotoColor() {
+  document.documentElement.classList.toggle(
+    "m42-a11y-color", app.getSetting("photos.a11yColor") === true);
+}
+app.on("started", applyPhotoColor);
+
 /* Правка настройки из сервис-панели должна сразу видеться на сцене. */
 app.on("setting", ({ path }) => {
   const id = path.split(".")[0];
+  if (id === "photos") return applyPhotoColor();
   const map = { pendulum: "pendulum", archive: "archive", museums: null };
   if (id === "museums") {
     ["timeline", "map"].forEach((sid) => {
