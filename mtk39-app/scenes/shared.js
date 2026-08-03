@@ -124,7 +124,18 @@ export function slowLoop(fn, fps) {
  * ходить в сеть вовсе, а обращение к кешу браузера — всё равно запрос
  * (стенд приёмки считает его нарушением). Заодно не держим в памяти
  * декодированные битмапы полусотни снимков — только исходные байты. */
-export async function preloadPictures(ctx) {
+let picturesJob = null;
+
+/* Снимки одни на всё приложение, а объявлены в преролле двух сцен («Мир» и
+ * «Глобус» — обе показывают карточки со снимками). Ядро гоняет customs всех
+ * сцен параллельно, поэтому одной проверки «уже загружено» мало: обе вошли бы
+ * одновременно и декодировали 23 МБ дважды. Держим сам промис. */
+export function preloadPictures(ctx) {
+  if (!picturesJob) picturesJob = loadPictures(ctx);
+  return picturesJob;
+}
+
+async function loadPictures(ctx) {
   const app = ctx.app;
   const pics = Object.create(null);
   const credits = Object.create(null);
