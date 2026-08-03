@@ -9,20 +9,25 @@
  * Проверено на себе: обёртка канвы жила в shared.js?v=1 и бралась из кеша,
  * хотя сцена и app уже были свежими.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=10";
 
-import { installChromeZones } from "./scenes/chrome-zones.js?v=5";
-import { shelfScene } from "./scenes/shelf.js?v=5";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=10";
+import { shelfScene } from "./scenes/shelf.js?v=10";
+import { timelineScene } from "./scenes/timeline.js?v=10";
 
 const app = createApp({
   appId: "mtk40",
   title: { ru: "МТК · 40", en: "MTK · 40", zh: "МТК · 40" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
+  /* Метка кеша словарей: у ?v= сцен своя цепочка, i18n ядро тянет само.
+   * Поднимать при каждой правке i18n/*.json. */
+  i18nVersion: "2",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
 app.registerScene(shelfScene);
+app.registerScene(timelineScene);
 
 /* Настройки сцен объявлены декларативно в самих сценах (settings:[] +
  * applySettings). Ядро 1.5.0 исполняет схему само — мост пилота 42 здесь

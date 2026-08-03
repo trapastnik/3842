@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=5";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=10";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -105,6 +105,26 @@ export const shelfScene = {
   applySettings(v) {
     this.values = v;
     this.layout();
+  },
+
+  /* Признак живого содержимого: корпус разошёлся по трём полкам и раскладка
+   * посчитала корешки. Структурные проверки этого не видят — канва на месте
+   * и при пустом корпусе. */
+  healthcheck() {
+    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    const empty = this.shelves.filter((s) => !s.items.length).map((s) => s.bucket);
+    if (empty.length) return { ok: false, detail: "пустые полки: " + empty.join(", ") };
+    /* Скрытый слой — не «пусто»: раскладка считается от ширины канвы, а у
+     * неактивной сцены она нулевая. Состав полок при этом проверен выше. */
+    if (!this.cv.w) {
+      const n0 = this.shelves.reduce((a, s) => a + s.items.length, 0);
+      return { ok: true, detail: "слой скрыт, раскладки ещё не было; книг " + n0 };
+    }
+    if (!this.shelves.some((s) => s.spineRects.length)) {
+      return { ok: false, detail: "раскладка не посчитана — корешков нет" };
+    }
+    const n = this.shelves.reduce((a, s) => a + s.items.length, 0);
+    return { ok: true, detail: "корешков " + n + " на трёх полках" };
   },
 
   // ---------- раскладка ----------

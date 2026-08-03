@@ -51,8 +51,11 @@ export function createCanvas(el, { onSize, onFrame }) {
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     let scale = dpr;
     if (w * h * dpr * dpr > MAX_BUFFER_PX) scale = Math.sqrt(MAX_BUFFER_PX / (w * h));
-    canvas.width = Math.max(1, Math.round(w * scale));
-    canvas.height = Math.max(1, Math.round(h * scale));
+    // Округление ТОЛЬКО вниз: при round обе стороны шли вверх и произведение
+    // перелезало кап на полторы тысячи пикселей — селфтест это ловит
+    // («2 из 2 сверх бюджета: 4308×1927»). floor даёт cw·ch ≤ w·h·scale² = кап.
+    canvas.width = Math.max(1, Math.floor(w * scale));
+    canvas.height = Math.max(1, Math.floor(h * scale));
     // рисуем в CSS-пикселях: масштаб буфера прячется в трансформе
     ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
     return true;
