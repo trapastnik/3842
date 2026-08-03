@@ -2,7 +2,7 @@
   "app.subtitle": "世界各民族语言中的列宁",
   "standby.call": "请触摸屏幕",
   "card.close": "关闭",
-  "card.langs": "这样书写的语言数：",
+  "card.langs": "共",
   "card.edition": "出版物",
   "card.script": "文字",
   "card.family": "语系",
@@ -16,5 +16,6 @@
   "card.prev": "上一版",
   "card.next": "下一版",
   "card.speakers-mln": "百万使用者",
-  "card.speakers-mlrd": "十亿使用者"
+  "card.speakers-mlrd": "十亿使用者",
+  "card.lang-other": "种语言使用此写法"
 }

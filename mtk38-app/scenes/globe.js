@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
-import { createCard } from "./card.js?v=7";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=7";
+import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
+import { createCard } from "./card.js?v=8";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=8";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -63,7 +63,8 @@ export const globeScene = {
       '<button type="button" class="m38-pill kiosk-target" data-earth="physical"></button></nav>';
     el.appendChild(root);
     this._root = root;
-    this._card = createCard({ publications: data.pubs, t: (k) => (this._app ? this._app.t(k) : null) });
+    this._card = createCard({ publications: data.pubs, t: (k) => (this._app ? this._app.t(k) : null),
+      lang: () => (this._app ? this._app.lang : "ru") });
 
     // глифы растеризуются в текстуры — без готовых шрифтов получим тофу
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }

@@ -16,5 +16,7 @@
   "card.prev": "previous edition",
   "card.next": "next edition",
   "card.speakers-mln": "mln speakers",
-  "card.speakers-mlrd": "bln speakers"
+  "card.speakers-mlrd": "bln speakers",
+  "card.lang-one": "language",
+  "card.lang-other": "languages"
 }

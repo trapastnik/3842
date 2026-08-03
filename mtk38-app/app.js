@@ -4,18 +4,18 @@
  */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
 
-import { globeScene } from "./scenes/globe.js?v=7";
-import { rainScene } from "./scenes/rain.js?v=7";
-import { mapScene } from "./scenes/map.js?v=7";
-import { catalogScene } from "./scenes/catalog.js?v=7";
-import { compositionsScene } from "./scenes/compositions.js?v=7";
+import { globeScene } from "./scenes/globe.js?v=8";
+import { rainScene } from "./scenes/rain.js?v=8";
+import { mapScene } from "./scenes/map.js?v=8";
+import { catalogScene } from "./scenes/catalog.js?v=8";
+import { compositionsScene } from "./scenes/compositions.js?v=8";
 
 /* Словари грузим сами и отдаём ядру объектом, а не через i18nUrl.
  * Причина практическая: ядро запрашивает ./i18n/<lang>.json без версии, и
  * Chrome на киоске держит старый словарь после обновления сборки — правка
  * подписей не доезжает. С `?v=` этого не происходит. (Заявка ядру: принимать
  * версию для словарей; тогда этот блок уйдёт.) */
-const I18N_V = 7;
+const I18N_V = 9;
 const i18n = {};
 await Promise.all(["ru", "en", "zh"].map((l) =>
   fetch(`./i18n/${l}.json?v=${I18N_V}`)
@@ -51,10 +51,11 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=7";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=8";
 
 let rotTimer = 0;
-function stopRotation() { clearInterval(rotTimer); rotTimer = 0; }
+let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики
+function stopRotation() { clearInterval(rotTimer); rotTimer = 0; rotEpoch++; }
 onStandbyStop(stopRotation);
 
 app.on("standby", ({ own }) => {
@@ -64,10 +65,19 @@ app.on("standby", ({ own }) => {
   if (ids.length < 2) return;
   let i = Math.max(0, ids.indexOf(app.activeSceneId));
   stopRotation();
+  const tick = ++rotEpoch;
   rotTimer = setInterval(async () => {
     i = (i + 1) % ids.length;
     stopSceneStandby();
     await app.showScene(ids[i]);
+    /* Проверка ПОСЛЕ await обязательна. Кроссфейд длится ~350 мс, и касание в
+     * это окно уводит киоск в ACTIVE, пока тик ещё висит на await. Без сверки
+     * продолжение тика перевело бы в заставку уже активную сцену: посетитель
+     * получил бы дёрганый кадр с отвязанным тачем, а осиротевшая петля рисовала
+     * бы чужую сцену в общий канвас до ночного рестарта (ссылка на стоп к тому
+     * моменту перезаписана и потеряна). Эпоха — на случай повторного входа в
+     * standby за время того же await. */
+    if (tick !== rotEpoch || !rotTimer || app.idleState !== "standby") return;
     const scene = SCENES.find((s) => s.id === ids[i]);
     if (scene && scene.standby) scene.standby();
   }, Math.max(8, cfg.rotateSec || 25) * 1000);

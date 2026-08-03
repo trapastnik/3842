@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
-import { createCard } from "./card.js?v=7";
+import { loadData, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
+import { createCard } from "./card.js?v=8";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -92,7 +92,8 @@ export const mapScene = {
     this._canvas = root.querySelector(".m38-canvas");
     this._ctx2d = this._canvas.getContext("2d");
     this._pills = root.querySelector(".m38-pills");
-    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null) });
+    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null),
+      lang: () => (this._app ? this._app.lang : "ru") });
 
     // контуры стран пришли ещё на сплэше (preload) — второй раз не ходим
     const pre = ctx && ctx.data && ctx.data.geo;

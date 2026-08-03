@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
-import { createCard } from "./card.js?v=7";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
+import { createCard } from "./card.js?v=8";
 
 export const catalogScene = {
   id: "catalog",
@@ -53,7 +53,8 @@ export const catalogScene = {
     this._root = root;
     this._canvas = root.querySelector(".m38-canvas");
     this._ctx2d = this._canvas.getContext("2d");
-    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null) });
+    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null),
+      lang: () => (this._app ? this._app.lang : "ru") });
     this._filter = "all";
     this._page = 0;
     this._hover = -1;

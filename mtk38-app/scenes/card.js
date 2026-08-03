@@ -120,6 +120,7 @@ const CSS = `
  * @param {Object}   opts
  * @param {Map}      opts.publications  lang_id → [издание, …]; см. engine/data.js → loadPublications
  * @param {Function} [opts.t]           словарь ядра: t("card.area") → подпись на языке киоска
+ * @param {Function} [opts.lang]        текущий язык киоска: нужен для числовых форм
  *
  * Переводятся ПОДПИСИ (хром), но не содержание: названия языков, ареалы и
  * выходные сведения существуют в каноне только по-русски — их перевод
@@ -136,6 +137,8 @@ export function createCard(opts = {}) {
     'card.prev': 'предыдущее издание', 'card.next': 'следующее издание',
     'card.langs': 'так пишут', 'card.speakers-mln': 'млн носителей',
     'card.speakers-mlrd': 'млрд носителей',
+    'card.lang-one': 'язык', 'card.lang-few': 'языка',
+    'card.lang-many': 'языков', 'card.lang-other': 'языка',
   };
   /* Ядро отдаёт ключ обратно, если строки нет в словаре — тогда берём русский
    * запасной вариант, чтобы в карточке никогда не проступал сам ключ. */
@@ -260,8 +263,14 @@ export function createCard(opts = {}) {
     renderPub();
   }
 
-  const plural = (n) => n % 10 === 1 && n % 100 !== 11 ? 'язык'
-    : (n % 10 >= 2 && n % 10 <= 4 && (n % 100 < 12 || n % 100 > 14)) ? 'языка' : 'языков';
+  /* Форма слова «язык» — из словаря, а не из русского правила в коде: иначе на
+   * английском выходило «written so by 3 языка». Категорию (one/few/many/other)
+   * даёт Intl по языку киоска, словарь отвечает только за текст. */
+  const plural = (n) => {
+    let cat = 'other';
+    try { cat = new Intl.PluralRules(opts.lang ? opts.lang() : 'ru').select(n); } catch (_) {}
+    return t('card.lang-' + cat);
+  };
 
   /**
    * @param w         язык или форма (см. groupByWriting)
