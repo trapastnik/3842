@@ -11,30 +11,30 @@
   };
 
   const words = [
-    { text: "Ленин", script: "cyrillic", primary: true },
-    { text: "Lenin", script: "latin", primary: true },
-    { text: "Lénine", script: "latin", primary: true },
-    { text: "Lenin", script: "latin", primary: true },
-    { text: "لينين", script: "arabic", primary: true },
-    { text: "列宁", script: "cjk", primary: true },
-    { text: "लेनिन", script: "devanagari" }, { text: "লেনিন", script: "bengali" },
-    { text: "Lênin", script: "latin" }, { text: "Lenin", script: "latin" },
-    { text: "Lenin", script: "latin" }, { text: "Lenin", script: "latin" },
-    { text: "Lenin", script: "latin" }, { text: "Lenin", script: "latin" },
-    { text: "Lênin", script: "latin" }, { text: "Lenin", script: "latin" },
-    { text: "Ленін", script: "cyrillic" }, { text: "Ленін", script: "cyrillic" },
-    { text: "Ленин", script: "cyrillic" }, { text: "Ленин", script: "cyrillic" },
-    { text: "Ленин", script: "cyrillic" }, { text: "Լենին", script: "armenian" },
-    { text: "ლენინი", script: "georgian" }, { text: "Λένιν", script: "greek" },
-    { text: "לנין", script: "hebrew" }, { text: "لنین", script: "arabic" },
-    { text: "لینن", script: "arabic" }, { text: "レーニン", script: "cjk" },
-    { text: "레닌", script: "hangul" }, { text: "เลนิน", script: "thai" },
-    { text: "லெனின்", script: "tamil" }, { text: "లెనిన్", script: "telugu" },
-    { text: "ಲೆನಿನ್", script: "kannada" }, { text: "ലെനിൻ", script: "malayalam" },
-    { text: "ਲੈਨਿਨ", script: "gurmukhi" }, { text: "लेनिन", script: "devanagari" },
-    { text: "लेनिन", script: "devanagari" }, { text: "ලෙනින්", script: "sinhala" },
-    { text: "ሌኒን", script: "ethiopic" }, { text: "ເລນິນ", script: "lao" },
-    { text: "លេនីន", script: "khmer" }, { text: "လီနင်", script: "myanmar" }
+    { text: "Ленин", script: "cyrillic", primary: true, id: "rus", langRu: "Русский", lang: "Русский", region: "Россия", speakers: 255 },
+    { text: "Lenin", script: "latin", primary: true, id: "eng", langRu: "Английский", lang: "English", region: "Великобритания", speakers: 1500 },
+    { text: "Lénine", script: "latin", primary: true, id: "fra", langRu: "Французский", lang: "Français", region: "Франция", speakers: 280 },
+    { text: "Lenin", script: "latin", primary: true, id: "spa", langRu: "Испанский", lang: "Español", region: "Испания", speakers: 560 },
+    { text: "لينين", script: "arabic", primary: true, id: "ara", langRu: "Арабский", lang: "العربية", region: "Египет", speakers: 370 },
+    { text: "列宁", script: "cjk", primary: true, id: "zho", langRu: "Китайский (упрощ.)", lang: "中文", region: "Китай", speakers: 1100 },
+    { text: "लेनिन", script: "devanagari", id: "hin", langRu: "Хинди", lang: "Hindi", region: "Индия" }, { text: "লেনিন", script: "bengali", id: "ben", langRu: "Бенгальский", lang: "Bengali", region: "Бангладеш", speakers: 270 },
+    { text: "Lênin", script: "latin", id: "por", langRu: "Португальский", lang: "Português", region: "Бразилия", speakers: 260 }, { text: "Lenin", script: "latin", id: "deu", langRu: "Немецкий", lang: "Deutsch", region: "Германия" },
+    { text: "Lenin", script: "latin", id: "ita", langRu: "Итальянский", lang: "Italiano", region: "Италия" }, { text: "Lenin", script: "latin", id: "pol", langRu: "Польский", lang: "Polski", region: "Польша" },
+    { text: "Lenin", script: "latin", id: "tur", langRu: "Турецкий", lang: "Türkçe", region: "Турция" }, { text: "Lenin", script: "latin", id: "ind", langRu: "Индонезийский", lang: "Indonesia", region: "Индонезия" },
+    { text: "Lênin", script: "latin", id: "vie", langRu: "Вьетнамский", lang: "Tiếng Việt", region: "Вьетнам" }, { text: "Lenin", script: "latin", id: "swa", langRu: "Суахили", lang: "Kiswahili", region: "Танзания" },
+    { text: "Ленін", script: "cyrillic", id: "ukr", langRu: "Украинский", lang: "Українська", region: "Украина" }, { text: "Ленін", script: "cyrillic", id: "bel", langRu: "Белорусский", lang: "Беларуская", region: "Беларусь", speakers: 5 },
+    { text: "Ленин", script: "cyrillic", id: "kaz", langRu: "Казахский", lang: "Қазақша", region: "Казахстан" }, { text: "Ленин", script: "cyrillic", id: "kir", langRu: "Киргизский", lang: "Кыргызча", region: "Кыргызстан" },
+    { text: "Ленин", script: "cyrillic", id: "mon", langRu: "Монгольский", lang: "Монгол", region: "Монголия" }, { text: "Լենին", script: "armenian", id: "hye", langRu: "Армянский", lang: "Հայերեն", region: "Армения", speakers: 6.7 },
+    { text: "ლენინი", script: "georgian", id: "kat", langRu: "Грузинский", lang: "ქართული", region: "Грузия", speakers: 3.7 }, { text: "Λένιν", script: "greek", id: "ell", langRu: "Греческий", lang: "Ελληνικά", region: "Греция", speakers: 13 },
+    { text: "לנין", script: "hebrew", id: "heb", langRu: "Иврит", lang: "עברית", region: "Израиль", speakers: 9 }, { text: "لنین", script: "arabic", id: "fas", langRu: "Персидский (фарси)", lang: "فارسی", region: "Иран" },
+    { text: "لینن", script: "arabic", id: "urd", langRu: "Урду", lang: "اردو", region: "Пакистан", speakers: 230 }, { text: "レーニン", script: "cjk", id: "jpn", langRu: "Японский", lang: "日本語", region: "Япония", speakers: 125 },
+    { text: "레닌", script: "hangul", id: "kor", langRu: "Корейский", lang: "한국어", region: "Респ. Корея", speakers: 82 }, { text: "เลนิน", script: "thai", id: "tha", langRu: "Тайский", lang: "ไทย", region: "Таиланд" },
+    { text: "லெனின்", script: "tamil", id: "tam", langRu: "Тамильский", lang: "தமிழ்", region: "Тамилнад", speakers: 86 }, { text: "లెనిన్", script: "telugu", id: "tel", langRu: "Телугу", lang: "తెలుగు", region: "Телангана / Андхра", speakers: 83 },
+    { text: "ಲೆನಿನ್", script: "kannada", id: "kan", langRu: "Каннада", lang: "ಕನ್ನಡ", region: "Карнатака", speakers: 44 }, { text: "ലെനിൻ", script: "malayalam", id: "mal", langRu: "Малаялам", lang: "മലയാളം", region: "Керала", speakers: 38 },
+    { text: "ਲੈਨਿਨ", script: "gurmukhi", id: "pan", langRu: "Панджаби", lang: "ਪੰਜਾਬੀ", region: "Пенджаб", speakers: 113 }, { text: "लेनिन", script: "devanagari", id: "mar", langRu: "Маратхи", lang: "मराठी", region: "Махараштра" },
+    { text: "लेनिन", script: "devanagari", id: "nep", langRu: "Непальский", lang: "नेपाली", region: "Непал" }, { text: "ලෙනින්", script: "sinhala", id: "sin", langRu: "Сингальский", lang: "සිංහල", region: "Шри-Ланка", speakers: 17 },
+    { text: "ሌኒን", script: "ethiopic", id: "amh", langRu: "Амхарский", lang: "Amharic", region: "Эфиопия", speakers: 57 }, { text: "ເລນິນ", script: "lao", id: "lao", langRu: "Лаосский", lang: "ລາວ", region: "Лаос", speakers: 30 },
+    { text: "លេនីន", script: "khmer", id: "khm", langRu: "Кхмерский", lang: "ខ្មែរ", region: "Камбоджа", speakers: 18 }, { text: "လီနင်", script: "myanmar", id: "mya", langRu: "Бирманский", lang: "မြန်မာ", region: "Мьянма", speakers: 43 }
   ];
 
   let width = 0, height = 0, dpr = 1;
@@ -105,9 +105,9 @@
       const reps = idx === 0 ? 5 : idx === 1 ? 8 : 14;
       for (let r = 0; r < reps; r += 1) {
         const shuffled = words.slice().sort(() => rng() - 0.5);
-        for (let i = 0; i < shuffled.length; i += 1) stream.push(shuffled[i].text);
+        for (let i = 0; i < shuffled.length; i += 1) stream.push(shuffled[i]);
       }
-      const text = stream.join(preset.glueGap);
+      const text = stream.map(w => w.text).join(preset.glueGap);
       const direction = idx % 2 === 0 ? -1 : 1;        // alternate directions
       const speed = preset.baseSpeed * direction;
 
@@ -116,8 +116,20 @@
       const measured = ctx.measureText(text);
       const textWidth = measured.width;
 
+      // Лента рисуется одной строкой, поэтому для тапа считаем отрезок каждого
+      // слова в её локальных координатах — иначе попасть можно только в ленту.
+      const spans = [];
+      let cursor = 0;
+      const glueW = ctx.measureText(preset.glueGap).width;
+      for (let i = 0; i < stream.length; i += 1) {
+        const w = ctx.measureText(stream[i].text).width;
+        spans.push({ start: cursor, end: cursor + w, item: stream[i] });
+        cursor += w + glueW;
+      }
+
       bands.push({
         text,
+        spans,
         textWidth,
         font: fontStack("latin", fontSize, preset.weight),
         size: fontSize,
@@ -215,6 +227,42 @@
     }
     return -1;
   }
+
+
+  // ── карточка языка (общий модуль assets/mtk38/lib/card.js) ──────────
+  const card = window.MTK38Card ? MTK38Card.create() : null;
+  let tapX = 0, tapY = 0, tapT = 0, tapMoved = false;
+
+  function pickWord(clientX, clientY) {
+    const bi = findBandAt(clientY);
+    if (bi < 0) return null;
+    const band = bands[bi];
+    if (!band.spans || !band.spans.length) return null;
+    // строка рисуется дважды подряд со сдвигом -offset → приводим x к её началу
+    let local = (clientX + band.offset) % band.textWidth;
+    if (local < 0) local += band.textWidth;
+    for (let i = 0; i < band.spans.length; i += 1) {
+      const s = band.spans[i];
+      if (local >= s.start - 6 && local <= s.end + 6) return s.item;
+    }
+    return null;
+  }
+
+  canvas.addEventListener("pointerdown", event => {
+    if (card && card.isOpen()) return;
+    tapX = event.clientX; tapY = event.clientY;
+    tapT = performance.now(); tapMoved = false;
+  }, { passive: true });
+
+  canvas.addEventListener("pointermove", event => {
+    if (Math.hypot(event.clientX - tapX, event.clientY - tapY) > 10) tapMoved = true;
+  }, { passive: true });
+
+  canvas.addEventListener("pointerup", event => {
+    if (!card || tapMoved || performance.now() - tapT > 500) return;
+    const item = pickWord(event.clientX, event.clientY);
+    if (item) card.open(item);
+  }, { passive: true });
 
   window.addEventListener("resize", resize);
 

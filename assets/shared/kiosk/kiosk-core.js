@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.5.0";
+  var VERSION = "1.6.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -73,6 +73,15 @@
       width: 100,
       height: 100
     },
+    /* Состав и порядок экранов — оперативная настройка киоска.
+     * order: массив id в порядке листания (неизвестные игнорируются,
+     * недостающие дописываются в порядке регистрации);
+     * enabled: id → false выключает экран.
+     * Рядом в этом же объекте лежат настройки самих сцен (scenes[id]). */
+    scenes: {
+      order: [],
+      enabled: {}
+    },
     a11y: {
       enabled: false,
       show: true,                // показывать кнопку режима слабовидящих
@@ -92,6 +101,10 @@
   };
 
   var IDLE = { ACTIVE: "active", STANDBY: "standby" };
+
+  /* Внутри config.scenes рядом с настройками сцен живут состав и порядок.
+   * Сцену с таким id зарегистрировать нельзя — иначе она затёрла бы их. */
+  var RESERVED_SCENE_IDS = { order: 1, enabled: 1 };
 
   /* Подписи языков в переключателе — на своём языке, как в каноне. */
   var LANG_LABEL = { ru: "РУС", en: "ENG", zh: "中文" };
@@ -519,6 +532,9 @@
     if (this._started) throw new Error("[kiosk] registerScene() после start() — поздно");
     if (!def || !def.id) throw new Error("[kiosk] у сцены обязателен id");
     if (this._byId[def.id]) throw new Error("[kiosk] сцена «" + def.id + "» уже зарегистрирована");
+    if (RESERVED_SCENE_IDS[def.id]) {
+      throw new Error("[kiosk] id «" + def.id + "» зарезервирован под состав/порядок экранов");
+    }
 
     var rec = {
       id: def.id,
@@ -543,11 +559,91 @@
     return rec ? rec.scene : null;
   };
 
+  /* ------------------------------------------- состав и порядок экранов
+   * Порядок листания и состав — оперативная настройка киоска: оператор
+   * гасит незаконченный экран или меняет их местами, не трогая код. */
+
+  /* Все сцены в настроенном порядке. Неизвестные id в order игнорируем,
+   * недостающие дописываем в порядке регистрации: список из конфига
+   * может отстать от кода, и это не повод потерять сцену. */
+  KioskApp.prototype._orderedRecords = function () {
+    var self = this;
+    var order = ((this.config.scenes || {}).order) || [];
+    var seen = Object.create(null);
+    var out = [];
+    if (Array.isArray(order)) {
+      order.forEach(function (id) {
+        var rec = self._byId[id];
+        if (rec && !seen[id]) { seen[id] = 1; out.push(rec); }
+      });
+    }
+    this._records.forEach(function (rec) {
+      if (!seen[rec.id]) { seen[rec.id] = 1; out.push(rec); }
+    });
+    return out;
+  };
+
+  KioskApp.prototype.isSceneEnabled = function (id) {
+    var map = (this.config.scenes || {}).enabled || {};
+    return map[id] !== false;
+  };
+
+  KioskApp.prototype._enabledRecords = function () {
+    var self = this;
+    return this._orderedRecords().filter(function (r) { return self.isSceneEnabled(r.id); });
+  };
+
+  /* Все сцены приложения — для сервис-панели. */
+  KioskApp.prototype.allScenes = function () {
+    var self = this, lang = this.lang;
+    return this._orderedRecords().map(function (r) {
+      return { id: r.id, title: pickLabel(r.title, lang), enabled: self.isSceneEnabled(r.id) };
+    });
+  };
+
+  /* Сцены, которые видит посетитель: включённые, в настроенном порядке. */
   KioskApp.prototype.listScenes = function () {
     var lang = this.lang;
-    return this._records.map(function (r) {
+    return this._enabledRecords().map(function (r) {
       return { id: r.id, title: pickLabel(r.title, lang) };
     });
+  };
+
+  KioskApp.prototype.setSceneEnabled = function (id, on) {
+    if (!this._byId[id]) return this;
+    on = !!on;
+    /* Пустой киоск невозможен: последний включённый экран не гасим. */
+    if (!on && this._enabledRecords().length <= 1 && this.isSceneEnabled(id)) {
+      this.log("warn", "нельзя выключить последний экран «" + id + "»");
+      return this;
+    }
+    var wasOff = !this.isSceneEnabled(id);
+    this.setSetting("scenes.enabled." + id, on);
+
+    /* Включили обратно в рантайме — её ассетов нет: на старте выключенные
+     * экраны не прерольны (в этом и была экономия). Догружаем сейчас,
+     * иначе оператор получил бы пустой экран вместо контента. */
+    if (on && wasOff && this._started) {
+      var self = this, rec = this._byId[id];
+      this._preloadRecords([rec]).then(function () {
+        self.log("info", "экран «" + id + "» включён, ассеты догружены");
+      });
+    }
+    return this;
+  };
+
+  /* Перестановка на одну позицию. Двигаем по ПОЛНОМУ списку, а не по
+   * включённым: иначе выключенный экран телепортировался бы при
+   * обратном включении. */
+  KioskApp.prototype.moveScene = function (id, dir) {
+    var ids = this._orderedRecords().map(function (r) { return r.id; });
+    var i = ids.indexOf(id);
+    var j = i + (dir < 0 ? -1 : 1);
+    if (i < 0 || j < 0 || j >= ids.length) return this;
+    ids[i] = ids[j];
+    ids[j] = id;
+    this.setSetting("scenes.order", ids);
+    return this;
   };
 
   Object.defineProperty(KioskApp.prototype, "activeSceneId", {
@@ -592,7 +688,11 @@
         return self._preroll();
       })
       .then(function () {
-        var startId = self._pickDefaultSceneId();
+        /* Диплинк #scene-id: удобно для отладки и для ссылок из хаба.
+         * На выключенный экран не пускаем — _activate уведёт на дефолт. */
+        var hash = (location.hash || "").replace(/^#/, "");
+        var startId = (hash && self._byId[hash] && self.isSceneEnabled(hash))
+          ? hash : self._pickDefaultSceneId();
         if (!startId) throw new Error("[kiosk] не зарегистрировано ни одной сцены");
         return self.showScene(startId, { instant: true });
       })
@@ -865,10 +965,61 @@
     var sideBand = (sides && navShown && nav.showArrows !== false) ? sideX + size + gap : 0;
     var side = Math.max(edge, sideBand);
 
-    root.style.setProperty("--kiosk-safe-top", Math.round(top) + "px");
-    root.style.setProperty("--kiosk-safe-bottom", Math.round(bottom) + "px");
-    root.style.setProperty("--kiosk-safe-left", Math.round(side) + "px");
-    root.style.setProperty("--kiosk-safe-right", Math.round(side) + "px");
+    /* Поверх расчёта — фактический замер хрома. Расчёт исходит из
+     * конфига и может недооценить реальную высоту: кнопки языков в
+     * режиме слабовидящих или на узком экране переносятся в две строки,
+     * и шапка сцены уезжает под них (дефект пилота 42). Берём максимум:
+     * расчёт доступен сразу, замер — точнее. */
+    var m = this._measureChrome(gap);
+    top = Math.max(top, m.top);
+    bottom = Math.max(bottom, m.bottom);
+    side = Math.max(side, m.side);
+
+    var vals = {
+      "top": Math.round(top), "bottom": Math.round(bottom),
+      "left": Math.round(side), "right": Math.round(side)
+    };
+    Object.keys(vals).forEach(function (k) {
+      /* Канонические имена (заявка координатора) и прежние — синонимы:
+       * сцены, уже сверстанные от --kiosk-safe-*, ломать нельзя. */
+      root.style.setProperty("--chrome-" + k, vals[k] + "px");
+      root.style.setProperty("--kiosk-safe-" + k, vals[k] + "px");
+    });
+  };
+
+  /* Фактические габариты хрома. В скрытой вкладке и до первой раскладки
+   * прямоугольники нулевые — тогда замер не участвует, работает расчёт. */
+  KioskApp.prototype._measureChrome = function (gap) {
+    var out = { top: 0, bottom: 0, side: 0 };
+    var root = this._els.root;
+    if (!root) return out;
+    var host = root.getBoundingClientRect();
+    if (!host.width || !host.height) return out;
+
+    var self = this;
+    ["tools", "gear", "nav"].forEach(function (key) {
+      var el = self._els[key];
+      if (!el || el.hidden) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width || !r.height) return;
+      /* Ближе к какой кромке прижат блок — ту полосу он и занимает. */
+      var fromTop = r.bottom - host.top;
+      var fromBottom = host.bottom - r.top;
+      if (fromTop <= fromBottom) out.top = Math.max(out.top, fromTop + gap);
+      else out.bottom = Math.max(out.bottom, fromBottom + gap);
+    });
+
+    /* Боковые стрелки в раскладке sides живут прямо в корне. */
+    Array.prototype.forEach.call(root.children, function (el) {
+      if (!el.classList || !el.classList.contains("kiosk-nav__arrow")) return;
+      if (el.hidden) return;
+      var r = el.getBoundingClientRect();
+      if (!r.width) return;
+      out.side = Math.max(out.side,
+        r.left - host.left + r.width + gap,
+        host.right - r.right + r.width + gap);
+    });
+    return out;
   };
 
   KioskApp.prototype._applySettings = function (path) {
@@ -876,6 +1027,15 @@
     if (!path || path.indexOf("stripes.") === 0) this._applyStripes();
     if (!path || /^(tools|i18n|a11y)\./.test(path)) this._applyToolsStyle();
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
+    /* Состав или порядок изменились — перестроить точки и, если оператор
+     * погасил экран прямо на нём, увести на дефолтный. */
+    if (path && /^scenes\.(order|enabled)/.test(path)) {
+      this._buildDots();
+      this._syncNav();
+      if (this._active && !this.isSceneEnabled(this._active.id)) {
+        this.showScene(this._pickDefaultSceneId());
+      }
+    }
     if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
     if (!path || path.indexOf("content.") === 0) this._applyContentBox();
     /* Настройка сцены — отдать её самой сцене, без перезагрузки. */
@@ -907,10 +1067,15 @@
     return this.appId + "-kiosk";
   };
 
+  /* Дефолтная сцена — только из включённых: выключенный экран не должен
+   * оказаться стартовым и точкой возврата из простоя. */
   KioskApp.prototype._pickDefaultSceneId = function () {
     var want = this.config.defaultScene;
-    if (want && this._byId[want]) return want;
-    return this._records.length ? this._records[0].id : null;
+    if (want && this._byId[want] && this.isSceneEnabled(want)) return want;
+    var on = this._enabledRecords();
+    if (on.length) return on[0].id;
+    var all = this._orderedRecords();
+    return all.length ? all[0].id : null;
   };
 
   /* ------------------------------------------------------------------ DOM */
@@ -1027,7 +1192,7 @@
     var parts = this._els.navParts;
     if (!parts) return;
     parts.dots.innerHTML = "";
-    this._records.forEach(function (rec) {
+    this._enabledRecords().forEach(function (rec) {
       var b = document.createElement("button");
       b.type = "button";
       b.className = "kiosk-nav__dot kiosk-touch";
@@ -1052,7 +1217,7 @@
       b.classList.toggle("is-active", on);
       b.setAttribute("aria-selected", on ? "true" : "false");
     });
-    var single = this._records.length < 2;
+    var single = this._enabledRecords().length < 2;
     parts.prev.hidden = single;
     parts.next.hidden = single;
     parts.prev.setAttribute("aria-label", this.t("nav.prev"));
@@ -1131,12 +1296,27 @@
 
   /* -------------------------------------------------------------- преролл */
 
+  /* Только включённые: ассеты погашенных экранов на старте не нужны —
+   * это прямая экономия времени запуска киоска. */
   KioskApp.prototype._preroll = function () {
+    var self = this;
+    var started = Date.now();
+    return this._preloadRecords(this._enabledRecords(), true).then(function () {
+      self._buildDots();
+      /* Сплэш не должен мигать на быстрой машине. Через waitFade, а не
+       * sleep: в свёрнутом окне задушенный таймер подвесил бы весь старт. */
+      return waitFade(400 - (Date.now() - started));
+    });
+  };
+
+  /* Загрузка ассетов набора сцен. Тем же кодом идёт и преролл на старте
+   * (со сплэшем), и догрузка экрана, включённого оператором в рантайме. */
+  KioskApp.prototype._preloadRecords = function (records, withSplash) {
     var self = this;
     var images = [], fonts = [], dataMap = {}, customs = [];
     var seenImg = Object.create(null), seenFont = Object.create(null);
 
-    this._records.forEach(function (rec) {
+    records.forEach(function (rec) {
       var p = rec.preload;
       p.images.forEach(function (u) {
         if (!seenImg[u]) { seenImg[u] = 1; images.push(u); }
@@ -1151,13 +1331,12 @@
     var dataKeys = Object.keys(dataMap);
     var total = images.length + fonts.length + dataKeys.length + customs.length;
     var done = 0;
-    var started = Date.now();
 
-    this._splashProgress(0, total);
+    if (withSplash) this._splashProgress(0, total);
 
     function step() {
       done++;
-      self._splashProgress(done, total);
+      if (withSplash) self._splashProgress(done, total);
     }
     /* Провал одного ассета не должен ронять весь киоск: логируем и идём дальше. */
     function soft(promise, what) {
@@ -1190,12 +1369,7 @@
       ));
     });
 
-    return Promise.all(jobs).then(function () {
-      self._buildDots();
-      /* Сплэш не должен мигать на быстрой машине. Через waitFade, а не
-       * sleep: в свёрнутом окне задушенный таймер подвесил бы весь старт. */
-      return waitFade(400 - (Date.now() - started));
-    });
+    return Promise.all(jobs);
   };
 
   KioskApp.prototype._splashProgress = function (done, total) {
@@ -1245,17 +1419,29 @@
     return this.showScene(this._neighbourId(-1));
   };
 
+  /* Листаем по ВКЛЮЧЁННЫМ в настроенном порядке. */
   KioskApp.prototype._neighbourId = function (dir) {
-    var n = this._records.length;
+    var list = this._enabledRecords();
+    var n = list.length;
     if (!n) return null;
-    var i = this._active ? this._records.indexOf(this._active) : -1;
-    return this._records[((i + dir) % n + n) % n].id;
+    var i = this._active ? list.indexOf(this._active) : -1;
+    return list[((i + dir) % n + n) % n].id;
   };
 
   KioskApp.prototype._activate = function (id, opts) {
     var self = this;
     var rec = this._byId[id];
     if (!rec) return Promise.reject(new Error("нет сцены «" + id + "»"));
+
+    /* Экран выключен оператором — уводим на дефолтный. Сюда попадают и
+     * диплинки: ссылка на погашенную сцену не должна давать пустоту. */
+    if (!this.isSceneEnabled(id)) {
+      var fallback = this._pickDefaultSceneId();
+      this.log("info", "экран «" + id + "» выключен, перевод на «" + fallback + "»");
+      if (!fallback || fallback === id) return Promise.resolve();
+      rec = this._byId[fallback];
+      id = fallback;
+    }
     if (this._active === rec) return Promise.resolve();
 
     var prev = this._active;
@@ -1870,6 +2056,7 @@
         "</section>";
     }).join("");
 
+    html = this._screensHtml() + html;
     html += this._sceneGroupsHtml();
 
     html += '<section class="kiosk-set__group">' +
@@ -1903,6 +2090,39 @@
     var t = "Журнал · запуск " + sid + ": " + bad(mine) + " авар. из " + mine.length;
     if (all.length !== mine.length) t += " · всего: " + bad(all) + " из " + all.length;
     return t;
+  };
+
+  /* Группа «Экраны»: состав и порядок листания. Идёт первой — это то,
+   * ради чего оператор чаще всего открывает панель. */
+  KioskApp.prototype._screensHtml = function () {
+    var self = this;
+    var list = this.allScenes();
+    if (list.length < 2) return "";
+    var onCount = list.filter(function (s) { return s.enabled; }).length;
+
+    var rows = list.map(function (s, i) {
+      var last = onCount <= 1 && s.enabled;   /* последний включённый не гасим */
+      return '<div class="kiosk-screen-row' + (s.enabled ? "" : " is-off") + '">' +
+        '<button type="button" class="kiosk-screen__move kiosk-touch" data-move="up" ' +
+        'data-screen="' + esc(s.id) + '" aria-label="Выше"' + (i === 0 ? " disabled" : "") +
+        '><span class="kiosk-screen__chev kiosk-screen__chev--up" aria-hidden="true"></span></button>' +
+        '<button type="button" class="kiosk-screen__move kiosk-touch" data-move="down" ' +
+        'data-screen="' + esc(s.id) + '" aria-label="Ниже"' +
+        (i === list.length - 1 ? " disabled" : "") +
+        '><span class="kiosk-screen__chev" aria-hidden="true"></span></button>' +
+        '<span class="kiosk-screen__name">' + esc(s.title) + "</span>" +
+        '<button type="button" class="kiosk-set__switch kiosk-touch' + (s.enabled ? " is-on" : "") +
+        '" data-screen-toggle="' + esc(s.id) + '" role="switch" aria-checked="' +
+        (s.enabled ? "true" : "false") + '"' + (last ? " disabled" : "") + "><i></i></button>" +
+        "</div>";
+    }).join("");
+
+    return '<section class="kiosk-set__group">' +
+      '<div class="kiosk-set__title">Экраны <span class="kiosk-set__fold-count">' +
+      onCount + " / " + list.length + "</span></div>" +
+      '<div class="kiosk-set__note">Порядок листания и состав. Выключенный экран не ' +
+      "грузится на старте, его точка скрыта, ссылка на него ведёт на стартовый.</div>" +
+      rows + "</section>";
   };
 
   /* Настройки сцен: своя группа на сцену, свёрнутая по умолчанию.
@@ -1969,8 +2189,9 @@
         '"><i></i></button></div>';
     }
     if (row.type === "choice" || row.type === "scene") {
+      /* «Стартовый экран» — только из включённых. */
       var options = row.type === "scene"
-        ? this._records.map(function (r) { return [r.id, pickLabel(r.title, "ru")]; })
+        ? this._enabledRecords().map(function (r) { return [r.id, pickLabel(r.title, "ru")]; })
         : row.options;
       return '<div class="kiosk-set-row kiosk-set-row--choice">' +
         '<label class="kiosk-set-row__label">' + esc(row.label) + "</label>" +
@@ -2059,6 +2280,21 @@
       }
       if (e.target.closest("[data-export]")) { self.exportSettings(); return; }
       if (e.target.closest("[data-import]")) { self._els.importInput.click(); return; }
+
+      var scrTog = e.target.closest("[data-screen-toggle]");
+      if (scrTog) {
+        var sid = scrTog.getAttribute("data-screen-toggle");
+        self.setSceneEnabled(sid, !self.isSceneEnabled(sid));
+        self._rebuildService();
+        return;
+      }
+      var mv = e.target.closest("[data-move]");
+      if (mv) {
+        self.moveScene(mv.getAttribute("data-screen"),
+          mv.getAttribute("data-move") === "up" ? -1 : 1);
+        self._rebuildService();
+        return;
+      }
 
       var fold = e.target.closest("[data-fold]");
       if (fold) {

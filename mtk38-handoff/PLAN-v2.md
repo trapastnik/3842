@@ -43,7 +43,7 @@
 ### Ф1 · Шрифты (блокер качества) — ✅ ГОТОВО (subset-вариант)
 - `mtk38-v2/fonts/noto/` — 57 woff2, 29 письменностей × (400+700), subset под нужные глифы
   (`build_fonts.py`), SIL OFL. Самодостаточно → рендер на любой машине, офлайн.
-- Бренд-шрифты (Nolde, 21 Cent, 20 Kopeek) — в `mtk38-globe/fonts/`.
+- Бренд-шрифты (Nolde, 21 Cent, 20 Kopeek) — в `assets/shared/fonts/brand/`.
 - WebGL вендорен: `mtk38-v2/vendor/three/` (Three.js r137 UMD + UnrealBloom).
 - ⬜ Остаётся долг: вендорить `pretext` → `mtk38-poster/vendor/` (всплывёт на пересборке постера).
 

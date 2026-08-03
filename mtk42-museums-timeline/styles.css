@@ -2,25 +2,25 @@
   font-family: "Nolde";
   font-weight: 400;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");
 }
 @font-face {
   font-family: "20 Kopeek";
   font-weight: 400;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");
 }
 @font-face {
   font-family: "20 Kopeek";
   font-weight: 600;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");
 }
 @font-face {
   font-family: "21 Cent";
   font-weight: 400;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+  src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");
 }
 
 :root {

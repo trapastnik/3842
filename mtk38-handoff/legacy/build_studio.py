@@ -52,9 +52,9 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 v2 · Студия</title>
 <style>
 __FACES__
-  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
-  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
-  @font-face{font-family:"21 Cent";src:url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype")}
+  @font-face{font-family:"21 Cent";src:url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");font-display:swap}
   :root{--brass:#D2B773;--paper:#F7F9EF;--telegrey:#CFD0CF;--window:#9DA3A8;--red:#A02128;
     --glow:1;--blur:16;--scrim:1;--qscale:1}
   *{box-sizing:border-box}

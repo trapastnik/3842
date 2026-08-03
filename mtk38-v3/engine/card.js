@@ -25,82 +25,102 @@ const FAM_SMALL = (sc) => (sc === 'Latn' || sc === 'Cyrl')
   : `'Arial Unicode MS','noto-fallback','noto-${sc}',sans-serif`;
 
 const CSS = `
-.v3card{--paper:#F7F9EF;--brass:#D2B773;--red:#A02128;--window:#9DA3A8;--telegrey:#CFD0CF;--graphite:#435059;
-  position:fixed;left:50%;bottom:-880px;transform:translateX(-50%);z-index:9;
-  width:min(620px,94vw);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
-  background:rgba(24,29,33,.95);backdrop-filter:blur(16px);
-  border:1px solid rgba(210,183,115,.34);border-radius:18px;
-  padding:30px 34px 28px;color:var(--telegrey);
-  font-family:'21 Cent',system-ui,sans-serif;
-  transition:bottom .5s cubic-bezier(.2,.7,.2,1);box-shadow:0 22px 70px rgba(0,0,0,.55)}
-.v3card.show{bottom:26px}
+.v3card{--paper:#F7F9EF;--brass:#D2B773;--red:#A02128;--window:#9DA3A8;--telegrey:#CFD0CF;
+  position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);z-index:9;
+  width:min(720px,86vw);max-height:88vh;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  padding:clamp(24px,3vw,40px) clamp(28px,4vw,52px);
+  background:rgba(18,22,26,.94);border:1.5px solid var(--brass);border-radius:18px;
+  color:var(--paper);font-family:'21 Cent',Georgia,serif;text-align:center;
+  box-shadow:0 24px 80px rgba(0,0,0,.75);isolation:isolate;overflow-x:hidden;
+  opacity:0;visibility:hidden;transition:opacity .28s ease,transform .28s ease,visibility .28s}
+.v3card.show{opacity:1;visibility:visible;transform:translate(-50%,-50%) scale(1)}
+/* фирменные диагонали V1: латунный волосок и красная полоса за содержимым */
+.v3card::before{content:"";position:absolute;inset:0;pointer-events:none;z-index:-1;opacity:.55;
+  background:
+    linear-gradient(105deg,transparent 0,transparent 86%,var(--red) 86%,var(--red) 92%,transparent 92.2%),
+    linear-gradient(105deg,transparent 0,transparent 64%,var(--brass) 64%,var(--brass) 64.16%,transparent 64.32%)}
 .v3card::-webkit-scrollbar{width:8px}
 .v3card::-webkit-scrollbar-thumb{background:rgba(210,183,115,.28);border-radius:4px}
 
-.v3card .x{position:absolute;top:12px;right:14px;width:44px;height:44px;line-height:44px;text-align:center;
+.v3card .x{position:absolute;top:10px;right:12px;width:44px;height:44px;line-height:44px;text-align:center;
   cursor:pointer;color:var(--window);font-size:20px;border-radius:10px}
 
-/* написание — главный герой карточки */
-.v3card .w{font-size:clamp(44px,6.4vw,74px);color:var(--paper);line-height:1.06;
-  letter-spacing:.01em;text-shadow:0 0 30px rgba(247,249,239,.22);word-break:break-word}
-.v3card .head{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;margin-top:12px;
-  padding-bottom:16px;border-bottom:1px solid rgba(210,183,115,.2)}
-.v3card .n{font-size:21px;font-weight:700;color:var(--paper)}
-.v3card .e{font-size:16px;color:var(--brass)}
+/* написание — Nolde, крупно, с тенью; как в карточке V1-карты */
+.v3card .w{font-family:'Nolde',Georgia,serif;font-weight:600;
+  font-size:clamp(52px,7vw,108px);line-height:1;color:var(--paper);
+  text-shadow:0 6px 28px rgba(0,0,0,.75);word-break:break-word}
+.v3card .head{margin:12px 0 20px;display:flex;flex-direction:column;gap:6px;align-items:center}
+.v3card .n{font-family:'20 Kopeek',ui-monospace,monospace;font-size:clamp(18px,2vw,28px);
+  letter-spacing:.22em;text-transform:uppercase;color:var(--brass)}
+.v3card .e{font-family:'21 Cent',Georgia,serif;font-size:clamp(14px,1.3vw,18px);color:rgba(247,249,239,.5)}
 
-/* метаданные: подпись 20 Kopeek в разрядку, значение — читаемым 21 Cent */
-.v3card .rows{margin-top:16px;display:grid;grid-template-columns:auto 1fr;gap:9px 20px;align-items:baseline}
-.v3card .rows b{font-family:'20 Kopeek',ui-monospace,monospace;font-weight:400;font-size:11px;
-  letter-spacing:.16em;text-transform:uppercase;color:var(--window);white-space:nowrap}
-.v3card .rows span{font-size:15px;line-height:1.4;color:var(--telegrey)}
+/* строки-факты: ключ моноширинным в разрядку, значение читаемым, линейка снизу */
+.v3card .rows{display:grid;gap:10px;margin-bottom:18px;text-align:left}
+.v3card .rows>div{display:grid;grid-template-columns:clamp(130px,26%,210px) 1fr;gap:18px;align-items:baseline;
+  font-size:clamp(14px,1.2vw,18px);padding-bottom:8px;border-bottom:1px solid rgba(210,183,115,.18)}
+.v3card .rows>div:last-child{border-bottom:none}
+.v3card .rows b{font-family:'20 Kopeek',ui-monospace,monospace;font-weight:400;font-size:.78em;
+  letter-spacing:.16em;text-transform:uppercase;color:rgba(247,249,239,.55)}
+.v3card .rows span{color:var(--paper)}
 
-.v3card .ver{margin-top:18px;display:inline-flex;align-items:center;gap:8px;
-  font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
-  padding:7px 14px;border-radius:11px;border:1px solid rgba(210,183,115,.4);color:var(--brass)}
+.v3card .ver{display:inline-flex;align-items:center;gap:8px;margin-bottom:8px;
+  font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+  color:rgba(247,249,239,.42)}
 .v3card .ver i{width:7px;height:7px;border-radius:50%;background:var(--brass);font-style:normal;flex:0 0 auto}
-.v3card .ver-warn{border-color:rgba(160,33,40,.65);color:#E2777C}
+.v3card .ver-warn{color:#E2777C}
 .v3card .ver-warn i{background:var(--red)}
 
-/* языки одного написания */
-.v3card .many{margin-top:18px}
-.v3card .many-n{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--window);margin-bottom:9px}
-.v3card .chips{display:flex;flex-wrap:wrap;gap:7px;max-height:140px;overflow-y:auto;padding-right:2px}
-.v3card .chip{height:36px;padding:0 14px;border:1px solid rgba(210,183,115,.3);border-radius:9px;
-  background:transparent;color:var(--telegrey);font-family:'21 Cent',system-ui,sans-serif;font-size:13px;
-  cursor:pointer;white-space:nowrap}
-.v3card .chip[aria-current="true"]{background:var(--brass);color:#1a1f23;border-color:var(--brass);font-weight:700}
+/* языки одной формы */
+.v3card .many{margin-bottom:22px}
+.v3card .many-n{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:rgba(247,249,239,.45);margin-bottom:10px}
+.v3card .chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;max-height:132px;overflow-y:auto}
+.v3card .chip{min-height:36px;padding:0 14px;border:1px solid rgba(210,183,115,.3);border-radius:999px;
+  background:transparent;color:var(--telegrey);font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;
+  letter-spacing:.14em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.v3card .chip[aria-current="true"]{background:var(--brass);color:#12161a;border-color:var(--brass)}
 
 /* издание */
-.v3card .pub{margin-top:22px;padding-top:18px;border-top:1px solid rgba(210,183,115,.2);display:none}
+.v3card .pub{margin-top:4px;padding-top:18px;border-top:1px solid rgba(210,183,115,.22);display:none;text-align:left}
 .v3card .pub.on{display:block}
-.v3card .pub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;min-height:38px}
-.v3card .pub-head>span{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;
-  text-transform:uppercase;color:var(--window)}
+.v3card .pub-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;min-height:38px}
+.v3card .pub-head>span{font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.18em;
+  text-transform:uppercase;color:rgba(247,249,239,.45)}
 .v3card .nav{display:flex;align-items:center;gap:6px}
 .v3card .nav button{width:38px;height:38px;border:1px solid rgba(210,183,115,.34);background:transparent;
-  color:var(--brass);border-radius:9px;font-size:17px;cursor:pointer;font-family:inherit;padding:0;line-height:1}
+  color:var(--brass);border-radius:999px;font-size:17px;cursor:pointer;font-family:inherit;padding:0;line-height:1}
 .v3card .nav button:disabled{opacity:.28}
 .v3card .nav i{font-style:normal;font-family:'20 Kopeek',ui-monospace,monospace;font-size:12px;
-  color:var(--window);min-width:48px;text-align:center}
-.v3card .pub-body{display:flex;gap:20px;align-items:flex-start}
+  color:rgba(247,249,239,.45);min-width:48px;text-align:center}
+.v3card .pub-body{display:flex;gap:22px;align-items:flex-start}
 .v3card .cover{width:132px;flex:0 0 132px;border-radius:3px;display:none;
   border:1px solid rgba(210,183,115,.22);box-shadow:0 8px 26px rgba(0,0,0,.5)}
 .v3card .cover.on{display:block}
 .v3card .pub-txt{flex:1 1 auto;min-width:0}
-.v3card .t-nat{font-size:18px;line-height:1.35;color:var(--paper);white-space:pre-line}
-.v3card .t-ru{font-size:15px;line-height:1.4;color:var(--telegrey);margin-top:8px}
-.v3card .imp{font-family:'20 Kopeek',ui-monospace,monospace;font-size:12px;letter-spacing:.04em;
-  color:var(--brass);margin-top:12px}
-.v3card .imp em{font-style:normal;color:var(--window)}
-.v3card .none{font-size:14px;color:var(--window);font-style:italic}
+.v3card .t-nat{font-size:clamp(17px,1.5vw,21px);line-height:1.35;color:var(--paper);white-space:pre-line}
+.v3card .t-ru{font-size:15px;line-height:1.4;color:rgba(247,249,239,.62);margin-top:8px}
+.v3card .imp{font-family:'20 Kopeek',ui-monospace,monospace;font-size:12px;letter-spacing:.06em;
+  color:var(--brass);margin-top:14px}
+.v3card .imp em{font-style:normal;color:rgba(247,249,239,.42)}
+.v3card .none{font-size:14px;color:rgba(247,249,239,.42);font-style:italic}
+
+.v3card .hint{margin-top:18px;font-family:'20 Kopeek',ui-monospace,monospace;
+  font-size:clamp(11px,1.1vw,13px);letter-spacing:.18em;text-transform:uppercase;color:rgba(247,249,239,.42)}
+
+/* затемнение позади — как .info-backdrop в V1 */
+.v3card-back{position:fixed;inset:0;z-index:8;background:rgba(0,0,0,.55);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  opacity:0;visibility:hidden;transition:opacity .28s ease,visibility .28s}
+.v3card-back.show{opacity:1;visibility:visible}
 
 @media (max-width:560px){
-  .v3card{padding:24px 20px 22px}
+  .v3card{padding:26px 22px}
   .v3card .pub-body{gap:14px}
   .v3card .cover{width:96px;flex:0 0 96px}
+  .v3card .rows>div{grid-template-columns:1fr;gap:4px}
 }
 `;
+
 
 /**
  * @param {Object} opts
@@ -129,11 +149,16 @@ export function createCard(opts = {}) {
         <img class="cover" alt="">
         <div class="pub-txt"><div class="t-nat"></div><div class="t-ru"></div><div class="imp"></div></div>
       </div>
-    </div>`;
+    </div>
+    <div class="hint">коснитесь снаружи, чтобы закрыть</div>`;
+  // затемнение позади карточки — как .info-backdrop в V1-карте
+  const back = document.createElement('div');
+  back.className = 'v3card-back';
+  document.body.appendChild(back);
   document.body.appendChild(el);
 
   const q = (s) => el.querySelector(s);
-  const close = () => el.classList.remove('show');
+  const close = () => { el.classList.remove('show'); back.classList.remove('show'); };
   let list = [], idx = 0, startIdx = 0;
 
   q('.x').onclick = close;
@@ -183,10 +208,15 @@ export function createCard(opts = {}) {
     q('.n').textContent = w.n;
     const ce = q('.e'); ce.textContent = w.e; ce.style.fontFamily = FAM_SMALL(w.sc);
     const also = (w.also && w.also.length) ? ` · также ${w.also.join(', ')}` : '';
+    const row = (k, v) => `<div><b>${k}</b><span>${v}</span></div>`;
+    const sp = (typeof w.speakers === 'number' && isFinite(w.speakers))
+      ? (w.speakers >= 1000 ? `≈ ${(w.speakers / 1000).toFixed(1).replace('.', ',')} млрд носителей`
+                            : `≈ ${w.speakers} млн носителей`) : '';
     q('.rows').innerHTML =
-      `<b>письмо</b><span>${w.scn}</span>` +
-      `<b>семья</b><span>${w.f}</span>` +
-      `<b>ареал</b><span>${w.r}${also}</span>`;
+      row('регион', w.r + also) +
+      (sp ? row('носители', sp) : '') +
+      row('письменность', w.scn) +
+      row('семья', w.f);
     const ver = q('.ver'), warn = w.ver === 'needs-verification';
     ver.className = 'ver' + (warn ? ' ver-warn' : '');
     ver.querySelector('em').textContent = warn
@@ -234,6 +264,7 @@ export function createCard(opts = {}) {
       renderLang(w);
     }
     el.scrollTop = 0;
+    back.classList.add('show');
     el.classList.add('show');
   }
 
