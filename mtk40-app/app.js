@@ -9,14 +9,15 @@
  * Проверено на себе: обёртка канвы жила в shared.js?v=1 и бралась из кеша,
  * хотя сцена и app уже были свежими.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=14";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=15";
 
-import { installChromeZones } from "./scenes/chrome-zones.js?v=14";
-import { shelfScene } from "./scenes/shelf.js?v=14";
-import { timelineScene } from "./scenes/timeline.js?v=14";
-import { catalogScene } from "./scenes/catalog.js?v=14";
-import { volumeScene } from "./scenes/volume.js?v=14";
-import { constellationScene } from "./scenes/constellation.js?v=14";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=15";
+import { shelfScene } from "./scenes/shelf.js?v=15";
+import { mirrorScene } from "./scenes/mirror.js?v=15";
+import { timelineScene } from "./scenes/timeline.js?v=15";
+import { catalogScene } from "./scenes/catalog.js?v=15";
+import { volumeScene } from "./scenes/volume.js?v=15";
+import { constellationScene } from "./scenes/constellation.js?v=15";
 
 const app = createApp({
   appId: "mtk40",
@@ -30,6 +31,7 @@ const app = createApp({
 
 /* Порядок регистрации = порядок стрелок навигации. */
 app.registerScene(shelfScene);
+app.registerScene(mirrorScene);
 app.registerScene(timelineScene);
 app.registerScene(catalogScene);
 app.registerScene(constellationScene);

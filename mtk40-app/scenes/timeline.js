@@ -11,7 +11,7 @@
  *  - двенадцать тюнингов прототипа объявлены схемой settings[] — панель их
  *    рисует и хранит сама, sessionStorage больше не нужен.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=14";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=15";
 
 const COLORS = M.COLORS;
 const BUCKET_META = M.BUCKET_META;
