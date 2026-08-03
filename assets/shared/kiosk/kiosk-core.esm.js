@@ -5,12 +5,17 @@
  * и без модулей — как hub.js и hint.js. Этот файл даёт тот же самый
  * экземпляр в виде именованных экспортов; дублирования кода нет.
  *
- *   import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
+ *   import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1";
  *
- * Импорт классического файла из модуля легален: он ничего не ждёт от
- * контекста, только присваивает window.KioskCore.
+ * ВЕРСИЮ ТЯНЕМ ИЗ АДРЕСА САМОЙ ОБЁРТКИ. Раньше здесь стоял статический
+ * import "./kiosk-core.js" — без версии. Приложение поднимало ?v= у себя
+ * и у CSS, а ядро браузер отдавал из кеша: обновление молча не доезжало
+ * до киоска (поймано пилотом МТК 42 — работало 1.0.0 вместо 1.1.0).
+ * Теперь kiosk-core.esm.js?v=7 загрузит ядро как kiosk-core.js?v=7:
+ * версия поднимается в ОДНОМ месте и расходится по всей цепочке.
  * ============================================================ */
-import "./kiosk-core.js";
+const here = new URL(import.meta.url);
+await import("./kiosk-core.js" + here.search);
 
 const core = window.KioskCore;
 if (!core) {

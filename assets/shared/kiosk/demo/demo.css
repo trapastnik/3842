@@ -32,7 +32,8 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--kiosk-safe-top) var(--edge-safe, 64px) var(--kiosk-safe-bottom);
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
   gap: 28px;
 }
 

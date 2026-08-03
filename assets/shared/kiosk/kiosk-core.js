@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.2.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -36,7 +36,9 @@
     },
     nav: {
       show: true,
-      position: "bottom",        // bottom | top
+      position: "bottom",        // bottom | top — где бар с титулом и точками
+      layout: "bar",             // bar — стрелки в баре; sides — по краям экрана
+      sideY: 50,                 // % высоты, положение боковых стрелок (layout: sides)
       size: 96,                  // px, тач-таргет стрелок (--touch-primary)
       opacity: 0.92,             // яркость хрома навигации
       showTitle: true,
@@ -110,7 +112,10 @@
     {
       group: "Навигация",
       rows: [
-        { type: "choice", path: "nav.position", label: "Положение",
+        { type: "choice", path: "nav.layout", label: "Стрелки",
+          options: [["bar", "В баре"], ["sides", "По бокам"]] },
+        { type: "range", path: "nav.sideY", label: "Высота боковых стрелок", min: 15, max: 85, step: 5, unit: " %" },
+        { type: "choice", path: "nav.position", label: "Бар",
           options: [["bottom", "Внизу"], ["top", "Вверху"]] },
         { type: "range", path: "nav.size", label: "Размер кнопок", min: 64, max: 160, step: 8, unit: " px" },
         { type: "range", path: "nav.opacity", label: "Яркость хрома", min: 0.3, max: 1, step: 0.02, pct: true },
@@ -416,6 +421,11 @@
     this._lastTick = Date.now();
     this._lastBeat = Date.now();
     this._wdSuspended = 0;
+
+    /* Метка запуска для журнала: различает жизни приложения между
+     * перезагрузками (ночной рестарт, перезапуск ватчдогом). */
+    this.sessionId = (Date.now().toString(36).slice(-4) +
+      Math.random().toString(36).slice(2, 4)).toUpperCase();
   }
 
   KioskApp.prototype = Object.create(Emitter.prototype);
@@ -505,6 +515,10 @@
       .then(function () {
         self._hideSplash();
         self._startIdle();
+        /* Одна строка в консоли: «какая версия ядра реально работает» —
+         * вопрос, на который после обновления нужен мгновенный ответ. */
+        console.info("[kiosk] ядро " + VERSION + " · " + self.appId +
+          " · запуск " + self.sessionId);
         if (/[?&]service=1\b/.test(location.search)) self.openService(true);
         self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
@@ -598,8 +612,17 @@
     var navShown = nav.show !== false && this._records.length > 0;
     var navTop = navShown && nav.position === "top";
     var navBottom = navShown && nav.position !== "top";
-    /* Ряд стрелок + ряд точек, каждый со своим таргетом. */
-    var navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
+    var sides = nav.layout === "sides";
+
+    /* В баре: ряд стрелок + ряд точек. По бокам: в баре остаются только
+     * титул и точки — полоса ниже, зато занят край по горизонтали. */
+    var navBand = 0;
+    if (sides) {
+      if (nav.showTitle !== false) navBand += 72 + gap;
+      if (nav.showDots !== false) navBand += 64 + gap;
+    } else {
+      navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
+    }
 
     var toolsPos = (this.config.tools || {}).position || "top-left";
     var toolsShown = this._els.tools && !this._els.tools.hidden;
@@ -615,8 +638,14 @@
     if (navBottom) bottom += navBand;
     else if (toolsBottom) bottom += size + gap;
 
+    /* Боковые стрелки съедают ширину, а не высоту — сцене нужно знать и
+     * про это, иначе её края уедут под кнопки. */
+    var sideBand = (sides && navShown && nav.showArrows !== false) ? size + gap : 0;
+
     root.style.setProperty("--kiosk-safe-top", Math.round(top) + "px");
     root.style.setProperty("--kiosk-safe-bottom", Math.round(bottom) + "px");
+    root.style.setProperty("--kiosk-safe-left", Math.round(edge + sideBand) + "px");
+    root.style.setProperty("--kiosk-safe-right", Math.round(edge + sideBand) + "px");
   };
 
   KioskApp.prototype._applySettings = function (path) {
@@ -734,7 +763,7 @@
     next.addEventListener("click", function () { self.nextScene(); });
 
     this._els.navParts = {
-      prev: prev, next: next, dots: dots,
+      prev: prev, next: next, dots: dots, row: row,
       appTitle: appTitle, sceneTitle: sceneTitle
     };
     return nav;
@@ -790,19 +819,57 @@
     parts.next.setAttribute("aria-label", this.t("nav.next"));
   };
 
-  /* Вид навигации из настроек: позиция, размер таргета, яркость, состав. */
+  /* Вид навигации из настроек: раскладка, позиция, размер, яркость, состав. */
   KioskApp.prototype._applyNavStyle = function () {
-    var nav = this._els.nav, parts = this._els.navParts, cfg = this.config.nav || {};
+    var nav = this._els.nav, parts = this._els.navParts, root = this._els.root;
+    var cfg = this.config.nav || {};
     if (!nav || !parts) return;
+
     nav.hidden = cfg.show === false;
     nav.setAttribute("data-position", cfg.position === "top" ? "top" : "bottom");
-    nav.style.setProperty("--kiosk-nav-size", (cfg.size || 96) + "px");
-    nav.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
+
+    /* Переменные ставим на КОРЕНЬ приложения, а не на .kiosk-nav: в
+     * раскладке «по бокам» стрелки живут вне бара и от него ничего не
+     * наследуют. */
+    root.style.setProperty("--kiosk-nav-size", (cfg.size || 96) + "px");
+    root.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
+    root.style.setProperty("--kiosk-nav-side-y", (cfg.sideY == null ? 50 : cfg.sideY) + "%");
+
+    this._applyNavLayout(cfg.layout === "sides" ? "sides" : "bar");
+
     parts.prev.classList.toggle("is-hidden", cfg.showArrows === false);
     parts.next.classList.toggle("is-hidden", cfg.showArrows === false);
     parts.dots.classList.toggle("is-hidden", cfg.showDots === false);
     var titleBox = nav.querySelector(".kiosk-nav__title");
     if (titleBox) titleBox.classList.toggle("is-hidden", cfg.showTitle === false);
+
+    /* Бар может остаться совсем пустым (титул и точки выключены) —
+     * тогда прячем его целиком, чтобы не висел прозрачный перехватчик. */
+    if (cfg.show !== false) {
+      var barEmpty = cfg.layout === "sides" &&
+        cfg.showTitle === false && cfg.showDots === false;
+      nav.hidden = barEmpty;
+    }
+  };
+
+  /* Стрелки переносим в DOM, а не прячем-показываем две копии: так у них
+   * один обработчик, одно состояние и никакой рассинхронизации.
+   * «По бокам» — как в прежнем хабе: круглые кнопки у левого и правого
+   * края, по вертикали настраиваются. */
+  KioskApp.prototype._applyNavLayout = function (layout) {
+    var parts = this._els.navParts, root = this._els.root, nav = this._els.nav;
+    nav.setAttribute("data-layout", layout);
+    root.setAttribute("data-nav-layout", layout);
+
+    if (layout === "sides") {
+      if (parts.prev.parentNode !== root) {
+        root.appendChild(parts.prev);
+        root.appendChild(parts.next);
+      }
+    } else if (parts.prev.parentNode !== parts.row) {
+      parts.row.insertBefore(parts.prev, parts.row.firstChild);
+      parts.row.appendChild(parts.next);
+    }
   };
 
   /* Косая подложка. Управляется настройками МТК; переменная та же, что у хаба. */
@@ -1348,6 +1415,26 @@
     if (this._journalReady) return;
     this._journalReady = true;
 
+    /* Журнал переживает и перезагрузку, и обновление ядра. Записи прошлой
+     * версии вперемешку с текущими путают на приёмке: счётчик аварий
+     * показывает чужие, а самая первая строка «версия ядра …» — самая
+     * старая (пилот МТК 42 из-за этого решил, что ядро не обновилось).
+     * Поэтому при смене версии журнал чистим, но факт чистки записываем —
+     * чтобы не потерять след аварии, случившейся прямо перед апдейтом. */
+    var prev = this.getLog();
+    if (prev.length) {
+      var prevV = null;
+      for (var i = prev.length - 1; i >= 0; i--) {
+        if (prev[i] && prev[i].v) { prevV = prev[i].v; break; }
+      }
+      if (prevV !== VERSION) {
+        this.clearLog();
+        this.log("info", "журнал очищен при обновлении ядра " +
+          (prevV || "(версия не отмечалась)") + " → " + VERSION +
+          ", было записей: " + prev.length);
+      }
+    }
+
     window.addEventListener("error", function (e) {
       var where = e.filename ? " (" + e.filename + ":" + e.lineno + ")" : "";
       self.log("error", "JS: " + (e.message || "ошибка") + where);
@@ -1357,13 +1444,19 @@
     });
   };
 
-  /* level: info | warn | error | fatal */
+  /* level: info | warn | error | fatal
+   * v/sid — версия ядра и метка запуска: без них записи разных версий и
+   * разных сессий неразличимы, а после ночного рестарта или перезапуска
+   * ватчдогом непонятно, где кончилась одна жизнь приложения и началась
+   * другая. */
   KioskApp.prototype.log = function (level, message, extra) {
     var entry = {
       at: new Date().toISOString(),
       level: level || "info",
       msg: String(message),
-      scene: (extra && extra.scene) || this.activeSceneId
+      scene: (extra && extra.scene) || this.activeSceneId,
+      v: VERSION,
+      sid: this.sessionId
     };
     this.emit("log", entry);
     try {
@@ -1386,6 +1479,12 @@
     } catch (err) {
       return [];
     }
+  };
+
+  /* Только текущий запуск — то, что обычно и нужно на приёмке. */
+  KioskApp.prototype.getSessionLog = function () {
+    var sid = this.sessionId;
+    return this.getLog().filter(function (e) { return e.sid === sid; });
   };
 
   KioskApp.prototype.clearLog = function () {
@@ -1502,11 +1601,26 @@
     }).join("");
 
     html += '<section class="kiosk-set__group kiosk-set__group--log">' +
-      '<div class="kiosk-set__title">Журнал <button type="button" class="kiosk-set__mini" data-log-clear>Очистить</button></div>' +
+      '<div class="kiosk-set__title">' + this._logTitle() +
+      ' <button type="button" class="kiosk-set__mini" data-log-clear>Очистить</button></div>' +
       '<div class="kiosk-set__log">' + this._logHtml() + "</div>" +
       "</section>";
 
     body.innerHTML = html;
+  };
+
+  /* Счётчик аварий отдельно за этот запуск и всего: иначе после обновления
+   * или рестарта на приёмке видны чужие аварии и непонятно, чьи они. */
+  KioskApp.prototype._logTitle = function () {
+    var all = this.getLog();
+    var sid = this.sessionId;
+    function bad(list) {
+      return list.filter(function (e) { return e.level === "error" || e.level === "fatal"; }).length;
+    }
+    var mine = all.filter(function (e) { return e.sid === sid; });
+    var t = "Журнал · запуск " + sid + ": " + bad(mine) + " авар. из " + mine.length;
+    if (all.length !== mine.length) t += " · всего: " + bad(all) + " из " + all.length;
+    return t;
   };
 
   KioskApp.prototype._rowHtml = function (row) {
@@ -1550,11 +1664,17 @@
   };
 
   KioskApp.prototype._logHtml = function () {
+    var sid = this.sessionId;
     var list = this.getLog().slice(-50).reverse();
     if (!list.length) return '<div class="kiosk-set__log-empty">Пусто</div>';
     return list.map(function (e) {
-      return '<div class="kiosk-set__log-row" data-level="' + esc(e.level) + '">' +
+      var mine = e.sid === sid;
+      /* Записи чужих запусков приглушены и подписаны меткой — читая
+       * журнал, сразу видно, где кончилась прошлая жизнь приложения. */
+      return '<div class="kiosk-set__log-row' + (mine ? "" : " is-old") +
+        '" data-level="' + esc(e.level) + '">' +
         '<span class="kiosk-set__log-at">' + esc(String(e.at).slice(5, 19).replace("T", " ")) + "</span>" +
+        (mine ? "" : '<span class="kiosk-set__log-sid">' + esc(e.sid || "—") + "</span>") +
         '<span class="kiosk-set__log-msg">' + esc(e.msg) + "</span></div>";
     }).join("");
   };

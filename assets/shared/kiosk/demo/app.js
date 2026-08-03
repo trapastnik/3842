@@ -4,7 +4,7 @@
  * делает ядро.
  *
  * Открывать ТОЛЬКО по http (ES-модули не работают из file://). */
-import { createApp } from "../kiosk-core.esm.js";
+import { createApp } from "../kiosk-core.esm.js?v=6";
 
 import { pulseScene } from "./scenes/pulse.js";
 import { gridScene } from "./scenes/grid.js";
