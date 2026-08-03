@@ -61,6 +61,7 @@
     "showCities": true
   },
   "photos": {
+    "color": false,
     "a11yColor": false
   }
 }

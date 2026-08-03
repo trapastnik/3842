@@ -49,7 +49,18 @@
   --m42-label: clamp(var(--type-min-label), 0.75vw, 30px);
   --m42-ui:    clamp(var(--type-min-ui), 0.95vw, 38px);
   --m42-label-col: clamp(240px, 12.5vw, 480px);
+
+  /* Обработка портретов — одной переменной на все сцены (картотека, маятник,
+   * раскрытая карточка). Монохром — базовый вид экспозиции, но это решение
+   * куратора: переключается из ⚙ (группа «Портреты»), поэтому здесь только
+   * значения, а не «зашитый» grayscale по месту. */
+  --m42-photo-filter: grayscale(1) contrast(1.05);
 }
+/* Цвет в обычном режиме — флаг photos.color */
+:root.m42-photo-color { --m42-photo-filter: contrast(1.05); }
+/* Слабовидящие: контраст выше; цвет — отдельный флаг photos.a11yColor */
+:root.a11y { --m42-photo-filter: grayscale(1) contrast(1.35); }
+:root.a11y.m42-a11y-color { --m42-photo-filter: contrast(1.35); }
 
 /* Сцена занимает слой целиком и уважает полосы хрома ядра. */
 .m42-archive, .m42-timeline, .m42-map, .m42-pend {
@@ -188,7 +199,7 @@
 .m42-tile__portrait img {
   width: 100%; height: 100%;
   object-fit: cover;
-  filter: grayscale(1) contrast(1.05);
+  filter: var(--m42-photo-filter);
 }
 .m42-tile__initials {
   font-family: var(--font-display);
@@ -419,7 +430,7 @@
 .m42-dot img {
   width: 100%; height: 100%;
   object-fit: cover;
-  filter: grayscale(1) contrast(1.05);
+  filter: var(--m42-photo-filter);
 }
 .m42-dot__initials {
   font-family: var(--font-display);
@@ -475,7 +486,7 @@
   background: rgba(67, 80, 89, 0.35);
   display: grid; place-items: center;
 }
-.m42-card__portrait img { width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); }
+.m42-card__portrait img { width: 100%; height: 100%; object-fit: cover; filter: var(--m42-photo-filter); }
 .m42-card__initials {
   font-family: var(--font-display);
   font-size: calc(96px * var(--a11y-scale));
@@ -593,16 +604,6 @@
   color: rgba(247, 249, 239, 0.6);
 }
 
-/* Режим слабовидящих: убираем полупрозрачности, но монохром сохраняем —
- * иначе половина снимков (современные цветные, сепия) выпадает из общего
- * ряда и сетка выглядит пёстрой. Вместо цвета поднимаем контраст: для
- * слабого зрения это полезнее. Цвет возвращается флагом photos.a11yColor. */
-.a11y .m42-tile__portrait img,
-.a11y .m42-dot img,
-.a11y .m42-card__portrait img { filter: grayscale(1) contrast(1.35); }
-.a11y.m42-a11y-color .m42-tile__portrait img,
-.a11y.m42-a11y-color .m42-dot img,
-.a11y.m42-a11y-color .m42-card__portrait img { filter: none; }
 .a11y .m42-detail { background: #000; backdrop-filter: none; }
 .a11y .m42-detail__panel { background: #000; border-color: var(--a11y-accent, #FFD24A); }
 .a11y .m42-card__kind,

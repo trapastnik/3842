@@ -36,6 +36,7 @@ app.addSettings("Картотека", [
 ]);
 
 app.addSettings("Портреты", [
+  { type: "toggle", path: "photos.color", label: "Цвет фото" },
   { type: "toggle", path: "photos.a11yColor",
     label: "Цвет фото в режиме слабовидящих" },
 ]);
@@ -45,11 +46,13 @@ app.addSettings("Институции", [
   { type: "toggle", path: "museums.showCities", label: "Названия городов" },
 ]);
 
-/* Монохром — общий вид экспозиции. Флаг возвращает исходный цвет снимков
- * в режиме слабовидящих (решение куратора, по умолчанию выключен). */
+/* Монохром — базовый вид экспозиции, но это кураторское решение, а не
+ * техническое: оба флага возвращают снимкам исходный цвет — отдельно для
+ * обычного режима и для режима слабовидящих. По умолчанию оба выключены. */
 function applyPhotoColor() {
-  document.documentElement.classList.toggle(
-    "m42-a11y-color", app.getSetting("photos.a11yColor") === true);
+  const root = document.documentElement;
+  root.classList.toggle("m42-photo-color", app.getSetting("photos.color") === true);
+  root.classList.toggle("m42-a11y-color", app.getSetting("photos.a11yColor") === true);
 }
 app.on("started", applyPhotoColor);
 
