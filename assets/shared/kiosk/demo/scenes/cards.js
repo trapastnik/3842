@@ -14,6 +14,22 @@ export const cardsScene = {
 
   preload: { data: { demo: "./demo.json" } },
 
+  settings: [
+    { key: "minCard", label: { ru: "Ширина карточки", en: "Card width", zh: "卡片宽度" },
+      type: "range", min: 240, max: 640, step: 20, unit: " px", default: 420 },
+    { key: "showYear", label: { ru: "Показывать год", en: "Show year", zh: "显示年份" },
+      type: "toggle", default: true },
+  ],
+
+  applySettings(v) {
+    this._opts = v;
+    if (this._gridEl) {
+      this._gridEl.style.gridTemplateColumns =
+        "repeat(auto-fill, minmax(" + (v.minCard || 420) + "px, 1fr))";
+      this._render();
+    }
+  },
+
   mount(el, ctx) {
     this._items = (ctx.data.demo && ctx.data.demo.cards) || [];
     this._app = ctx.app;
@@ -21,10 +37,15 @@ export const cardsScene = {
 
     const root = document.createElement("div");
     root.className = "demo-cards";
+    /* .kiosk-content — поле контента из настроек киоска (ширина/высота
+     * в % и центрирование). Хром сцены при этом остаётся во всю
+     * рабочую область. */
     root.innerHTML =
       '<div class="demo-cards__filters"></div>' +
       '<div class="demo-cards__state"></div>' +
-      '<div class="demo-cards__grid kiosk-scroll"></div>';
+      '<div class="demo-cards__body kiosk-content">' +
+      '<div class="demo-cards__grid kiosk-scroll"></div>' +
+      "</div>";
     el.appendChild(root);
 
     this._root = root;
@@ -86,7 +107,7 @@ export const cardsScene = {
       '<article class="demo-card">' +
       `<div class="demo-card__kind">${it.kind}</div>` +
       `<h3 class="demo-card__title">${it.title}</h3>` +
-      `<div class="demo-card__year">${it.year}</div>` +
+      ((this._opts || {}).showYear === false ? "" : `<div class="demo-card__year">${it.year}</div>`) +
       "</article>"
     ).join("");
   },

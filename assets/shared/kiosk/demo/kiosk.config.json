@@ -8,9 +8,15 @@
     "restartAt": "04:00",
     "standbyFps": 10
   },
+  "scale": {
+    "ui": 1,
+    "content": 1
+  },
   "nav": {
     "show": true,
     "position": "bottom",
+    "layout": "bar",
+    "sideY": 50,
     "size": 96,
     "opacity": 0.92,
     "showTitle": true,
@@ -22,6 +28,6 @@
     "opacity": 1,
     "angle": 105
   },
-  "a11y": { "enabled": false },
+  "a11y": { "enabled": false, "show": true, "uiBoost": 1.25, "contentBoost": 1.5 },
   "service": { "gear": "always" }
 }

@@ -32,7 +32,8 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--kiosk-safe-top) var(--edge-safe, 64px) var(--kiosk-safe-bottom);
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
   gap: 28px;
 }
 
@@ -59,6 +60,14 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   color: var(--brass);
 }
 
+/* Поле контента (.kiosk-content) занимает остаток по высоте, а его
+ * ширина/высота приходят из настроек киоска. */
+.demo-cards__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .demo-cards__grid {
   flex: 1;
   min-height: 0;
@@ -74,9 +83,13 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   background: rgba(247, 249, 239, 0.06);
   border: 1px solid rgba(247, 249, 239, 0.12);
 }
+/* Карточки — это КОНТЕНТ: масштабируются от --content-scale, а не от
+ * размера интерфейса. Фильтры-чипы выше — наоборот, контрол, и живут
+ * на --type-min-ui (то есть на --ui-scale). Ровно та развилка, ради
+ * которой масштабы разделены. */
 .demo-card__kind {
   font-family: "20 Kopeek", "Courier New", monospace;
-  font-size: var(--type-min-label, 24px);
+  font-size: calc(24px * var(--content-scale, 1));
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--brass);
@@ -84,13 +97,13 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
 .demo-card__title {
   margin: 10px 0 0;
   font-family: "21 Cent", Georgia, serif;
-  font-size: 38px;
+  font-size: calc(38px * var(--content-scale, 1));
   color: var(--paper);
 }
 .demo-card__year {
   margin-top: 8px;
   font-family: "20 Kopeek", "Courier New", monospace;
-  font-size: var(--type-min-label, 24px);
+  font-size: calc(24px * var(--content-scale, 1));
   color: rgba(247, 249, 239, 0.6);
 }
 

@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.1.0";
+  var VERSION = "1.5.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -36,7 +36,13 @@
     },
     nav: {
       show: true,
-      position: "bottom",        // bottom | top
+      position: "bottom",        // bottom | top — где бар с титулом и точками
+      layout: "bar",             // bar — стрелки в баре; sides — по краям экрана
+      /* Точное положение боковых стрелок — как было в хабе (он отмирает,
+       * настройка не должна пропасть вместе с ним): вертикаль в % высоты,
+       * горизонталь — отступ от кромки в px. */
+      sideY: 50,                 // 5..95 %
+      sideX: 64,                 // 0..200 px от бокового края
       size: 96,                  // px, тач-таргет стрелок (--touch-primary)
       opacity: 0.92,             // яркость хрома навигации
       showTitle: true,
@@ -52,9 +58,26 @@
       langs: ["ru", "en", "zh"],
       show: true                 // показывать переключатель «РУС · ENG · 中文»
     },
+    /* Два независимых масштаба. Общий множитель не годится: крупный
+     * интерфейс съедает место у контента и наоборот — что-то одно всегда
+     * оказывается плохо видно. */
+    scale: {
+      ui: 1,                     // хром киоска: кнопки, чипы, подписи контролов
+      content: 1                 // содержимое сцен: карточки, подписи, тексты
+    },
+    /* Поле контента внутри сцены — % от контейнера, в котором сцена его
+     * применяет. Приложение всегда во весь экран; поджимается только
+     * содержимое: на панели 2160 px шириной строка во всю ширину
+     * нечитаема, и это не лечится кеглем. */
+    content: {
+      width: 100,
+      height: 100
+    },
     a11y: {
       enabled: false,
-      show: true                 // показывать кнопку режима слабовидящих
+      show: true,                // показывать кнопку режима слабовидящих
+      uiBoost: 1.25,             // во сколько режим поднимает масштаб интерфейса
+      contentBoost: 1.5          // ...и масштаб контента (канон: кегли ×1.5)
     },
     tools: {
       position: "top-left"       // top-left | top-right | bottom-left | bottom-right
@@ -110,13 +133,31 @@
     {
       group: "Навигация",
       rows: [
-        { type: "choice", path: "nav.position", label: "Положение",
+        { type: "choice", path: "nav.layout", label: "Стрелки",
+          options: [["bar", "В баре"], ["sides", "По бокам"]] },
+        { type: "range", path: "nav.sideY", label: "Стрелки по вертикали", min: 5, max: 95, step: 1, unit: " %" },
+        { type: "range", path: "nav.sideX", label: "Стрелки от края", min: 0, max: 200, step: 4, unit: " px" },
+        { type: "choice", path: "nav.position", label: "Бар",
           options: [["bottom", "Внизу"], ["top", "Вверху"]] },
         { type: "range", path: "nav.size", label: "Размер кнопок", min: 64, max: 160, step: 8, unit: " px" },
         { type: "range", path: "nav.opacity", label: "Яркость хрома", min: 0.3, max: 1, step: 0.02, pct: true },
         { type: "toggle", path: "nav.showTitle", label: "Заголовок экрана" },
         { type: "toggle", path: "nav.showArrows", label: "Стрелки" },
         { type: "toggle", path: "nav.showDots", label: "Точки" }
+      ]
+    },
+    {
+      group: "Масштаб",
+      rows: [
+        { type: "range", path: "scale.ui", label: "Интерфейс киоска", min: 0.75, max: 2, step: 0.05, x: true },
+        { type: "range", path: "scale.content", label: "Контент сцен", min: 0.75, max: 2, step: 0.05, x: true }
+      ]
+    },
+    {
+      group: "Поле контента",
+      rows: [
+        { type: "range", path: "content.width", label: "Ширина поля", min: 30, max: 100, step: 1, unit: " %" },
+        { type: "range", path: "content.height", label: "Высота поля", min: 30, max: 100, step: 1, unit: " %" }
       ]
     },
     {
@@ -157,6 +198,41 @@
     }
   ];
 
+  /* --------------------------------------------- настройки сцены (v1.2)
+   * Сцена ОБЪЯВЛЯЕТ свои параметры, ядро само рисует их в сервис-панели,
+   * хранит и отдаёт обратно. Так тюнинг-панели прототипов переезжают в
+   * одно место одинаково у всех МТК. Опись насчитала до ~60 настроек на
+   * МТК — поэтому группы по сценам и сворачивание обязательны. */
+  function normSceneSettings(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map(function (s) {
+      var type = s.type === "toggle" || s.type === "select" ? s.type : "range";
+      var out = {
+        key: s.key,
+        label: normLabel(s.label) || normLabel(s.key),
+        type: type,
+        "default": s["default"]
+      };
+      if (type === "range") {
+        out.min = s.min == null ? 0 : Number(s.min);
+        out.max = s.max == null ? 1 : Number(s.max);
+        out.step = s.step == null ? 1 : Number(s.step);
+        out.unit = s.unit || "";
+        if (out["default"] == null) out["default"] = out.min;
+      } else if (type === "toggle") {
+        out["default"] = !!out["default"];
+      } else {
+        /* options: [[value, label]] либо [{value, label}] */
+        out.options = (s.options || []).map(function (o) {
+          if (Array.isArray(o)) return [o[0], o[1]];
+          return [o.value, o.label];
+        });
+        if (out["default"] == null && out.options.length) out["default"] = out.options[0][0];
+      }
+      return out;
+    }).filter(function (s) { return !!s.key; });
+  }
+
   function getByPath(obj, path) {
     var parts = path.split("."), cur = obj, i;
     for (i = 0; i < parts.length; i++) {
@@ -187,15 +263,25 @@
     return v && typeof v === "object" && !Array.isArray(v);
   }
 
-  /* Глубокое слияние простых объектов: base не мутируется. */
+  /* Глубокое слияние простых объектов: base не мутируется.
+   *
+   * Вложенные объекты ВСЕГДА клонируются, даже когда сливать не с чем.
+   * Иначе результат делил бы поддеревья с источником — и правка одного
+   * незаметно меняла бы другой. На этом уже попались: config.scenes
+   * оказывался тем же объектом, что и патч оператора, и в localStorage
+   * утекали все дефолты схемы вместо реально изменённых ключей. */
   function deepMerge(base, over) {
     var out = {}, k;
-    for (k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+    for (k in base) {
+      if (!Object.prototype.hasOwnProperty.call(base, k)) continue;
+      out[k] = isObj(base[k]) ? deepMerge(base[k], null) : base[k];
+    }
     if (!isObj(over)) return out;
     for (k in over) {
       if (!Object.prototype.hasOwnProperty.call(over, k)) continue;
+      if (over[k] === undefined) continue;
       if (isObj(out[k]) && isObj(over[k])) out[k] = deepMerge(out[k], over[k]);
-      else if (over[k] !== undefined) out[k] = over[k];
+      else out[k] = isObj(over[k]) ? deepMerge(over[k], null) : over[k];
     }
     return out;
   }
@@ -400,6 +486,7 @@
     this._settingsSpec = SETTINGS_SPEC.map(function (g) {
       return { group: g.group, rows: g.rows.slice() };
     });
+    this._openSceneGroups = {};   /* какие группы настроек сцен развёрнуты */
 
     /* idle-машина */
     this.idleState = IDLE.ACTIVE;
@@ -416,6 +503,11 @@
     this._lastTick = Date.now();
     this._lastBeat = Date.now();
     this._wdSuspended = 0;
+
+    /* Метка запуска для журнала: различает жизни приложения между
+     * перезагрузками (ночной рестарт, перезапуск ватчдогом). */
+    this.sessionId = (Date.now().toString(36).slice(-4) +
+      Math.random().toString(36).slice(2, 4)).toUpperCase();
   }
 
   KioskApp.prototype = Object.create(Emitter.prototype);
@@ -434,6 +526,7 @@
       title: normLabel(def.title) || normLabel(def.id),
       scene: def,
       preload: normPreload(def.preload),
+      settings: normSceneSettings(def.settings),
       /* keepAlive: сцена монтируется один раз и живёт на паузе (быстрое
        * переключение). false — выгружается при уходе (тяжёлые WebGL-сцены). */
       keepAlive: def.keepAlive !== false,
@@ -490,6 +583,7 @@
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
       .then(function () { return self._loadStrings(); })
+      .then(function () { self._seedSceneDefaults(); })
       .then(function () { return domReady(); })
       .then(function () {
         self._buildChrome();
@@ -505,6 +599,10 @@
       .then(function () {
         self._hideSplash();
         self._startIdle();
+        /* Одна строка в консоли: «какая версия ядра реально работает» —
+         * вопрос, на который после обновления нужен мгновенный ответ. */
+        console.info("[kiosk] ядро " + VERSION + " · " + self.appId +
+          " · запуск " + self.sessionId);
         if (/[?&]service=1\b/.test(location.search)) self.openService(true);
         self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
@@ -537,7 +635,9 @@
       try {
         var patch = JSON.parse(raw);
         if (isObj(patch)) {
-          this._override = patch;
+          /* Клон, а не сам объект: патч и живой конфиг не должны делить
+           * поддеревья, иначе дефолты схемы утекут в сохранённый патч. */
+          this._override = deepMerge(patch, null);
           this.config = deepMerge(this.config, patch);
         }
       } catch (err) {
@@ -546,6 +646,60 @@
     }
     this.lang = this.config.defaultLang || this.lang;
     this.a11y = !!(this.config.a11y && this.config.a11y.enabled);
+  };
+
+  /* ------------------------------------------- настройки сцен (v1.2) */
+
+  /* Дефолты схемы кладём в config.scenes[id] под сохранённые значения.
+   * Порядок важен: сохранённое оператором должно пережить обновление
+   * схемы, а новые ключи схемы — появиться со своими дефолтами. */
+  KioskApp.prototype._seedSceneDefaults = function () {
+    var self = this;
+    if (!isObj(this.config.scenes)) this.config.scenes = {};
+    this._records.forEach(function (rec) {
+      if (!rec.settings.length) return;
+      var stored = isObj(self.config.scenes[rec.id]) ? self.config.scenes[rec.id] : {};
+      var merged = {};
+      rec.settings.forEach(function (s) {
+        merged[s.key] = stored[s.key] === undefined ? s["default"] : stored[s.key];
+      });
+      self.config.scenes[rec.id] = merged;
+    });
+  };
+
+  /* Текущие значения настроек сцены — то, что уходит в applySettings. */
+  KioskApp.prototype.sceneSettings = function (id) {
+    var v = (this.config.scenes || {})[id];
+    return isObj(v) ? deepMerge(v, null) : {};
+  };
+
+  KioskApp.prototype.setSceneSetting = function (id, key, value) {
+    return this.setSetting("scenes." + id + "." + key, value);
+  };
+
+  /* Вернуть сцену к дефолтам её схемы. */
+  KioskApp.prototype.resetSceneSettings = function (id) {
+    var rec = this._byId[id];
+    if (!rec) return this;
+    var self = this;
+    rec.settings.forEach(function (s) {
+      setByPath(self.config, "scenes." + id + "." + s.key, s["default"]);
+    });
+    /* Из ПАТЧА ключи убираем, а не переписываем дефолтами: сохранённый
+     * дефолт затенил бы будущую правку схемы навсегда. */
+    if (isObj(this._override.scenes)) {
+      delete this._override.scenes[id];
+      if (!Object.keys(this._override.scenes).length) delete this._override.scenes;
+    }
+    this._saveOverride();
+    this._pushSceneSettings(rec);
+    this.log("info", "настройки сцены «" + id + "» сброшены к дефолтам");
+    return this;
+  };
+
+  KioskApp.prototype._pushSceneSettings = function (rec) {
+    if (!rec || !rec.settings.length) return;
+    safeCall(rec, "applySettings", this.sceneSettings(rec.id));
   };
 
   /* ------------------------------------------------------ API настроек */
@@ -572,12 +726,89 @@
     }
   };
 
+  /* ---------------------------------------- перенос настроек (запомнить)
+   *
+   * Правки оператора и так сохраняются сразу — в localStorage. Но он
+   * умирает вместе с профилем браузера: переустановка киоска, чистка
+   * кеша, новый компьютер — и всё выкручено заново. Поэтому выгрузка
+   * даёт ГОТОВЫЙ kiosk.config.json: сессия МТК кладёт его в git, и
+   * настройки переживают что угодно. */
+  KioskApp.prototype.exportSettings = function () {
+    var json = JSON.stringify(this.config, null, 2);
+    var blob = new Blob([json], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "kiosk.config.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    this.log("info", "настройки выгружены в файл");
+    return json;
+  };
+
+  /* Загрузка снимка настроек. Ложится поверх файла целиком — оператор
+   * восстанавливает ровно то, что было выгружено. Постоянное место
+   * настройки всё равно kiosk.config.json в git. */
+  KioskApp.prototype.importSettings = function (text) {
+    var patch = JSON.parse(text);
+    if (!isObj(patch)) throw new Error("это не объект настроек");
+    this._override = patch;
+    this._saveOverride();
+    this.log("info", "настройки загружены из файла");
+    this.restart("загрузка настроек");
+    return patch;
+  };
+
   /* Сброс к kiosk.config.json. Перезагружаем страницу, а не «размерживаем»
    * патч: файл — единственный источник правды, и это честнее. */
   KioskApp.prototype.resetSettings = function () {
     try { localStorage.removeItem(this.storageKey()); } catch (err) {}
     this._override = {};
     this.restart("сброс настроек");
+  };
+
+  /* Итоговые множители: настройка оператора × надбавка режима слабовидящих.
+   * Считаем в JS и ставим инлайном на <html>, а не правилом для .a11y:
+   * иначе фиксированные значения режима затирали бы масштаб, выставленный
+   * оператором, и два регулятора конфликтовали бы между собой. */
+  KioskApp.prototype.scales = function () {
+    var s = this.config.scale || {}, a = this.config.a11y || {};
+    function num(v, def) {
+      v = Number(v);
+      return isFinite(v) && v > 0 ? v : def;
+    }
+    return {
+      ui: num(s.ui, 1) * (this.a11y ? num(a.uiBoost, 1.25) : 1),
+      content: num(s.content, 1) * (this.a11y ? num(a.contentBoost, 1.5) : 1)
+    };
+  };
+
+  /* Поле контента. Само приложение всегда во весь экран — поджимается
+   * только содержимое сцены. Проценты считаются от того контейнера, в
+   * который сцена положила .kiosk-content. */
+  KioskApp.prototype._applyContentBox = function () {
+    var root = this._els.root;
+    if (!root) return;
+    var c = this.config.content || {};
+
+    function pct(v, def) {
+      v = Number(v);
+      if (!isFinite(v) || v < 10 || v > 100) v = def;
+      return v + "%";
+    }
+    root.style.setProperty("--kiosk-content-w", pct(c.width, 100));
+    root.style.setProperty("--kiosk-content-h", pct(c.height, 100));
+  };
+
+  KioskApp.prototype._applyScale = function () {
+    var sc = this.scales();
+    var root = document.documentElement;
+    root.style.setProperty("--ui-scale", sc.ui.toFixed(3));
+    root.style.setProperty("--content-scale", sc.content.toFixed(3));
+    /* Прежнее имя: сцены и прототипы уже считают кегль от него. */
+    root.style.setProperty("--a11y-scale", sc.content.toFixed(3));
   };
 
   /* Сколько места сверху и снизу занял хром ядра. Сцена обязана верстаться
@@ -592,14 +823,24 @@
     var edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
     var edgeBottom = parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
     var gap = parseFloat(cs.getPropertyValue("--touch-gap")) || 16;
-    var size = Number((this.config.nav || {}).size) || 96;
+    /* Размер кнопки — уже с учётом масштаба интерфейса. */
+    var size = (Number((this.config.nav || {}).size) || 96) * this.scales().ui;
 
     var nav = this.config.nav || {};
     var navShown = nav.show !== false && this._records.length > 0;
     var navTop = navShown && nav.position === "top";
     var navBottom = navShown && nav.position !== "top";
-    /* Ряд стрелок + ряд точек, каждый со своим таргетом. */
-    var navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
+    var sides = nav.layout === "sides";
+
+    /* В баре: ряд стрелок + ряд точек. По бокам: в баре остаются только
+     * титул и точки — полоса ниже, зато занят край по горизонтали. */
+    var navBand = 0;
+    if (sides) {
+      if (nav.showTitle !== false) navBand += 72 + gap;
+      if (nav.showDots !== false) navBand += 64 + gap;
+    } else {
+      navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
+    }
 
     var toolsPos = (this.config.tools || {}).position || "top-left";
     var toolsShown = this._els.tools && !this._els.tools.hidden;
@@ -615,8 +856,19 @@
     if (navBottom) bottom += navBand;
     else if (toolsBottom) bottom += size + gap;
 
+    /* Боковые стрелки съедают ширину, а не высоту — сцене нужно знать и
+     * про это, иначе её края уедут под кнопки. Считаем от ФАКТИЧЕСКОГО
+     * отступа стрелок (nav.sideX), а не от кромки: оператор двигает их
+     * до 200 px, и полоса обязана ехать следом. */
+    var sideX = Number(nav.sideX);
+    if (!isFinite(sideX) || sideX < 0) sideX = 64;
+    var sideBand = (sides && navShown && nav.showArrows !== false) ? sideX + size + gap : 0;
+    var side = Math.max(edge, sideBand);
+
     root.style.setProperty("--kiosk-safe-top", Math.round(top) + "px");
     root.style.setProperty("--kiosk-safe-bottom", Math.round(bottom) + "px");
+    root.style.setProperty("--kiosk-safe-left", Math.round(side) + "px");
+    root.style.setProperty("--kiosk-safe-right", Math.round(side) + "px");
   };
 
   KioskApp.prototype._applySettings = function (path) {
@@ -624,13 +876,28 @@
     if (!path || path.indexOf("stripes.") === 0) this._applyStripes();
     if (!path || /^(tools|i18n|a11y)\./.test(path)) this._applyToolsStyle();
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
+    if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
+    if (!path || path.indexOf("content.") === 0) this._applyContentBox();
+    /* Настройка сцены — отдать её самой сцене, без перезагрузки. */
+    if (path && path.indexOf("scenes.") === 0) {
+      this._pushSceneSettings(this._byId[path.split(".")[1]]);
+    }
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
 
-  /* Сессия МТК может добавить свою группу настроек — и получить тот же
-   * вид контролов, что и у ядра (единый облик системных настроек). */
+  /* УСТАРЕЛО с v1.2 канона: настройки объявляет сама сцена полем
+   * settings:[] + applySettings(values) — тогда ядро группирует их по
+   * сценам, сворачивает и сбрасывает к дефолтам схемы. Императивный
+   * вызов оставлен рабочим: пилот 42 переезжает следующим шагом. */
   KioskApp.prototype.addSettings = function (group, rows) {
+    if (!this._addSettingsWarned) {
+      this._addSettingsWarned = true;
+      console.warn("[kiosk] addSettings() устарел. Объявляйте настройки в сцене:\n" +
+        "  settings: [{ key, label:{ru}, type:'range'|'toggle'|'select', … , default }],\n" +
+        "  applySettings(values) { … }\n" +
+        "Тогда они попадут в свою сворачиваемую группу и получат честный сброс.");
+    }
     this._settingsSpec.push({ group: group, rows: rows.slice() });
     if (this._els.service) this._rebuildService();
     return this;
@@ -684,8 +951,10 @@
 
     doc.documentElement.setAttribute("lang", this.lang);
     if (this.a11y) doc.documentElement.classList.add("a11y");
+    this._applyScale();
     this._buildTools();
     this._buildService();
+    this._applyContentBox();
     this._applyInsets();
   };
 
@@ -734,7 +1003,7 @@
     next.addEventListener("click", function () { self.nextScene(); });
 
     this._els.navParts = {
-      prev: prev, next: next, dots: dots,
+      prev: prev, next: next, dots: dots, row: row,
       appTitle: appTitle, sceneTitle: sceneTitle
     };
     return nav;
@@ -790,19 +1059,60 @@
     parts.next.setAttribute("aria-label", this.t("nav.next"));
   };
 
-  /* Вид навигации из настроек: позиция, размер таргета, яркость, состав. */
+  /* Вид навигации из настроек: раскладка, позиция, размер, яркость, состав. */
   KioskApp.prototype._applyNavStyle = function () {
-    var nav = this._els.nav, parts = this._els.navParts, cfg = this.config.nav || {};
+    var nav = this._els.nav, parts = this._els.navParts, root = this._els.root;
+    var cfg = this.config.nav || {};
     if (!nav || !parts) return;
+
     nav.hidden = cfg.show === false;
     nav.setAttribute("data-position", cfg.position === "top" ? "top" : "bottom");
-    nav.style.setProperty("--kiosk-nav-size", (cfg.size || 96) + "px");
-    nav.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
+
+    /* Переменные ставим на КОРЕНЬ приложения, а не на .kiosk-nav: в
+     * раскладке «по бокам» стрелки живут вне бара и от него ничего не
+     * наследуют. */
+    /* Через calc, а не готовым числом: размер кнопок должен ехать вместе
+     * с масштабом интерфейса, а не жить своей жизнью. */
+    root.style.setProperty("--kiosk-nav-size", "calc(" + (cfg.size || 96) + "px * var(--ui-scale))");
+    root.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
+    root.style.setProperty("--kiosk-nav-side-y", (cfg.sideY == null ? 50 : cfg.sideY) + "%");
+    root.style.setProperty("--kiosk-nav-side-x", (cfg.sideX == null ? 64 : cfg.sideX) + "px");
+
+    this._applyNavLayout(cfg.layout === "sides" ? "sides" : "bar");
+
     parts.prev.classList.toggle("is-hidden", cfg.showArrows === false);
     parts.next.classList.toggle("is-hidden", cfg.showArrows === false);
     parts.dots.classList.toggle("is-hidden", cfg.showDots === false);
     var titleBox = nav.querySelector(".kiosk-nav__title");
     if (titleBox) titleBox.classList.toggle("is-hidden", cfg.showTitle === false);
+
+    /* Бар может остаться совсем пустым (титул и точки выключены) —
+     * тогда прячем его целиком, чтобы не висел прозрачный перехватчик. */
+    if (cfg.show !== false) {
+      var barEmpty = cfg.layout === "sides" &&
+        cfg.showTitle === false && cfg.showDots === false;
+      nav.hidden = barEmpty;
+    }
+  };
+
+  /* Стрелки переносим в DOM, а не прячем-показываем две копии: так у них
+   * один обработчик, одно состояние и никакой рассинхронизации.
+   * «По бокам» — как в прежнем хабе: круглые кнопки у левого и правого
+   * края, по вертикали настраиваются. */
+  KioskApp.prototype._applyNavLayout = function (layout) {
+    var parts = this._els.navParts, root = this._els.root, nav = this._els.nav;
+    nav.setAttribute("data-layout", layout);
+    root.setAttribute("data-nav-layout", layout);
+
+    if (layout === "sides") {
+      if (parts.prev.parentNode !== root) {
+        root.appendChild(parts.prev);
+        root.appendChild(parts.next);
+      }
+    } else if (parts.prev.parentNode !== parts.row) {
+      parts.row.insertBefore(parts.prev, parts.row.firstChild);
+      parts.row.appendChild(parts.next);
+    }
   };
 
   /* Косая подложка. Управляется настройками МТК; переменная та же, что у хаба. */
@@ -997,6 +1307,9 @@
     rec.mounted = true;
     return Promise.resolve()
       .then(function () { return rec.scene.mount ? rec.scene.mount(el, self.context()) : null; })
+      /* Настройки отдаём сразу после монтирования: сцена строится в
+       * дефолтном виде, а затем получает то, что накрутил оператор. */
+      .then(function () { self._pushSceneSettings(rec); })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
 
@@ -1348,6 +1661,26 @@
     if (this._journalReady) return;
     this._journalReady = true;
 
+    /* Журнал переживает и перезагрузку, и обновление ядра. Записи прошлой
+     * версии вперемешку с текущими путают на приёмке: счётчик аварий
+     * показывает чужие, а самая первая строка «версия ядра …» — самая
+     * старая (пилот МТК 42 из-за этого решил, что ядро не обновилось).
+     * Поэтому при смене версии журнал чистим, но факт чистки записываем —
+     * чтобы не потерять след аварии, случившейся прямо перед апдейтом. */
+    var prev = this.getLog();
+    if (prev.length) {
+      var prevV = null;
+      for (var i = prev.length - 1; i >= 0; i--) {
+        if (prev[i] && prev[i].v) { prevV = prev[i].v; break; }
+      }
+      if (prevV !== VERSION) {
+        this.clearLog();
+        this.log("info", "журнал очищен при обновлении ядра " +
+          (prevV || "(версия не отмечалась)") + " → " + VERSION +
+          ", было записей: " + prev.length);
+      }
+    }
+
     window.addEventListener("error", function (e) {
       var where = e.filename ? " (" + e.filename + ":" + e.lineno + ")" : "";
       self.log("error", "JS: " + (e.message || "ошибка") + where);
@@ -1357,13 +1690,19 @@
     });
   };
 
-  /* level: info | warn | error | fatal */
+  /* level: info | warn | error | fatal
+   * v/sid — версия ядра и метка запуска: без них записи разных версий и
+   * разных сессий неразличимы, а после ночного рестарта или перезапуска
+   * ватчдогом непонятно, где кончилась одна жизнь приложения и началась
+   * другая. */
   KioskApp.prototype.log = function (level, message, extra) {
     var entry = {
       at: new Date().toISOString(),
       level: level || "info",
       msg: String(message),
-      scene: (extra && extra.scene) || this.activeSceneId
+      scene: (extra && extra.scene) || this.activeSceneId,
+      v: VERSION,
+      sid: this.sessionId
     };
     this.emit("log", entry);
     try {
@@ -1386,6 +1725,12 @@
     } catch (err) {
       return [];
     }
+  };
+
+  /* Только текущий запуск — то, что обычно и нужно на приёмке. */
+  KioskApp.prototype.getSessionLog = function () {
+    var sid = this.sessionId;
+    return this.getLog().filter(function (e) { return e.sid === sid; });
   };
 
   KioskApp.prototype.clearLog = function () {
@@ -1435,6 +1780,29 @@
     this._els.service = panel;
     this._els.serviceBody = panel.querySelector(".kiosk-service__body");
 
+    /* Скрытый файловый вход для загрузки снимка настроек. */
+    var file = doc.createElement("input");
+    file.type = "file";
+    file.accept = "application/json,.json";
+    file.style.display = "none";
+    file.addEventListener("change", function () {
+      var f = file.files && file.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          self.importSettings(String(reader.result));
+        } catch (err) {
+          self.log("error", "не удалось загрузить настройки: " + errText(err));
+          alert("Файл настроек не прочитан: " + errText(err));
+        }
+      };
+      reader.readAsText(f);
+      file.value = "";
+    });
+    panel.appendChild(file);
+    this._els.importInput = file;
+
     this._bindServiceBody();
     this._applyGearMode();
     this._bindTripleTap();
@@ -1470,6 +1838,7 @@
     this._serviceOpen = on;
 
     var panel = this._els.service;
+    this._els.root.classList.toggle("is-service", on);
     if (on) {
       this._rebuildService();
       panel.hidden = false;
@@ -1501,12 +1870,84 @@
         "</section>";
     }).join("");
 
+    html += this._sceneGroupsHtml();
+
+    html += '<section class="kiosk-set__group">' +
+      '<div class="kiosk-set__title">Запомнить настройки</div>' +
+      '<div class="kiosk-set__note">Правки сохраняются сразу, но в этом браузере. ' +
+      'Чтобы пережить переустановку — выгрузите файл и отдайте его сессии МТК: ' +
+      'это готовый <b>kiosk.config.json</b>.</div>' +
+      '<div class="kiosk-set__actions">' +
+      '<button type="button" class="kiosk-set__btn kiosk-touch" data-export>Выгрузить в файл</button>' +
+      '<button type="button" class="kiosk-set__btn kiosk-touch" data-import>Загрузить из файла</button>' +
+      "</div></section>";
+
     html += '<section class="kiosk-set__group kiosk-set__group--log">' +
-      '<div class="kiosk-set__title">Журнал <button type="button" class="kiosk-set__mini" data-log-clear>Очистить</button></div>' +
+      '<div class="kiosk-set__title">' + this._logTitle() +
+      ' <button type="button" class="kiosk-set__mini" data-log-clear>Очистить</button></div>' +
       '<div class="kiosk-set__log">' + this._logHtml() + "</div>" +
       "</section>";
 
     body.innerHTML = html;
+  };
+
+  /* Счётчик аварий отдельно за этот запуск и всего: иначе после обновления
+   * или рестарта на приёмке видны чужие аварии и непонятно, чьи они. */
+  KioskApp.prototype._logTitle = function () {
+    var all = this.getLog();
+    var sid = this.sessionId;
+    function bad(list) {
+      return list.filter(function (e) { return e.level === "error" || e.level === "fatal"; }).length;
+    }
+    var mine = all.filter(function (e) { return e.sid === sid; });
+    var t = "Журнал · запуск " + sid + ": " + bad(mine) + " авар. из " + mine.length;
+    if (all.length !== mine.length) t += " · всего: " + bad(all) + " из " + all.length;
+    return t;
+  };
+
+  /* Настройки сцен: своя группа на сцену, свёрнутая по умолчанию.
+   * У МТК 38 по описи ~60 параметров — развёрнутыми они превратили бы
+   * панель в бесконечную ленту, где не найти ничего. */
+  KioskApp.prototype._sceneGroupsHtml = function () {
+    var self = this;
+    var withSettings = this._records.filter(function (r) { return r.settings.length; });
+    if (!withSettings.length) return "";
+
+    return withSettings.map(function (rec) {
+      var open = !!self._openSceneGroups[rec.id];
+      var rows = rec.settings.map(function (s) {
+        return self._rowHtml(self._sceneRowSpec(rec.id, s));
+      }).join("");
+
+      return '<section class="kiosk-set__group kiosk-set__group--scene' +
+        (open ? " is-open" : "") + '" data-scene-group="' + esc(rec.id) + '">' +
+        '<button type="button" class="kiosk-set__fold" data-fold="' + esc(rec.id) + '">' +
+        '<span class="kiosk-set__fold-mark" aria-hidden="true"></span>' +
+        '<span class="kiosk-set__fold-title">Настройки МТК · ' +
+        esc(pickLabel(rec.title, self.lang)) + "</span>" +
+        '<span class="kiosk-set__fold-count">' + rec.settings.length + "</span>" +
+        "</button>" +
+        '<div class="kiosk-set__fold-body">' + rows +
+        '<button type="button" class="kiosk-set__mini" data-scene-reset="' + esc(rec.id) +
+        '">Сбросить сцену</button>' +
+        "</div></section>";
+    }).join("");
+  };
+
+  /* Настройка сцены — та же строка панели, что и у ядра: единый облик
+   * контролов, один путь хранения (scenes.<id>.<key>), одна обработка. */
+  KioskApp.prototype._sceneRowSpec = function (sceneId, s) {
+    var spec = {
+      path: "scenes." + sceneId + "." + s.key,
+      label: pickLabel(s.label, this.lang),
+      type: s.type === "select" ? "choice" : s.type
+    };
+    if (s.type === "range") {
+      spec.min = s.min; spec.max = s.max; spec.step = s.step; spec.unit = s.unit;
+    } else if (s.type === "select") {
+      spec.options = s.options;
+    }
+    return spec;
   };
 
   KioskApp.prototype._rowHtml = function (row) {
@@ -1550,11 +1991,17 @@
   };
 
   KioskApp.prototype._logHtml = function () {
+    var sid = this.sessionId;
     var list = this.getLog().slice(-50).reverse();
     if (!list.length) return '<div class="kiosk-set__log-empty">Пусто</div>';
     return list.map(function (e) {
-      return '<div class="kiosk-set__log-row" data-level="' + esc(e.level) + '">' +
+      var mine = e.sid === sid;
+      /* Записи чужих запусков приглушены и подписаны меткой — читая
+       * журнал, сразу видно, где кончилась прошлая жизнь приложения. */
+      return '<div class="kiosk-set__log-row' + (mine ? "" : " is-old") +
+        '" data-level="' + esc(e.level) + '">' +
         '<span class="kiosk-set__log-at">' + esc(String(e.at).slice(5, 19).replace("T", " ")) + "</span>" +
+        (mine ? "" : '<span class="kiosk-set__log-sid">' + esc(e.sid || "—") + "</span>") +
         '<span class="kiosk-set__log-msg">' + esc(e.msg) + "</span></div>";
     }).join("");
   };
@@ -1608,6 +2055,22 @@
         self.clearLog();
         var box = body.querySelector(".kiosk-set__log");
         if (box) box.innerHTML = self._logHtml();
+        return;
+      }
+      if (e.target.closest("[data-export]")) { self.exportSettings(); return; }
+      if (e.target.closest("[data-import]")) { self._els.importInput.click(); return; }
+
+      var fold = e.target.closest("[data-fold]");
+      if (fold) {
+        var fid = fold.getAttribute("data-fold");
+        self._openSceneGroups[fid] = !self._openSceneGroups[fid];
+        fold.parentNode.classList.toggle("is-open", self._openSceneGroups[fid]);
+        return;
+      }
+      var sreset = e.target.closest("[data-scene-reset]");
+      if (sreset) {
+        self.resetSceneSettings(sreset.getAttribute("data-scene-reset"));
+        self._rebuildService();
       }
     });
   };
@@ -1617,12 +2080,26 @@
     this._settingsSpec.forEach(function (g) {
       g.rows.forEach(function (r) { if (r.path === path) found = r; });
     });
+    if (found) return found;
+
+    /* Настройки сцен в _settingsSpec не лежат — собираем спеку на лету,
+     * иначе подпись значения у слайдера сцены не обновлялась бы. */
+    var parts = path.split(".");
+    if (parts[0] !== "scenes" || parts.length < 3) return null;
+    var rec = this._byId[parts[1]];
+    if (!rec) return null;
+    var key = parts.slice(2).join(".");
+    var self = this;
+    rec.settings.forEach(function (s) {
+      if (s.key === key) found = self._sceneRowSpec(rec.id, s);
+    });
     return found;
   };
 
   function fmtValue(row, val) {
     if (val == null) return "—";
     if (row.pct) return Math.round(Number(val) * 100) + " %";
+    if (row.x) return "×" + Number(val).toFixed(2);
     return String(val) + (row.unit || "");
   }
 
@@ -1725,7 +2202,8 @@
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
-    this._applyInsets();          // таргеты выросли ×1.25 — полосы хрома тоже
+    this._applyScale();           // режим домножает оба масштаба
+    this._applyInsets();          // таргеты выросли — полосы хрома тоже
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;

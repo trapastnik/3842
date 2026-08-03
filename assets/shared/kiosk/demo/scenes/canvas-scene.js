@@ -6,7 +6,7 @@
  * в консоли после переключения должен быть ровно 1 (активная сцена). */
 window.__kioskDemoRaf = 0;
 
-export function createCanvasScene({ id, title, draw, reset }) {
+export function createCanvasScene({ id, title, draw, reset, settings }) {
   let canvas = null;
   let ctx = null;
   let raf = 0;
@@ -66,9 +66,23 @@ export function createCanvasScene({ id, title, draw, reset }) {
     window.__kioskDemoRaf--;
   }
 
+  /* Значения настроек сцены: ядро отдаёт их в applySettings и держит
+   * между запусками. Петля читает их из того же объекта state. */
+  let values = {};
+
   return {
     id,
     title,
+    settings,
+    applySettings(v) {
+      values = v;
+      state.settings = v;
+      /* Перерисовать сразу: оператор крутит слайдер и должен видеть
+       * результат, а не ждать следующего кадра паузной сцены. */
+      if (ctx && canvas) {
+        draw(ctx, { t: 0, w: canvas.clientWidth, h: canvas.clientHeight, state });
+      }
+    },
     mount(el) {
       canvas = document.createElement("canvas");
       canvas.className = "demo-canvas";
@@ -92,7 +106,7 @@ export function createCanvasScene({ id, title, draw, reset }) {
     pause: stop,
     resume: start,
     reset() {
-      state = {};
+      state = { settings: values };   /* сброс состояния, но не настроек оператора */
       if (reset) reset(state);
     },
     setLang() {},
