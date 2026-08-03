@@ -23,10 +23,15 @@
    * настроек; СЦЕНА ОБЯЗАНА верстаться от них, а не от --edge-safe, иначе
    * её контент уедет под навигацию или под переключатель языков.
    * Здесь — значения на случай, если JS ещё не отработал. */
-  --kiosk-safe-top: var(--edge-safe, 64px);
-  --kiosk-safe-bottom: var(--edge-safe-bottom, 80px);
-  --kiosk-safe-left: var(--edge-safe, 64px);
-  --kiosk-safe-right: var(--edge-safe, 64px);
+  --chrome-top: var(--edge-safe, 64px);
+  --chrome-bottom: var(--edge-safe-bottom, 80px);
+  --chrome-left: var(--edge-safe, 64px);
+  --chrome-right: var(--edge-safe, 64px);
+  /* Прежние имена — синонимы: сцены, свёрстанные от них, ломать нельзя. */
+  --kiosk-safe-top: var(--chrome-top);
+  --kiosk-safe-bottom: var(--chrome-bottom);
+  --kiosk-safe-left: var(--chrome-left);
+  --kiosk-safe-right: var(--chrome-right);
 }
 
 /* ------------------------------------------------------------ каркас */
@@ -690,6 +695,47 @@ html.kiosk-runtime body {
   font-size: var(--type-min-label, 24px);
   text-align: center;
 }
+
+/* ---- группа «Экраны»: состав и порядок ---- */
+.kiosk-screen-row {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+  padding: 8px 0;
+}
+.kiosk-screen-row.is-off .kiosk-screen__name { opacity: 0.42; text-decoration: line-through; }
+
+.kiosk-screen__name {
+  flex: 1;
+  font-size: var(--type-min-ui, 32px);
+  color: var(--paper, #F7F9EF);
+}
+
+.kiosk-screen__move {
+  width: var(--touch-min, 64px);
+  height: var(--touch-min, 64px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(247, 249, 239, 0.2);
+  background: rgba(247, 249, 239, 0.04);
+  color: var(--brass, #D2B773);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-screen__move:disabled { opacity: 0.25; cursor: default; }
+.kiosk-screen__move:active:not(:disabled) { background: rgba(210, 183, 115, 0.22); }
+.kiosk-screen__chev {
+  width: 14px;
+  height: 14px;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: translateY(-3px) rotate(45deg);
+}
+.kiosk-screen__chev--up { transform: translateY(3px) rotate(-135deg); }
+
+.kiosk-set__switch:disabled { opacity: 0.45; cursor: default; }
 
 /* ---- настройки сцен: сворачиваемые группы ----
    По описи у МТК 38 около 60 параметров. Развёрнутыми они превращают
