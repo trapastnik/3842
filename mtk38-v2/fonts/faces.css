@@ -1,13 +1,13 @@
 /* МТК 38 v2 · faces.css — единый набор @font-face для всех страниц v2.
    Пути относительны этому файлу (mtk38-v2/fonts/): ./noto/… — subset-Noto (32 записей),
-   ../../mtk38-globe/fonts/… — брендовые (20 Kopeek / 21 Cent / Nolde).
+   ../../assets/shared/fonts/brand/… — брендовые (20 Kopeek / 21 Cent / Nolde).
    Раньше эти же ~30 деклараций дублировались в каждом .html — теперь один <link>. */
 
 /* — брендовые — */
-@font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
-@font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
-@font-face{font-family:"21 Cent";src:url("../../mtk38-globe/fonts/cent/21Cent.woff") format("woff");font-display:swap}
-@font-face{font-family:"Nolde";src:url("../../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");font-display:swap}
+@font-face{font-family:"20 Kopeek";font-weight:400;src:url("../../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");font-display:swap}
+@font-face{font-family:"20 Kopeek";font-weight:700;src:url("../../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");font-display:swap}
+@font-face{font-family:"21 Cent";src:url("../../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");font-display:swap}
+@font-face{font-family:"Nolde";src:url("../../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");font-display:swap}
 
 /* — не-латиница: subset-Noto, регуляр (700 синтезируется браузером, как в оттюненных v2-рендерах) — */
 @font-face{font-family:"noto-Arab";src:url("./noto/Arab.woff2") format("woff2");font-display:swap}

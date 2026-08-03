@@ -28,9 +28,9 @@ COPY = [
     "data/ne_110m_countries.geojson",
     "assets/mtk38/covers", "assets/mtk38/textures", "assets/mtk38/lib",
     "mtk38-catalog", "mtk38-cloud", "mtk38-poster", "mtk38-rain", "mtk38-ticker",
-    # v2 ссылается на брендовые шрифты наружу (../../mtk38-globe/fonts) — без них
+    # v2 ссылается на брендовые шрифты наружу (../../assets/shared/fonts/brand) — без них
     # в сборке 20 Kopeek/21 Cent/Nolde не грузились и текст падал на системный
-    "mtk38-globe/fonts",
+    "assets/shared/fonts/brand",
     "assets/shared/lib/projection.js",
 ]
 

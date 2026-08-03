@@ -34,8 +34,8 @@ TEMPLATE = r"""<!doctype html>
 <title>МТК 38 v2 · рендер-сэндбокс (WebGL)</title>
 <style>
 __FACES__
-  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype")}
-  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:400;src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype")}
+  @font-face{font-family:"20 Kopeek";font-weight:700;src:url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype")}
   html,body{margin:0;height:100%;background:#2d363d;overflow:hidden;font-family:"20 Kopeek",system-ui,sans-serif}
   #c{display:block;width:100vw;height:100vh;cursor:grab}#c:active{cursor:grabbing}
   #panel{position:fixed;top:14px;right:14px;width:236px;z-index:5;background:rgba(28,34,39,.82);

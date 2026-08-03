@@ -11,7 +11,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/nolde/nolde.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");
 }
 
 @font-face {
@@ -19,7 +19,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-book.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");
 }
 
 @font-face {
@@ -27,7 +27,7 @@
   font-weight: 600;
   font-style: normal;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/kopeek/20-kopeek-demibold.otf") format("opentype");
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");
 }
 
 @font-face {
@@ -35,7 +35,7 @@
   font-weight: 400;
   font-style: normal;
   font-display: swap;
-  src: url("../mtk38-globe/fonts/cent/21Cent.woff") format("woff");
+  src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");
 }
 
 :root {

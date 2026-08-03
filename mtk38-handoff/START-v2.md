@@ -85,7 +85,7 @@ EnterWorktree  path = /Users/dvn/Desktop/WWWWW/BMK/38-42/.claude/worktrees/mtk38
 
 **Палитра (брендбук 2026-05-12):** `--brass #D2B773` · `--paper #F7F9EF` · `--telegrey #CFD0CF` · `--window #9DA3A8` · `--graphite #435059` · `--red #A02128` (красный — точечный акцент, НЕ заливка).
 
-**Шрифты:** бренд — `mtk38-globe/fonts/` (Nolde — заголовки, 21 Cent — текст, 20 Kopeek — мета, покрывают латиницу+кириллицу). Не-латиница — subset-Noto в `mtk38-v2/fonts/noto/` (имена @font-face: `noto-<ISO15924>`, напр. `noto-Arab`, `noto-Deva`; -700 = bold). Стек по письменности: латиница/кириллица → `'20 Kopeek','Arial Unicode MS'`; иначе → `'Arial Unicode MS','noto-<iso>'`. На macOS Arial Unicode MS лежит в `/System/Library/Fonts/Supplemental/Arial Unicode.ttf`.
+**Шрифты:** бренд — `assets/shared/fonts/brand/` (Nolde — заголовки, 21 Cent — текст, 20 Kopeek — мета, покрывают латиницу+кириллицу). Не-латиница — subset-Noto в `mtk38-v2/fonts/noto/` (имена @font-face: `noto-<ISO15924>`, напр. `noto-Arab`, `noto-Deva`; -700 = bold). Стек по письменности: латиница/кириллица → `'20 Kopeek','Arial Unicode MS'`; иначе → `'Arial Unicode MS','noto-<iso>'`. На macOS Arial Unicode MS лежит в `/System/Library/Fonts/Supplemental/Arial Unicode.ttf`.
 
 ---
 
