@@ -9,7 +9,7 @@
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
   DATA, byYear, createCard, esc, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=2";
+} from "./shared.js?v=3";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {

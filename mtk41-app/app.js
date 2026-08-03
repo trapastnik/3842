@@ -3,11 +3,12 @@
  * страницы. Открывать только по http — ES-модули из file:// не идут.
  *
  * Версия у импортов сцен обязательна и поднимается вместе с ?v= у app.js:
- * `<script src="./app.js?v=2">` обновит только сам app.js, а его
+ * `<script src="./app.js?v=3">` обновит только сам app.js, а его
  * `import "./scenes/canon.js"` без версии браузер отдаст из кеша (README ядра). */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=3";
 
-import { canonScene } from "./scenes/canon.js?v=2";
+import { canonScene } from "./scenes/canon.js?v=3";
+import { authorsScene } from "./scenes/authors.js?v=3";
 
 const app = createApp({
   appId: "mtk41",
@@ -17,6 +18,7 @@ const app = createApp({
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
+app.registerScene(authorsScene);
 app.registerScene(canonScene);
 
 app.start();
