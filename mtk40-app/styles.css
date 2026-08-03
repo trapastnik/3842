@@ -407,3 +407,78 @@
   border-top-color: currentColor;
   border-top-style: solid;
 }
+
+/* ---------- панель города (география) ----------
+   Стоит справа под хромом; карточка книги живёт ниже, поэтому высота
+   панели ограничена — иначе они перекрывают друг друга. */
+.m40-city {
+  position: absolute;
+  top: calc(var(--m40-chrome-top, var(--kiosk-safe-top)) + var(--touch-min) + var(--touch-gap));
+  right: var(--edge-safe);
+  z-index: 5;
+  width: min(calc(760px * var(--content-scale)), 34%);
+  max-height: 34%;
+  overflow-y: auto;
+  padding: calc(var(--touch-gap) * 1.4);
+  border: 1px solid rgba(247, 249, 239, 0.14);
+  border-radius: calc(14px * var(--content-scale));
+  background: rgba(12, 16, 18, 0.88);
+  color: var(--paper-white, #f7f9ef);
+}
+.m40-city[hidden] { display: none; }
+.m40-city__close {
+  position: absolute;
+  top: calc(var(--touch-gap) * 0.4);
+  right: calc(var(--touch-gap) * 0.4);
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper-white, #f7f9ef);
+  font-size: var(--type-min-ui);
+  cursor: pointer;
+}
+.m40-city__name {
+  font-family: var(--font-display, "Nolde", Georgia, serif);
+  font-size: calc(var(--type-min-ui) * 1.2);
+  padding-right: var(--touch-min);
+}
+.m40-city__sub {
+  margin-top: calc(var(--touch-gap) * 0.4);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.6);
+}
+.m40-city__list {
+  margin: var(--touch-gap) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) * 0.5);
+}
+.m40-city__list button {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: calc(var(--touch-gap) * 0.5) var(--touch-gap);
+  border: none;
+  border-left: calc(6px * var(--content-scale)) solid var(--m40-spine);
+  border-radius: calc(6px * var(--content-scale));
+  background: rgba(247, 249, 239, 0.06);
+  color: var(--paper-white, #f7f9ef);
+  font-size: var(--type-min-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.m40-city__yr {
+  flex: none;
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  color: var(--brass, #d2b773);
+}

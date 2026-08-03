@@ -66,6 +66,7 @@
   "geography.level.city": "城市",
   "geography.level.axis": "藏书轴",
   "geography.level.book": "书籍",
+  "geography.hud": "{level} · ×{zoom} · 捏合 = 缩放 · 点击 = 展开",
   "geography.home": "← 整幅地图",
   "geography.city.count": "{total} 中的 {shown}",
   "volume.sub": "色块面积 = 页数 · 99 本书共 90 402 页",

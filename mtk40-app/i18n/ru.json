@@ -62,6 +62,7 @@
   "geography.level.city": "ГОРОДА",
   "geography.level.axis": "ОСИ КОРПУСА",
   "geography.level.book": "КНИГИ",
+  "geography.hud": "{level} · ×{zoom} · ЩИПОК = МАСШТАБ · ТАП = ВГЛУБЬ",
   "geography.home": "← вся карта",
   "geography.city.count": "{shown} из {total}",
   "volume.sub": "площадь плитки — число страниц · 90 402 страницы в 99 книгах",

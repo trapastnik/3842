@@ -64,6 +64,7 @@
   "geography.level.city": "CITIES",
   "geography.level.axis": "CORPUS AXES",
   "geography.level.book": "BOOKS",
+  "geography.hud": "{level} · ×{zoom} · PINCH = ZOOM · TAP = DRILL",
   "geography.home": "← whole map",
   "geography.city.count": "{shown} of {total}",
   "volume.sub": "tile area — page count · 90,402 pages across 99 books",
