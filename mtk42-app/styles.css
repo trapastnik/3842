@@ -253,9 +253,10 @@
 .m42-timeline__tick {
   position: absolute; top: 0; padding-left: 6px;
   font-family: var(--font-mono);
-  font-size: calc(var(--m42-label) * var(--a11y-scale));
+  font-size: calc(var(--tl-axis-size, var(--m42-label)) * var(--a11y-scale));
+  font-weight: var(--tl-axis-weight, 400);
   letter-spacing: 0.12em;
-  color: rgba(210, 183, 115, 0.6);
+  color: rgba(210, 183, 115, var(--tl-axis-opacity, 0.55));
   border-left: 1px solid rgba(210, 183, 115, 0.16);
 }
 .m42-timeline__scroll { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
@@ -271,14 +272,14 @@
   padding-top: 6px;
   font-family: var(--font-display);
   font-weight: 400;
-  font-size: calc(clamp(22px, 1.15vw, 44px) * var(--a11y-scale));
-  color: var(--brass);
+  font-size: calc(var(--tl-region-size, 22px) * var(--a11y-scale));
+  font-weight: var(--tl-region-weight, 400);
+  color: rgba(210, 183, 115, var(--tl-region-opacity, 1));
   border-top: 1px solid rgba(210, 183, 115, 0.28);
 }
 .m42-timeline__row {
   position: relative;
-  /* Строка нормирована на 1920 и удваивается к 3840, как и кегли. */
-  height: calc(clamp(52px, 2.7vw, 104px) * var(--a11y-scale));
+  height: calc(var(--tl-row-height, 44px) * var(--a11y-scale));
 }
 .m42-timeline__label {
   position: absolute;
@@ -288,24 +289,26 @@
   display: flex; flex-direction: column; justify-content: center; gap: 2px;
 }
 .m42-timeline__name {
-  font-size: calc(var(--m42-label) * var(--a11y-scale));
+  font-size: calc(var(--tl-museum-size, var(--m42-label)) * var(--a11y-scale));
+  font-weight: var(--tl-museum-weight, 400);
   line-height: 1.15;
-  color: rgba(247, 249, 239, 0.92);
+  color: rgba(247, 249, 239, var(--tl-museum-opacity, 0.92));
   overflow: hidden;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
 }
 .m42-timeline__city {
   font-family: var(--font-mono);
-  font-size: calc(var(--m42-label) * var(--a11y-scale) * 0.72);
+  font-size: calc(var(--tl-city-size, 9px) * var(--a11y-scale));
+  font-weight: var(--tl-city-weight, 400);
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.45);
+  color: rgba(247, 249, 239, var(--tl-city-opacity, 0.5));
 }
 .m42-timeline__bar {
   position: absolute;
   top: 50%; transform: translateY(-50%);
-  height: calc(clamp(26px, 1.35vw, 52px) * var(--a11y-scale));
-  min-height: 18px;
+  height: calc(var(--tl-bar-height, 24px) * var(--a11y-scale));
+  min-height: 14px;
   border: 0; border-radius: 4px;
   background: var(--brass);
   cursor: pointer;
@@ -321,8 +324,9 @@
 .m42-timeline__year {
   padding-left: 8px;
   font-family: var(--font-mono);
-  font-size: calc(var(--m42-label) * var(--a11y-scale) * 0.72);
-  color: rgba(12, 16, 18, 0.85);
+  font-size: calc(var(--tl-barlabel-size, 10px) * var(--a11y-scale));
+  font-weight: var(--tl-barlabel-weight, 400);
+  color: rgba(12, 16, 18, var(--tl-barlabel-opacity, 0.9));
 }
 
 /* ─── Карта ─── */
@@ -340,22 +344,23 @@
 .m42-pend { padding-left: 0; padding-right: 0; }
 .m42-pend__axis {
   position: absolute;
-  top: calc(var(--kiosk-safe-top) + 150px * var(--a11y-scale));
+  top: calc(var(--kiosk-safe-top) + 230px * var(--a11y-scale));
   left: var(--edge-safe); right: var(--edge-safe);
   z-index: 3;
   display: flex; justify-content: space-between;
   pointer-events: none;
   font-family: var(--font-mono);
-  font-size: calc(var(--m42-label) * var(--a11y-scale));
+  font-size: calc(var(--pend-axis-size, var(--m42-label)) * var(--a11y-scale));
+  font-weight: var(--pend-axis-weight, 400);
   letter-spacing: 0.24em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.5);
+  color: rgba(247, 249, 239, var(--pend-axis-opacity, 0.72));
   border-bottom: 1px solid rgba(210, 183, 115, 0.18);
   padding-bottom: 10px;
 }
 .m42-pend__scroll {
   flex: 1 1 auto; min-height: 0;
-  margin-top: calc(var(--kiosk-safe-top) + 210px * var(--a11y-scale));
+  margin-top: calc(var(--kiosk-safe-top) + 290px * var(--a11y-scale));
   overflow-y: auto;
   padding: 0 var(--edge-safe);
 }
@@ -370,8 +375,9 @@
 .m42-pend__epoch {
   position: absolute; left: 8px;
   font-family: var(--font-display);
-  font-size: calc(28px * var(--a11y-scale));
-  color: rgba(247, 249, 239, 0.22);
+  font-size: calc(var(--pend-epoch-size, 28px) * var(--a11y-scale));
+  font-weight: var(--pend-epoch-weight, 400);
+  color: rgba(247, 249, 239, var(--pend-epoch-opacity, 0.22));
   pointer-events: none;
   text-transform: uppercase;
 }
@@ -387,9 +393,10 @@
 .m42-pend__tick {
   position: absolute; right: 0;
   font-family: var(--font-mono);
-  font-size: calc(var(--m42-label) * var(--a11y-scale));
+  font-size: calc(var(--pend-year-size, var(--m42-label)) * var(--a11y-scale));
+  font-weight: var(--pend-year-weight, 400);
   letter-spacing: 0.12em;
-  color: rgba(210, 183, 115, 0.6);
+  color: rgba(210, 183, 115, var(--pend-year-opacity, 0.65));
   transform: translateY(-50%);
 }
 .m42-pend__tick::before {
@@ -407,8 +414,8 @@
 .m42-pend__path {
   fill: none;
   stroke: var(--brass);
-  stroke-width: 6;
-  stroke-opacity: 0.62;
+  stroke-width: var(--pend-stroke, 6);
+  stroke-opacity: var(--pend-stroke-opacity, 0.62);
   stroke-linecap: round;
 }
 .m42-dot {
@@ -609,3 +616,31 @@
 .a11y .m42-card__kind,
 .a11y .m42-card__work-title,
 .a11y .m42-timeline__region { color: var(--a11y-accent, #FFD24A); }
+
+/* ─── Настройки схемы v1.2, приходящие из applySettings() ─── */
+.m42-map .m42-head__title {
+  font-size: calc(var(--map-title-size, var(--m42-h1)) * var(--a11y-scale));
+  font-weight: var(--map-title-weight, 400);
+  color: rgba(247, 249, 239, var(--map-title-opacity, 1));
+}
+.m42-map .m42-filter {
+  font-size: calc(var(--map-filter-size, var(--m42-ui)) * var(--a11y-scale));
+  font-weight: var(--map-filter-weight, 400);
+  color: rgba(247, 249, 239, var(--map-filter-opacity, 0.82));
+}
+.m42-map .m42-filter.is-active { color: var(--night); }
+
+/* Посетительский фильтр категорий на маятнике (класс Б). */
+.m42-pend__cats {
+  position: absolute;
+  top: calc(var(--kiosk-safe-top) + 120px * var(--a11y-scale));
+  left: var(--edge-safe); right: var(--edge-safe);
+  z-index: 3;
+}
+
+/* «Больше воздуха» — второй дизайн карточки героя (из прототипов). */
+[data-card="air"] .m42-detail__panel { padding: 56px 64px 48px; gap: 30px; }
+[data-card="air"] .m42-card__head { gap: 40px; }
+[data-card="air"] .m42-card__text,
+[data-card="air"] .m42-card__quote-text { line-height: 1.7; }
+[data-card="air"] .m42-tile { padding: 24px 22px 20px; gap: 14px; }

@@ -46,20 +46,6 @@
     "restart": true,
     "journalLimit": 200
   },
-  "archive": {
-    "gapX": 20,
-    "gapY": 20
-  },
-  "pendulum": {
-    "dotSize": 112,
-    "pxPerYear": 42,
-    "minGap": 0,
-    "showPendulum": true
-  },
-  "museums": {
-    "dotRadius": 10,
-    "showCities": true
-  },
   "photos": {
     "color": false,
     "a11yColor": false
