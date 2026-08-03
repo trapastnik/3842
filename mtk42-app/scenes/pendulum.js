@@ -13,7 +13,7 @@
  * setInterval 100 мс = 10 fps, ровно потолок стандарта. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=8";
+} from "./shared.js?v=9";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -23,7 +23,7 @@ const CATS = ["leaders", "politician", "researcher", "writers"];
 
 export const pendulumScene = {
   id: "pendulum",
-  title: { ru: "Маятник", en: "Pendulum", zh: "钟摆" },
+  title: { ru: "Маятник истории", en: "Pendulum of history", zh: "历史的钟摆" },
 
   /* ─── Схема настроек (v1.2). Диапазоны и дефолты — из описи. ─────────── */
   settings: [

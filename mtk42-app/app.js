@@ -2,12 +2,13 @@
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
-import { installSettings } from "./scenes/settings-bridge.js?v=8";
+import { installSettings } from "./scenes/settings-bridge.js?v=9";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=9";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=8";
-import { archiveScene } from "./scenes/archive.js?v=8";
-import { timelineScene } from "./scenes/timeline.js?v=8";
-import { mapScene } from "./scenes/map.js?v=8";
+import { pendulumScene } from "./scenes/pendulum.js?v=9";
+import { archiveScene } from "./scenes/archive.js?v=9";
+import { timelineScene } from "./scenes/timeline.js?v=9";
+import { mapScene } from "./scenes/map.js?v=9";
 
 const app = createApp({
   appId: "mtk42",
@@ -27,6 +28,11 @@ app.registerScene(mapScene);
  * исполняет, поэтому её разворачивает мост — он же уйдёт, когда ядро
  * научится. Императивных addSettings() для сцен здесь больше нет. */
 installSettings(app, [pendulumScene, archiveScene, timelineScene, mapScene]);
+
+/* Реальные зоны хрома в CSS-переменные: ядро отдаёт только отступ от
+ * кромки, а кнопки языков занимают заметно больше. Заявка на экспорт
+ * зон из ядра — в COORDINATION; до неё меряем сами. */
+installChromeZones(app);
 
 /* Общеприкладная настройка, не принадлежащая ни одной сцене. */
 app.addSettings("Портреты", [
