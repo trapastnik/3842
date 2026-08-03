@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
-import { createCard } from "./card.js?v=8";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=8";
+import { loadData, PAL, beginStandby } from "./shared.js?v=9";
+import { createCard } from "./card.js?v=9";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=9";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -202,15 +202,14 @@ export const compositionsScene = {
     this.pause();
     if (this._card) this._card.close();
     this._standby = true;
-    const stop = standbyLoop(standbyFps(this._app), () => this._frame());
+    const tick = () => this._frame();
     // раскладки сменяют друг друга — сцена в заставке не должна замирать
     clearInterval(this._auto);
     this._auto = setInterval(() => {
       const i = LAYOUTS.indexOf(this._layout);
       this._setLayout(LAYOUTS[(i + 1) % LAYOUTS.length]);
     }, 12000);
-    return beginStandby(() => {
-      stop();
+    return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
     });

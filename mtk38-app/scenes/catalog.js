@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
-import { createCard } from "./card.js?v=8";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby } from "./shared.js?v=9";
+import { createCard } from "./card.js?v=9";
 
 export const catalogScene = {
   id: "catalog",
@@ -157,12 +157,11 @@ export const catalogScene = {
     this.pause();
     if (this._card) this._card.close();
     this._standby = true;
-    const stop = standbyLoop(standbyFps(this._app), () => this._draw());
+    const tick = () => this._draw();
     // сетка статична — в заставке она листается сама, иначе экран мёртвый
     clearInterval(this._auto);
     this._auto = setInterval(() => this._turn(1), 7000);
-    return beginStandby(() => {
-      stop();
+    return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
     });

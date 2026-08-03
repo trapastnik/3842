@@ -2,32 +2,25 @@
  * Пять прежних прототипов стали сценами одной страницы (PLAN-KIOSK.md).
  * Открывать только по http — ES-модули из file:// не идут.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
+/* ?v= обязателен и здесь: обёртка тянет версию из своего адреса и передаёт её
+ * дальше в kiosk-core.js. Без неё Chrome отдаёт ядро из кеша — у меня так
+ * приложение работало на 1.5.0, когда в репозитории уже лежало 1.7.0. */
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=170";
 
-import { globeScene } from "./scenes/globe.js?v=8";
-import { rainScene } from "./scenes/rain.js?v=8";
-import { mapScene } from "./scenes/map.js?v=8";
-import { catalogScene } from "./scenes/catalog.js?v=8";
-import { compositionsScene } from "./scenes/compositions.js?v=8";
-
-/* Словари грузим сами и отдаём ядру объектом, а не через i18nUrl.
- * Причина практическая: ядро запрашивает ./i18n/<lang>.json без версии, и
- * Chrome на киоске держит старый словарь после обновления сборки — правка
- * подписей не доезжает. С `?v=` этого не происходит. (Заявка ядру: принимать
- * версию для словарей; тогда этот блок уйдёт.) */
-const I18N_V = 9;
-const i18n = {};
-await Promise.all(["ru", "en", "zh"].map((l) =>
-  fetch(`./i18n/${l}.json?v=${I18N_V}`)
-    .then((r) => r.json())
-    .then((d) => { i18n[l] = d; })
-    .catch((e) => console.warn("[i18n] словарь " + l + " не прочитан", e))));
+import { globeScene } from "./scenes/globe.js?v=9";
+import { rainScene } from "./scenes/rain.js?v=9";
+import { mapScene } from "./scenes/map.js?v=9";
+import { catalogScene } from "./scenes/catalog.js?v=9";
+import { compositionsScene } from "./scenes/compositions.js?v=9";
 
 const app = createApp({
   appId: "mtk38",
   title: { ru: "МТК · 38", en: "MTK · 38", zh: "МТК · 38" },
   configUrl: "./kiosk.config.json",
-  i18n,
+  i18nUrl: "./i18n/",
+  /* Метка кеша словарей (ядро 1.7.0). Поднимать вместе с правкой i18n/*.json,
+   * иначе Chrome на киоске покажет прежние подписи. */
+  i18nVersion: 9,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
@@ -51,7 +44,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=8";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=9";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики

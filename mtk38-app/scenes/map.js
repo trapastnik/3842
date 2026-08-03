@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
-import { createCard } from "./card.js?v=8";
+import { loadData, famWord, PAL, rgba, beginStandby } from "./shared.js?v=9";
+import { createCard } from "./card.js?v=9";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -147,14 +147,13 @@ export const mapScene = {
     this.pause();
     if (this._card) this._card.close();
     this._standby = true;
-    const stop = standbyLoop(standbyFps(this._app), () => this._draw());
+    const tick = () => this._draw();
     clearInterval(this._auto);
     this._auto = setInterval(() => {
       this._layer = this._layer === "lang" ? "pub" : "lang";
       this._syncPills();
     }, 8000);
-    return beginStandby(() => {
-      stop();
+    return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
     });

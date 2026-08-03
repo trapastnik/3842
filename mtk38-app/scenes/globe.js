@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=8";
-import { createCard } from "./card.js?v=8";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=8";
+import { loadData, PAL, beginStandby } from "./shared.js?v=9";
+import { createCard } from "./card.js?v=9";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=9";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -198,8 +198,7 @@ export const globeScene = {
     this.pause();                       // 60-FPS петля и слушатели ввода — прочь
     if (this._card) this._card.close();
     this._standby = true;               // в кадре: вращение вдвое живее
-    const stop = standbyLoop(standbyFps(this._app), () => this._frame());
-    return beginStandby(() => { stop(); this._standby = false; });
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
   },
 
   setLang(lang) {

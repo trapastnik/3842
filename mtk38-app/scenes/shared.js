@@ -111,10 +111,37 @@ export function groupByWriting(langs) {
  */
 const SB = { sceneStop: null, onStop: null };
 
-/** Сцена: вызвать в конце своего standby(), передав стоп СВОЕЙ петли. */
-export function beginStandby(sceneStop) {
-  SB.sceneStop = sceneStop;
+/** Сцена: вызвать в конце своего standby(), передав app, свой кадр и уборку.
+ *
+ * Петлю ведёт ядро (app.standbyTicker, 1.7.0) — один источник частоты на весь
+ * киоск. Своего setInterval здесь больше нет; осталась только защита от
+ * наложения: кадр WebGPU асинхронный и на 4K может не уложиться в такт.
+ * `cleanup` — то, что сцена должна вернуть в исходное при выходе из заставки
+ * (снять флаг, погасить своё автолистание). */
+export function beginStandby(app, tick, cleanup) {
+  let busy = false;
+  const draw = () => {
+    if (busy) return;
+    busy = true;
+    Promise.resolve(tick()).catch((e) => console.warn("[standby tick]", e))
+      .finally(() => { busy = false; });
+  };
+  const stopTicker = app && app.standbyTicker
+    ? app.standbyTicker(draw)
+    : fallbackTicker(app, draw);
+  SB.sceneStop = () => {
+    stopTicker();
+    if (cleanup) cleanup();
+  };
   return stopStandby;
+}
+
+/* На случай ядра старше 1.7.0 (сборка на стенде может отстать). */
+function fallbackTicker(app, draw) {
+  const t = (app && app.config && app.config.timings) || {};
+  const fps = Math.max(1, Math.min(30, t.standbyFps || 10));
+  const id = setInterval(draw, Math.round(1000 / fps));
+  return () => clearInterval(id);
 }
 
 /** app.js: сюда вешается остановка ротации. */
@@ -131,26 +158,6 @@ export function stopStandby() {
   stopSceneStandby();
   const fn = SB.onStop;
   if (fn) { try { fn(); } catch (e) { console.warn("[standby rotation stop]", e); } }
-}
-
-/* Петля заставки — setInterval, а не rAF: канон киоска не выше 10 fps (GPU
- * ночью и выгорание панели). Асинхронный кадр не накладываем сам на себя. */
-export function standbyLoop(fps, tick) {
-  const ms = Math.round(1000 / Math.max(1, Math.min(30, fps || 10)));
-  let busy = false;
-  const id = setInterval(async () => {
-    if (busy) return;
-    busy = true;
-    try { await tick(); } catch (e) { console.warn("[standby tick]", e); }
-    busy = false;
-  }, ms);
-  return () => clearInterval(id);
-}
-
-/** FPS заставки из конфига киоска (timings.standbyFps). */
-export function standbyFps(app) {
-  const t = (app && app.config && app.config.timings) || {};
-  return t.standbyFps || 10;
 }
 
 /* Кап буфера для WebGPU-сцен: на 4K-смоуке dpr=2 давал 3840×2160×4 = 33 Мп
