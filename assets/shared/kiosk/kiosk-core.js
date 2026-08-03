@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.7.0";
+  var VERSION = "1.8.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -77,8 +77,9 @@
      * order: массив id в порядке листания (неизвестные игнорируются,
      * недостающие дописываются в порядке регистрации);
      * enabled: id → false выключает экран.
-     * Рядом в этом же объекте лежат настройки самих сцен (scenes[id]). */
-    scenes: {
+     * ОТДЕЛЬНО от config.scenes[id], где лежат настройки самих сцен:
+     * в общем объекте сцена с id «order» затёрла бы состав. */
+    screens: {
       order: [],
       enabled: {}
     },
@@ -101,10 +102,6 @@
   };
 
   var IDLE = { ACTIVE: "active", STANDBY: "standby" };
-
-  /* Внутри config.scenes рядом с настройками сцен живут состав и порядок.
-   * Сцену с таким id зарегистрировать нельзя — иначе она затёрла бы их. */
-  var RESERVED_SCENE_IDS = { order: 1, enabled: 1 };
 
   /* Подписи языков в переключателе — на своём языке, как в каноне. */
   var LANG_LABEL = { ru: "РУС", en: "ENG", zh: "中文" };
@@ -542,9 +539,6 @@
     if (this._started) throw new Error("[kiosk] registerScene() после start() — поздно");
     if (!def || !def.id) throw new Error("[kiosk] у сцены обязателен id");
     if (this._byId[def.id]) throw new Error("[kiosk] сцена «" + def.id + "» уже зарегистрирована");
-    if (RESERVED_SCENE_IDS[def.id]) {
-      throw new Error("[kiosk] id «" + def.id + "» зарезервирован под состав/порядок экранов");
-    }
 
     var rec = {
       id: def.id,
@@ -578,7 +572,7 @@
    * может отстать от кода, и это не повод потерять сцену. */
   KioskApp.prototype._orderedRecords = function () {
     var self = this;
-    var order = ((this.config.scenes || {}).order) || [];
+    var order = ((this.config.screens || {}).order) || [];
     var seen = Object.create(null);
     var out = [];
     if (Array.isArray(order)) {
@@ -594,7 +588,7 @@
   };
 
   KioskApp.prototype.isSceneEnabled = function (id) {
-    var map = (this.config.scenes || {}).enabled || {};
+    var map = (this.config.screens || {}).enabled || {};
     return map[id] !== false;
   };
 
@@ -628,7 +622,7 @@
       return this;
     }
     var wasOff = !this.isSceneEnabled(id);
-    this.setSetting("scenes.enabled." + id, on);
+    this.setSetting("screens.enabled." + id, on);
 
     /* Включили обратно в рантайме — её ассетов нет: на старте выключенные
      * экраны не прерольны (в этом и была экономия). Догружаем сейчас,
@@ -652,7 +646,7 @@
     if (i < 0 || j < 0 || j >= ids.length) return this;
     ids[i] = ids[j];
     ids[j] = id;
-    this.setSetting("scenes.order", ids);
+    this.setSetting("screens.order", ids);
     return this;
   };
 
@@ -734,7 +728,48 @@
       .catch(function (err) {
         console.warn("[kiosk] kiosk.config.json не прочитан, работаем на дефолтах", err);
       })
-      .then(function () { self._applyStoredConfig(); });
+      .then(function () {
+        self._applyStoredConfig();
+        self._migrateScreensKey();
+      });
+  };
+
+  /* Одноразовая миграция 1.6.0 → 1.8.0: состав экранов переехал из
+   * config.scenes.order/enabled в отдельный config.screens. В общем
+   * объекте с настройками сцен сцена с id «order» затёрла бы состав,
+   * поэтому ключи разведены. Переносим и то, что уже лежит в файле
+   * конфига, и то, что оператор накрутил в localStorage. */
+  KioskApp.prototype._migrateScreensKey = function () {
+    var old = this.config.scenes;
+    if (!isObj(old)) return;
+    var moved = [];
+
+    if (!isObj(this.config.screens)) this.config.screens = { order: [], enabled: {} };
+    if (Array.isArray(old.order)) {
+      this.config.screens.order = old.order;
+      moved.push("order");
+    }
+    if (isObj(old.enabled)) {
+      this.config.screens.enabled = old.enabled;
+      moved.push("enabled");
+    }
+    delete this.config.scenes.order;
+    delete this.config.scenes.enabled;
+    if (!moved.length) return;
+
+    /* Патч оператора чиним отдельно: иначе старые ключи оставались бы в
+     * localStorage и всплывали при каждом старте. */
+    var patch = this._override.scenes;
+    if (isObj(patch) && (patch.order || patch.enabled)) {
+      if (!isObj(this._override.screens)) this._override.screens = {};
+      if (patch.order) this._override.screens.order = patch.order;
+      if (patch.enabled) this._override.screens.enabled = patch.enabled;
+      delete patch.order;
+      delete patch.enabled;
+      if (!Object.keys(patch).length) delete this._override.scenes;
+      this._saveOverride();
+    }
+    this.log("info", "состав экранов перенесён scenes." + moved.join("/") + " → screens");
   };
 
   /* Правки оператора из сервис-панели живут поверх файла конфига. */
@@ -1039,7 +1074,7 @@
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
     /* Состав или порядок изменились — перестроить точки и, если оператор
      * погасил экран прямо на нём, увести на дефолтный. */
-    if (path && /^scenes\.(order|enabled)/.test(path)) {
+    if (path && path.indexOf("screens.") === 0) {
       this._buildDots();
       this._syncNav();
       if (this._active && !this.isSceneEnabled(this._active.id)) {

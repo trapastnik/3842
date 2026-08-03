@@ -310,11 +310,11 @@ try { await heavyThing(); } finally { app.resumeWatchdog(); }
   "nav": { "show": true, "position": "bottom", "layout": "bar",
            "sideY": 50, "sideX": 64, "size": 96, "opacity": 0.92,
            "showTitle": true, "showArrows": true, "showDots": true },
-  "scenes": {
+  "screens": {
     "order": ["map", "timeline"],
-    "enabled": { "timeline": false },
-    "map": { "dotSize": 12 }
+    "enabled": { "timeline": false }
   },
+  "scenes": { "map": { "dotSize": 12 } },
   "stripes": { "on": true, "opacity": 1, "angle": 105 },
   "scale": { "ui": 1, "content": 1 },
   "content": { "width": 100, "height": 100 },
@@ -436,12 +436,14 @@ try { await heavyThing(); } finally { app.resumeWatchdog(); }
   стартовый: ссылка на погашенный экран не должна давать пустоту.
 - Включённый обратно в рантайме экран догружает свои ассеты сам — иначе
   оператор увидел бы пустой контент вместо картинок.
-- Хранение: `scenes.order` (массив id) и `scenes.enabled` (id → false) в
+- Хранение: `screens.order` (массив id) и `screens.enabled` (id → false) в
   `kiosk.config.json`, localStorage поверх, «Сбросить» возвращает конфиг,
   выгрузка файлом подхватывает. Порядок из конфига может отстать от кода —
   недостающие сцены дописываются в порядке регистрации, лишние игнорируются.
-- `order` и `enabled` — зарезервированные id: сцену с таким именем ядро не
-  примет, иначе она затёрла бы состав.
+- Ключ **отдельный** от `scenes[<id>]` с настройками сцен: в общем объекте
+  сцена с id `order` затёрла бы состав. С 1.6.0 состав лежал в
+  `scenes.order/enabled` — ядро переносит его в `screens` при старте
+  автоматически, в том числе из localStorage оператора.
 
 ## Настройки сцены (главное для сессий МТК)
 
