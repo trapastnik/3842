@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>BMK 38–42 · Стиль</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css">
+  <style>
+    @font-face { font-family: "Nolde"; src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype"); font-display: swap; }
+    @font-face { font-family: "21 Cent"; src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff"); font-display: swap; }
+    @font-face { font-family: "20 Kopeek"; font-weight: 600; src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype"); font-display: swap; }
+
+    :root {
+      --amber-black: #000000; --white: #FFFFFF; --brass: #D2B773; --red: #A02128;
+      --blue-grey: #5D8970; --window: #9DA3A8; --graphite: #435059; --telegrey: #CFD0CF;
+      --paper: #F7F9EF;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; background: var(--graphite); color: var(--paper);
+      font-family: "21 Cent", Georgia, serif; line-height: 1.55; padding: 48px 56px 96px;
+    }
+    /* косая подложка — сквозной мотив */
+    body::before {
+      content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+      background:
+        linear-gradient(105deg, transparent 0, transparent 78%, rgba(160,33,40,.35) 78%, rgba(160,33,40,.35) 90%, transparent 90.2%),
+        linear-gradient(105deg, transparent 0, transparent 70%, rgba(210,183,115,.5) 70%, rgba(210,183,115,.5) 70.18%, transparent 70.36%);
+    }
+    main { position: relative; z-index: 1; max-width: 1500px; }
+    .kicker { font-family: "20 Kopeek", monospace; font-size: 13px; letter-spacing: .24em; text-transform: uppercase; color: var(--brass); }
+    h1 { font-family: "Nolde", Georgia, serif; font-weight: 400; font-size: clamp(44px, 6vw, 84px); line-height: .95; margin: .1em 0 .3em; }
+    h2 { font-family: "Nolde", Georgia, serif; font-weight: 400; font-size: 34px; margin: 2.2em 0 .6em; }
+    p.lead { max-width: 760px; color: rgba(247,249,239,.78); }
+    code, .mono { font-family: "20 Kopeek", "Courier New", monospace; font-size: 13px; letter-spacing: .04em; }
+    code { background: rgba(0,0,0,.3); padding: 2px 8px; border-radius: 6px; color: var(--brass); }
+
+    .swatches { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 14px; }
+    .sw { border: 1px solid rgba(210,183,115,.35); border-radius: 14px; overflow: hidden; background: rgba(0,0,0,.25); }
+    .sw .chip { height: 84px; }
+    .sw .meta { padding: 12px 14px; display: grid; gap: 3px; }
+    .sw .name { font-family: "20 Kopeek", monospace; font-size: 12px; letter-spacing: .12em; color: var(--paper); }
+    .sw .hex { font-family: "20 Kopeek", monospace; font-size: 12px; color: rgba(247,249,239,.6); }
+    .sw .role { font-size: 13px; color: rgba(247,249,239,.72); }
+
+    .typo { display: grid; gap: 18px; }
+    .typo .row { border: 1px solid rgba(210,183,115,.25); border-radius: 14px; padding: 20px 24px; background: rgba(0,0,0,.22); }
+    .typo .label { font-family: "20 Kopeek", monospace; font-size: 11px; letter-spacing: .2em; text-transform: uppercase; color: var(--brass); margin-bottom: 8px; }
+    .s-nolde { font-family: "Nolde"; font-size: 54px; line-height: 1; }
+    .s-cent { font-size: 22px; }
+    .s-kopeek { font-family: "20 Kopeek", monospace; font-size: 16px; letter-spacing: .14em; text-transform: uppercase; }
+
+    .controls { display: flex; flex-wrap: wrap; gap: 22px; align-items: center; }
+    .btn-primary {
+      min-width: var(--touch-primary); min-height: var(--touch-primary);
+      border-radius: 50%; border: 1px solid rgba(210,183,115,.6); background: rgba(0,0,0,.35);
+      color: var(--brass); font-size: 40px; display: grid; place-items: center; cursor: pointer;
+    }
+    .btn-chip {
+      min-height: var(--touch-min); padding: 0 28px; border-radius: 999px;
+      border: 1px solid rgba(210,183,115,.5); background: rgba(0,0,0,.3); color: var(--paper);
+      font-family: "20 Kopeek", monospace; font-size: 15px; letter-spacing: .14em; text-transform: uppercase; cursor: pointer;
+    }
+    .btn-chip.active { background: var(--brass); color: var(--graphite); }
+    .seg { display: inline-flex; border: 1px solid rgba(210,183,115,.5); border-radius: 999px; overflow: hidden; background: rgba(0,0,0,.3); }
+    .seg button { min-height: var(--touch-min); border: 0; background: transparent; color: var(--paper); padding: 0 24px; font-family: "20 Kopeek", monospace; letter-spacing: .14em; cursor: pointer; }
+    .seg button.on { background: var(--brass); color: var(--graphite); }
+    .seg button + button { border-left: 1px solid rgba(210,183,115,.3); }
+
+    .scrolldemo { max-height: 180px; overflow-y: auto; border: 1px solid rgba(210,183,115,.3); border-radius: 12px; padding: 16px 20px; background: rgba(0,0,0,.25); max-width: 560px; }
+
+    .sizes { display: flex; gap: 28px; flex-wrap: wrap; align-items: flex-end; }
+    .sizebox { display: grid; gap: 8px; justify-items: center; }
+    .sq { border: 2px dashed rgba(210,183,115,.7); border-radius: 12px; display: grid; place-items: center; color: rgba(247,249,239,.6); font-family: "20 Kopeek", monospace; font-size: 11px; }
+    table.rules { border-collapse: collapse; font-size: 15px; }
+    table.rules td, table.rules th { border: 1px solid rgba(210,183,115,.25); padding: 8px 14px; text-align: left; }
+    table.rules th { font-family: "20 Kopeek", monospace; font-size: 11px; letter-spacing: .16em; text-transform: uppercase; color: var(--brass); }
+    .note { font-size: 14px; color: rgba(247,249,239,.6); max-width: 760px; }
+  </style>
+</head>
+<body>
+<main>
+  <div class="kicker">Музей В.И. Ленина · МТК 38–42 · единый дизайн-код</div>
+  <h1>Стиль</h1>
+  <p class="lead">Живой справочник: палитра, типографика, тач-размеры и элементы управления.
+  Всё на странице взято из общих токенов — как выглядит здесь, так выглядит на киосках.
+  Канон текстом — COORDINATION.md → «Шрифтово-цветовые правила»; размеры — <code>assets/shared/kiosk/kiosk.css</code>.</p>
+
+  <h2>Палитра (брендбук)</h2>
+  <div class="swatches">
+    <div class="sw"><div class="chip" style="background:#435059"></div><div class="meta"><span class="name">--graphite</span><span class="hex">#435059</span><span class="role">основной фон</span></div></div>
+    <div class="sw"><div class="chip" style="background:#D2B773"></div><div class="meta"><span class="name">--brass</span><span class="hex">#D2B773</span><span class="role">латунь · акценты, активные состояния</span></div></div>
+    <div class="sw"><div class="chip" style="background:#A02128"></div><div class="meta"><span class="name">--red</span><span class="hex">#A02128</span><span class="role">сигнальный красный · диагонали, маркеры</span></div></div>
+    <div class="sw"><div class="chip" style="background:#F7F9EF"></div><div class="meta"><span class="name">--paper</span><span class="hex">#F7F9EF</span><span class="role">тёплый белый · текст на тёмном</span></div></div>
+    <div class="sw"><div class="chip" style="background:#CFD0CF"></div><div class="meta"><span class="name">--telegrey</span><span class="hex">#CFD0CF</span><span class="role">телосерый · вторичный текст</span></div></div>
+    <div class="sw"><div class="chip" style="background:#9DA3A8"></div><div class="meta"><span class="name">--window</span><span class="hex">#9DA3A8</span><span class="role">серое окно · нейтральные элементы</span></div></div>
+    <div class="sw"><div class="chip" style="background:#5D8970"></div><div class="meta"><span class="name">--blue-grey</span><span class="hex">#5D8970</span><span class="role">сине-серый · вспомогательный</span></div></div>
+    <div class="sw"><div class="chip" style="background:#000000"></div><div class="meta"><span class="name">--amber-black</span><span class="hex">#000000</span><span class="role">чёрный · контраст-режим</span></div></div>
+    <div class="sw"><div class="chip" style="background:#FFD24A"></div><div class="meta"><span class="name">--a11y-accent</span><span class="hex">#FFD24A</span><span class="role">жёлтый · акцент режима слабовидящих</span></div></div>
+  </div>
+
+  <h2>Типографика</h2>
+  <div class="typo">
+    <div class="row"><div class="label">Nolde · акцидентный — заголовки, крупные числа</div>
+      <div class="s-nolde">Ленин на языках мира · 1 203 объекта</div></div>
+    <div class="row"><div class="label">21 Cent · текстовый — описания, карточки</div>
+      <div class="s-cent">Объекты, носившие имя Владимира Ильича Ленина, — от улицы в бразильском посёлке до канала длиной в полторы тысячи километров.</div></div>
+    <div class="row"><div class="label">20 Kopeek · моноширинный — интерфейс, подписи, чипы</div>
+      <div class="s-kopeek">Носит имя сегодня · 643 &nbsp;·&nbsp; Переименовано · 462 &nbsp;·&nbsp; Утрачено · 25</div></div>
+  </div>
+  <p class="note">Не-латинские письменности (29 систем: CJK, арабская, деванагари, тайская…) — сабсеты Noto,
+  пайплайн в <code>assets/shared/fonts/</code>. Китайский интерфейс — Noto Sans SC.</p>
+
+  <h2>Тач-размеры (канон, 49″ 3840×2160)</h2>
+  <div class="sizes">
+    <div class="sizebox"><div class="sq" style="width:64px;height:64px">64</div><span class="mono">--touch-min</span></div>
+    <div class="sizebox"><div class="sq" style="width:96px;height:96px">96</div><span class="mono">--touch-primary</span></div>
+    <div class="sizebox"><div class="sq" style="width:120px;height:80px">64/80</div><span class="mono">--edge-safe / -bottom</span></div>
+  </div>
+  <table class="rules" style="margin-top:22px">
+    <tr><th>Правило</th><th>Значение</th></tr>
+    <tr><td>Минимальный тач-таргет / основные контролы</td><td>64 px / 96 px</td></tr>
+    <tr><td>Отступ интерактива от кромки панели (низ)</td><td>64 px (80 px)</td></tr>
+    <tr><td>Кегль подписей / текста на кнопках, минимум на 3840</td><td>24 px / 32 px</td></tr>
+    <tr><td>Полосы прокрутки</td><td>всегда видимы, 18 px, латунь</td></tr>
+    <tr><td>Режим слабовидящих</td><td>интерфейс ×1.25, контент ×1.5, контраст-тема, жёлтый акцент</td></tr>
+    <tr><td>Карты</td><td>только вектор · проекция Winkel Tripel (общая либа)</td></tr>
+  </table>
+
+  <h2>Элементы управления</h2>
+  <div class="controls">
+    <button class="btn-primary">‹</button>
+    <button class="btn-primary" style="font-size:26px">⚙</button>
+    <span class="seg"><button class="on">РУС</button><button>ENG</button><button>中文</button></span>
+    <button class="btn-chip active">Все</button>
+    <button class="btn-chip">Носит имя сегодня</button>
+    <button class="btn-chip">Переименовано</button>
+  </div>
+
+  <h2>Видимая прокрутка</h2>
+  <div class="scrolldemo kiosk-scroll">
+    <p>Полоса прокрутки всегда видна — посетитель должен ВИДЕТЬ, что контент продолжается.
+    Класс <code>.kiosk-scroll</code> из киоск-кита.</p>
+    <p>Улицы и площади · 414</p><p>Города и сёла · 162</p><p>Площади · 118</p>
+    <p>Проспекты · 113</p><p>Заводы · 82</p><p>Районы · 49</p><p>Вузы · 46</p>
+  </div>
+
+  <h2>Подключение</h2>
+  <p class="note">Токены палитры — объявить в <code>:root</code> своей страницы (канон hex — на этой странице).
+  Размеры и скролл — <code>&lt;link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css"&gt;</code>.
+  Подсказки жестов — <code>KioskHint.attach(el, {gesture: "pinch"})</code> из <code>hint.js</code>.
+  Киоск-приложение целиком — ядро <code>kiosk-core.js</code>, гайд в <code>assets/shared/kiosk/README</code>.</p>
+</main>
+</body>
+</html>
