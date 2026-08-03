@@ -11,7 +11,7 @@
  *  - двенадцать тюнингов прототипа объявлены схемой settings[] — панель их
  *    рисует и хранит сама, sessionStorage больше не нужен.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=16";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=17";
 
 const COLORS = M.COLORS;
 const BUCKET_META = M.BUCKET_META;
@@ -1014,7 +1014,7 @@ export const timelineScene = {
     ctx.font = `400 ${10 * s}px "20 Kopeek", monospace`;
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
-    ctx.fillStyle = rgba(COLORS.brass, 0.5);
+    ctx.fillStyle = rgba(COLORS.brass, this.app.a11y ? 0.95 : 0.5);
     ctx.fillText(this.app.t("timeline.hud", { level: human, zoom: this.zoom.toFixed(2) }),
       this.W - 14 * s, this.H - 12 * s);
     ctx.restore();

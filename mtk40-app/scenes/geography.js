@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=16";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=17";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -669,7 +669,7 @@ export const geographyScene = {
     ctx.font = `400 ${10 * s}px "20 Kopeek", monospace`;
     ctx.textAlign = "right";
     ctx.textBaseline = "bottom";
-    ctx.fillStyle = M.rgba(M.COLORS.brass, 0.5);
+    ctx.fillStyle = M.rgba(M.COLORS.brass, this.app.a11y ? 0.95 : 0.5);
     ctx.fillText(this.app.t("geography.hud", { level: human, zoom: this.zf().toFixed(2) }),
       this.W - 14 * s, this.H - 12 * s);
     ctx.restore();
