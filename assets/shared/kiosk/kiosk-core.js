@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.6.0";
+  var VERSION = "1.7.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -235,10 +235,12 @@
       } else if (type === "toggle") {
         out["default"] = !!out["default"];
       } else {
-        /* options: [[value, label]] либо [{value, label}] */
+        /* options: [[value, label]] либо [{value, label}].
+         * Подпись может быть и словарём {ru,en,zh} — как везде в ядре.
+         * Без нормализации она рендерилась «[object Object]» (нашли 38). */
         out.options = (s.options || []).map(function (o) {
-          if (Array.isArray(o)) return [o[0], o[1]];
-          return [o.value, o.label];
+          if (Array.isArray(o)) return [o[0], normLabel(o[1])];
+          return [o.value, normLabel(o.label)];
         });
         if (out["default"] == null && out.options.length) out["default"] = out.options[0][0];
       }
@@ -428,8 +430,11 @@
     });
   }
 
-  function loadJson(url) {
-    return fetch(url, { cache: "force-cache" }).then(function (r) {
+  /* cacheMode: "force-cache" для прероллимых данных (офлайн-киоск берёт
+   * их из кеша), "default" для словарей — им нужна ревалидация, иначе
+   * старый перевод переживает обновление сборки. */
+  function loadJson(url, cacheMode) {
+    return fetch(url, { cache: cacheMode || "force-cache" }).then(function (r) {
       if (!r.ok) throw new Error("HTTP " + r.status + " на " + url);
       return r.json();
     });
@@ -474,8 +479,13 @@
     this.configUrl = opts.configUrl || null;
     this.config = deepMerge(DEFAULT_CONFIG, opts.config);
 
-    /* Словари UI-хрома: папка mtkXX-app/i18n/ ({lang}.json) и/или объект. */
+    /* Словари UI-хрома: папка mtkXX-app/i18n/ ({lang}.json) и/или объект.
+     * i18nVersion — метка кеша для словарей. Без неё Chrome держал старый
+     * словарь после обновления сборки и новые ключи не доезжали (нашли 38):
+     * приложение поднимает ?v= у своих файлов, а адрес словаря строит ядро,
+     * и версию туда передать было нечем. */
     this.i18nUrl = opts.i18nUrl || null;
+    this.i18nVersion = opts.i18nVersion == null ? null : String(opts.i18nVersion);
     this._strings = {};
     this._inlineStrings = opts.i18n || null;
 
@@ -1707,6 +1717,29 @@
     this.emit("standby-exit", { app: this });
   };
 
+  /* Штатная петля аттрактора для сцены. Возвращать её прямо из standby():
+   *
+   *   standby() { return this.app.standbyTicker(t => this.drawSlow(t)); }
+   *
+   * Ровно то, что сцены иначе пишут сами через rAF — и будят композитор
+   * каждый vsync, хотя канон standby разрешает не выше standbyFps.
+   * Колбэк получает секунды с начала простоя. */
+  KioskApp.prototype.standbyTicker = function (draw) {
+    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var t0 = Date.now();
+    var self = this;
+    var id = setInterval(function () {
+      try {
+        draw((Date.now() - t0) / 1000);
+      } catch (err) {
+        clearInterval(id);
+        self.log("error", "аттрактор сцены упал: " + errText(err));
+      }
+    }, Math.round(1000 / fps));
+    /* Ядро зовёт это при выходе из простоя. */
+    return function () { clearInterval(id); };
+  };
+
   KioskApp.prototype._showStandby = function (drawAttractor) {
     var self = this;
     if (!this._els.standby) this._buildStandby();
@@ -2165,7 +2198,10 @@
     if (s.type === "range") {
       spec.min = s.min; spec.max = s.max; spec.step = s.step; spec.unit = s.unit;
     } else if (s.type === "select") {
-      spec.options = s.options;
+      var lang = this.lang;
+      spec.options = s.options.map(function (o) {
+        return [o[0], pickLabel(o[1], lang)];
+      });
     }
     return spec;
   };
@@ -2372,8 +2408,9 @@
     if (!this.i18nUrl) return Promise.resolve();
 
     var base = this.i18nUrl.replace(/\/?$/, "/");
+    var ver = this.i18nVersion ? (base.indexOf("?") < 0 ? "?v=" : "&v=") + encodeURIComponent(this.i18nVersion) : "";
     return Promise.all(langs.map(function (l) {
-      return loadJson(base + l + ".json")
+      return loadJson(base + l + ".json" + ver, "default")
         .then(function (dict) {
           var one = {};
           one[l] = dict;
@@ -2421,6 +2458,9 @@
     this._syncNav();
     this._syncStandbyLabel();
     this._syncTools();
+    /* Подписи настроек сцен идут через словари — открытую панель
+     * перерисовываем, иначе она осталась бы на прежнем языке. */
+    if (this._serviceOpen) this._rebuildService();
     this.emit("lang", { lang: lang });
     return this;
   };
