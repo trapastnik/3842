@@ -39,6 +39,7 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
 
   function loop(now) {
     raf = requestAnimationFrame(loop);
+    frames++;
     draw(ctx, {
       t: (now - t0 - paused) / 1000,
       w: canvas.clientWidth,
@@ -69,6 +70,8 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
   /* Значения настроек сцены: ядро отдаёт их в applySettings и держит
    * между запусками. Петля читает их из того же объекта state. */
   let values = {};
+  let app = null;
+  let frames = 0;   /* для healthcheck: холст не просто есть, а рисуется */
 
   return {
     id,
@@ -83,7 +86,27 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
         draw(ctx, { t: 0, w: canvas.clientWidth, h: canvas.clientHeight, state });
       }
     },
-    mount(el) {
+    /* Своя петля аттрактора — через штатный тикер ядра: он держит
+     * standbyFps из конфига. Самодельный rAF-цикл будил бы композитор
+     * каждый vsync, что канон standby запрещает. */
+    standby() {
+      return app ? app.standbyTicker(function (t) {
+        if (ctx && canvas) draw(ctx, { t: t * 0.25, w: canvas.clientWidth, h: canvas.clientHeight, state });
+      }) : null;
+    },
+
+    /* Структурные проверки не видят «загружено, но пусто»: холст на
+     * месте, сеть чиста, а на нём ничего. Признак живого — что холст
+     * получил размер и хотя бы раз отрисовался. */
+    healthcheck() {
+      if (!canvas) return { ok: false, detail: "холст не смонтирован" };
+      if (!canvas.width || !canvas.height) return { ok: false, detail: "нулевой буфер холста" };
+      if (!frames) return { ok: false, detail: "ни одного отрисованного кадра" };
+      return { ok: true, detail: canvas.width + "×" + canvas.height + ", кадров " + frames };
+    },
+
+    mount(el, sceneCtx) {
+      app = sceneCtx && sceneCtx.app;
       canvas = document.createElement("canvas");
       canvas.className = "demo-canvas";
       el.appendChild(canvas);
@@ -94,6 +117,7 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
       ro.observe(canvas);
       /* Первый кадр рисуем синхронно: ядро запускает кроссфейд только
        * после него, иначе на входе мигнёт пустой слой. */
+      frames++;
       draw(ctx, { t: 0, w: canvas.clientWidth, h: canvas.clientHeight, state });
     },
     unmount() {
@@ -102,6 +126,7 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
       if (canvas) { canvas.remove(); canvas = null; }
       ctx = null;
       lastW = lastH = 0;
+      frames = 0;
     },
     pause: stop,
     resume: start,
