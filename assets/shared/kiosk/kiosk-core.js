@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.4.0";
+  var VERSION = "1.5.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -38,7 +38,11 @@
       show: true,
       position: "bottom",        // bottom | top — где бар с титулом и точками
       layout: "bar",             // bar — стрелки в баре; sides — по краям экрана
-      sideY: 50,                 // % высоты, положение боковых стрелок (layout: sides)
+      /* Точное положение боковых стрелок — как было в хабе (он отмирает,
+       * настройка не должна пропасть вместе с ним): вертикаль в % высоты,
+       * горизонталь — отступ от кромки в px. */
+      sideY: 50,                 // 5..95 %
+      sideX: 64,                 // 0..200 px от бокового края
       size: 96,                  // px, тач-таргет стрелок (--touch-primary)
       opacity: 0.92,             // яркость хрома навигации
       showTitle: true,
@@ -131,7 +135,8 @@
       rows: [
         { type: "choice", path: "nav.layout", label: "Стрелки",
           options: [["bar", "В баре"], ["sides", "По бокам"]] },
-        { type: "range", path: "nav.sideY", label: "Высота боковых стрелок", min: 15, max: 85, step: 5, unit: " %" },
+        { type: "range", path: "nav.sideY", label: "Стрелки по вертикали", min: 5, max: 95, step: 1, unit: " %" },
+        { type: "range", path: "nav.sideX", label: "Стрелки от края", min: 0, max: 200, step: 4, unit: " px" },
         { type: "choice", path: "nav.position", label: "Бар",
           options: [["bottom", "Внизу"], ["top", "Вверху"]] },
         { type: "range", path: "nav.size", label: "Размер кнопок", min: 64, max: 160, step: 8, unit: " px" },
@@ -193,6 +198,41 @@
     }
   ];
 
+  /* --------------------------------------------- настройки сцены (v1.2)
+   * Сцена ОБЪЯВЛЯЕТ свои параметры, ядро само рисует их в сервис-панели,
+   * хранит и отдаёт обратно. Так тюнинг-панели прототипов переезжают в
+   * одно место одинаково у всех МТК. Опись насчитала до ~60 настроек на
+   * МТК — поэтому группы по сценам и сворачивание обязательны. */
+  function normSceneSettings(list) {
+    if (!Array.isArray(list)) return [];
+    return list.map(function (s) {
+      var type = s.type === "toggle" || s.type === "select" ? s.type : "range";
+      var out = {
+        key: s.key,
+        label: normLabel(s.label) || normLabel(s.key),
+        type: type,
+        "default": s["default"]
+      };
+      if (type === "range") {
+        out.min = s.min == null ? 0 : Number(s.min);
+        out.max = s.max == null ? 1 : Number(s.max);
+        out.step = s.step == null ? 1 : Number(s.step);
+        out.unit = s.unit || "";
+        if (out["default"] == null) out["default"] = out.min;
+      } else if (type === "toggle") {
+        out["default"] = !!out["default"];
+      } else {
+        /* options: [[value, label]] либо [{value, label}] */
+        out.options = (s.options || []).map(function (o) {
+          if (Array.isArray(o)) return [o[0], o[1]];
+          return [o.value, o.label];
+        });
+        if (out["default"] == null && out.options.length) out["default"] = out.options[0][0];
+      }
+      return out;
+    }).filter(function (s) { return !!s.key; });
+  }
+
   function getByPath(obj, path) {
     var parts = path.split("."), cur = obj, i;
     for (i = 0; i < parts.length; i++) {
@@ -223,15 +263,25 @@
     return v && typeof v === "object" && !Array.isArray(v);
   }
 
-  /* Глубокое слияние простых объектов: base не мутируется. */
+  /* Глубокое слияние простых объектов: base не мутируется.
+   *
+   * Вложенные объекты ВСЕГДА клонируются, даже когда сливать не с чем.
+   * Иначе результат делил бы поддеревья с источником — и правка одного
+   * незаметно меняла бы другой. На этом уже попались: config.scenes
+   * оказывался тем же объектом, что и патч оператора, и в localStorage
+   * утекали все дефолты схемы вместо реально изменённых ключей. */
   function deepMerge(base, over) {
     var out = {}, k;
-    for (k in base) if (Object.prototype.hasOwnProperty.call(base, k)) out[k] = base[k];
+    for (k in base) {
+      if (!Object.prototype.hasOwnProperty.call(base, k)) continue;
+      out[k] = isObj(base[k]) ? deepMerge(base[k], null) : base[k];
+    }
     if (!isObj(over)) return out;
     for (k in over) {
       if (!Object.prototype.hasOwnProperty.call(over, k)) continue;
+      if (over[k] === undefined) continue;
       if (isObj(out[k]) && isObj(over[k])) out[k] = deepMerge(out[k], over[k]);
-      else if (over[k] !== undefined) out[k] = over[k];
+      else out[k] = isObj(over[k]) ? deepMerge(over[k], null) : over[k];
     }
     return out;
   }
@@ -436,6 +486,7 @@
     this._settingsSpec = SETTINGS_SPEC.map(function (g) {
       return { group: g.group, rows: g.rows.slice() };
     });
+    this._openSceneGroups = {};   /* какие группы настроек сцен развёрнуты */
 
     /* idle-машина */
     this.idleState = IDLE.ACTIVE;
@@ -475,6 +526,7 @@
       title: normLabel(def.title) || normLabel(def.id),
       scene: def,
       preload: normPreload(def.preload),
+      settings: normSceneSettings(def.settings),
       /* keepAlive: сцена монтируется один раз и живёт на паузе (быстрое
        * переключение). false — выгружается при уходе (тяжёлые WebGL-сцены). */
       keepAlive: def.keepAlive !== false,
@@ -531,6 +583,7 @@
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
       .then(function () { return self._loadStrings(); })
+      .then(function () { self._seedSceneDefaults(); })
       .then(function () { return domReady(); })
       .then(function () {
         self._buildChrome();
@@ -582,7 +635,9 @@
       try {
         var patch = JSON.parse(raw);
         if (isObj(patch)) {
-          this._override = patch;
+          /* Клон, а не сам объект: патч и живой конфиг не должны делить
+           * поддеревья, иначе дефолты схемы утекут в сохранённый патч. */
+          this._override = deepMerge(patch, null);
           this.config = deepMerge(this.config, patch);
         }
       } catch (err) {
@@ -591,6 +646,60 @@
     }
     this.lang = this.config.defaultLang || this.lang;
     this.a11y = !!(this.config.a11y && this.config.a11y.enabled);
+  };
+
+  /* ------------------------------------------- настройки сцен (v1.2) */
+
+  /* Дефолты схемы кладём в config.scenes[id] под сохранённые значения.
+   * Порядок важен: сохранённое оператором должно пережить обновление
+   * схемы, а новые ключи схемы — появиться со своими дефолтами. */
+  KioskApp.prototype._seedSceneDefaults = function () {
+    var self = this;
+    if (!isObj(this.config.scenes)) this.config.scenes = {};
+    this._records.forEach(function (rec) {
+      if (!rec.settings.length) return;
+      var stored = isObj(self.config.scenes[rec.id]) ? self.config.scenes[rec.id] : {};
+      var merged = {};
+      rec.settings.forEach(function (s) {
+        merged[s.key] = stored[s.key] === undefined ? s["default"] : stored[s.key];
+      });
+      self.config.scenes[rec.id] = merged;
+    });
+  };
+
+  /* Текущие значения настроек сцены — то, что уходит в applySettings. */
+  KioskApp.prototype.sceneSettings = function (id) {
+    var v = (this.config.scenes || {})[id];
+    return isObj(v) ? deepMerge(v, null) : {};
+  };
+
+  KioskApp.prototype.setSceneSetting = function (id, key, value) {
+    return this.setSetting("scenes." + id + "." + key, value);
+  };
+
+  /* Вернуть сцену к дефолтам её схемы. */
+  KioskApp.prototype.resetSceneSettings = function (id) {
+    var rec = this._byId[id];
+    if (!rec) return this;
+    var self = this;
+    rec.settings.forEach(function (s) {
+      setByPath(self.config, "scenes." + id + "." + s.key, s["default"]);
+    });
+    /* Из ПАТЧА ключи убираем, а не переписываем дефолтами: сохранённый
+     * дефолт затенил бы будущую правку схемы навсегда. */
+    if (isObj(this._override.scenes)) {
+      delete this._override.scenes[id];
+      if (!Object.keys(this._override.scenes).length) delete this._override.scenes;
+    }
+    this._saveOverride();
+    this._pushSceneSettings(rec);
+    this.log("info", "настройки сцены «" + id + "» сброшены к дефолтам");
+    return this;
+  };
+
+  KioskApp.prototype._pushSceneSettings = function (rec) {
+    if (!rec || !rec.settings.length) return;
+    safeCall(rec, "applySettings", this.sceneSettings(rec.id));
   };
 
   /* ------------------------------------------------------ API настроек */
@@ -764,13 +873,26 @@
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
     if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
     if (!path || path.indexOf("content.") === 0) this._applyContentBox();
+    /* Настройка сцены — отдать её самой сцене, без перезагрузки. */
+    if (path && path.indexOf("scenes.") === 0) {
+      this._pushSceneSettings(this._byId[path.split(".")[1]]);
+    }
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
 
-  /* Сессия МТК может добавить свою группу настроек — и получить тот же
-   * вид контролов, что и у ядра (единый облик системных настроек). */
+  /* УСТАРЕЛО с v1.2 канона: настройки объявляет сама сцена полем
+   * settings:[] + applySettings(values) — тогда ядро группирует их по
+   * сценам, сворачивает и сбрасывает к дефолтам схемы. Императивный
+   * вызов оставлен рабочим: пилот 42 переезжает следующим шагом. */
   KioskApp.prototype.addSettings = function (group, rows) {
+    if (!this._addSettingsWarned) {
+      this._addSettingsWarned = true;
+      console.warn("[kiosk] addSettings() устарел. Объявляйте настройки в сцене:\n" +
+        "  settings: [{ key, label:{ru}, type:'range'|'toggle'|'select', … , default }],\n" +
+        "  applySettings(values) { … }\n" +
+        "Тогда они попадут в свою сворачиваемую группу и получат честный сброс.");
+    }
     this._settingsSpec.push({ group: group, rows: rows.slice() });
     if (this._els.service) this._rebuildService();
     return this;
@@ -949,6 +1071,7 @@
     root.style.setProperty("--kiosk-nav-size", "calc(" + (cfg.size || 96) + "px * var(--ui-scale))");
     root.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
     root.style.setProperty("--kiosk-nav-side-y", (cfg.sideY == null ? 50 : cfg.sideY) + "%");
+    root.style.setProperty("--kiosk-nav-side-x", (cfg.sideX == null ? 64 : cfg.sideX) + "px");
 
     this._applyNavLayout(cfg.layout === "sides" ? "sides" : "bar");
 
@@ -1179,6 +1302,9 @@
     rec.mounted = true;
     return Promise.resolve()
       .then(function () { return rec.scene.mount ? rec.scene.mount(el, self.context()) : null; })
+      /* Настройки отдаём сразу после монтирования: сцена строится в
+       * дефолтном виде, а затем получает то, что накрутил оператор. */
+      .then(function () { self._pushSceneSettings(rec); })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
 
@@ -1739,6 +1865,8 @@
         "</section>";
     }).join("");
 
+    html += this._sceneGroupsHtml();
+
     html += '<section class="kiosk-set__group">' +
       '<div class="kiosk-set__title">Запомнить настройки</div>' +
       '<div class="kiosk-set__note">Правки сохраняются сразу, но в этом браузере. ' +
@@ -1770,6 +1898,51 @@
     var t = "Журнал · запуск " + sid + ": " + bad(mine) + " авар. из " + mine.length;
     if (all.length !== mine.length) t += " · всего: " + bad(all) + " из " + all.length;
     return t;
+  };
+
+  /* Настройки сцен: своя группа на сцену, свёрнутая по умолчанию.
+   * У МТК 38 по описи ~60 параметров — развёрнутыми они превратили бы
+   * панель в бесконечную ленту, где не найти ничего. */
+  KioskApp.prototype._sceneGroupsHtml = function () {
+    var self = this;
+    var withSettings = this._records.filter(function (r) { return r.settings.length; });
+    if (!withSettings.length) return "";
+
+    return withSettings.map(function (rec) {
+      var open = !!self._openSceneGroups[rec.id];
+      var rows = rec.settings.map(function (s) {
+        return self._rowHtml(self._sceneRowSpec(rec.id, s));
+      }).join("");
+
+      return '<section class="kiosk-set__group kiosk-set__group--scene' +
+        (open ? " is-open" : "") + '" data-scene-group="' + esc(rec.id) + '">' +
+        '<button type="button" class="kiosk-set__fold" data-fold="' + esc(rec.id) + '">' +
+        '<span class="kiosk-set__fold-mark" aria-hidden="true"></span>' +
+        '<span class="kiosk-set__fold-title">Настройки МТК · ' +
+        esc(pickLabel(rec.title, self.lang)) + "</span>" +
+        '<span class="kiosk-set__fold-count">' + rec.settings.length + "</span>" +
+        "</button>" +
+        '<div class="kiosk-set__fold-body">' + rows +
+        '<button type="button" class="kiosk-set__mini" data-scene-reset="' + esc(rec.id) +
+        '">Сбросить сцену</button>' +
+        "</div></section>";
+    }).join("");
+  };
+
+  /* Настройка сцены — та же строка панели, что и у ядра: единый облик
+   * контролов, один путь хранения (scenes.<id>.<key>), одна обработка. */
+  KioskApp.prototype._sceneRowSpec = function (sceneId, s) {
+    var spec = {
+      path: "scenes." + sceneId + "." + s.key,
+      label: pickLabel(s.label, this.lang),
+      type: s.type === "select" ? "choice" : s.type
+    };
+    if (s.type === "range") {
+      spec.min = s.min; spec.max = s.max; spec.step = s.step; spec.unit = s.unit;
+    } else if (s.type === "select") {
+      spec.options = s.options;
+    }
+    return spec;
   };
 
   KioskApp.prototype._rowHtml = function (row) {
@@ -1880,7 +2053,20 @@
         return;
       }
       if (e.target.closest("[data-export]")) { self.exportSettings(); return; }
-      if (e.target.closest("[data-import]")) { self._els.importInput.click(); }
+      if (e.target.closest("[data-import]")) { self._els.importInput.click(); return; }
+
+      var fold = e.target.closest("[data-fold]");
+      if (fold) {
+        var fid = fold.getAttribute("data-fold");
+        self._openSceneGroups[fid] = !self._openSceneGroups[fid];
+        fold.parentNode.classList.toggle("is-open", self._openSceneGroups[fid]);
+        return;
+      }
+      var sreset = e.target.closest("[data-scene-reset]");
+      if (sreset) {
+        self.resetSceneSettings(sreset.getAttribute("data-scene-reset"));
+        self._rebuildService();
+      }
     });
   };
 
@@ -1888,6 +2074,19 @@
     var found = null;
     this._settingsSpec.forEach(function (g) {
       g.rows.forEach(function (r) { if (r.path === path) found = r; });
+    });
+    if (found) return found;
+
+    /* Настройки сцен в _settingsSpec не лежат — собираем спеку на лету,
+     * иначе подпись значения у слайдера сцены не обновлялась бы. */
+    var parts = path.split(".");
+    if (parts[0] !== "scenes" || parts.length < 3) return null;
+    var rec = this._byId[parts[1]];
+    if (!rec) return null;
+    var key = parts.slice(2).join(".");
+    var self = this;
+    rec.settings.forEach(function (s) {
+      if (s.key === key) found = self._sceneRowSpec(rec.id, s);
     });
     return found;
   };

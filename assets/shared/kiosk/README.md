@@ -277,9 +277,10 @@ try { await heavyThing(); } finally { app.resumeWatchdog(); }
   "defaultScene": "map",
   "defaultLang": "ru",
   "timings": { "fade": 350, "reset": 90, "standby": 180, "restartAt": "04:00", "standbyFps": 10 },
-  "nav": { "show": true, "position": "bottom", "layout": "bar", "sideY": 50,
-           "size": 96, "opacity": 0.92,
+  "nav": { "show": true, "position": "bottom", "layout": "bar",
+           "sideY": 50, "sideX": 64, "size": 96, "opacity": 0.92,
            "showTitle": true, "showArrows": true, "showDots": true },
+  "scenes": { "map": { "dotSize": 12 } },
   "stripes": { "on": true, "opacity": 1, "angle": 105 },
   "scale": { "ui": 1, "content": 1 },
   "content": { "width": 100, "height": 100 },
@@ -363,9 +364,10 @@ try { await heavyThing(); } finally { app.resumeWatchdog(); }
 
 - `nav.layout: "bar"` — стрелки в баре по бокам от заголовка (по умолчанию).
 - `nav.layout: "sides"` — стрелки у левого и правого края экрана, как в прежнем
-  хабе; в баре остаются только заголовок и точки. Высота кнопок настраивается
-  (`nav.sideY`, % высоты экрана): на вертикальной панели 2160×3840 середина
-  бывает слишком высоко для посетителя.
+  хабе; в баре остаются только заголовок и точки. Положение задаётся точно, как
+  было в хабе (он отмирает — настройка не должна пропасть вместе с ним):
+  `nav.sideY` — вертикаль 5–95 % высоты, `nav.sideX` — отступ от кромки 0–200 px.
+  На вертикальной панели 2160×3840 середина бывает слишком высоко для посетителя.
 
 Переключается из сервис-панели («Навигация» → «Стрелки»). Полосы
 `--kiosk-safe-*` пересчитываются сами: в «sides» занят край по горизонтали,
@@ -384,6 +386,46 @@ try { await heavyThing(); } finally { app.resumeWatchdog(); }
 
 Какая версия работает прямо сейчас: строка в консоли при старте
 (`[kiosk] ядро 1.2.0 · mtk42 · запуск A1B2C3`) и подпись в подвале сервис-панели.
+
+## Настройки сцены (главное для сессий МТК)
+
+Сцена **объявляет** свои параметры — ядро само рисует их в сервис-панели, хранит и
+возвращает обратно. Так тюнинг-панели прототипов переезжают в одно место, одинаково
+у всех пяти МТК.
+
+```js
+export const mapScene = {
+  id: "map",
+  title: { ru: "Карта" },
+
+  settings: [
+    { key: "dotSize", label: { ru: "Размер точек", en: "Dot size" },
+      type: "range", min: 6, max: 24, step: 1, unit: " px", default: 12 },
+    { key: "labels", label: { ru: "Подписи городов" },
+      type: "toggle", default: true },
+    { key: "projection", label: { ru: "Проекция" }, type: "select", default: "winkel",
+      options: [["winkel", "Винкель"], ["equirect", "Прямоугольная"]] },
+  ],
+
+  applySettings(values) {          // на старте и при каждом изменении
+    this.dotSize = values.dotSize;
+    this.redraw();                 // без перезагрузки страницы
+  },
+};
+```
+
+- Типы: `range` (min/max/step/unit), `toggle`, `select` (`options`).
+- `label` — строка или `{ru, en?, zh?}`.
+- Хранение: `localStorage["<appId>-kiosk"].scenes[<id>]` **поверх дефолтов схемы**, и
+  только реально изменённые ключи. Дефолт, записанный в патч, затенил бы будущую
+  правку схемы навсегда — поэтому «Сбросить сцену» ключи *удаляет*, а не переписывает.
+- В панели каждая сцена получает свою **сворачиваемую** группу «Настройки МТК · <сцена>»
+  со счётчиком параметров и кнопкой «Сбросить сцену». По описи у МТК 38 их около
+  шестидесяти — развёрнутыми они превратили бы панель в ленту, где ничего не найти.
+- `applySettings` вызывается сразу после `mount()` и при каждом изменении.
+
+Императивный `app.addSettings(группа, строки)` **устарел**, но продолжает работать —
+пилот 42 переезжает на схему следующим шагом. В консоли он один раз предупредит.
 
 ## Сервис-панель
 
@@ -416,6 +458,8 @@ app.on("setting", ({ path, value }) => { /* применить у себя */ })
 | `app.scales()` | итоговые множители `{ui, content}` с учётом режима |
 | `app.t(key, vars)` | строка из словаря |
 | `app.getSetting(p)` / `app.setSetting(p, v)` | настройки |
+| `app.sceneSettings(id)` / `app.setSceneSetting(id, key, v)` | настройки сцены |
+| `app.resetSceneSettings(id)` | вернуть сцену к дефолтам её схемы |
 | `app.exportSettings()` / `app.importSettings(json)` | выгрузить `kiosk.config.json` / восстановить снимок |
 | `app.resetScenes()` | сброс состояния всех сцен |
 | `app.poke()` | отметить активность (если ловите жест, не всплывающий до window) |

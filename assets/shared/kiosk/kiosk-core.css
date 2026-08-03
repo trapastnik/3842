@@ -247,8 +247,8 @@ html.kiosk-runtime body {
   border: 1px solid rgba(210, 183, 115, 0.35);
   backdrop-filter: blur(6px);
 }
-.kiosk-app > .kiosk-nav__arrow--prev { left: var(--edge-safe, 64px); }
-.kiosk-app > .kiosk-nav__arrow--next { right: var(--edge-safe, 64px); }
+.kiosk-app > .kiosk-nav__arrow--prev { left: var(--kiosk-nav-side-x, 64px); }
+.kiosk-app > .kiosk-nav__arrow--next { right: var(--kiosk-nav-side-x, 64px); }
 .kiosk-app > .kiosk-nav__arrow:active {
   transform: translateY(-50%) scale(0.94);
   background: rgba(210, 183, 115, 0.22);
@@ -690,6 +690,51 @@ html.kiosk-runtime body {
   font-size: var(--type-min-label, 24px);
   text-align: center;
 }
+
+/* ---- настройки сцен: сворачиваемые группы ----
+   По описи у МТК 38 около 60 параметров. Развёрнутыми они превращают
+   панель в ленту, где ничего не найти, — поэтому свёрнуто по умолчанию. */
+.kiosk-set__group--scene { padding: 0; }
+
+.kiosk-set__fold {
+  width: 100%;
+  min-height: var(--touch-primary, 96px);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 4px;
+  border: 0;
+  background: none;
+  color: rgba(210, 183, 115, 0.85);
+  font-family: "20 Kopeek", "Courier New", monospace;
+  font-size: var(--type-min-label, 24px);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-set__fold-title { flex: 1; }
+.kiosk-set__fold-count {
+  min-width: 3ch;
+  padding: 2px 12px;
+  border-radius: 999px;
+  background: rgba(247, 249, 239, 0.08);
+  color: rgba(247, 249, 239, 0.6);
+  text-align: center;
+}
+.kiosk-set__fold-mark {
+  width: 18px;
+  height: 18px;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: rotate(-45deg);
+  transition: transform 180ms ease;
+}
+.kiosk-set__group--scene.is-open .kiosk-set__fold-mark { transform: rotate(45deg); }
+
+.kiosk-set__fold-body { display: none; padding: 0 0 20px; }
+.kiosk-set__group--scene.is-open .kiosk-set__fold-body { display: block; }
 
 /* ---- перенос настроек ---- */
 .kiosk-set__note {
