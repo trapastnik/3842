@@ -16,10 +16,18 @@ export function createCanvasScene({ id, title, draw, reset }) {
   let pausedAt = 0;
   let state = {};
 
+  let lastW = 0, lastH = 0;
+
   function size() {
     if (!canvas) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const w = canvas.clientWidth, h = canvas.clientHeight;
+    /* Скрытый слой имеет размер 0×0, и ResizeObserver отдаёт сначала ноль,
+     * а потом настоящую ширину — при КАЖДОМ показе сцены. Ноль означает
+     * «слой спрятан», а не новый размер: пересобирать по нему нельзя. */
+    if (!w || !h) return;
+    if (w === lastW && h === lastH) return;
+    lastW = w; lastH = h;
     /* Буфер ≤ 8.3 Мп по канону перф-бюджета. */
     const maxPx = 8.3e6;
     let scale = dpr;
@@ -41,6 +49,10 @@ export function createCanvasScene({ id, title, draw, reset }) {
 
   function start() {
     if (raf) return;
+    /* ResizeObserver не доставляется в скрытой вкладке: если сцену
+     * смонтировали или возобновили в фоне, размер мог не примениться.
+     * Меряем сами на входе — RO остаётся только для будущих изменений. */
+    size();
     if (pausedAt) { paused += performance.now() - pausedAt; pausedAt = 0; }
     window.__kioskDemoRaf++;
     raf = requestAnimationFrame(loop);
@@ -75,6 +87,7 @@ export function createCanvasScene({ id, title, draw, reset }) {
       if (ro) { ro.disconnect(); ro = null; }
       if (canvas) { canvas.remove(); canvas = null; }
       ctx = null;
+      lastW = lastH = 0;
     },
     pause: stop,
     resume: start,
