@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.2.0";
+  var VERSION = "1.3.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -54,9 +54,18 @@
       langs: ["ru", "en", "zh"],
       show: true                 // показывать переключатель «РУС · ENG · 中文»
     },
+    /* Два независимых масштаба. Общий множитель не годится: крупный
+     * интерфейс съедает место у контента и наоборот — что-то одно всегда
+     * оказывается плохо видно. */
+    scale: {
+      ui: 1,                     // хром киоска: кнопки, чипы, подписи контролов
+      content: 1                 // содержимое сцен: карточки, подписи, тексты
+    },
     a11y: {
       enabled: false,
-      show: true                 // показывать кнопку режима слабовидящих
+      show: true,                // показывать кнопку режима слабовидящих
+      uiBoost: 1.25,             // во сколько режим поднимает масштаб интерфейса
+      contentBoost: 1.5          // ...и масштаб контента (канон: кегли ×1.5)
     },
     tools: {
       position: "top-left"       // top-left | top-right | bottom-left | bottom-right
@@ -122,6 +131,13 @@
         { type: "toggle", path: "nav.showTitle", label: "Заголовок экрана" },
         { type: "toggle", path: "nav.showArrows", label: "Стрелки" },
         { type: "toggle", path: "nav.showDots", label: "Точки" }
+      ]
+    },
+    {
+      group: "Масштаб",
+      rows: [
+        { type: "range", path: "scale.ui", label: "Интерфейс киоска", min: 0.75, max: 2, step: 0.05, x: true },
+        { type: "range", path: "scale.content", label: "Контент сцен", min: 0.75, max: 2, step: 0.05, x: true }
       ]
     },
     {
@@ -594,6 +610,31 @@
     this.restart("сброс настроек");
   };
 
+  /* Итоговые множители: настройка оператора × надбавка режима слабовидящих.
+   * Считаем в JS и ставим инлайном на <html>, а не правилом для .a11y:
+   * иначе фиксированные значения режима затирали бы масштаб, выставленный
+   * оператором, и два регулятора конфликтовали бы между собой. */
+  KioskApp.prototype.scales = function () {
+    var s = this.config.scale || {}, a = this.config.a11y || {};
+    function num(v, def) {
+      v = Number(v);
+      return isFinite(v) && v > 0 ? v : def;
+    }
+    return {
+      ui: num(s.ui, 1) * (this.a11y ? num(a.uiBoost, 1.25) : 1),
+      content: num(s.content, 1) * (this.a11y ? num(a.contentBoost, 1.5) : 1)
+    };
+  };
+
+  KioskApp.prototype._applyScale = function () {
+    var sc = this.scales();
+    var root = document.documentElement;
+    root.style.setProperty("--ui-scale", sc.ui.toFixed(3));
+    root.style.setProperty("--content-scale", sc.content.toFixed(3));
+    /* Прежнее имя: сцены и прототипы уже считают кегль от него. */
+    root.style.setProperty("--a11y-scale", sc.content.toFixed(3));
+  };
+
   /* Сколько места сверху и снизу занял хром ядра. Сцена обязана верстаться
    * от этих переменных (--kiosk-safe-top / --kiosk-safe-bottom), иначе её
    * контент уедет под навигацию или под переключатель языков. Считаем от
@@ -606,7 +647,8 @@
     var edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
     var edgeBottom = parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
     var gap = parseFloat(cs.getPropertyValue("--touch-gap")) || 16;
-    var size = Number((this.config.nav || {}).size) || 96;
+    /* Размер кнопки — уже с учётом масштаба интерфейса. */
+    var size = (Number((this.config.nav || {}).size) || 96) * this.scales().ui;
 
     var nav = this.config.nav || {};
     var navShown = nav.show !== false && this._records.length > 0;
@@ -653,6 +695,7 @@
     if (!path || path.indexOf("stripes.") === 0) this._applyStripes();
     if (!path || /^(tools|i18n|a11y)\./.test(path)) this._applyToolsStyle();
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
+    if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
@@ -713,6 +756,7 @@
 
     doc.documentElement.setAttribute("lang", this.lang);
     if (this.a11y) doc.documentElement.classList.add("a11y");
+    this._applyScale();
     this._buildTools();
     this._buildService();
     this._applyInsets();
@@ -831,7 +875,9 @@
     /* Переменные ставим на КОРЕНЬ приложения, а не на .kiosk-nav: в
      * раскладке «по бокам» стрелки живут вне бара и от него ничего не
      * наследуют. */
-    root.style.setProperty("--kiosk-nav-size", (cfg.size || 96) + "px");
+    /* Через calc, а не готовым числом: размер кнопок должен ехать вместе
+     * с масштабом интерфейса, а не жить своей жизнью. */
+    root.style.setProperty("--kiosk-nav-size", "calc(" + (cfg.size || 96) + "px * var(--ui-scale))");
     root.style.setProperty("--kiosk-nav-opacity", String(cfg.opacity == null ? 0.92 : cfg.opacity));
     root.style.setProperty("--kiosk-nav-side-y", (cfg.sideY == null ? 50 : cfg.sideY) + "%");
 
@@ -1743,6 +1789,7 @@
   function fmtValue(row, val) {
     if (val == null) return "—";
     if (row.pct) return Math.round(Number(val) * 100) + " %";
+    if (row.x) return "×" + Number(val).toFixed(2);
     return String(val) + (row.unit || "");
   }
 
@@ -1845,7 +1892,8 @@
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
-    this._applyInsets();          // таргеты выросли ×1.25 — полосы хрома тоже
+    this._applyScale();           // режим домножает оба масштаба
+    this._applyInsets();          // таргеты выросли — полосы хрома тоже
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;
