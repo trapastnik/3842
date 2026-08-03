@@ -1,6 +1,8 @@
 {
   "draft": true,
   "_note": "Draft machine-assisted translation of UI chrome only. Book titles, authors and places stay in Russian by decision of 2026-08-02. Needs a native pass before acceptance.",
+  "untranslated": true,
+  "_untranslated": "Ключи type.* и conn.* оставлены по-русски намеренно: машинный перевод терминов («брошюра», «конспект», «рамка») без китаиста хуже ru-фолбэка. Фаза языков должна перевести именно их — 26 строк.",
   "app.subtitle": "列宁的图书馆",
   "bucket.by-lenin": "他所写",
   "bucket.in-library": "他所读",
