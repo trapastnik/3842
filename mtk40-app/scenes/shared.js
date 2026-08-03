@@ -25,9 +25,16 @@ const MAX_BUFFER_PX = 8.3e6;   // канон перф-бюджета
  * на приёмке (0 rAF у неактивных сцен).
  */
 export function createCanvas(el, { onSize, onFrame }) {
+  /* Канва лежит в обёртке, а не прямо в слое сцены: у абсолютно
+   * позиционированного <canvas> ширина auto берётся из собственного размера
+   * (300×150), а right/bottom игнорируются — сцена оказывалась пустой.
+   * Обёртка держит безопасную область, канва внутри просто inset:0. */
+  const plot = document.createElement("div");
+  plot.className = "m40-plot";
   const canvas = document.createElement("canvas");
   canvas.className = "m40-canvas";
-  el.appendChild(canvas);
+  plot.appendChild(canvas);
+  el.appendChild(plot);
   const ctx = canvas.getContext("2d");
 
   let raf = 0;
@@ -78,7 +85,7 @@ export function createCanvas(el, { onSize, onFrame }) {
     destroy() {
       api.stop();
       if (ro) { ro.disconnect(); ro = null; }
-      canvas.remove();
+      plot.remove();
     },
   };
   return api;

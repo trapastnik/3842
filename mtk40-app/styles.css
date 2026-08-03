@@ -3,8 +3,10 @@
  * Размеры берутся только из переменных кита: контролы — от --touch-* и
  * --type-min-*, контент — через calc(N * var(--content-scale)). Тогда оба
  * регулятора масштаба и режим слабовидящих срабатывают сами.
- * Отступы — от полос ядра (--kiosk-safe-*), хардкодить их нельзя: оператор
- * двигает навигацию из настроек.
+ * Отступы — от РЕАЛЬНО занятых зон хрома: --m40-chrome-top/-bottom их меряет
+ * chrome-zones.js. Ядерные --kiosk-safe-* — это лишь отступ от кромки, а не
+ * место под кнопками языков и глазом; свёрстанный от них заголовок ложится
+ * ровно под них (на этом споткнулся и пилот 42).
  *
  * Приёма прототипов с `zoom: var(--zoom)` здесь нет намеренно: в киоске
  * масштаб задаёт ядро, а zoom поверх него дал бы двойное умножение.
@@ -13,11 +15,21 @@
 .m40-scene {
   position: absolute;
   inset: 0;
-  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
-           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+  /* Без padding: дети (поле канвы, карточка, чип «домой») позиционируются от
+     зон хрома сами. С padding отступ применился бы дважды — обёртка канвы
+     отсчитывается от padding-box родителя, и сцена сплющивалась в полоску. */
   overflow: hidden;
 }
 
+/* Безопасная область для канвы: при inset:0 прямо в слое она игнорировала бы
+   padding родителя и рисовала под кнопками языков. */
+.m40-plot {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  right: var(--edge-safe);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  left: var(--edge-safe);
+}
 .m40-canvas {
   position: absolute;
   inset: 0;
@@ -33,7 +45,7 @@
    и она отступает вниз на ряд инструментов (языки, глаз, шестерёнка). */
 .m40-head {
   position: absolute;
-  top: calc(var(--kiosk-safe-top) + var(--touch-primary) + var(--touch-gap));
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
   left: var(--edge-safe);
   right: var(--edge-safe);
   z-index: 3;
@@ -77,8 +89,8 @@
 /* ---------- карточка книги ---------- */
 .m40-card {
   position: absolute;
-  right: var(--kiosk-safe-right);
-  bottom: var(--kiosk-safe-bottom);
+  right: var(--edge-safe);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
   z-index: 6;
   width: min(calc(460px * var(--content-scale)), 42%);
   max-height: 62%;
@@ -163,8 +175,8 @@
 /* ---------- чип «домой» у сцен с масштабом ---------- */
 .m40-home {
   position: absolute;
-  top: var(--kiosk-safe-top);
-  right: var(--kiosk-safe-right);
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  right: var(--edge-safe);
   z-index: 5;
   min-height: var(--touch-min);
   padding: 0 calc(var(--touch-gap) * 1.6);

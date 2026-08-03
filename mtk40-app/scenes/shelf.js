@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=1";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=5";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -51,11 +51,6 @@ export const shelfScene = {
       scrollX: 0, velocityX: 0, spineRects: [], totalWidth: 0,
     }));
 
-    this.head = document.createElement("header");
-    this.head.className = "m40-head";
-    this.head.innerHTML = '<p class="m40-head__sub"></p>';
-    el.appendChild(this.head);
-
     this.cv = createCanvas(el, {
       onSize: () => this.layout(),
       onFrame: () => this.frame(),
@@ -85,9 +80,8 @@ export const shelfScene = {
       c.removeEventListener("pointerleave", this.onUp);
     }
     if (this.cv) this.cv.destroy();
-    if (this.head) this.head.remove();
     if (this.card) this.card.el.remove();
-    this.cv = this.head = this.card = null;
+    this.cv = this.card = null;
     this.root.classList.remove("m40-scene");
   },
 
@@ -101,8 +95,8 @@ export const shelfScene = {
   },
 
   setLang() {
-    if (!this.head) return;
-    this.head.querySelector(".m40-head__sub").textContent = this.app.t("shelf.sub");
+    /* Подпись о жесте несёт сама дорожка прокрутки на канве — отдельной
+     * строки-подсказки у этой сцены нет. */
     if (this.card) this.card.setLang();
   },
 
