@@ -35,6 +35,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent.parent.parent
 ASSETS = ROOT / "assets/mtk41"
 MANIFEST = ASSETS / "manifest.json"
+CORPUS = ROOT / "data/mtk41.json"
 THUMBS_INDEX = ASSETS / "thumbs.json"
 CARDS_INDEX = ASSETS / "cards.json"
 THUMB_W = 480      # преролл: сетки и плитки
@@ -86,6 +87,15 @@ def build(manifest, sub, width, index_path, human):
 
 def main():
     manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    # Индексируем только то, что есть в корпусе. В assets/mtk41 остались папки
+    # первого набора из 18 ID (alekseev-1919-bust, leningrad-1920s и др.),
+    # которых в data/mtk41.json нет. Их миниатюры уходили бы в преролл и
+    # занимали память, не появляясь на экране ни разу.
+    corpus = {it["id"] for it in json.loads(CORPUS.read_text(encoding="utf-8"))["items"]}
+    skipped = sorted(set(manifest) - corpus)
+    if skipped:
+        print(f"вне корпуса, не индексируем ({len(skipped)}): {', '.join(skipped)}")
+    manifest = {k: v for k, v in manifest.items() if k in corpus}
     build(manifest, "thumbs", THUMB_W, THUMBS_INDEX, "миниатюры (преролл)")
     build(manifest, "cards", CARD_W, CARDS_INDEX, "карточные (по тапу)")
 

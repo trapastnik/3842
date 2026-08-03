@@ -9,7 +9,7 @@
  * Томский. Здесь на это опираемся и повторно не чистим. */
 import {
   DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=6";
+} from "./shared.js?v=9";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
@@ -102,6 +102,15 @@ export const authorsScene = {
 
   setLang() { this._render(); },
 
+  healthcheck() {
+    if (!this._cols) return { ok: true, detail: "не смонтирована" };
+    const cols = this._cols.childElementCount;
+    if (!cols) return { ok: false, detail: "ни одной колонки авторов" };
+    const works = this._cols.querySelectorAll(".m41-work").length;
+    if (!works) return { ok: false, detail: "колонки есть, работ в них нет" };
+    return { ok: true, detail: `колонок ${cols}, работ ${works}` };
+  },
+
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
   },
@@ -165,7 +174,7 @@ export const authorsScene = {
       }).join("");
 
     return '<section class="m41-author' + (b.anon ? " is-anon" : "") + '">' +
-      head + '<div class="m41-author__works">' + works + "</div></section>";
+      head + '<div class="m41-author__works kiosk-scroll">' + works + "</div></section>";
   },
 };
 

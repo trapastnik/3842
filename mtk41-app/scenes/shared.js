@@ -116,7 +116,9 @@ export function thumbList(thumbs) {
  * ~7.8 ГБ декодированными, столько в память не положить.
  * Ошибку одной картинки глотаем: пустая плитка лучше упавшего сплэша. */
 export function preloadThumbs(ctx) {
-  return fetch(DATA.thumbs, { cache: "force-cache" })
+  /* Без force-cache: индекс меняется при каждой пересборке миниатюр, и
+   * закешированный список тянул бы в преролл уже удалённые файлы. */
+  return fetch(DATA.thumbs, { cache: "no-cache" })
     .then((r) => r.json())
     .then((idx) => Promise.all(thumbList(idx).map((u) => new Promise((res) => {
       const img = new Image();

@@ -9,7 +9,7 @@
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
   DATA, byYear, createCard, esc, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=6";
+} from "./shared.js?v=9";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -102,6 +102,19 @@ export const canonScene = {
   },
 
   setLang() { this._renderHead(); },
+
+  /* Ловит «загружено, но пусто»: корпус приехал, DOM построен, а плиток нет
+   * (например, разъехались id между mtk41.json и thumbs.json). */
+  healthcheck() {
+    /* Стенд зовёт healthcheck у всех включённых сцен, в том числе ещё не
+     * смонтированных (ядро монтирует сцену при первом показе). «Пусто, потому
+     * что не смонтирована» — не поломка, и путать эти два случая нельзя. */
+    if (!this._grid) return { ok: true, detail: "не смонтирована" };
+    const tiles = this._grid.childElementCount;
+    if (!tiles) return { ok: false, detail: "ни одной плитки в иконостасе" };
+    const withPhoto = this._grid.querySelectorAll(".m41-tile:not(.is-empty)").length;
+    return { ok: true, detail: `плиток ${tiles}, с фото ${withPhoto}` };
+  },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
