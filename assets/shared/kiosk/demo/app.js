@@ -4,11 +4,14 @@
  * делает ядро.
  *
  * Открывать ТОЛЬКО по http (ES-модули не работают из file://). */
-import { createApp } from "../kiosk-core.esm.js?v=7";
+import { createApp } from "../kiosk-core.esm.js?v=10";
 
-import { pulseScene } from "./scenes/pulse.js";
-import { gridScene } from "./scenes/grid.js";
-import { cardsScene } from "./scenes/cards.js";
+/* ?v= нужен и на импортах сцен: версия точки входа НЕ пробивает кеш её
+ * импортов, и правка сцены иначе не доезжает до киоска. У ядра это
+ * решено внутри обёртки, у ваших сцен — нет. */
+import { pulseScene } from "./scenes/pulse.js?v=10";
+import { gridScene } from "./scenes/grid.js?v=10";
+import { cardsScene } from "./scenes/cards.js?v=10";
 
 const app = createApp({
   appId: "kiosk-demo",

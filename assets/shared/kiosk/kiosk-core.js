@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.3.0";
+  var VERSION = "1.4.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -60,6 +60,14 @@
     scale: {
       ui: 1,                     // хром киоска: кнопки, чипы, подписи контролов
       content: 1                 // содержимое сцен: карточки, подписи, тексты
+    },
+    /* Поле контента внутри сцены — % от контейнера, в котором сцена его
+     * применяет. Приложение всегда во весь экран; поджимается только
+     * содержимое: на панели 2160 px шириной строка во всю ширину
+     * нечитаема, и это не лечится кеглем. */
+    content: {
+      width: 100,
+      height: 100
     },
     a11y: {
       enabled: false,
@@ -138,6 +146,13 @@
       rows: [
         { type: "range", path: "scale.ui", label: "Интерфейс киоска", min: 0.75, max: 2, step: 0.05, x: true },
         { type: "range", path: "scale.content", label: "Контент сцен", min: 0.75, max: 2, step: 0.05, x: true }
+      ]
+    },
+    {
+      group: "Поле контента",
+      rows: [
+        { type: "range", path: "content.width", label: "Ширина поля", min: 30, max: 100, step: 1, unit: " %" },
+        { type: "range", path: "content.height", label: "Высота поля", min: 30, max: 100, step: 1, unit: " %" }
       ]
     },
     {
@@ -602,6 +617,41 @@
     }
   };
 
+  /* ---------------------------------------- перенос настроек (запомнить)
+   *
+   * Правки оператора и так сохраняются сразу — в localStorage. Но он
+   * умирает вместе с профилем браузера: переустановка киоска, чистка
+   * кеша, новый компьютер — и всё выкручено заново. Поэтому выгрузка
+   * даёт ГОТОВЫЙ kiosk.config.json: сессия МТК кладёт его в git, и
+   * настройки переживают что угодно. */
+  KioskApp.prototype.exportSettings = function () {
+    var json = JSON.stringify(this.config, null, 2);
+    var blob = new Blob([json], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "kiosk.config.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(function () { URL.revokeObjectURL(url); }, 1000);
+    this.log("info", "настройки выгружены в файл");
+    return json;
+  };
+
+  /* Загрузка снимка настроек. Ложится поверх файла целиком — оператор
+   * восстанавливает ровно то, что было выгружено. Постоянное место
+   * настройки всё равно kiosk.config.json в git. */
+  KioskApp.prototype.importSettings = function (text) {
+    var patch = JSON.parse(text);
+    if (!isObj(patch)) throw new Error("это не объект настроек");
+    this._override = patch;
+    this._saveOverride();
+    this.log("info", "настройки загружены из файла");
+    this.restart("загрузка настроек");
+    return patch;
+  };
+
   /* Сброс к kiosk.config.json. Перезагружаем страницу, а не «размерживаем»
    * патч: файл — единственный источник правды, и это честнее. */
   KioskApp.prototype.resetSettings = function () {
@@ -624,6 +674,23 @@
       ui: num(s.ui, 1) * (this.a11y ? num(a.uiBoost, 1.25) : 1),
       content: num(s.content, 1) * (this.a11y ? num(a.contentBoost, 1.5) : 1)
     };
+  };
+
+  /* Поле контента. Само приложение всегда во весь экран — поджимается
+   * только содержимое сцены. Проценты считаются от того контейнера, в
+   * который сцена положила .kiosk-content. */
+  KioskApp.prototype._applyContentBox = function () {
+    var root = this._els.root;
+    if (!root) return;
+    var c = this.config.content || {};
+
+    function pct(v, def) {
+      v = Number(v);
+      if (!isFinite(v) || v < 10 || v > 100) v = def;
+      return v + "%";
+    }
+    root.style.setProperty("--kiosk-content-w", pct(c.width, 100));
+    root.style.setProperty("--kiosk-content-h", pct(c.height, 100));
   };
 
   KioskApp.prototype._applyScale = function () {
@@ -696,6 +763,7 @@
     if (!path || /^(tools|i18n|a11y)\./.test(path)) this._applyToolsStyle();
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
     if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
+    if (!path || path.indexOf("content.") === 0) this._applyContentBox();
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
@@ -759,6 +827,7 @@
     this._applyScale();
     this._buildTools();
     this._buildService();
+    this._applyContentBox();
     this._applyInsets();
   };
 
@@ -1580,6 +1649,29 @@
     this._els.service = panel;
     this._els.serviceBody = panel.querySelector(".kiosk-service__body");
 
+    /* Скрытый файловый вход для загрузки снимка настроек. */
+    var file = doc.createElement("input");
+    file.type = "file";
+    file.accept = "application/json,.json";
+    file.style.display = "none";
+    file.addEventListener("change", function () {
+      var f = file.files && file.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try {
+          self.importSettings(String(reader.result));
+        } catch (err) {
+          self.log("error", "не удалось загрузить настройки: " + errText(err));
+          alert("Файл настроек не прочитан: " + errText(err));
+        }
+      };
+      reader.readAsText(f);
+      file.value = "";
+    });
+    panel.appendChild(file);
+    this._els.importInput = file;
+
     this._bindServiceBody();
     this._applyGearMode();
     this._bindTripleTap();
@@ -1615,6 +1707,7 @@
     this._serviceOpen = on;
 
     var panel = this._els.service;
+    this._els.root.classList.toggle("is-service", on);
     if (on) {
       this._rebuildService();
       panel.hidden = false;
@@ -1645,6 +1738,16 @@
         g.rows.map(function (row) { return self._rowHtml(row); }).join("") +
         "</section>";
     }).join("");
+
+    html += '<section class="kiosk-set__group">' +
+      '<div class="kiosk-set__title">Запомнить настройки</div>' +
+      '<div class="kiosk-set__note">Правки сохраняются сразу, но в этом браузере. ' +
+      'Чтобы пережить переустановку — выгрузите файл и отдайте его сессии МТК: ' +
+      'это готовый <b>kiosk.config.json</b>.</div>' +
+      '<div class="kiosk-set__actions">' +
+      '<button type="button" class="kiosk-set__btn kiosk-touch" data-export>Выгрузить в файл</button>' +
+      '<button type="button" class="kiosk-set__btn kiosk-touch" data-import>Загрузить из файла</button>' +
+      "</div></section>";
 
     html += '<section class="kiosk-set__group kiosk-set__group--log">' +
       '<div class="kiosk-set__title">' + this._logTitle() +
@@ -1774,7 +1877,10 @@
         self.clearLog();
         var box = body.querySelector(".kiosk-set__log");
         if (box) box.innerHTML = self._logHtml();
+        return;
       }
+      if (e.target.closest("[data-export]")) { self.exportSettings(); return; }
+      if (e.target.closest("[data-import]")) { self._els.importInput.click(); }
     });
   };
 

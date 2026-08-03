@@ -21,10 +21,15 @@ export const cardsScene = {
 
     const root = document.createElement("div");
     root.className = "demo-cards";
+    /* .kiosk-content — поле контента из настроек киоска (ширина/высота
+     * в % и центрирование). Хром сцены при этом остаётся во всю
+     * рабочую область. */
     root.innerHTML =
       '<div class="demo-cards__filters"></div>' +
       '<div class="demo-cards__state"></div>' +
-      '<div class="demo-cards__grid kiosk-scroll"></div>';
+      '<div class="demo-cards__body kiosk-content">' +
+      '<div class="demo-cards__grid kiosk-scroll"></div>' +
+      "</div>";
     el.appendChild(root);
 
     this._root = root;

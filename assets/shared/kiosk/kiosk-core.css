@@ -31,6 +31,15 @@
 
 /* ------------------------------------------------------------ каркас */
 
+/* Поле вокруг рабочей области обязано быть чёрным: на киоске белая
+   полоса по краю видна за версту. */
+html.kiosk-runtime,
+html.kiosk-runtime body {
+  background: var(--amber-black, #000);
+}
+
+/* Приложение всегда во весь экран. Поджимается не оно, а поле контента
+   внутри сцены — см. .kiosk-content ниже. */
 .kiosk-app {
   position: fixed;
   inset: 0;
@@ -64,6 +73,22 @@
   position: absolute;
   inset: 0;
   z-index: 1;
+}
+
+/* Готовое поле контента для сцены: ширина/высота из настроек, по центру.
+   Применяйте ВНУТРИ своей области с отступами — проценты считаются от
+   того контейнера, в который вы это положили. */
+.kiosk-content {
+  width: var(--kiosk-content-w, 100%);
+  height: var(--kiosk-content-h, 100%);
+  margin-inline: auto;
+}
+
+/* Границу поля видно, только пока открыта сервис-панель — иначе оператор
+   крутит «Ширину поля» вслепую. */
+.kiosk-app.is-service .kiosk-content {
+  outline: 2px dashed rgba(210, 183, 115, 0.55);
+  outline-offset: 4px;
 }
 
 /* ------------------------------------------------------------- слои сцен
@@ -660,6 +685,30 @@
   font-size: var(--type-min-label, 24px);
   text-align: center;
 }
+
+/* ---- перенос настроек ---- */
+.kiosk-set__note {
+  margin-bottom: 14px;
+  font-size: var(--type-min-label, 24px);
+  line-height: 1.4;
+  color: rgba(247, 249, 239, 0.6);
+}
+.kiosk-set__note b { color: var(--brass, #D2B773); font-weight: 400; }
+
+.kiosk-set__actions { display: flex; flex-wrap: wrap; gap: var(--touch-gap, 16px); }
+.kiosk-set__btn {
+  min-height: var(--touch-min, 64px);
+  padding: 0 28px;
+  border-radius: 999px;
+  border: 1px solid rgba(210, 183, 115, 0.55);
+  background: rgba(210, 183, 115, 0.12);
+  color: var(--paper, #F7F9EF);
+  font-family: inherit;
+  font-size: var(--type-min-label, 24px);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-set__btn:active { background: rgba(210, 183, 115, 0.28); }
 
 /* ---- журнал ---- */
 .kiosk-set__log {

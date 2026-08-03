@@ -60,6 +60,14 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   color: var(--brass);
 }
 
+/* Поле контента (.kiosk-content) занимает остаток по высоте, а его
+ * ширина/высота приходят из настроек киоска. */
+.demo-cards__body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
 .demo-cards__grid {
   flex: 1;
   min-height: 0;
