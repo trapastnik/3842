@@ -80,8 +80,13 @@ html.kiosk-runtime body {
    того контейнера, в который вы это положили. */
 .kiosk-content {
   width: var(--kiosk-content-w, 100%);
-  height: var(--kiosk-content-h, 100%);
-  margin-inline: auto;
+  /* max-height, а не height: поле почти всегда лежит во flex-колонке
+     сцены, и там flex-basis перебивает height — регулятор высоты просто
+     не работал бы. Потолок же переживает и flex: 1. */
+  max-height: var(--kiosk-content-h, 100%);
+  /* margin: auto центрирует по ОБЕИМ осям (во flex/grid), а не только
+     по горизонтали: поля должны быть симметричны и сверху-снизу. */
+  margin: auto;
 }
 
 /* Границу поля видно, только пока открыта сервис-панель — иначе оператор
