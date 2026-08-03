@@ -9,7 +9,7 @@
  * Томский. Здесь на это опираемся и повторно не чистим. */
 import {
   DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=3";
+} from "./shared.js?v=6";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
@@ -37,6 +37,7 @@ export const authorsScene = {
       monuments: DATA.monuments,
       photos: DATA.photos,
       thumbs: DATA.thumbs,
+      cards: DATA.cards,
       heights: DATA.heights,
     },
     custom: preloadThumbs,

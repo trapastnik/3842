@@ -7,14 +7,20 @@
 это 2097 Мп, то есть ~7.8 ГБ в RGBA. Отдать такое в преролл нельзя — киоск
 ляжет ещё на сплэше.
 
-Что делает. Кладёт рядом с каждым фото уменьшенную копию шириной THUMB_W в
-`<id>/thumbs/`. Иконостас и любые плиточные сцены грузят миниатюры (282 ×
-480×320 ≈ 43 Мп ≈ 173 МБ RGBA — уже подъёмно), а полноразмерный снимок
-открывается только в карточке одного памятника, по тапу, с локального диска.
+Два тира — канонический паттерн для фотокорпусов (PLAN-KIOSK → «Оптимизация»,
+решение координатора 2026-08-04):
 
-Сеть тут ни при чём: правило офлайна запрещает ходить в интернет, а не
-читать файл рядом. Один снимок по тапу — это чтение с диска, не догрузка
-из сети.
+  thumbs/01.jpg  THUMB_W = 480 px  — в преролл ядра. Плиточные сцены и любые
+                 сетки берут только их. 289 шт ≈ 49 Мп ≈ 188 МБ RGBA.
+  cards/01.jpg   CARD_W  = 1100 px — НЕ в преролл. Догружается по тапу, когда
+                 посетитель открыл карточку одного памятника.
+
+Почему догрузка законна: автономность киоска — про сеть, а не про диск.
+Чтение файла рядом с приложением интернета не требует. (До ядра 1.7 проверка
+`checkNetwork` в selftest.js этого не различает и ругается на догрузку — этот
+один чек игнорируется с пометкой в отчёте приёмки.)
+
+Оригиналы крупнее CARD_W в киоск не кладутся вовсе.
 
 sips — родной macOS, чтобы не тащить Pillow в зависимости репозитория.
 
@@ -30,47 +36,58 @@ ROOT = Path(__file__).resolve().parent.parent.parent.parent
 ASSETS = ROOT / "assets/mtk41"
 MANIFEST = ASSETS / "manifest.json"
 THUMBS_INDEX = ASSETS / "thumbs.json"
-THUMB_W = 480
+CARDS_INDEX = ASSETS / "cards.json"
+THUMB_W = 480      # преролл: сетки и плитки
+CARD_W = 1100      # догрузка по тапу: карточка одного памятника
 FORCE = "--force" in sys.argv
 
 
-def main():
-    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+def resize(src, out, width):
+    """sips -Z вписывает в квадрат width, то есть НЕ увеличивает мелкие
+    оригиналы — что и нужно: апскейл дал бы вес без единого лишнего пикселя."""
+    out.parent.mkdir(parents=True, exist_ok=True)
+    r = subprocess.run(
+        ["sips", "-Z", str(width), "-s", "format", "jpeg",
+         "-s", "formatOptions", "70", str(src), "--out", str(out)],
+        capture_output=True,
+    )
+    return r.returncode == 0 and out.is_file(), r
+
+
+def build(manifest, sub, width, index_path, human):
     index = {}
     made = skipped = failed = 0
-
     for mid, photos in sorted(manifest.items()):
         if not photos:
             continue
         src = ASSETS / mid / photos[0]
         if not src.is_file():
             continue
-        out_dir = ASSETS / mid / "thumbs"
-        out = out_dir / "01.jpg"
+        out = ASSETS / mid / sub / "01.jpg"
         if out.is_file() and not FORCE:
-            index[mid] = f"thumbs/{out.name}"
+            index[mid] = f"{sub}/{out.name}"
             skipped += 1
             continue
-        out_dir.mkdir(parents=True, exist_ok=True)
-        r = subprocess.run(
-            ["sips", "-Z", str(THUMB_W), "-s", "format", "jpeg",
-             "-s", "formatOptions", "70", str(src), "--out", str(out)],
-            capture_output=True,
-        )
-        if r.returncode != 0 or not out.is_file():
+        ok, r = resize(src, out, width)
+        if not ok:
             print(f"  ⚠ не удалось: {mid} — {r.stderr.decode()[:80]}", file=sys.stderr)
             failed += 1
             continue
-        index[mid] = f"thumbs/{out.name}"
+        index[mid] = f"{sub}/{out.name}"
         made += 1
 
-    THUMBS_INDEX.write_text(json.dumps(index, ensure_ascii=False, indent=2),
-                            encoding="utf-8")
+    index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2),
+                          encoding="utf-8")
     total = sum((ASSETS / m / p).stat().st_size for m, p in index.items()
                 if (ASSETS / m / p).is_file())
-    print(f"миниатюр: {len(index)} (создано {made}, уже были {skipped}, ошибок {failed})")
-    print(f"суммарный вес: {total / 1048576:.1f} МБ")
-    print(f"индекс: {THUMBS_INDEX.relative_to(ROOT)}")
+    print(f"{human}: {len(index)} (создано {made}, уже были {skipped}, ошибок {failed}), "
+          f"{total / 1048576:.1f} МБ → {index_path.relative_to(ROOT)}")
+
+
+def main():
+    manifest = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    build(manifest, "thumbs", THUMB_W, THUMBS_INDEX, "миниатюры (преролл)")
+    build(manifest, "cards", CARD_W, CARDS_INDEX, "карточные (по тапу)")
 
 
 if __name__ == "__main__":

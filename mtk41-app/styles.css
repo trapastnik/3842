@@ -131,12 +131,19 @@
 
 /* ─── Карточка памятника ──────────────────────────────────────────────── */
 
+/* z-index 20 — как у пилота 42: хром ядра (30..70) сознательно остаётся
+   выше карточки, посетитель не теряет навигацию и языки. Поэтому карточка
+   обязана держаться ВНУТРИ полос ядра, иначе кнопка «закрыть» окажется под
+   переключателем языков, а фотография — под нав-баром. */
 .m41-card {
   position: absolute;
   inset: 0;
-  z-index: 40;
+  z-index: 20;
   display: grid;
   place-items: center;
+  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
+           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+  box-sizing: border-box;
   background: rgba(10, 13, 16, 0.72);
   backdrop-filter: blur(2px);
 }
@@ -144,8 +151,8 @@
 
 .m41-card__panel {
   position: relative;
-  width: min(calc(720px * var(--content-scale, 1)), 88vw);
-  max-height: 84vh;
+  width: min(calc(720px * var(--content-scale, 1)), 100%);
+  max-height: 100%;
   overflow-y: auto;
   padding: calc(26px * var(--content-scale, 1));
   box-sizing: border-box;
@@ -169,13 +176,20 @@
 }
 .m41-card__close:active { background: rgba(210, 183, 115, 0.35); }
 
-/* Ширина снимка ограничена его собственным разрешением (миниатюра 480 px):
-   растягивать выше — мыло, а оригиналы в память не помещаются. */
+/* Потолок — разрешение карточного тира (1100 px): выше растягивать нечего.
+   Высота фиксирована, чтобы подмена миниатюры на чёткий снимок не сдвигала
+   вёрстку под пальцем. */
 .m41-card__photo {
-  max-width: 480px;
+  max-width: min(calc(1100px * var(--content-scale, 1)), 100%);
+  /* Высота фиксированная, а не по аспекту: во-первых, подмена миниатюры на
+     снимок 1100 px не должна сдвигать вёрстку под пальцем; во-вторых, при
+     свободной высоте фотография съедала всю карточку и текст уезжал за
+     пределы видимого. */
+  height: clamp(120px, 32vh, 560px);
+  overflow: hidden;
   margin: 0 auto calc(16px * var(--content-scale, 1));
 }
-.m41-card__photo img { display: block; width: 100%; height: auto; }
+.m41-card__photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
 .m41-card__photo--empty {
   display: grid;
   place-items: center;

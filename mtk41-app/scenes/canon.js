@@ -9,7 +9,7 @@
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
   DATA, byYear, createCard, esc, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=3";
+} from "./shared.js?v=6";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -32,6 +32,7 @@ export const canonScene = {
       monuments: DATA.monuments,
       photos: DATA.photos,
       thumbs: DATA.thumbs,
+      cards: DATA.cards,
       heights: DATA.heights,
     },
     /* Миниатюры всех 289 памятников — на сплэше. Список известен только из

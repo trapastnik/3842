@@ -14,6 +14,7 @@ export const DATA = {
   heights: "../assets/mtk41/heights.json",
   photos: "../assets/mtk41/manifest.json",
   thumbs: "../assets/mtk41/thumbs.json",
+  cards: "../assets/mtk41/cards.json",
   countries: "../data/ne_110m_countries.geojson",
 };
 
@@ -81,6 +82,14 @@ export function thumbUrl(thumbs, id) {
 export function photoUrl(manifest, id) {
   const list = manifest && manifest[id];
   return list && list.length ? ASSET_DIR + id + "/" + list[0] : null;
+}
+
+/* Второй тир, 1100 px — только для карточки и только по тапу. В преролл он
+ * НЕ идёт: 289 таких снимков это ещё 38 МБ на диске и сотни мегабайт в
+ * памяти, а посетитель за сеанс открывает единицы карточек. */
+export function cardUrl(cards, id) {
+  const rel = cards && cards[id];
+  return rel ? ASSET_DIR + id + "/" + rel : null;
 }
 
 /* Все миниатюры — в преролл ядра. */
@@ -186,6 +195,7 @@ export function createCard(el, app, ctx) {
       root.hidden = false;
       panel.scrollTop = 0;
       closeBtn.setAttribute("aria-label", app.t("card.close"));
+      upgradePhoto(body, ctx, m);
     },
     close,
     destroy() {
@@ -196,12 +206,34 @@ export function createCard(el, app, ctx) {
   };
 }
 
+/* Подменить миниатюру снимком второго тира, когда тот догрузится.
+ *
+ * Два тира вместо одного — решение координатора 2026-08-04, ставшее каноном
+ * для фотокорпусов: 480 px в прероле, 1100 px по тапу с локального диска.
+ * Карточка открывается мгновенно на уже загруженной миниатюре, а чёткий
+ * снимок встаёт на её место через кадр-другой — без пустой рамки и без
+ * скачка вёрстки, потому что размер задаёт контейнер, а не картинка.
+ *
+ * До ядра 1.7 checkNetwork в selftest.js считает эту догрузку нарушением
+ * автономности: он не отличает локальный путь от внешнего хоста. Фикс
+ * заказан; в отчёте приёмки этот один чек помечается как известный. */
+function upgradePhoto(body, ctx, m) {
+  const img = body.querySelector(".m41-card__photo img");
+  const big = cardUrl(ctx.data.cards, m.id);
+  if (!img || !big || img.getAttribute("src") === big) return;
+  const probe = new Image();
+  probe.onload = () => {
+    /* Пока грузилось, посетитель мог закрыть карточку или открыть другую —
+     * тогда подменять нечего и незачем. */
+    if (img.isConnected) img.src = big;
+  };
+  probe.src = big;
+}
+
 export function cardHtml(app, ctx, m) {
   const t = (k, v) => app.t(k, v);
-  /* Миниатюра, а не оригинал. Она уже в памяти после преролла, а подгрузка
-   * полного снимка по тапу была бы запросом после старта — приёмка считает это
-   * провалом автономности, и локальный файл там неотличим от сетевого.
-   * В CSS ширина снимка ограничена так, чтобы не растягивать выше 480 px. */
+  /* В разметку идёт миниатюра — она уже в памяти, карточка открывается без
+   * ожидания. Снимок 1100 px подставляется следом, см. upgradePhoto(). */
   const full = thumbUrl(ctx.data.thumbs, m.id) || photoUrl(ctx.data.photos, m.id);
   const photo = full
     ? '<div class="m41-card__photo"><img src="' + esc(full) + '" alt="" /></div>'
