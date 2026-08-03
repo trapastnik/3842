@@ -857,13 +857,18 @@
     else if (toolsBottom) bottom += size + gap;
 
     /* Боковые стрелки съедают ширину, а не высоту — сцене нужно знать и
-     * про это, иначе её края уедут под кнопки. */
-    var sideBand = (sides && navShown && nav.showArrows !== false) ? size + gap : 0;
+     * про это, иначе её края уедут под кнопки. Считаем от ФАКТИЧЕСКОГО
+     * отступа стрелок (nav.sideX), а не от кромки: оператор двигает их
+     * до 200 px, и полоса обязана ехать следом. */
+    var sideX = Number(nav.sideX);
+    if (!isFinite(sideX) || sideX < 0) sideX = 64;
+    var sideBand = (sides && navShown && nav.showArrows !== false) ? sideX + size + gap : 0;
+    var side = Math.max(edge, sideBand);
 
     root.style.setProperty("--kiosk-safe-top", Math.round(top) + "px");
     root.style.setProperty("--kiosk-safe-bottom", Math.round(bottom) + "px");
-    root.style.setProperty("--kiosk-safe-left", Math.round(edge + sideBand) + "px");
-    root.style.setProperty("--kiosk-safe-right", Math.round(edge + sideBand) + "px");
+    root.style.setProperty("--kiosk-safe-left", Math.round(side) + "px");
+    root.style.setProperty("--kiosk-safe-right", Math.round(side) + "px");
   };
 
   KioskApp.prototype._applySettings = function (path) {
