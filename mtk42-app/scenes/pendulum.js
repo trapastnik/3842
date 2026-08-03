@@ -13,7 +13,7 @@
  * setInterval 100 мс = 10 fps, ровно потолок стандарта. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=13";
+} from "./shared.js?v=15";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -202,24 +202,37 @@ export const pendulumScene = {
     return d;
   },
 
+  /* Аттрактор на штатной петле ядра (1.7.0): темп берётся из
+   * timings.standbyFps, свой setInterval больше не нужен. */
   standby() {
     const scroll = this._scrollEl;
     if (!scroll) return null;
     if (this._overlay) this._overlay.close();
     let dir = 1;
-    this._driftTimer = setInterval(() => {
+    this._driftStop = this._app.standbyTicker(() => {
       const max = scroll.scrollHeight - scroll.clientHeight;
       if (max <= 0) return;
       let next = scroll.scrollTop + dir * 6;
       if (next >= max) { next = max; dir = -1; }
       if (next <= 0) { next = 0; dir = 1; }
       scroll.scrollTop = next;
-    }, 100);
+    });
     return () => this._stopDrift();
   },
 
   _stopDrift() {
-    if (this._driftTimer) { clearInterval(this._driftTimer); this._driftTimer = 0; }
+    if (this._driftStop) { this._driftStop(); this._driftStop = null; }
+  },
+
+  /* «Загружено, но пусто» ловится по числу отрисованных портретов: данные
+   * могут прийти, а раскладка — упасть на нуле ширины контейнера. */
+  healthcheck() {
+    if (!this._innerEl) return { ok: false, detail: "сцена не смонтирована" };
+    const dots = this._innerEl.querySelectorAll(".m42-dot").length;
+    const want = this._visible().length;
+    return dots >= want && want > 0
+      ? { ok: true, detail: "точек отрисовано " + dots }
+      : { ok: false, detail: "точек отрисовано " + dots + " из " + want };
   },
 
   /* ─── настройки → CSS-переменные ─────────────────────────────────────── */

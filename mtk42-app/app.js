@@ -2,18 +2,22 @@
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
-import { installChromeZones } from "./scenes/chrome-zones.js?v=14";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=15";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=13";
-import { archiveScene } from "./scenes/archive.js?v=13";
-import { timelineScene } from "./scenes/timeline.js?v=13";
-import { mapScene } from "./scenes/map.js?v=13";
+import { pendulumScene } from "./scenes/pendulum.js?v=15";
+import { archiveScene } from "./scenes/archive.js?v=15";
+import { timelineScene } from "./scenes/timeline.js?v=15";
+import { mapScene } from "./scenes/map.js?v=15";
 
 const app = createApp({
   appId: "mtk42",
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
+  /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
+   * и правки подписей не доезжали — ловил это руками не раз. Поднимать
+   * вместе с ?v= остальных ассетов. */
+  i18nVersion: "15",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */

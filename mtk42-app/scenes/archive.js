@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=13";
+} from "./shared.js?v=15";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -119,6 +119,18 @@ export const archiveScene = {
     const d = {};
     for (const row of this.settings) d[row.key] = row.default;
     return d;
+  },
+
+  /* Плитки строятся из данных; пустая сетка при непустом отборе — авария. */
+  healthcheck() {
+    if (!this._gridEl) return { ok: false, detail: "сцена не смонтирована" };
+    const tiles = this._gridEl.querySelectorAll(".m42-tile").length;
+    const want = this._items.filter((it) =>
+      (this._epoch === "all" || it.epoch === this._epoch) &&
+      (this._cat === "all" || it.category === this._cat)).length;
+    return tiles === want && want > 0
+      ? { ok: true, detail: "карточек отрисовано " + tiles }
+      : { ok: false, detail: "карточек отрисовано " + tiles + " из " + want };
   },
 
   pause() {},   // нет rAF и таймеров — останавливать нечего

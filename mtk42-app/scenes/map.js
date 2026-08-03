@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=13";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=15";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -186,8 +186,29 @@ export const mapScene = {
 
   _uiScale() { return Math.min(2, Math.max(1, window.innerWidth / 1920)); },
 
+  /* Канвас нельзя опросить как DOM, поэтому считаем в самой отрисовке:
+   * _draw() кладёт сюда число нарисованных точек и размер буфера. */
+  healthcheck() {
+    if (!this._canvas) return { ok: false, detail: "сцена не смонтирована" };
+    const drawn = this._drawn || 0;
+    const want = this._items().length;
+    const r = this._canvas.getBoundingClientRect();
+    const buf = this._canvas.width;
+    /* Не только «нарисовано столько же», но и «нарисовано в нужном
+     * разрешении»: дефолтные 300×150 при полноэкранном боксе — авария. */
+    if (r.width && buf < r.width * 0.9) {
+      return { ok: false, detail: "буфер " + this._canvas.width + "×" +
+        this._canvas.height + " при боксе " + Math.round(r.width) + "×" +
+        Math.round(r.height) + " — карта в низком разрешении" };
+    }
+    return drawn === want && want > 0
+      ? { ok: true, detail: "точек нарисовано " + drawn + ", буфер " +
+          this._canvas.width + "×" + this._canvas.height }
+      : { ok: false, detail: "точек нарисовано " + drawn + " из " + want };
+  },
+
   pause() {},   // петли нет: рисуем только по жесту
-  resume() { this._draw(); },
+  resume() { this._ensureSized(); this._draw(); },
 
   reset() {
     this._status = "all";
@@ -279,9 +300,27 @@ export const mapScene = {
 
   /* ─── отрисовка ─────────────────────────────────────────────────────── */
 
+  /* Буфер обязан соответствовать CSS-боксу. Сцена монтируется в невидимом
+   * слое, где ResizeObserver может не сработать ни разу, — тогда канвас
+   * остаётся с дефолтными 300×150 и карта рисуется в 4% разрешения.
+   * Поэтому сверяем перед каждой отрисовкой: это одно сравнение. */
+  _ensureSized() {
+    const c = this._canvas;
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const want = Math.floor(r.width * (this._dpr || 1));
+    if (Math.abs(c.width - want) > 1 || !this._cam.worldW) {
+      const first = !this._cam.worldW;
+      this._size();
+      if (first) this._fit();
+    }
+  },
+
   _draw() {
     const c = this._canvas, ctx = this._ctx2d;
     if (!c || !ctx) return;
+    this._ensureSized();
     const r = c.getBoundingClientRect();
     const W = r.width, H = r.height;
     const a11y = this._app.a11y;
@@ -341,6 +380,7 @@ export const mapScene = {
 
   _drawDots(ctx, a11y) {
     const R = this._dotRadius(a11y);
+    this._drawn = 0;
     for (const it of this._items()) {
       if (typeof it.lat !== "number") continue;
       const w = this._project(it.lat, it.lng);
@@ -352,6 +392,7 @@ export const mapScene = {
       ctx.lineWidth = Math.max(1.5, R * 0.14);
       ctx.strokeStyle = "rgba(12, 16, 18, 0.75)";
       ctx.stroke();
+      this._drawn++;
     }
   },
 
