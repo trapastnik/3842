@@ -102,22 +102,9 @@ export function loop(fn) {
   };
 }
 
-/* Медленная петля для аттрактора: ядро просит не выше standbyFps. */
-export function slowLoop(fn, fps) {
-  const period = 1000 / Math.max(1, fps || 10);
-  let raf = 0;
-  let last = 0;
-  const step = (now) => {
-    raf = requestAnimationFrame(step);
-    if (now - last < period) return;
-    last = now;
-    fn(now);
-  };
-  return {
-    start() { if (!raf) { last = 0; raf = requestAnimationFrame(step); } },
-    stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } },
-  };
-}
+/* Своей петли для аттрактора здесь нет: с ядра 1.7.0 её даёт
+ * app.standbyTicker(draw) — он держит timings.standbyFps и не будит
+ * композитор каждый vsync, как это делал наш rAF. */
 
 /* ─── преролл снимков ───────────────────────────────────────────────────
  * Снимки уходят в data-URL, а не в <img src>: в рантайме киоск обязан не

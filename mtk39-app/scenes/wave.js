@@ -6,8 +6,8 @@
  * аргументов (lat, lng), аспект только из WT.ASPECT — своей математики нет). */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, slowLoop, sizeWatch,
-} from "./shared.js?v=1";
+  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
+} from "./shared.js?v=2";
 
 const FROM = 1900;
 const TO = 2025;
@@ -278,20 +278,25 @@ export const waveScene = {
         lastFrame = 0;
         if (width) render();
       },
-      /* Аттрактор: столетие идёт само, но медленно и без интерфейса. */
-      standby(fps) {
+      /* Аттрактор: столетие идёт само, без интерфейса. Петля — от ядра
+         (standbyTicker держит standbyFps), год считаем от секунд простоя. */
+      standby(app_) {
         anim.stop();
         this.reset();
         setPlaying(true);
-        const step = 1 / Math.max(1, fps) * (scene.opt.speed || DEFAULTS.speed);
-        const slow = slowLoop(() => {
-          year += step;
-          if (year > TO) year = FROM;
+        const span = TO - FROM;
+        const stop = app_.standbyTicker((t) => {
+          year = FROM + ((t * (scene.opt.speed || DEFAULTS.speed)) % span);
           scrub.value = String(Math.floor(year));
           render();
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = 0; anim.start(); };
+        });
+        return () => { stop(); lastFrame = 0; anim.start(); };
+      },
+      health() {
+        if (!dated.length) return { ok: false, detail: "ни одного объекта с годом" };
+        if (!land.length) return { ok: false, detail: "контуры суши не построены" };
+        return { ok: true, detail: "точек с датой " + dated.length +
+          ", фоном " + undated.length + ", контуров суши " + land.length };
       },
       destroy() {
         anim.stop();
@@ -324,9 +329,11 @@ export const waveScene = {
   },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

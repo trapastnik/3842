@@ -12,7 +12,7 @@
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap,
-} from "./shared.js?v=1";
+} from "./shared.js?v=2";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -114,6 +114,7 @@ export const unionScene = {
     let fitZoom = 1;
     let fly = null;
     let dirty = true;
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
 
     const invalidate = () => { dirty = true; };
     const worldW = () => baseW * zoom;
@@ -306,6 +307,8 @@ export const unionScene = {
         }
       }
 
+      lastDrawn = visible.length;
+
       if (selected && shown(selected)) {
         const [x, y] = project(selected.lat, selected.lng);
         g.beginPath();
@@ -342,7 +345,9 @@ export const unionScene = {
         ({ zoom, panX, panY } = v);
       }
       clampView();
-      dirty = true;
+      // первый кадр — сразу, не дожидаясь rAF (см. world.js)
+      dirty = false;
+      render();
     });
 
     /* ---- карточка и картотека ---- */
@@ -579,6 +584,15 @@ export const unionScene = {
         hint.classList.remove("is-off");
         invalidate();
       },
+      health() {
+        if (!land.length) return { ok: false, detail: "контуры республик не построены" };
+        if (!points.length) return { ok: false, detail: "в Союзе нет геолоцированных объектов" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        const ready = points.filter(shown).length;
+        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
+        return { ok: true, detail: "к показу " + ready + " из " + points.length +
+          ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
+      },
       destroy() {
         anim.stop();
         canvas.removeEventListener("pointerdown", onDown);
@@ -618,6 +632,10 @@ export const unionScene = {
     if (!this.api) return;
     this.api.remeasure();
     this.api.invalidate();
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

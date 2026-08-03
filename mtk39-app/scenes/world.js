@@ -12,8 +12,8 @@
 
 import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
-  slowLoop, sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap,
-} from "./shared.js?v=1";
+  sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap,
+} from "./shared.js?v=2";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -98,6 +98,7 @@ export const worldScene = {
     let selected = null;
     let visible = [];
     let dirty = true;
+    let lastDrawn = 0;          // сколько точек легло в последний кадр (healthcheck)
     let lastFrame = 0;
     let lastInteraction = performance.now();
 
@@ -229,6 +230,8 @@ export const worldScene = {
         }
       }
 
+      lastDrawn = visible.length;
+
       if (selected && isVisible(selected.lng, selected.lat)) {
         const pt = projection([selected.lng, selected.lat]);
         g.beginPath();
@@ -269,6 +272,10 @@ export const worldScene = {
       width = w; height = h;
       fitCanvas(canvas, w, h);
       applyProjection();
+      // первый кадр — сразу, не дожидаясь rAF: иначе слой проявляется пустым,
+      // а healthcheck честно докладывает «ни одной точки»
+      dirty = false;
+      render();
     });
 
     /* ---- панели ---- */
@@ -475,18 +482,29 @@ export const worldScene = {
         hint.classList.remove("is-off");
         applyProjection();
       },
-      /* Аттрактор: шар без интерфейса, крутится не выше потолка ядра. */
-      standby(fps) {
+      /* Аттрактор: шар без интерфейса. Петлю даёт ядро (standbyTicker держит
+         standbyFps и не будит композитор каждый vsync), угол считаем от
+         секунд простоя — тогда картинка не зависит от частоты тиков. */
+      standby(app_) {
         anim.stop();
         this.reset();
         setMode("globe", true);
-        const slow = slowLoop(() => {
-          rotation[0] = (rotation[0] + 0.35) % 360;
+        const from = rotation[0];
+        const stop = app_.standbyTicker((t) => {
+          rotation[0] = (from + t * 3.5) % 360;
           applyProjection();
           render();
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = 0; anim.start(); };
+        });
+        return () => { stop(); lastFrame = 0; anim.start(); };
+      },
+      health() {
+        const total = points.length;
+        const ready = points.filter(passes).length;
+        if (!total) return { ok: false, detail: "корпус пуст: ни одной точки" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
+        return { ok: true, detail: "к показу " + ready + " из " + total +
+          ", в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -535,9 +553,13 @@ export const worldScene = {
   },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  /* Структурные проверки не видят «загружено, но пусто»: DOM на месте,
+     сеть чиста, а на шаре ни одной точки. */
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

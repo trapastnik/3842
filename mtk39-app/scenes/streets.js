@@ -7,7 +7,7 @@
  * листе стоит масштабная линейка: форма сравнивается глазом, размер читается
  * по линейке. */
 
-import { DATA, nf, esc } from "./shared.js?v=1";
+import { DATA, nf, esc } from "./shared.js?v=2";
 
 const NS = "http://www.w3.org/2000/svg";
 const DEFAULTS = { leafW: 380, stroke: 2.6 };
@@ -271,6 +271,13 @@ export const streetsScene = {
         closeSheet();
         wall.scrollTo({ left: 0, behavior: "auto" });
       },
+      health() {
+        const leaves = wall.querySelectorAll(".m39-leaf").length;
+        const paths = wall.querySelectorAll(".m39-leaf__plot svg path").length;
+        if (!leaves) return { ok: false, detail: "ни одного листа в стене" };
+        if (!paths) return { ok: false, detail: "листы есть, но геометрия не отрисована" };
+        return { ok: true, detail: "листов " + leaves + ", линий " + paths };
+      },
       destroy() {
         closeSheet();
         sheetClose.removeEventListener("click", onClose);
@@ -285,6 +292,10 @@ export const streetsScene = {
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
   setA11y() { if (this.api) this.api.rebuild(); },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
+  },
 
   unmount() {
     if (this.api) this.api.destroy();

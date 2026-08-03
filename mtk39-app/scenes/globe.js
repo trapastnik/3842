@@ -8,9 +8,9 @@
  * d3 подключён локально классическим <script> — офлайн-киоск. */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, slowLoop, sizeWatch,
+  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel,
-} from "./shared.js?v=1";
+} from "./shared.js?v=2";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -133,6 +133,7 @@ export const globeScene = {
     let modeTween = null;
     let introT0 = 0;
     let labelHits = [];
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
     let dragStart = null;
     let dragMoved = false;
     let pinch = null;
@@ -427,6 +428,7 @@ export const globeScene = {
           });
         }
       }
+      lastDrawn = labelCandidates.length;
       drawLabels(labelCandidates);
     }
 
@@ -473,6 +475,7 @@ export const globeScene = {
       fitCanvas(canvas, w, h);
       generateStars();
       applyProjection();
+      render(performance.now());     // первый кадр сразу (см. world.js)
     });
 
     /* ---- карточка ---- */
@@ -679,17 +682,31 @@ export const globeScene = {
         hint.classList.remove("is-off");
         startIntro();
       },
-      /* Аттрактор: тот же шар, но медленно и без интерфейса. */
-      standby(fps) {
+      /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро; угол и фаза
+         мерцания звёзд считаются от секунд простоя, а не от номера кадра. */
+      standby(app_) {
         anim.stop();
         this.reset();
-        const slow = slowLoop((now) => {
-          rotation[0] = (rotation[0] + 0.4) % 360;
+        const from = rotation[0];
+        const stop = app_.standbyTicker((t) => {
+          rotation[0] = (from + t * 4) % 360;
           applyProjection();
-          render(now);
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = performance.now(); anim.start(); };
+          render(t * 1000);
+        });
+        return () => { stop(); lastFrame = performance.now(); anim.start(); };
+      },
+      health() {
+        const total = items.length;
+        if (!total) return { ok: false, detail: "список избранного пуст" };
+        // Считаем то, что сцена готова показать, а не последний кадр: точки
+        // прилетают анимацией (первые 600 мс кадр честно пуст), а повёрнутый
+        // к Тихому океану шар — это не «загружено, но пусто».
+        const ready = items.filter((it) =>
+          it.lat != null && it.lng != null && filterPasses(it)).length;
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
+        return { ok: true, detail: "к показу " + ready + " из " + total +
+          ", в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -723,9 +740,11 @@ export const globeScene = {
   setA11y() { if (this.api) this.api.remeasure(); },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {
