@@ -382,3 +382,28 @@
   color: rgba(247, 249, 239, 0.55);
   pointer-events: none;
 }
+
+/* ---------- легенда типов связи ---------- */
+.m40-legend {
+  position: absolute;
+  left: var(--edge-safe);
+  right: calc(var(--edge-safe) + var(--touch-min) * 2);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--touch-gap) * 0.6) calc(var(--touch-gap) * 2);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+  pointer-events: none;
+}
+.m40-legend__row { display: inline-flex; align-items: center; gap: calc(var(--touch-gap) * 0.6); }
+.m40-legend__sw {
+  width: calc(var(--touch-gap) * 2.5);
+  border-top-width: calc(3px * var(--content-scale));
+  border-top-color: currentColor;
+  border-top-style: solid;
+}
