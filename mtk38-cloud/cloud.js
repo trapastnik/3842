@@ -12,48 +12,48 @@
   };
 
   const words = [
-    { lang: "Русский", text: "Ленин", script: "cyrillic", primary: true },
-    { lang: "English", text: "Lenin", script: "latin", primary: true },
-    { lang: "Français", text: "Lénine", script: "latin", primary: true },
-    { lang: "Español", text: "Lenin", script: "latin", primary: true },
-    { lang: "العربية", text: "لينين", script: "arabic", primary: true },
-    { lang: "中文", text: "列宁", script: "cjk", primary: true },
-    { lang: "Hindi", text: "लेनिन", script: "devanagari" },
-    { lang: "Bengali", text: "লেনিন", script: "bengali" },
-    { lang: "Português", text: "Lênin", script: "latin" },
-    { lang: "Deutsch", text: "Lenin", script: "latin" },
-    { lang: "Italiano", text: "Lenin", script: "latin" },
-    { lang: "Polski", text: "Lenin", script: "latin" },
-    { lang: "Türkçe", text: "Lenin", script: "latin" },
-    { lang: "Indonesia", text: "Lenin", script: "latin" },
-    { lang: "Tiếng Việt", text: "Lênin", script: "latin" },
-    { lang: "Kiswahili", text: "Lenin", script: "latin" },
-    { lang: "Українська", text: "Ленін", script: "cyrillic" },
-    { lang: "Беларуская", text: "Ленін", script: "cyrillic" },
-    { lang: "Қазақша", text: "Ленин", script: "cyrillic" },
-    { lang: "Кыргызча", text: "Ленин", script: "cyrillic" },
-    { lang: "Монгол", text: "Ленин", script: "cyrillic" },
-    { lang: "Հայերեն", text: "Լենին", script: "armenian" },
-    { lang: "ქართული", text: "ლენინი", script: "georgian" },
-    { lang: "Ελληνικά", text: "Λένιν", script: "greek" },
-    { lang: "עברית", text: "לנין", script: "hebrew" },
-    { lang: "فارسی", text: "لنین", script: "arabic" },
-    { lang: "اردو", text: "لینن", script: "arabic" },
-    { lang: "日本語", text: "レーニン", script: "cjk" },
-    { lang: "한국어", text: "레닌", script: "hangul" },
-    { lang: "ไทย", text: "เลนิน", script: "thai" },
-    { lang: "தமிழ்", text: "லெனின்", script: "tamil" },
-    { lang: "తెలుగు", text: "లెనిన్", script: "telugu" },
-    { lang: "ಕನ್ನಡ", text: "ಲೆನಿನ್", script: "kannada" },
-    { lang: "മലയാളം", text: "ലെനിൻ", script: "malayalam" },
-    { lang: "ਪੰਜਾਬੀ", text: "ਲੈਨਿਨ", script: "gurmukhi" },
-    { lang: "मराठी", text: "लेनिन", script: "devanagari" },
-    { lang: "नेपाली", text: "लेनिन", script: "devanagari" },
-    { lang: "සිංහල", text: "ලෙනින්", script: "sinhala" },
-    { lang: "Amharic", text: "ሌኒን", script: "ethiopic" },
-    { lang: "Lao", text: "ເລນິນ", script: "lao" },
-    { lang: "Khmer", text: "លេនីន", script: "khmer" },
-    { lang: "Burmese", text: "လီနင်", script: "myanmar" }
+    { lang: "Русский", text: "Ленин", script: "cyrillic", primary: true, id: "rus", langRu: "Русский", region: "Россия", speakers: 255 },
+    { lang: "English", text: "Lenin", script: "latin", primary: true, id: "eng", langRu: "Английский", region: "Великобритания", speakers: 1500 },
+    { lang: "Français", text: "Lénine", script: "latin", primary: true, id: "fra", langRu: "Французский", region: "Франция", speakers: 280 },
+    { lang: "Español", text: "Lenin", script: "latin", primary: true, id: "spa", langRu: "Испанский", region: "Испания", speakers: 560 },
+    { lang: "العربية", text: "لينين", script: "arabic", primary: true, id: "ara", langRu: "Арабский", region: "Египет", speakers: 370 },
+    { lang: "中文", text: "列宁", script: "cjk", primary: true, id: "zho", langRu: "Китайский (упрощ.)", region: "Китай", speakers: 1100 },
+    { lang: "Hindi", text: "लेनिन", script: "devanagari", id: "hin", langRu: "Хинди", region: "Индия" },
+    { lang: "Bengali", text: "লেনিন", script: "bengali", id: "ben", langRu: "Бенгальский", region: "Бангладеш", speakers: 270 },
+    { lang: "Português", text: "Lênin", script: "latin", id: "por", langRu: "Португальский", region: "Бразилия", speakers: 260 },
+    { lang: "Deutsch", text: "Lenin", script: "latin", id: "deu", langRu: "Немецкий", region: "Германия" },
+    { lang: "Italiano", text: "Lenin", script: "latin", id: "ita", langRu: "Итальянский", region: "Италия" },
+    { lang: "Polski", text: "Lenin", script: "latin", id: "pol", langRu: "Польский", region: "Польша" },
+    { lang: "Türkçe", text: "Lenin", script: "latin", id: "tur", langRu: "Турецкий", region: "Турция" },
+    { lang: "Indonesia", text: "Lenin", script: "latin", id: "ind", langRu: "Индонезийский", region: "Индонезия" },
+    { lang: "Tiếng Việt", text: "Lênin", script: "latin", id: "vie", langRu: "Вьетнамский", region: "Вьетнам" },
+    { lang: "Kiswahili", text: "Lenin", script: "latin", id: "swa", langRu: "Суахили", region: "Танзания" },
+    { lang: "Українська", text: "Ленін", script: "cyrillic", id: "ukr", langRu: "Украинский", region: "Украина" },
+    { lang: "Беларуская", text: "Ленін", script: "cyrillic", id: "bel", langRu: "Белорусский", region: "Беларусь", speakers: 5 },
+    { lang: "Қазақша", text: "Ленин", script: "cyrillic", id: "kaz", langRu: "Казахский", region: "Казахстан" },
+    { lang: "Кыргызча", text: "Ленин", script: "cyrillic", id: "kir", langRu: "Киргизский", region: "Кыргызстан" },
+    { lang: "Монгол", text: "Ленин", script: "cyrillic", id: "mon", langRu: "Монгольский", region: "Монголия" },
+    { lang: "Հայերեն", text: "Լենին", script: "armenian", id: "hye", langRu: "Армянский", region: "Армения", speakers: 6.7 },
+    { lang: "ქართული", text: "ლენინი", script: "georgian", id: "kat", langRu: "Грузинский", region: "Грузия", speakers: 3.7 },
+    { lang: "Ελληνικά", text: "Λένιν", script: "greek", id: "ell", langRu: "Греческий", region: "Греция", speakers: 13 },
+    { lang: "עברית", text: "לנין", script: "hebrew", id: "heb", langRu: "Иврит", region: "Израиль", speakers: 9 },
+    { lang: "فارسی", text: "لنین", script: "arabic", id: "fas", langRu: "Персидский (фарси)", region: "Иран" },
+    { lang: "اردو", text: "لینن", script: "arabic", id: "urd", langRu: "Урду", region: "Пакистан", speakers: 230 },
+    { lang: "日本語", text: "レーニン", script: "cjk", id: "jpn", langRu: "Японский", region: "Япония", speakers: 125 },
+    { lang: "한국어", text: "레닌", script: "hangul", id: "kor", langRu: "Корейский", region: "Респ. Корея", speakers: 82 },
+    { lang: "ไทย", text: "เลนิน", script: "thai", id: "tha", langRu: "Тайский", region: "Таиланд" },
+    { lang: "தமிழ்", text: "லெனின்", script: "tamil", id: "tam", langRu: "Тамильский", region: "Тамилнад", speakers: 86 },
+    { lang: "తెలుగు", text: "లెనిన్", script: "telugu", id: "tel", langRu: "Телугу", region: "Телангана / Андхра", speakers: 83 },
+    { lang: "ಕನ್ನಡ", text: "ಲೆನಿನ್", script: "kannada", id: "kan", langRu: "Каннада", region: "Карнатака", speakers: 44 },
+    { lang: "മലയാളം", text: "ലെനിൻ", script: "malayalam", id: "mal", langRu: "Малаялам", region: "Керала", speakers: 38 },
+    { lang: "ਪੰਜਾਬੀ", text: "ਲੈਨਿਨ", script: "gurmukhi", id: "pan", langRu: "Панджаби", region: "Пенджаб", speakers: 113 },
+    { lang: "मराठी", text: "लेनिन", script: "devanagari", id: "mar", langRu: "Маратхи", region: "Махараштра" },
+    { lang: "नेपाली", text: "लेनिन", script: "devanagari", id: "nep", langRu: "Непальский", region: "Непал" },
+    { lang: "සිංහල", text: "ලෙනින්", script: "sinhala", id: "sin", langRu: "Сингальский", region: "Шри-Ланка", speakers: 17 },
+    { lang: "Amharic", text: "ሌኒን", script: "ethiopic", id: "amh", langRu: "Амхарский", region: "Эфиопия", speakers: 57 },
+    { lang: "Lao", text: "ເລນິນ", script: "lao", id: "lao", langRu: "Лаосский", region: "Лаос", speakers: 30 },
+    { lang: "Khmer", text: "លេនីន", script: "khmer", id: "khm", langRu: "Кхмерский", region: "Камбоджа", speakers: 18 },
+    { lang: "Burmese", text: "လီနင်", script: "myanmar", id: "mya", langRu: "Бирманский", region: "Мьянма", speakers: 43 }
   ];
 
   let width = 0;
@@ -205,6 +205,8 @@
     };
   }
 
+  const hits = [];
+
   function drawParticle(p, cx, cy, scaleBase, time) {
     const drift = Math.sin(time * p.driftSpeed + p.driftPhase) * p.driftAmp;
     const x = p.baseX + p.driftDirX * drift;
@@ -237,6 +239,9 @@
     ctx.globalAlpha = alpha;
     ctx.fillStyle = color;
     ctx.fillText(p.item.text, 0, 0);
+    // рамка слова для тапа (ближние перекрывают дальние — они позже в списке)
+    hits.push({ x: proj.x, y: proj.y, w: ctx.measureText(p.item.text).width,
+                h: baseFontSize, item: p.item });
 
     if ((p.accent === "red" || p.accent === "brass") && depthNorm > 0.5) {
       ctx.globalAlpha = 0.16;
@@ -285,6 +290,7 @@
       const z2 = y * camera.sinPitch + z1 * camera.cosPitch;
       return { p, depth: z2 };
     });
+    hits.length = 0;
     projected.sort((a, b) => a.depth - b.depth);
     projected.forEach(entry => drawParticle(entry.p, cx, cy, scaleBase, time));
 
@@ -376,6 +382,41 @@
 
   buildParticles();
   updateDensityUI();
+
+  // ── карточка языка (общий модуль assets/mtk38/lib/card.js) ──────────
+  // Рамки слов собираются в hits во время отрисовки: у каждой сцены своя
+  // раскладка, и повторять её в обработчике тапа значило бы дублировать логику.
+  const card = window.MTK38Card ? MTK38Card.create() : null;
+  let tapX = 0, tapY = 0, tapT = 0, tapMoved = false;
+
+  function pickHit(x, y) {
+    let best = null, bd = Infinity;
+    for (let i = hits.length - 1; i >= 0; i--) {
+      const h = hits[i];
+      const dx = Math.abs(x - h.x), dy = Math.abs(y - h.y);
+      if (dx > h.w * 0.5 + 12 || dy > h.h * 0.5 + 12) continue;
+      const d = dx + dy;
+      if (d < bd) { bd = d; best = h; }
+    }
+    return best;
+  }
+
+  canvas.addEventListener("pointerdown", event => {
+    if (card && card.isOpen()) return;
+    tapX = event.clientX; tapY = event.clientY;
+    tapT = performance.now(); tapMoved = false;
+  }, { passive: true });
+
+  canvas.addEventListener("pointermove", event => {
+    if (Math.hypot(event.clientX - tapX, event.clientY - tapY) > 10) tapMoved = true;
+  }, { passive: true });
+
+  canvas.addEventListener("pointerup", event => {
+    if (!card || tapMoved || performance.now() - tapT > 500) return;
+    const h = pickHit(event.clientX, event.clientY);
+    if (h) card.open(h.item);
+  }, { passive: true });
+
   resize();
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(() => requestAnimationFrame(render));

@@ -23,10 +23,11 @@ OUT = ROOT / "mtk38-build"
 COPY = [
     "mtk38-v3/globe.html", "mtk38-v3/rain.html", "mtk38-v3/map.html",
     "mtk38-v3/engine", "mtk38-v3/scenes", "mtk38-v3/vendor", "mtk38-v3/fonts",
-    "mtk38-v2/studio", "mtk38-v2/map", "mtk38-v2/shared", "mtk38-v2/vendor", "mtk38-v2/fonts",
+    "mtk38-v2/studio", "mtk38-v2/shared", "mtk38-v2/vendor", "mtk38-v2/fonts",
     "data/mtk38.json", "data/mtk38-publications.json", "data/mtk38-quotes.json",
     "data/ne_110m_countries.geojson",
-    "assets/mtk38/covers", "assets/mtk38/textures",
+    "assets/mtk38/covers", "assets/mtk38/textures", "assets/mtk38/lib",
+    "mtk38-catalog", "mtk38-cloud", "mtk38-poster", "mtk38-rain", "mtk38-ticker",
     # v2 ссылается на брендовые шрифты наружу (../../mtk38-globe/fonts) — без них
     # в сборке 20 Kopeek/21 Cent/Nolde не грузились и текст падал на системный
     "mtk38-globe/fonts",
@@ -35,11 +36,15 @@ COPY = [
 
 # Варианты в переключателе. url — от корня сборки.
 VARIANTS = [
+    ("v1", "catalog", "Каталог",  "mtk38-catalog/",  "Сетка карточек, 42 языка"),
+    ("v1", "poster",  "Постер",   "mtk38-poster/",   "Типографическая композиция"),
+    ("v1", "cloud",   "Облако",   "mtk38-cloud/",    "Слова дрейфуют в объёме"),
+    ("v1", "rain1",   "Дождь v1", "mtk38-rain/",     "Слова падают с физикой"),
+    ("v1", "ticker",  "Лента",    "mtk38-ticker/",   "Бегущие строки"),
     ("v3", "globe", "Глобус", "mtk38-v3/globe.html", "Кольца слов на сфере, WebGPU"),
     ("v3", "rain",  "Дождь",  "mtk38-v3/rain.html",  "Слова всплывают, GPU-частицы"),
     ("v3", "map",   "Карта",  "mtk38-v3/map.html",   "Написания по миру, Winkel Tripel"),
     ("v2", "studio", "Студия", "mtk38-v2/studio/",   "7 композиций в одном движке"),
-    ("v2", "map2",   "Карта v2", "mtk38-v2/map/",    "Карта на старом стеке"),
 ]
 
 INDEX = """<!doctype html>
