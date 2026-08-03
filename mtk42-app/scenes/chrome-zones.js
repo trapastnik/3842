@@ -58,16 +58,37 @@ export function installChromeZones(app) {
     timer = setTimeout(() => { timer = 0; measureChrome(); }, 0);
   };
 
-  app.on("started", schedule);
-  /* Хром меняет размер от: режима слабовидящих, положения/размера навигации,
-   * показа переключателя языков и кнопки глаза — всё это ходит через события. */
+  /* Наблюдаем за самими элементами хрома: они меняют размер от режима
+   * слабовидящих (таргеты ×1.25), от размера/положения навигации и от
+   * скрытия переключателя языков. ResizeObserver срабатывает и сразу при
+   * подписке — это же и есть надёжный первый замер: на момент запуска
+   * приложения хрома в DOM ещё нет, поэтому «померить один раз в начале»
+   * не работает. */
+  let ro = null;
+  const observeChrome = () => {
+    const els = [".kiosk-tools", ".kiosk-gear", ".kiosk-nav"]
+      .map((s) => document.querySelector(s)).filter(Boolean);
+    if (!els.length) return false;
+    if (ro) ro.disconnect();
+    ro = new ResizeObserver(schedule);
+    els.forEach((el) => ro.observe(el));
+    schedule();
+    return true;
+  };
+
+  app.on("started", () => { observeChrome(); schedule(); });
   app.on("a11y", schedule);
-  app.on("setting", schedule);
+  app.on("setting", () => { observeChrome(); schedule(); });
   app.on("scene-changed", schedule);
   window.addEventListener("resize", schedule, { passive: true });
 
-  /* Первый замер — сразу и синхронно: хром ядро строит до старта сцен. */
+  /* Хром строится асинхронно внутри start(); если его ещё нет — ждём. */
+  if (!observeChrome()) {
+    let tries = 0;
+    const wait = setInterval(() => {
+      if (observeChrome() || ++tries > 40) clearInterval(wait);
+    }, 50);
+  }
   measureChrome();
-  schedule();
   return { measure: measureChrome };
 }

@@ -2,7 +2,7 @@
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
-import { installChromeZones } from "./scenes/chrome-zones.js?v=13";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=14";
 
 import { pendulumScene } from "./scenes/pendulum.js?v=13";
 import { archiveScene } from "./scenes/archive.js?v=13";
