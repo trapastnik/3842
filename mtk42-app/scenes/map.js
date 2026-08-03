@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=8";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=13";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -28,10 +28,10 @@ export const mapScene = {
    * Проекция оставлена настройкой, а не константой: WT — канон, но плоская
    * нужна для сверки, и прототип её умел. */
   settings: [
-    { key: "projection", label: { ru: "Проекция" }, type: "choice", default: "wt",
+    { key: "projection", label: { ru: "Проекция" }, type: "select", default: "wt",
       options: [{ value: "wt", label: { ru: "Winkel Tripel" } },
                 { value: "flat", label: { ru: "Плоская" } }] },
-    { key: "viewPreset", label: { ru: "Кадр карты" }, type: "choice", default: "core",
+    { key: "viewPreset", label: { ru: "Кадр карты" }, type: "select", default: "core",
       options: [{ value: "full", label: { ru: "Евразия" } },
                 { value: "core", label: { ru: "СССР + В. Европа" } },
                 { value: "ussr", label: { ru: "СССР" } },
@@ -53,7 +53,7 @@ export const mapScene = {
 
     { key: "showCities", label: { ru: "Названия городов" }, type: "toggle", default: true },
     { key: "citySize", label: { ru: "Города: размер" }, type: "range",
-      min: 9, max: 22, step: 1, unit: " px", default: 11 },
+      min: 9, max: 22, step: 1, unit: " px", default: 12 },
     { key: "cityOpacity", label: { ru: "Города: непрозрачность" }, type: "range",
       min: 30, max: 100, step: 5, unit: " %", default: 70 },
 
@@ -67,7 +67,7 @@ export const mapScene = {
     { key: "titleBold", label: { ru: "Заголовок: жирный" }, type: "toggle", default: false },
 
     { key: "filterSize", label: { ru: "Кнопки-фильтры: размер" }, type: "range",
-      min: 8, max: 24, step: 1, unit: " px", default: 11 },
+      min: 8, max: 24, step: 1, unit: " px", default: 16 },
     { key: "filterOpacity", label: { ru: "Кнопки-фильтры: непрозрачность" }, type: "range",
       min: 30, max: 100, step: 5, unit: " %", default: 78 },
     { key: "filterBold", label: { ru: "Кнопки-фильтры: жирный" }, type: "toggle", default: false },

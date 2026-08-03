@@ -13,7 +13,7 @@
  * setInterval 100 мс = 10 fps, ровно потолок стандарта. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=8";
+} from "./shared.js?v=13";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -23,11 +23,11 @@ const CATS = ["leaders", "politician", "researcher", "writers"];
 
 export const pendulumScene = {
   id: "pendulum",
-  title: { ru: "Маятник", en: "Pendulum", zh: "钟摆" },
+  title: { ru: "Маятник истории", en: "Pendulum of history", zh: "历史的钟摆" },
 
   /* ─── Схема настроек (v1.2). Диапазоны и дефолты — из описи. ─────────── */
   settings: [
-    { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "choice",
+    { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "select",
       default: "classic",
       options: [{ value: "classic", label: { ru: "Классика" } },
                 { value: "air", label: { ru: "Больше воздуха" } }] },
@@ -52,7 +52,7 @@ export const pendulumScene = {
     { key: "compressCanon", label: { ru: "Сжать эпоху «Канон»" }, type: "toggle", default: true },
 
     { key: "axisSize", label: { ru: "Ось: размер" }, type: "range",
-      min: 8, max: 40, step: 1, unit: " px", default: 11 },
+      min: 8, max: 40, step: 1, unit: " px", default: 12 },
     { key: "axisOpacity", label: { ru: "Ось: непрозрачность" }, type: "range",
       min: 20, max: 100, step: 1, unit: " %", default: 72 },
     { key: "axisBold", label: { ru: "Ось: жирный" }, type: "toggle", default: false },
@@ -92,7 +92,7 @@ export const pendulumScene = {
     const root = document.createElement("div");
     root.className = "m42-pend";
     root.innerHTML =
-      '<header class="m42-head m42-head--over">' +
+      '<header class="m42-head">' +
       '<h1 class="m42-head__title"></h1>' +
       '<p class="m42-head__sub"></p>' +
       "</header>" +

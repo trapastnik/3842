@@ -13,6 +13,27 @@
 :root {
   --kiosk-core-css: 1;            /* маячок: ядро проверяет, что стили подключены */
 
+  /* ---- Палитра хрома ----
+   * Непрозрачные цвета берутся как var(--brass, #D2B773): приложение
+   * переопределяет токен — хром едет следом. Для полупрозрачных нужен
+   * доступ к каналам, поэтому рядом лежат *-rgb того же цвета.
+   * ЕСЛИ ПРИЛОЖЕНИЕ ПЕРЕОПРЕДЕЛЯЕТ --brass, ПУСТЬ ПЕРЕОПРЕДЕЛИТ И
+   * --brass-rgb: иначе непрозрачные и полупрозрачные места разойдутся.
+   * Значения — брендбук (COORDINATION → «Шрифтово-цветовые правила»). */
+  --paper-rgb:       247, 249, 239;
+  --brass-rgb:       210, 183, 115;
+  --red-rgb:         160, 33, 40;
+  --window-rgb:      157, 163, 168;
+  --graphite-rgb:    67, 80, 89;
+  --amber-black-rgb: 0, 0, 0;
+
+  /* Собственные цвета хрома, которых нет в брендбуке: подложка панелей
+   * (почти чёрный янтарь) и сигнал аварии в журнале. */
+  --kiosk-ink-rgb:      12, 16, 18;
+  --kiosk-ink-deep-rgb:  8, 11, 13;
+  --kiosk-alert:        #E8737A;
+  --a11y-fg:            #FFFFFF;
+
   --kiosk-fade: 350ms;            /* длительность кроссфейда (ядро ставит инлайном) */
   --kiosk-nav-size: var(--touch-primary, 96px);
   --kiosk-nav-opacity: 0.92;
@@ -23,10 +44,15 @@
    * настроек; СЦЕНА ОБЯЗАНА верстаться от них, а не от --edge-safe, иначе
    * её контент уедет под навигацию или под переключатель языков.
    * Здесь — значения на случай, если JS ещё не отработал. */
-  --kiosk-safe-top: var(--edge-safe, 64px);
-  --kiosk-safe-bottom: var(--edge-safe-bottom, 80px);
-  --kiosk-safe-left: var(--edge-safe, 64px);
-  --kiosk-safe-right: var(--edge-safe, 64px);
+  --chrome-top: var(--edge-safe, 64px);
+  --chrome-bottom: var(--edge-safe-bottom, 80px);
+  --chrome-left: var(--edge-safe, 64px);
+  --chrome-right: var(--edge-safe, 64px);
+  /* Прежние имена — синонимы: сцены, свёрстанные от них, ломать нельзя. */
+  --kiosk-safe-top: var(--chrome-top);
+  --kiosk-safe-bottom: var(--chrome-bottom);
+  --kiosk-safe-left: var(--chrome-left);
+  --kiosk-safe-right: var(--chrome-right);
 }
 
 /* ------------------------------------------------------------ каркас */
@@ -46,7 +72,7 @@ html.kiosk-runtime body {
   overflow: hidden;
   isolation: isolate;
   background:
-    radial-gradient(ellipse 120% 85% at 50% 42%, rgba(67, 80, 89, 0.34), rgba(12, 16, 18, 0.96)),
+    radial-gradient(ellipse 120% 85% at 50% 42%, rgba(var(--graphite-rgb, 67, 80, 89), 0.34), rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.96)),
     var(--graphite, #435059);
   color: var(--paper, #F7F9EF);
   -webkit-tap-highlight-color: transparent;
@@ -63,9 +89,9 @@ html.kiosk-runtime body {
   opacity: var(--stripe-opacity, 1);
   transition: opacity 200ms ease;
   background:
-    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 95.4%, rgba(160, 33, 40, 0.62) 95.4%, rgba(160, 33, 40, 0.62) 99%, transparent 99.2%),
-    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 1.5%, rgba(157, 163, 166, 0.1) 1.5%, rgba(157, 163, 166, 0.1) 9%, transparent 9.2%),
-    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 93.6%, rgba(210, 183, 115, 0.6) 93.6%, rgba(210, 183, 115, 0.6) 93.75%, transparent 93.95%);
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 95.4%, rgba(var(--red-rgb, 160, 33, 40), 0.62) 95.4%, rgba(var(--red-rgb, 160, 33, 40), 0.62) 99%, transparent 99.2%),
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 1.5%, rgba(var(--window-rgb, 157, 163, 168), 0.1) 1.5%, rgba(var(--window-rgb, 157, 163, 168), 0.1) 9%, transparent 9.2%),
+    linear-gradient(var(--kiosk-stripe-angle), transparent 0, transparent 93.6%, rgba(var(--brass-rgb, 210, 183, 115), 0.6) 93.6%, rgba(var(--brass-rgb, 210, 183, 115), 0.6) 93.75%, transparent 93.95%);
 }
 .kiosk-stripes[hidden] { display: none; }
 
@@ -92,7 +118,7 @@ html.kiosk-runtime body {
 /* Границу поля видно, только пока открыта сервис-панель — иначе оператор
    крутит «Ширину поля» вслепую. */
 .kiosk-app.is-service .kiosk-content {
-  outline: 2px dashed rgba(210, 183, 115, 0.55);
+  outline: 2px dashed rgba(var(--brass-rgb, 210, 183, 115), 0.55);
   outline-offset: 4px;
 }
 
@@ -146,8 +172,8 @@ html.kiosk-runtime body {
   gap: var(--touch-gap, 16px);
   padding: 10px 18px;
   border-radius: 999px;
-  background: rgba(12, 16, 18, 0.62);
-  border: 1px solid rgba(210, 183, 115, 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
   backdrop-filter: blur(6px);
   pointer-events: auto;
 }
@@ -160,7 +186,7 @@ html.kiosk-runtime body {
   border: 0;
   padding: 0;
   border-radius: 50%;
-  background: rgba(247, 249, 239, 0.06);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.06);
   color: var(--brass, #D2B773);
   cursor: pointer;
   touch-action: manipulation;
@@ -168,7 +194,7 @@ html.kiosk-runtime body {
 }
 .kiosk-nav__arrow svg { width: 52%; height: 52%; }
 .kiosk-nav__arrow:active {
-  background: rgba(210, 183, 115, 0.22);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.22);
   color: var(--paper, #F7F9EF);
   transform: scale(0.94);
 }
@@ -186,7 +212,7 @@ html.kiosk-runtime body {
   font-size: var(--type-min-label, 24px);
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: rgba(210, 183, 115, 0.8);
+  color: rgba(var(--brass-rgb, 210, 183, 115), 0.8);
 }
 .kiosk-nav__scene {
   display: block;
@@ -218,13 +244,13 @@ html.kiosk-runtime body {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: rgba(247, 249, 239, 0.28);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.28);
   border: 2px solid transparent;
   transition: background 180ms ease, transform 180ms ease, border-color 180ms ease;
 }
 .kiosk-nav__dot.is-active i {
   background: var(--brass, #D2B773);
-  border-color: rgba(247, 249, 239, 0.55);
+  border-color: rgba(var(--paper-rgb, 247, 249, 239), 0.55);
   transform: scale(1.35);
 }
 
@@ -243,15 +269,15 @@ html.kiosk-runtime body {
   width: var(--kiosk-nav-size, 96px);
   height: var(--kiosk-nav-size, 96px);
   opacity: var(--kiosk-nav-opacity, 0.92);
-  background: rgba(12, 16, 18, 0.62);
-  border: 1px solid rgba(210, 183, 115, 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
   backdrop-filter: blur(6px);
 }
 .kiosk-app > .kiosk-nav__arrow--prev { left: var(--kiosk-nav-side-x, 64px); }
 .kiosk-app > .kiosk-nav__arrow--next { right: var(--kiosk-nav-side-x, 64px); }
 .kiosk-app > .kiosk-nav__arrow:active {
   transform: translateY(-50%) scale(0.94);
-  background: rgba(210, 183, 115, 0.22);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.22);
   color: var(--paper, #F7F9EF);
 }
 .kiosk-app.is-standby > .kiosk-nav__arrow { opacity: 0; pointer-events: none; }
@@ -269,7 +295,7 @@ html.kiosk-runtime body {
   z-index: 50;
   display: grid;
   place-items: center;
-  background: rgba(0, 0, 0, 0.82);
+  background: rgba(var(--amber-black-rgb, 0, 0, 0), 0.82);
   opacity: 0;
   transition: opacity 500ms ease;
   pointer-events: none;              /* касание идёт сцене, выход ловит window */
@@ -277,7 +303,7 @@ html.kiosk-runtime body {
 .kiosk-standby.is-on { opacity: 1; }
 .kiosk-standby[hidden] { display: none; }
 
-.kiosk-standby.is-bare { background: rgba(0, 0, 0, 0.28); }
+.kiosk-standby.is-bare { background: rgba(var(--amber-black-rgb, 0, 0, 0), 0.28); }
 .kiosk-standby.is-bare .kiosk-standby__canvas { display: none; }
 
 .kiosk-standby__canvas {
@@ -357,7 +383,7 @@ html.kiosk-runtime body {
   margin: 32px 0 18px;
   height: 6px;
   border-radius: 3px;
-  background: rgba(247, 249, 239, 0.12);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.12);
   overflow: hidden;
 }
 .kiosk-splash__bar i {
@@ -372,7 +398,7 @@ html.kiosk-runtime body {
   font-size: var(--type-min-label, 24px);
   letter-spacing: 0.1em;
   text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.62);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.62);
 }
 .kiosk-splash.is-error .kiosk-splash__bar i { background: var(--red, #A02128); }
 .kiosk-splash.is-error .kiosk-splash__note { color: var(--red, #A02128); }
@@ -398,8 +424,8 @@ html.kiosk-runtime body {
   gap: 6px;
   padding: 6px;
   border-radius: 999px;
-  background: rgba(12, 16, 18, 0.62);
-  border: 1px solid rgba(210, 183, 115, 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
 }
 .kiosk-lang[hidden] { display: none; }
 .kiosk-lang__btn {
@@ -409,7 +435,7 @@ html.kiosk-runtime body {
   border: 0;
   border-radius: 999px;
   background: none;
-  color: rgba(247, 249, 239, 0.62);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.62);
   font-family: "20 Kopeek", "Courier New", monospace;
   font-size: var(--type-min-ui, 32px);
   letter-spacing: 0.08em;
@@ -418,7 +444,7 @@ html.kiosk-runtime body {
   transition: background 160ms ease, color 160ms ease;
 }
 .kiosk-lang__btn.is-on {
-  background: rgba(210, 183, 115, 0.22);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.22);
   color: var(--brass, #D2B773);
 }
 
@@ -429,9 +455,9 @@ html.kiosk-runtime body {
   place-items: center;
   padding: 0;
   border-radius: 50%;
-  border: 1px solid rgba(210, 183, 115, 0.35);
-  background: rgba(12, 16, 18, 0.62);
-  color: rgba(247, 249, 239, 0.7);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.7);
   cursor: pointer;
   touch-action: manipulation;
 }
@@ -440,7 +466,7 @@ html.kiosk-runtime body {
 .kiosk-a11y.is-on {
   background: var(--a11y-accent, #FFD24A);
   border-color: var(--a11y-accent, #FFD24A);
-  color: #000;
+  color: var(--amber-black, #000);
 }
 .kiosk-app.is-standby .kiosk-tools { opacity: 0; pointer-events: none; }
 
@@ -463,17 +489,17 @@ html.kiosk-runtime body {
 :root.a11y .kiosk-gear,
 :root.a11y .kiosk-nav__app { color: var(--a11y-accent, #FFD24A); }
 :root.a11y .kiosk-nav__arrow { background: none; border: 2px solid var(--a11y-accent, #FFD24A); }
-:root.a11y .kiosk-lang__btn { color: #FFFFFF; }
+:root.a11y .kiosk-lang__btn { color: var(--a11y-fg, #FFFFFF); }
 /* Включённая кнопка режима должна остаться залитой — иначе общее
    правило контраст-темы гасит её в пустой кружок. */
 :root.a11y .kiosk-a11y.is-on {
   background: var(--a11y-accent, #FFD24A);
-  color: #000;
+  color: var(--amber-black, #000);
 }
 :root.a11y .kiosk-lang__btn.is-on { background: var(--a11y-accent, #FFD24A); color: #000; }
-:root.a11y .kiosk-nav__dot i { background: #FFFFFF; }
-:root.a11y .kiosk-nav__dot.is-active i { background: var(--a11y-accent, #FFD24A); border-color: #FFFFFF; }
-:root.a11y .kiosk-standby { background: #000; }
+:root.a11y .kiosk-nav__dot i { background: var(--a11y-fg, #FFFFFF); }
+:root.a11y .kiosk-nav__dot.is-active i { background: var(--a11y-accent, #FFD24A); border-color: var(--a11y-fg, #FFFFFF); }
+:root.a11y .kiosk-standby { background: var(--amber-black, #000); }
 :root.a11y .kiosk-standby__icon { color: var(--a11y-accent, #FFD24A); }
 
 /* ------------------------------------------------------- сервис-панель
@@ -492,14 +518,14 @@ html.kiosk-runtime body {
   place-items: center;
   padding: 0;
   border-radius: 50%;
-  border: 1px solid rgba(210, 183, 115, 0.35);
-  background: rgba(12, 16, 18, 0.62);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
   color: var(--brass, #D2B773);
   cursor: pointer;
   touch-action: manipulation;
 }
 .kiosk-gear svg { width: 54%; height: 54%; }
-.kiosk-gear:active { background: rgba(210, 183, 115, 0.22); }
+.kiosk-gear:active { background: rgba(var(--brass-rgb, 210, 183, 115), 0.22); }
 .kiosk-gear[hidden] { display: none; }
 .kiosk-app.is-standby .kiosk-gear { opacity: 0; pointer-events: none; }
 
@@ -512,8 +538,8 @@ html.kiosk-runtime body {
   width: min(720px, 46vw);
   display: flex;
   flex-direction: column;
-  background: rgba(8, 11, 13, 0.96);
-  border-left: 1px solid rgba(210, 183, 115, 0.35);
+  background: rgba(var(--kiosk-ink-deep-rgb, 8, 11, 13), 0.96);
+  border-left: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
   transform: translateX(102%);
   transition: transform 320ms ease;
   font-family: "21 Cent", Georgia, serif;
@@ -528,7 +554,7 @@ html.kiosk-runtime body {
   justify-content: space-between;
   gap: 16px;
   padding: 24px var(--edge-safe, 64px) 24px 32px;
-  border-bottom: 1px solid rgba(247, 249, 239, 0.12);
+  border-bottom: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.12);
   font-family: "20 Kopeek", "Courier New", monospace;
   font-size: var(--type-min-ui, 32px);
   letter-spacing: 0.1em;
@@ -537,17 +563,17 @@ html.kiosk-runtime body {
 }
 .kiosk-service__foot {
   border-bottom: 0;
-  border-top: 1px solid rgba(247, 249, 239, 0.12);
+  border-top: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.12);
   font-size: var(--type-min-label, 24px);
 }
-.kiosk-service__ver { color: rgba(247, 249, 239, 0.42); text-transform: none; }
+.kiosk-service__ver { color: rgba(var(--paper-rgb, 247, 249, 239), 0.42); text-transform: none; }
 
 .kiosk-service__close {
   width: var(--touch-min, 64px);
   height: var(--touch-min, 64px);
   border: 0;
   border-radius: 50%;
-  background: rgba(247, 249, 239, 0.06);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.06);
   color: var(--paper, #F7F9EF);
   font-size: 30px;
   cursor: pointer;
@@ -556,8 +582,8 @@ html.kiosk-runtime body {
   min-height: var(--touch-min, 64px);
   padding: 0 28px;
   border-radius: 999px;
-  border: 1px solid rgba(160, 33, 40, 0.7);
-  background: rgba(160, 33, 40, 0.16);
+  border: 1px solid rgba(var(--red-rgb, 160, 33, 40), 0.7);
+  background: rgba(var(--red-rgb, 160, 33, 40), 0.16);
   color: var(--paper, #F7F9EF);
   font-family: inherit;
   font-size: var(--type-min-label, 24px);
@@ -573,7 +599,7 @@ html.kiosk-runtime body {
   padding: 8px 32px 32px;
 }
 
-.kiosk-set__group { padding: 24px 0; border-bottom: 1px solid rgba(247, 249, 239, 0.08); }
+.kiosk-set__group { padding: 24px 0; border-bottom: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.08); }
 .kiosk-set__title {
   display: flex;
   align-items: center;
@@ -584,15 +610,15 @@ html.kiosk-runtime body {
   font-size: var(--type-min-label, 24px);
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: rgba(210, 183, 115, 0.8);
+  color: rgba(var(--brass-rgb, 210, 183, 115), 0.8);
 }
 .kiosk-set__mini {
   min-height: 48px;
   padding: 0 18px;
   border-radius: 999px;
-  border: 1px solid rgba(247, 249, 239, 0.2);
+  border: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.2);
   background: none;
-  color: rgba(247, 249, 239, 0.7);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.7);
   font-family: inherit;
   font-size: 20px;
   letter-spacing: 0.08em;
@@ -639,8 +665,8 @@ html.kiosk-runtime body {
   height: var(--touch-min, 64px);
   padding: 0;
   border-radius: 999px;
-  border: 1px solid rgba(247, 249, 239, 0.22);
-  background: rgba(247, 249, 239, 0.06);
+  border: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.22);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.06);
   cursor: pointer;
   touch-action: manipulation;
   position: relative;
@@ -652,11 +678,11 @@ html.kiosk-runtime body {
   width: 46px;
   height: 46px;
   border-radius: 50%;
-  background: rgba(247, 249, 239, 0.45);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.45);
   transform: translateY(-50%);
   transition: left 180ms ease, background 180ms ease;
 }
-.kiosk-set__switch.is-on { background: rgba(210, 183, 115, 0.28); border-color: var(--brass, #D2B773); }
+.kiosk-set__switch.is-on { background: rgba(var(--brass-rgb, 210, 183, 115), 0.28); border-color: var(--brass, #D2B773); }
 .kiosk-set__switch.is-on i { left: 60px; background: var(--brass, #D2B773); }
 
 .kiosk-set__choices { display: flex; flex-wrap: wrap; gap: var(--touch-gap, 16px); }
@@ -664,7 +690,7 @@ html.kiosk-runtime body {
   min-height: var(--touch-min, 64px);
   padding: 0 26px;
   border-radius: 999px;
-  border: 1px solid rgba(247, 249, 239, 0.22);
+  border: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.22);
   background: none;
   color: var(--paper, #F7F9EF);
   font-family: inherit;
@@ -673,7 +699,7 @@ html.kiosk-runtime body {
   touch-action: manipulation;
 }
 .kiosk-set__choice.is-on {
-  background: rgba(210, 183, 115, 0.22);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.22);
   border-color: var(--brass, #D2B773);
   color: var(--brass, #D2B773);
 }
@@ -683,13 +709,54 @@ html.kiosk-runtime body {
   width: 200px;
   padding: 0 18px;
   border-radius: 12px;
-  border: 1px solid rgba(247, 249, 239, 0.22);
-  background: rgba(247, 249, 239, 0.04);
+  border: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.22);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.04);
   color: var(--paper, #F7F9EF);
   font-family: "20 Kopeek", "Courier New", monospace;
   font-size: var(--type-min-label, 24px);
   text-align: center;
 }
+
+/* ---- группа «Экраны»: состав и порядок ---- */
+.kiosk-screen-row {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap, 16px);
+  padding: 8px 0;
+}
+.kiosk-screen-row.is-off .kiosk-screen__name { opacity: 0.42; text-decoration: line-through; }
+
+.kiosk-screen__name {
+  flex: 1;
+  font-size: var(--type-min-ui, 32px);
+  color: var(--paper, #F7F9EF);
+}
+
+.kiosk-screen__move {
+  width: var(--touch-min, 64px);
+  height: var(--touch-min, 64px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 12px;
+  border: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.2);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.04);
+  color: var(--brass, #D2B773);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-screen__move:disabled { opacity: 0.25; cursor: default; }
+.kiosk-screen__move:active:not(:disabled) { background: rgba(var(--brass-rgb, 210, 183, 115), 0.22); }
+.kiosk-screen__chev {
+  width: 14px;
+  height: 14px;
+  border-right: 3px solid currentColor;
+  border-bottom: 3px solid currentColor;
+  transform: translateY(-3px) rotate(45deg);
+}
+.kiosk-screen__chev--up { transform: translateY(3px) rotate(-135deg); }
+
+.kiosk-set__switch:disabled { opacity: 0.45; cursor: default; }
 
 /* ---- настройки сцен: сворачиваемые группы ----
    По описи у МТК 38 около 60 параметров. Развёрнутыми они превращают
@@ -705,7 +772,7 @@ html.kiosk-runtime body {
   padding: 0 4px;
   border: 0;
   background: none;
-  color: rgba(210, 183, 115, 0.85);
+  color: rgba(var(--brass-rgb, 210, 183, 115), 0.85);
   font-family: "20 Kopeek", "Courier New", monospace;
   font-size: var(--type-min-label, 24px);
   letter-spacing: 0.1em;
@@ -719,8 +786,8 @@ html.kiosk-runtime body {
   min-width: 3ch;
   padding: 2px 12px;
   border-radius: 999px;
-  background: rgba(247, 249, 239, 0.08);
-  color: rgba(247, 249, 239, 0.6);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.08);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.6);
   text-align: center;
 }
 .kiosk-set__fold-mark {
@@ -741,7 +808,7 @@ html.kiosk-runtime body {
   margin-bottom: 14px;
   font-size: var(--type-min-label, 24px);
   line-height: 1.4;
-  color: rgba(247, 249, 239, 0.6);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.6);
 }
 .kiosk-set__note b { color: var(--brass, #D2B773); font-weight: 400; }
 
@@ -750,15 +817,15 @@ html.kiosk-runtime body {
   min-height: var(--touch-min, 64px);
   padding: 0 28px;
   border-radius: 999px;
-  border: 1px solid rgba(210, 183, 115, 0.55);
-  background: rgba(210, 183, 115, 0.12);
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.55);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.12);
   color: var(--paper, #F7F9EF);
   font-family: inherit;
   font-size: var(--type-min-label, 24px);
   cursor: pointer;
   touch-action: manipulation;
 }
-.kiosk-set__btn:active { background: rgba(210, 183, 115, 0.28); }
+.kiosk-set__btn:active { background: rgba(var(--brass-rgb, 210, 183, 115), 0.28); }
 
 /* ---- журнал ---- */
 .kiosk-set__log {
@@ -772,22 +839,22 @@ html.kiosk-runtime body {
   display: flex;
   gap: 14px;
   padding: 6px 0;
-  border-bottom: 1px solid rgba(247, 249, 239, 0.06);
-  color: rgba(247, 249, 239, 0.72);
+  border-bottom: 1px solid rgba(var(--paper-rgb, 247, 249, 239), 0.06);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.72);
 }
-.kiosk-set__log-at { color: rgba(247, 249, 239, 0.4); white-space: nowrap; }
+.kiosk-set__log-at { color: rgba(var(--paper-rgb, 247, 249, 239), 0.4); white-space: nowrap; }
 /* Записи прошлых запусков приглушены и помечены — чтобы чужие аварии
    не читались как свои. */
 .kiosk-set__log-row.is-old { opacity: 0.45; }
 .kiosk-set__log-sid {
-  color: rgba(210, 183, 115, 0.75);
+  color: rgba(var(--brass-rgb, 210, 183, 115), 0.75);
   white-space: nowrap;
   letter-spacing: 0.06em;
 }
 .kiosk-set__log-row[data-level="warn"]  { color: var(--brass, #D2B773); }
-.kiosk-set__log-row[data-level="error"] { color: #E8737A; }
-.kiosk-set__log-row[data-level="fatal"] { color: #E8737A; font-weight: 700; }
-.kiosk-set__log-empty { color: rgba(247, 249, 239, 0.4); }
+.kiosk-set__log-row[data-level="error"] { color: var(--kiosk-alert, #E8737A); }
+.kiosk-set__log-row[data-level="fatal"] { color: var(--kiosk-alert, #E8737A); font-weight: 700; }
+.kiosk-set__log-empty { color: rgba(var(--paper-rgb, 247, 249, 239), 0.4); }
 
 /* --------------------------------------------------- системные предпочтения */
 

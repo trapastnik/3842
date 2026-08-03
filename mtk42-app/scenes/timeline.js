@@ -4,7 +4,7 @@
  * Полосы позиционируются в px внутри content-box, который начинается после
  * padding-left = --m42-label-col; ширину меряем по вычисленному padding
  * (переменная — clamp(), parseFloat по ней дал бы NaN). */
-import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=8";
+import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=13";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 
@@ -28,19 +28,19 @@ export const timelineScene = {
     { key: "museumBold", label: { ru: "Название музея: жирный" }, type: "toggle", default: false },
 
     { key: "citySize", label: { ru: "Город: размер" }, type: "range",
-      min: 8, max: 20, step: 1, unit: " px", default: 9 },
+      min: 8, max: 20, step: 1, unit: " px", default: 12 },
     { key: "cityOpacity", label: { ru: "Город: непрозрачность" }, type: "range",
       min: 20, max: 100, step: 5, unit: " %", default: 50 },
     { key: "cityBold", label: { ru: "Город: жирный" }, type: "toggle", default: false },
 
     { key: "barLabelSize", label: { ru: "Год на бирке: размер" }, type: "range",
-      min: 8, max: 20, step: 1, unit: " px", default: 10 },
+      min: 8, max: 20, step: 1, unit: " px", default: 12 },
     { key: "barLabelOpacity", label: { ru: "Год на бирке: непрозрачность" }, type: "range",
       min: 40, max: 100, step: 5, unit: " %", default: 90 },
     { key: "barLabelBold", label: { ru: "Год на бирке: жирный" }, type: "toggle", default: false },
 
     { key: "axisTickSize", label: { ru: "Годы на оси: размер" }, type: "range",
-      min: 9, max: 24, step: 1, unit: " px", default: 11 },
+      min: 9, max: 24, step: 1, unit: " px", default: 12 },
     { key: "axisTickOpacity", label: { ru: "Годы на оси: непрозрачность" }, type: "range",
       min: 20, max: 100, step: 5, unit: " %", default: 55 },
     { key: "axisTickBold", label: { ru: "Годы на оси: жирный" }, type: "toggle", default: false },

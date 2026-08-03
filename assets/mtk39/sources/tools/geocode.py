@@ -166,9 +166,21 @@ def fetch_wiki(records):
 STOP = re.compile(r'\(.*?\)|\bбывш[а-яё]*\.?|\bныне\b|→|\bупразднён|\bликвидирован', re.I)
 
 
+def src_country(rec):
+    """Страна по материалам музея.
+
+    Часть записей отнесена к России по действующим границам РФ (см.
+    parse_docx.by_russian_law), но геокодинг обязан оставаться тем же: кеш
+    Nominatim лежит по строке запроса, а проверка попадания в контур страны
+    идёт по Natural Earth. Иначе разовый прогон перестал бы воспроизводиться
+    и выбросил бы девять честных точек как «не попавшие в свою страну».
+    """
+    return rec.get('country_src') or rec['country']
+
+
 def place_query(rec):
     city = STOP.sub(' ', rec['city'] or '').strip(' ,-–—')
-    country = re.split(r'[/(]', rec['country'])[0].strip()
+    country = re.split(r'[/(]', src_country(rec))[0].strip()
     country = {'Англия': 'United Kingdom', 'Кыргызстан': 'Киргизия'}.get(country, country)
     if not city:
         return country or None
@@ -188,7 +200,7 @@ def candidates(rec):
     оригинальное написание («Нкайи (Nkayi)»), и оно ищется отлично.
     """
     city = rec['city'] or ''
-    country = re.split(r'[/(]', rec['country'])[0].strip()
+    country = re.split(r'[/(]', src_country(rec))[0].strip()
     out = []
 
     for m in re.findall(r'\(([^)]+)\)', city):          # оригинал в скобках
@@ -389,13 +401,13 @@ def main():
     for r in records:
         if r['lat'] is None or r['geo_src'] == 'osm':
             continue          # OSM-объект взят по id, проверять нечего
-        key = country_key(r['country'])
+        key = country_key(src_country(r))
         shapes = borders.get(key) if key else None
         if not shapes:
             continue          # страны нет в Natural Earth — проверить нечем
         if not fits_country(r['lat'], r['lng'], shapes):
             dropped.append('%s / %s → %.2f,%.2f (%s)'
-                           % (r['country'], r['city'][:28], r['lat'], r['lng'], r['geo_src']))
+                           % (src_country(r), r['city'][:28], r['lat'], r['lng'], r['geo_src']))
             stats[r['geo_src']] -= 1
             stats['none'] += 1
             r['lat'] = r['lng'] = r['geo_src'] = None

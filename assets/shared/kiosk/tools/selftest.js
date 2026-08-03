@@ -62,18 +62,63 @@
 
   /* ------------------------------------------------------------ проверки */
 
+  /* Запрещена СЕТЬ, а не диск (канон уточнён в PLAN-KIOSK). Локальная
+   * догрузка по тапу легальна и обязательна: у МТК 41 282 фотографии —
+   * 7,8 ГБ в декодированном виде, прероллить оригиналы невозможно.
+   * Валим приёмку только на внешних хостах. */
   function checkNetwork(sinceMs) {
     var late = performance.getEntriesByType("resource").filter(function (e) {
       return e.startTime > sinceMs;
     });
-    var urls = late.map(function (e) { return e.name; });
+    var external = [], local = [];
+    late.forEach(function (e) {
+      var host;
+      try { host = new URL(e.name, location.href).origin; } catch (err) { host = ""; }
+      (host && host !== location.origin ? external : local).push(e.name);
+    });
     return {
-      name: "Сеть после старта",
-      ok: late.length === 0,
-      detail: late.length
-        ? late.length + " запрос(ов) уже после запуска: " + urls.slice(0, 5).join(", ")
-        : "ноль запросов — киоск автономен",
-      data: urls
+      name: "Ноль обращений к внешним хостам",
+      ok: external.length === 0,
+      detail: external.length
+        ? external.length + " внешних запрос(ов): " + external.slice(0, 5).join(", ")
+        : "внешних нет" + (local.length
+            ? "; локальных догрузок после старта: " + local.length + " (это норма)"
+            : "; локальных догрузок тоже нет"),
+      data: { external: external, local: local }
+    };
+  }
+
+  /* Структурные проверки не видят «загружено, но пусто»: DOM на месте,
+   * сеть чиста, а на экране ничего. Сцена сама знает, что для неё
+   * признак живого содержимого. */
+  function checkHealth(app) {
+    var scenes = app.listScenes();
+    var checked = [], bad = [];
+    scenes.forEach(function (s) {
+      var scene = app.getScene(s.id);
+      if (!scene || typeof scene.healthcheck !== "function") return;
+      var r;
+      try {
+        r = scene.healthcheck();
+      } catch (err) {
+        r = { ok: false, detail: "healthcheck упал: " + (err && err.message) };
+      }
+      r = r || {};
+      checked.push(s.id);
+      if (!r.ok) bad.push(s.id + ": " + (r.detail || "без пояснения"));
+    });
+    if (!checked.length) {
+      return {
+        name: "Самопроверка сцен",
+        ok: null,
+        detail: "ни одна сцена не объявила healthcheck() — «загружено, но пусто» не ловится"
+      };
+    }
+    return {
+      name: "Самопроверка сцен",
+      ok: bad.length === 0,
+      detail: bad.length ? bad.join("; ")
+        : "проверено " + checked.length + " из " + scenes.length + ": " + checked.join(", ")
     };
   }
 
@@ -98,6 +143,18 @@
     var edge = px("--edge-safe", 64);
     var edgeBottom = px("--edge-safe-bottom", 80);
     var vw = innerWidth, vh = innerHeight;
+
+    /* В схлопнутом или скрытом окне вся раскладка вырождается в ноль, и
+     * «всё у кромки» — не дефект, а отсутствие раскладки. Красный тут
+     * хуже пропуска: пара ложных срабатываний, и стенду перестают верить. */
+    if (vw < 320 || vh < 320) {
+      var why = "окно " + Math.round(vw) + "×" + Math.round(vh) +
+        " — раскладки нет, мерить нечего";
+      return [
+        { name: "Тач-таргеты ≥ " + Math.round(min) + " px", ok: null, detail: why },
+        { name: "Отступ от кромки", ok: null, detail: why }
+      ];
+    }
 
     var els = Array.prototype.slice.call(
       document.querySelectorAll("button, [role=button], a[href], input, select, .kiosk-touch")
@@ -249,6 +306,7 @@
           });
 
           results.push(checkNetwork(startedAt));
+          results.push(checkHealth(app));
           results.push(checkCanvas());
           results.push(checkScroll());
           checkTouch().forEach(function (r) { results.push(r); });

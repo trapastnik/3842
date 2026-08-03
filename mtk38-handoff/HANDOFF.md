@@ -32,7 +32,7 @@
 
 ### Шрифты (Ф1) — ✅ (subset-вариант)
 - `mtk38-v2/fonts/noto/` — **57 woff2**, 29 письменностей × (400+700), subset под нужные глифы (через Google Fonts `text=`), SIL OFL. Генератор — `build_fonts.py`. Список письменностей — `FONTS-NEEDED.md`.
-- Бренд-шрифты — `mtk38-globe/fonts/` (Nolde, 21 Cent, 20 Kopeek).
+- Бренд-шрифты — `assets/shared/fonts/brand/` (Nolde, 21 Cent, 20 Kopeek).
 - Долг: вендорить `pretext` → `mtk38-poster/vendor/` (всплывёт при пересборке постера).
 
 ### WebGL вендорен (Ф6-D) — ✅
