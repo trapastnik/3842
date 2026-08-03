@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.0.0";
+  var VERSION = "1.1.0";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -221,28 +221,61 @@
     return new Promise(function (res) { setTimeout(res, ms); });
   }
 
-  /* Ждём n отрисованных кадров — чтобы входящая сцена показала первый кадр
-   * ДО старта fade (иначе на кроссфейде видна пустая вспышка).
+  function isHidden() {
+    return typeof document !== "undefined" && document.hidden === true;
+  }
+
+  /* ЛЮБОЕ ожидание внутри ядра проходит через это.
    *
-   * Обязателен фолбэк по таймеру: в скрытой вкладке (фон, свёрнутое окно)
-   * requestAnimationFrame не вызывается вообще, и без страховки очередь
-   * переключений встала бы навсегда — экран умер бы до перезагрузки. */
-  function nextFrames(n, timeoutMs) {
-    n = n || 1;
+   * В скрытой вкладке браузер (а) не вызывает requestAnimationFrame вообще
+   * и (б) душит setInterval/setTimeout до ~одного раза в минуту. То есть
+   * даже страховка по таймеру там не страховка. Поэтому: если вкладка уже
+   * в фоне — не ждём вовсе; если она ушла в фон посреди ожидания —
+   * завершаемся немедленно по visibilitychange (это событие приходит
+   * честно, оно не throttling-зависимо).
+   *
+   * Инвариант: возвращённый промис резолвится ВСЕГДА и детерминированно. */
+  function guardedWait(schedule) {
+    if (isHidden()) return Promise.resolve();
     return new Promise(function (res) {
-      var left = n, done = false;
-      var timer = setTimeout(finish, timeoutMs || 48 * n + 50);
+      var done = false, cancel = null;
       function finish() {
         if (done) return;
         done = true;
-        clearTimeout(timer);
+        document.removeEventListener("visibilitychange", onVis);
+        if (cancel) cancel();
         res();
       }
+      function onVis() { if (isHidden()) finish(); }
+      document.addEventListener("visibilitychange", onVis);
+      cancel = schedule(finish);
+      if (done && cancel) cancel();   // schedule успел позвать finish синхронно
+    });
+  }
+
+  /* Ждём n отрисованных кадров — чтобы входящая сцена показала первый кадр
+   * ДО старта fade (иначе на кроссфейде видна пустая вспышка). */
+  function nextFrames(n, timeoutMs) {
+    n = n || 1;
+    return guardedWait(function (finish) {
+      var left = n;
+      var timer = setTimeout(finish, timeoutMs || 48 * n + 50);
       (function tick() {
-        if (done) return;
         if (left-- <= 0) return finish();
         requestAnimationFrame(tick);
       })();
+      return function () { clearTimeout(timer); };
+    });
+  }
+
+  /* Ожидание конца CSS-перехода. Отдельно от sleep(): переход, начатый в
+   * видимой вкладке и застигнутый уходом в фон, обязан завершиться сразу,
+   * а не через задушенный setTimeout. */
+  function waitFade(ms) {
+    if (!(ms > 0)) return Promise.resolve();
+    return guardedWait(function (finish) {
+      var timer = setTimeout(finish, ms);
+      return function () { clearTimeout(timer); };
     });
   }
 
@@ -382,6 +415,7 @@
     /* watchdog */
     this._lastTick = Date.now();
     this._lastBeat = Date.now();
+    this._wdSuspended = 0;
   }
 
   KioskApp.prototype = Object.create(Emitter.prototype);
@@ -848,9 +882,9 @@
 
     return Promise.all(jobs).then(function () {
       self._buildDots();
-      /* Сплэш не должен мигать на быстрой машине. */
-      var left = 400 - (Date.now() - started);
-      return left > 0 ? sleep(left) : null;
+      /* Сплэш не должен мигать на быстрой машине. Через waitFade, а не
+       * sleep: в свёрнутом окне задушенный таймер подвесил бы весь старт. */
+      return waitFade(400 - (Date.now() - started));
     });
   };
 
@@ -915,7 +949,10 @@
     if (this._active === rec) return Promise.resolve();
 
     var prev = this._active;
-    var fade = opts.instant ? 0 : Number(this.config.timings.fade) || 350;
+    /* В скрытой вкладке анимировать нечего и нечем: rAF заморожен, таймеры
+     * задушены. Переключаемся мгновенно — переход обязан завершаться
+     * детерминированно, иначе очередь встаёт и сцена не меняется вовсе. */
+    var fade = (opts.instant || isHidden()) ? 0 : Number(this.config.timings.fade) || 350;
 
     this.emit("scene-will-change", { from: prev ? prev.id : null, to: id });
 
@@ -937,7 +974,7 @@
           prev.el.style.transitionDuration = fade + "ms";
           prev.el.classList.remove("is-active");
         }
-        return fade ? sleep(fade) : nextFrames(1);
+        return waitFade(fade);
       })
       .then(function () {
         if (prev) {
@@ -1002,6 +1039,17 @@
       window.addEventListener(ev, self._onActivity, { passive: true, capture: true });
     });
 
+    /* Возврат из фона — не фриз. Обнуляем все опорные метки, иначе
+     * ватчдог примет паузу браузера за зависание главного потока. */
+    this._onVisibility = function () {
+      var now = Date.now();
+      self._lastTick = now;
+      self._lastBeat = now;
+      self._lastActivity = now;
+      self._didReset = false;
+    };
+    document.addEventListener("visibilitychange", this._onVisibility);
+
     this._lastActivity = Date.now();
     this._lastTick = Date.now();
     this._lastBeat = Date.now();
@@ -1025,27 +1073,63 @@
     return this._idleSuspended;
   };
 
+  /* Заморозить ватчдог — на время долгих операций, которые честно держат
+   * поток (тяжёлый импорт, генерация текстур) или когда сцена сознательно
+   * не бьётся. Счётчик, как и у простоя: вложенные вызовы безопасны. */
+  KioskApp.prototype.suspendWatchdog = function () {
+    this._wdSuspended++;
+    return this._wdSuspended;
+  };
+
+  KioskApp.prototype.resumeWatchdog = function () {
+    this._wdSuspended = Math.max(0, this._wdSuspended - 1);
+    if (!this._wdSuspended) {
+      /* Пауза не должна засчитаться как зависание. */
+      this._lastTick = Date.now();
+      this._lastBeat = Date.now();
+    }
+    return this._wdSuspended;
+  };
+
   KioskApp.prototype._tick = function () {
     var now = Date.now();
     var sinceTick = now - this._lastTick;
     this._lastTick = now;
 
-    /* Тикер должен приходить раз в секунду. Опоздал сильно → главный поток
-     * стоял (тяжёлая сцена, утечка, зависший WebGL). */
-    var wd = this.config.watchdog || {};
-    var stallMs = (wd.stallSec || 30) * 1000;
-    if (sinceTick > stallMs) {
-      this.log("fatal", "главный поток стоял " + Math.round(sinceTick / 1000) + " с");
-      if (wd.restart !== false) return this.restart("зависание главного потока");
+    /* Вкладка в фоне — тикер там не показатель здоровья.
+     *
+     * Chrome душит setInterval скрытой вкладки до ~одного раза в минуту:
+     * разрыв в 60 с означает «браузер экономит», а не «поток завис». Без
+     * этой проверки ватчдог перезапускал живое приложение каждую минуту
+     * (пилот МТК 42 поймал три рестарта подряд).
+     *
+     * Простой в фоне тоже не идёт: посетителя перед экраном по определению
+     * нет, а уводить в standby невидимый экран бессмысленно. Метки держим
+     * свежими, чтобы возврат из фона не выглядел как трёхминутный простой. */
+    if (isHidden()) {
+      this._lastActivity = now;
+      this._lastBeat = now;
+      return;
     }
 
-    /* Сцена с watchdog:true обязана звать ctx.beat(). Молчит — авария. */
-    var rec = this._active;
-    if (rec && rec.scene.watchdog && this.idleState === IDLE.ACTIVE) {
-      var quiet = now - this._lastBeat;
-      if (quiet > (wd.sceneTimeoutSec || 20) * 1000) {
-        this.log("fatal", "сцена «" + rec.id + "» молчит " + Math.round(quiet / 1000) + " с");
-        if (wd.restart !== false) return this.restart("сцена не отвечает");
+    var wd = this.config.watchdog || {};
+    if (!this._wdSuspended) {
+      /* Тикер должен приходить раз в секунду. Опоздал сильно → главный
+       * поток стоял (тяжёлая сцена, утечка, зависший WebGL). */
+      var stallMs = (wd.stallSec || 30) * 1000;
+      if (sinceTick > stallMs) {
+        this.log("fatal", "главный поток стоял " + Math.round(sinceTick / 1000) + " с");
+        if (wd.restart !== false) return this.restart("зависание главного потока");
+      }
+
+      /* Сцена с watchdog:true обязана звать ctx.beat(). Молчит — авария. */
+      var rec = this._active;
+      if (rec && rec.scene.watchdog && this.idleState === IDLE.ACTIVE) {
+        var quiet = now - this._lastBeat;
+        if (quiet > (wd.sceneTimeoutSec || 20) * 1000) {
+          this.log("fatal", "сцена «" + rec.id + "» молчит " + Math.round(quiet / 1000) + " с");
+          if (wd.restart !== false) return this.restart("сцена не отвечает");
+        }
       }
     }
 
@@ -1392,11 +1476,15 @@
       /* nextFrames, а не голый rAF: в скрытой вкладке кадров не бывает и
        * панель осталась бы за краем экрана (страховка по таймеру внутри). */
       nextFrames(1).then(function () { panel.classList.add("is-open"); });
-      this.suspendIdle(true);      // под руками оператора киоск не засыпает
+      /* Под руками оператора киоск не засыпает и не перезапускается:
+       * оператор может держать поток (правка полей, долгий разбор журнала). */
+      this.suspendIdle(true);
+      this.suspendWatchdog();
     } else {
       panel.classList.remove("is-open");
       setTimeout(function () { if (!panel.classList.contains("is-open")) panel.hidden = true; }, 350);
       this.suspendIdle(false);
+      this.resumeWatchdog();
     }
     this.emit("service", { open: on });
     return this;
@@ -1746,7 +1834,13 @@
     DEFAULT_CONFIG: DEFAULT_CONFIG,
     createApp: function (opts) { return new KioskApp(opts); },
     KioskApp: KioskApp,
-    /* внутреннее, но полезно сценам и демо */
-    util: { deepMerge: deepMerge, pickLabel: pickLabel, sleep: sleep, nextFrames: nextFrames }
+    /* Внутреннее, но полезно сценам. waitFade/nextFrames/guardedWait —
+     * ожидания, переживающие уход вкладки в фон; для собственных
+     * анимаций сцены берите их, а не голый setTimeout. */
+    util: {
+      deepMerge: deepMerge, pickLabel: pickLabel, sleep: sleep,
+      nextFrames: nextFrames, waitFade: waitFade, guardedWait: guardedWait,
+      isHidden: isHidden
+    }
   };
 })(typeof window !== "undefined" ? window : this);
