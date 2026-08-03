@@ -4,17 +4,30 @@
  */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
 
-import { globeScene } from "./scenes/globe.js?v=6";
-import { rainScene } from "./scenes/rain.js?v=6";
-import { mapScene } from "./scenes/map.js?v=6";
-import { catalogScene } from "./scenes/catalog.js?v=6";
-import { compositionsScene } from "./scenes/compositions.js?v=6";
+import { globeScene } from "./scenes/globe.js?v=7";
+import { rainScene } from "./scenes/rain.js?v=7";
+import { mapScene } from "./scenes/map.js?v=7";
+import { catalogScene } from "./scenes/catalog.js?v=7";
+import { compositionsScene } from "./scenes/compositions.js?v=7";
+
+/* Словари грузим сами и отдаём ядру объектом, а не через i18nUrl.
+ * Причина практическая: ядро запрашивает ./i18n/<lang>.json без версии, и
+ * Chrome на киоске держит старый словарь после обновления сборки — правка
+ * подписей не доезжает. С `?v=` этого не происходит. (Заявка ядру: принимать
+ * версию для словарей; тогда этот блок уйдёт.) */
+const I18N_V = 7;
+const i18n = {};
+await Promise.all(["ru", "en", "zh"].map((l) =>
+  fetch(`./i18n/${l}.json?v=${I18N_V}`)
+    .then((r) => r.json())
+    .then((d) => { i18n[l] = d; })
+    .catch((e) => console.warn("[i18n] словарь " + l + " не прочитан", e))));
 
 const app = createApp({
   appId: "mtk38",
   title: { ru: "МТК · 38", en: "MTK · 38", zh: "МТК · 38" },
   configUrl: "./kiosk.config.json",
-  i18nUrl: "./i18n/",
+  i18n,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
@@ -27,23 +40,36 @@ SCENES.forEach((s) => app.registerScene(s));
  * по пути scenes.<id>.<key> и зовёт applySettings. Мост из эталона 42 (он писался
  * под ядро 1.1.0) здесь не нужен и продублировал бы строки панели. */
 
-/* Аттрактор-чередование: ядро 1.5.0 умеет отдать standby одной сцене, но не
- * переключать их по кругу. Пока не умеет — крутим здесь, по списку из конфига.
- * Смысл: с трёх метров зритель должен видеть движение и разные картины, иначе
- * киоск читается как выключенный экран. */
+/* Аттрактор-чередование поверх контракта сцен.
+ *
+ * Ядро умеет отдать standby ОДНОЙ сцене: та возвращает стоп-функцию своей
+ * тротлённой петли, и ядро не гасит её и не закрывает своим оверлеем. Крутить
+ * сцены по кругу ядро пока не умеет — это делается здесь, по списку из конфига.
+ *
+ * Порядок в такте важен: сперва гасим петлю уходящей сцены, потом показываем
+ * следующую (ядро на показе поднимет ей обычную петлю), и сразу переводим её в
+ * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
+ * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
+ * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=7";
+
 let rotTimer = 0;
 function stopRotation() { clearInterval(rotTimer); rotTimer = 0; }
+onStandbyStop(stopRotation);
 
-app.on("standby", () => {
+app.on("standby", ({ own }) => {
   const cfg = (app.config && app.config.standby) || {};
-  if (cfg.mode !== "rotate") return;
+  if (cfg.mode !== "rotate" || !own) return;   // сцена не отдала петлю — крутит ядро
   const ids = (cfg.scenes || []).filter((id) => SCENES.some((s) => s.id === id));
   if (ids.length < 2) return;
   let i = Math.max(0, ids.indexOf(app.activeSceneId));
   stopRotation();
-  rotTimer = setInterval(() => {
+  rotTimer = setInterval(async () => {
     i = (i + 1) % ids.length;
-    app.showScene(ids[i]);
+    stopSceneStandby();
+    await app.showScene(ids[i]);
+    const scene = SCENES.find((s) => s.id === ids[i]);
+    if (scene && scene.standby) scene.standby();
   }, Math.max(8, cfg.rotateSec || 25) * 1000);
 });
 app.on("standby-exit", stopRotation);

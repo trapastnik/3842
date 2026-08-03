@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba } from "./shared.js?v=6";
-import { createCard } from "./card.js?v=6";
+import { loadData, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
+import { createCard } from "./card.js?v=7";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -26,10 +26,10 @@ export const mapScene = {
   /* Схема настроек v1.2 — позиции класса А из SETTINGS-INVENTORY (v3 map).
    * Слой («показать») здесь НЕТ: это класс Б, он остаётся пилюлей на сцене. */
   settings: [
+    /* Пары-массивы, а не {value,label}: ядро 1.5/1.6 рендерит label-объект как
+     * «[object Object]» (заявка в kiosk-core, чинят к 1.7). */
     { key: "base", label: { ru: "Подложка" }, type: "select", default: "countries",
-      options: [{ value: "countries", label: { ru: "Страны" } },
-                { value: "relief", label: { ru: "Рельеф" } },
-                { value: "physical", label: { ru: "Физическая" } }] },
+      options: [["countries", "Страны"], ["relief", "Рельеф"], ["physical", "Физическая"]] },
     { key: "routes", label: { ru: "Связи с Москвой" }, type: "toggle", default: true },
     { key: "dot", label: { ru: "Размер точек" }, type: "range", min: 0.4, max: 2, step: 0.05, default: 1 },
     { key: "borders", label: { ru: "Границы на растре" }, type: "toggle", default: true },
@@ -37,6 +37,10 @@ export const mapScene = {
       min: 0.5, max: 2.2, step: 0.05, default: 1 },
     { key: "glow", label: { ru: "Свечение" }, type: "range",
       min: 0, max: 1.5, step: 0.05, default: 0.5 },
+    /* Параллели и меридианы. В Winkel Tripel они кривые и сэмплируются, но
+     * куратор всё равно должен уметь их приглушить или снять совсем. */
+    { key: "guides", label: { ru: "Сетка" }, type: "range",
+      min: 0, max: 1, step: 0.05, default: 0.5 },
     { key: "grain", label: { ru: "Зерно" }, type: "range",
       min: 0, max: 0.2, step: 0.005, default: 0.05 },
     { key: "vign", label: { ru: "Виньетка" }, type: "range",
@@ -88,7 +92,7 @@ export const mapScene = {
     this._canvas = root.querySelector(".m38-canvas");
     this._ctx2d = this._canvas.getContext("2d");
     this._pills = root.querySelector(".m38-pills");
-    this._card = createCard({ publications: this._pubs });
+    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null) });
 
     // контуры стран пришли ещё на сплэше (preload) — второй раз не ходим
     const pre = ctx && ctx.data && ctx.data.geo;
@@ -135,6 +139,26 @@ export const mapScene = {
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
   resume() { if (!this._raf) this._loop(); },
 
+  /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
+   * Карта статична, поэтому в заставке она сама показывает то, чего посетитель
+   * мог не заметить: слои языков и изданий сменяют друг друга. */
+  standby() {
+    this.pause();
+    if (this._card) this._card.close();
+    this._standby = true;
+    const stop = standbyLoop(standbyFps(this._app), () => this._draw());
+    clearInterval(this._auto);
+    this._auto = setInterval(() => {
+      this._layer = this._layer === "lang" ? "pub" : "lang";
+      this._syncPills();
+    }, 8000);
+    return beginStandby(() => {
+      stop();
+      clearInterval(this._auto); this._auto = 0;
+      this._standby = false;
+    });
+  },
+
   reset() {
     this._layer = "lang";
     this._syncPills();
@@ -168,8 +192,11 @@ export const mapScene = {
     for (const b of this._pills.querySelectorAll("[data-layer]")) {
       b.textContent = T[b.getAttribute("data-layer")];
     }
+    this._syncCardLang();
     this._syncPills();
   },
+
+  _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
@@ -285,20 +312,23 @@ export const mapScene = {
       }
     }
     // сетка: в WT меридианы и параллели — кривые, поэтому сэмплируем
-    g.strokeStyle = rgba(PAL.brass, 0.09); g.lineWidth = 1.4; g.setLineDash([4, 26]);
-    g.beginPath();
-    for (let lng = -180; lng <= 180; lng += 2) {
-      const p = proj(0, lng); lng === -180 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y);
-    }
-    g.stroke();
-    for (let lng = -180; lng <= 180; lng += 30) {
+    const guides = c.guides ?? 0.5;
+    if (guides > 0.001) {
+      g.strokeStyle = rgba(PAL.brass, 0.18 * guides); g.lineWidth = 1.4; g.setLineDash([4, 26]);
       g.beginPath();
-      for (let lat = -90; lat <= 90; lat += 2) {
-        const p = proj(lat, lng); lat === -90 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y);
+      for (let lng = -180; lng <= 180; lng += 2) {
+        const p = proj(0, lng); lng === -180 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y);
       }
       g.stroke();
+      for (let lng = -180; lng <= 180; lng += 30) {
+        g.beginPath();
+        for (let lat = -90; lat <= 90; lat += 2) {
+          const p = proj(lat, lng); lat === -90 ? g.moveTo(p.x, p.y) : g.lineTo(p.x, p.y);
+        }
+        g.stroke();
+      }
+      g.setLineDash([]);
     }
-    g.setLineDash([]);
     this._cache = off;
   },
 

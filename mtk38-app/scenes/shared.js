@@ -96,6 +96,63 @@ export function groupByWriting(langs) {
   });
 }
 
+/* ── STANDBY ────────────────────────────────────────────────────────
+ *
+ * Контракт ядра: scene.standby() зовётся БЕЗ аргумента и возвращает функцию
+ * остановки собственного аттрактора. Вернула — ядро не паузит сцены и не
+ * рисует свой оверлей поверх, зритель видит саму сцену; не вернула — ядро
+ * гасит всё и включает свою заставку.
+ *
+ * Тонкость МТК 38: аттрактор — не одна сцена, а их чередование (решение
+ * пользователя). Ядро запоминает ТУ функцию, что вернула первая сцена, и
+ * ротация ему не видна. Поэтому все сцены возвращают ОДНУ и ту же ссылку —
+ * `stopStandby` ниже: она гасит и петлю текущей сцены, и саму ротацию, какой
+ * бы сцена ни оказалась активной к моменту прихода посетителя.
+ */
+const SB = { sceneStop: null, onStop: null };
+
+/** Сцена: вызвать в конце своего standby(), передав стоп СВОЕЙ петли. */
+export function beginStandby(sceneStop) {
+  SB.sceneStop = sceneStop;
+  return stopStandby;
+}
+
+/** app.js: сюда вешается остановка ротации. */
+export function onStandbyStop(fn) { SB.onStop = fn; }
+
+/** Ротация: погасить петлю уходящей сцены, не трогая ротацию. */
+export function stopSceneStandby() {
+  const fn = SB.sceneStop;
+  SB.sceneStop = null;
+  if (fn) { try { fn(); } catch (e) { console.warn("[standby stop]", e); } }
+}
+
+export function stopStandby() {
+  stopSceneStandby();
+  const fn = SB.onStop;
+  if (fn) { try { fn(); } catch (e) { console.warn("[standby rotation stop]", e); } }
+}
+
+/* Петля заставки — setInterval, а не rAF: канон киоска не выше 10 fps (GPU
+ * ночью и выгорание панели). Асинхронный кадр не накладываем сам на себя. */
+export function standbyLoop(fps, tick) {
+  const ms = Math.round(1000 / Math.max(1, Math.min(30, fps || 10)));
+  let busy = false;
+  const id = setInterval(async () => {
+    if (busy) return;
+    busy = true;
+    try { await tick(); } catch (e) { console.warn("[standby tick]", e); }
+    busy = false;
+  }, ms);
+  return () => clearInterval(id);
+}
+
+/** FPS заставки из конфига киоска (timings.standbyFps). */
+export function standbyFps(app) {
+  const t = (app && app.config && app.config.timings) || {};
+  return t.standbyFps || 10;
+}
+
 /* Кап буфера для WebGPU-сцен: на 4K-смоуке dpr=2 давал 3840×2160×4 = 33 Мп
  * и просадку до неиграбельного. 8.3 Мп — потолок, дальше режем dpr. */
 export const GPU_MAX_PIXELS = 8300000;

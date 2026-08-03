@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba } from "./shared.js?v=6";
-import { createCard } from "./card.js?v=6";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
+import { createCard } from "./card.js?v=7";
 
 export const catalogScene = {
   id: "catalog",
@@ -28,6 +28,7 @@ export const catalogScene = {
   preload: { custom: async () => { await loadData(); } },
 
   async mount(el, ctx) {
+    this._app = ctx && ctx.app;
     const data = await loadData();
     this._all = [...data.langs].sort((a, b) => (b.un - a.un) || (b.wt - a.wt) || a.n.localeCompare(b.n, "ru"));
     this._pubs = data.pubs;
@@ -52,7 +53,7 @@ export const catalogScene = {
     this._root = root;
     this._canvas = root.querySelector(".m38-canvas");
     this._ctx2d = this._canvas.getContext("2d");
-    this._card = createCard({ publications: this._pubs });
+    this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null) });
     this._filter = "all";
     this._page = 0;
     this._hover = -1;
@@ -148,13 +149,22 @@ export const catalogScene = {
     this._build();
   },
 
-  /* Standby: каталог сам по себе статичен, поэтому в заставке листается. */
-  standby(on) {
-    this._standby = !!on;
+  /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
+   * Отдаём тротлённую петлю (timings.standbyFps): зритель издалека видит саму
+   * сцену, а не оверлей ядра, при этом GPU ночью не молотит на 60 кадрах. */
+  standby() {
+    this.pause();
     if (this._card) this._card.close();
+    this._standby = true;
+    const stop = standbyLoop(standbyFps(this._app), () => this._draw());
+    // сетка статична — в заставке она листается сама, иначе экран мёртвый
     clearInterval(this._auto);
-    this._auto = 0;
-    if (on) this._auto = setInterval(() => this._turn(1), 7000);
+    this._auto = setInterval(() => this._turn(1), 7000);
+    return beginStandby(() => {
+      stop();
+      clearInterval(this._auto); this._auto = 0;
+      this._standby = false;
+    });
   },
 
   setLang(lang) {
@@ -178,8 +188,11 @@ export const catalogScene = {
     for (const b of this._root.querySelectorAll("[data-filter]")) {
       b.textContent = T[b.getAttribute("data-filter")];
     }
+    this._syncCardLang();
     this._build();
   },
+
+  _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) {
     this._a11y = !!on;

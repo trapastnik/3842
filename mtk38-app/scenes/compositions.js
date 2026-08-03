@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL } from "./shared.js?v=6";
-import { createCard } from "./card.js?v=6";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=6";
+import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
+import { createCard } from "./card.js?v=7";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=7";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -33,6 +33,11 @@ export const compositionsScene = {
     { key: "exposure", label: { ru: "Экспозиция" }, type: "range", min: 0.4, max: 2, step: 0.02, default: 1.1 },
     { key: "bloom", label: { ru: "Свечение" }, type: "range", min: 0, max: 2.5, step: 0.02, default: 0.85 },
     { key: "bloomThr", label: { ru: "Порог свечения" }, type: "range", min: 0, max: 1, step: 0.02, default: 0.7 },
+    { key: "bloomRadius", label: { ru: "Радиус свечения" }, type: "range", min: 0, max: 1, step: 0.01, default: 0.55 },
+    /* «Плотность ×» из прототипа mtk38-cloud: разброс облака. Собственной
+     * сцены у облака больше нет, поэтому настройка живёт здесь и действует
+     * на раскладку «облако». */
+    { key: "cloudDensity", label: { ru: "Плотность облака" }, type: "range", min: 0.4, max: 2.5, step: 0.05, default: 1 },
     { key: "fog", label: { ru: "Туман" }, type: "range", min: 0, max: 1, step: 0.02, default: 0.22 },
     { key: "bg", label: { ru: "Фон (светлота)" }, type: "range", min: 24, max: 60, step: 1, default: 44 },
     { key: "grain", label: { ru: "Зерно" }, type: "range", min: 0, max: 0.2, step: 0.005, default: 0.055 },
@@ -56,6 +61,7 @@ export const compositionsScene = {
   },
 
   async mount(el, ctx) {
+    this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
 
@@ -70,7 +76,7 @@ export const compositionsScene = {
       "</nav>";
     el.appendChild(root);
     this._root = root;
-    this._card = createCard({ publications: data.pubs });
+    this._card = createCard({ publications: data.pubs, t: (k) => (this._app ? this._app.t(k) : null) });
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
 
@@ -188,17 +194,25 @@ export const compositionsScene = {
     this._setLayout("cloud");
   },
 
-  /* Standby: композиции сами по себе кино — меняем раскладку по кругу. */
-  standby(on) {
-    this._standby = !!on;
-    clearInterval(this._auto);
-    this._auto = 0;
-    if (!on) return;
+  /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
+   * Отдаём тротлённую петлю (timings.standbyFps): зритель издалека видит саму
+   * сцену, а не оверлей ядра, при этом GPU ночью не молотит на 60 кадрах. */
+  standby() {
+    this.pause();
     if (this._card) this._card.close();
+    this._standby = true;
+    const stop = standbyLoop(standbyFps(this._app), () => this._frame());
+    // раскладки сменяют друг друга — сцена в заставке не должна замирать
+    clearInterval(this._auto);
     this._auto = setInterval(() => {
       const i = LAYOUTS.indexOf(this._layout);
       this._setLayout(LAYOUTS[(i + 1) % LAYOUTS.length]);
     }, 12000);
+    return beginStandby(() => {
+      stop();
+      clearInterval(this._auto); this._auto = 0;
+      this._standby = false;
+    });
   },
 
   setLang(lang) {
@@ -222,7 +236,10 @@ export const compositionsScene = {
     for (const b of this._root.querySelectorAll("[data-layout]")) {
       b.textContent = T[b.getAttribute("data-layout")];
     }
+    this._syncCardLang();
   },
+
+  _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
@@ -247,6 +264,11 @@ export const compositionsScene = {
       case "exposure": r.toneMappingExposure = v; break;
       case "bloom": if (this._bloom) this._bloom.strength.value = v; break;
       case "bloomThr": if (this._bloom) this._bloom.threshold.value = v; break;
+      case "bloomRadius": if (this._bloom && this._bloom.radius) this._bloom.radius.value = v; break;
+      case "cloudDensity":
+        // плотнее облако — теснее разброс; пересобираем цели только для него
+        if (this._layout === "cloud") { this._computeTargets(); }
+        break;
       case "fog": case "bg": {
         const s = Math.round(this._cfg.bg ?? 44);
         const col = new THREE.Color(`rgb(${s - 6},${s + 6},${s + 13})`);
@@ -317,7 +339,10 @@ export const compositionsScene = {
     const N = this._forms.length, gold = Math.PI * (3 - Math.sqrt(5));
     for (let i = 0; i < N; i++) {
       const t = this._targets[i], d = this._forms[i], rv = this._rv[i];
-      if (this._layout === "cloud") t.set(rv.x * 8, rv.y * 5.5, rv.z * 8);
+      if (this._layout === "cloud") {
+        const k = 1 / (this._cfg && this._cfg.cloudDensity ? this._cfg.cloudDensity : 1);
+        t.set(rv.x * 8 * k, rv.y * 5.5 * k, rv.z * 8 * k);
+      }
       else if (this._layout === "mandala") {
         const ring = 1 + (i % 5), a = gold * i, rr = ring * 1.5;
         t.set(Math.cos(a) * rr, Math.sin(a) * rr, (d.wt - 2) * 0.6);

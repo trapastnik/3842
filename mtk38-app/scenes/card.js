@@ -117,11 +117,32 @@ const CSS = `
 
 
 /**
- * @param {Object} opts
- * @param {Map}    opts.publications  lang_id → [издание, …]; см. engine/data.js → loadPublications
+ * @param {Object}   opts
+ * @param {Map}      opts.publications  lang_id → [издание, …]; см. engine/data.js → loadPublications
+ * @param {Function} [opts.t]           словарь ядра: t("card.area") → подпись на языке киоска
+ *
+ * Переводятся ПОДПИСИ (хром), но не содержание: названия языков, ареалы и
+ * выходные сведения существуют в каноне только по-русски — их перевод
+ * кураторская работа, а не техническая (Этап A, PLAN-KIOSK).
  */
 export function createCard(opts = {}) {
   const pubs = opts.publications || new Map();
+  const FALLBACK = {
+    'card.area': 'регион', 'card.speakers': 'носители', 'card.script': 'письменность',
+    'card.family': 'семья', 'card.edition': 'издание',
+    'card.verified': 'написание выверено', 'card.unverified': 'написание ждёт проверки носителем',
+    'card.hint': 'коснитесь снаружи, чтобы закрыть',
+    'card.also': 'также', 'card.no-edition': 'описания издания в источнике нет',
+    'card.prev': 'предыдущее издание', 'card.next': 'следующее издание',
+    'card.langs': 'так пишут', 'card.speakers-mln': 'млн носителей',
+    'card.speakers-mlrd': 'млрд носителей',
+  };
+  /* Ядро отдаёт ключ обратно, если строки нет в словаре — тогда берём русский
+   * запасной вариант, чтобы в карточке никогда не проступал сам ключ. */
+  const t = (key) => {
+    const v = opts.t ? opts.t(key) : null;
+    return (!v || v === key) ? (FALLBACK[key] || key) : v;
+  };
 
   if (!document.getElementById('v3card-css')) {
     const st = document.createElement('style'); st.id = 'v3card-css'; st.textContent = CSS;
@@ -136,15 +157,15 @@ export function createCard(opts = {}) {
     <div class="rows"></div><span class="ver"><i></i><em></em></span>
     <div class="pub">
       <div class="pub-head">
-        <span>издание</span>
-        <div class="nav"><button class="prev" aria-label="предыдущее издание">‹</button><i></i><button class="next" aria-label="следующее издание">›</button></div>
+        <span>${t('card.edition')}</span>
+        <div class="nav"><button class="prev" aria-label="${t('card.prev')}">‹</button><i></i><button class="next" aria-label="${t('card.next')}">›</button></div>
       </div>
       <div class="pub-body">
         <img class="cover" alt="">
         <div class="pub-txt"><div class="t-nat"></div><div class="t-ru"></div><div class="imp"></div></div>
       </div>
     </div>
-    <div class="hint">коснитесь снаружи, чтобы закрыть</div>`;
+    <div class="hint">${t('card.hint')}</div>`;
   // затемнение позади карточки — как .info-backdrop в V1-карте
   const back = document.createElement('div');
   back.className = 'v3card-back';
@@ -153,7 +174,7 @@ export function createCard(opts = {}) {
 
   const q = (s) => el.querySelector(s);
   const close = () => { el.classList.remove('show'); back.classList.remove('show'); };
-  let list = [], idx = 0, startIdx = 0;
+  let list = [], idx = 0, startIdx = 0, lastShown = null;
 
   q('.x').onclick = close;
   const onKey = (e) => { if (e.key === 'Escape') close(); };
@@ -202,7 +223,7 @@ export function createCard(opts = {}) {
       nat.textContent = p.titleNative || p.titleRu;
       q('.t-ru').textContent = (p.titleNative && p.titleRu) ? p.titleRu : '';
     } else {
-      nat.innerHTML = '<span class="none">описания издания в источнике нет</span>';
+      nat.innerHTML = `<span class="none">${t('card.no-edition')}</span>`;
       q('.t-ru').textContent = '';
     }
     // выходные данные: город · издательство · год, ареал приглушённо в конце
@@ -213,23 +234,24 @@ export function createCard(opts = {}) {
 
   // Показ одного языка формы. Написание общее для всех её языков и не меняется.
   function renderLang(w) {
+    lastShown = w;
     q('.n').textContent = w.n;
     const ce = q('.e'); ce.textContent = w.e; ce.style.fontFamily = FAM_SMALL(w.sc);
-    const also = (w.also && w.also.length) ? ` · также ${w.also.join(', ')}` : '';
+    const also = (w.also && w.also.length) ? ` · ${t('card.also')} ${w.also.join(', ')}` : '';
     const row = (k, v) => `<div><b>${k}</b><span>${v}</span></div>`;
     const sp = (typeof w.speakers === 'number' && isFinite(w.speakers))
-      ? (w.speakers >= 1000 ? `≈ ${(w.speakers / 1000).toFixed(1).replace('.', ',')} млрд носителей`
-                            : `≈ ${w.speakers} млн носителей`) : '';
+      ? (w.speakers >= 1000 ? `≈ ${(w.speakers / 1000).toFixed(1).replace('.', ',')} ${t('card.speakers-mlrd')}`
+                            : `≈ ${w.speakers} ${t('card.speakers-mln')}`) : '';
     q('.rows').innerHTML =
-      row('регион', w.r + also) +
-      (sp ? row('носители', sp) : '') +
-      row('письменность', w.scn) +
-      row('семья', w.f);
+      row(t('card.area'), w.r + also) +
+      (sp ? row(t('card.speakers'), sp) : '') +
+      row(t('card.script'), w.scn) +
+      row(t('card.family'), w.f);
     const ver = q('.ver'), warn = w.ver === 'needs-verification';
     ver.className = 'ver' + (warn ? ' ver-warn' : '');
     ver.querySelector('em').textContent = warn
-      ? 'написание ждёт проверки носителем'
-      : `написание выверено · ${w.src}`;
+      ? t('card.unverified')
+      : `${t('card.verified')} · ${w.src}`;
 
     list = pubs.get(w.id) || [];
     // startIdx — тап по точке города печати на карте открывает сразу это издание
@@ -253,7 +275,7 @@ export function createCard(opts = {}) {
     const langs = (w.langs && w.langs.length > 1) ? w.langs : null;
     q('.many').style.display = langs ? 'block' : 'none';
     if (langs) {
-      q('.many-n').textContent = `так пишут ${langs.length} ${plural(langs.length)}`;
+      q('.many-n').textContent = `${t('card.langs')} ${langs.length} ${plural(langs.length)}`;
       const chips = q('.chips');
       chips.innerHTML = '';
       langs.forEach((l, k) => {
@@ -276,5 +298,15 @@ export function createCard(opts = {}) {
     el.classList.add('show');
   }
 
-  return { open, close, destroy, isOpen: () => el.classList.contains('show'), dom: el };
+  /* Язык киоска меняется кнопкой на сцене, поэтому подписи пересобираются на
+   * лету; открытая карточка перерисовывается тем же языком, что показывала. */
+  function setLang() {
+    q('.pub-head span').textContent = t('card.edition');
+    q('.prev').setAttribute('aria-label', t('card.prev'));
+    q('.next').setAttribute('aria-label', t('card.next'));
+    q('.hint').textContent = t('card.hint');
+    if (el.classList.contains('show') && lastShown) renderLang(lastShown);
+  }
+
+  return { open, close, destroy, setLang, isOpen: () => el.classList.contains('show'), dom: el };
 }

@@ -1,12 +1,20 @@
 {
   "app.subtitle": "Ленин на языках народов мира",
   "standby.call": "Коснитесь экрана",
-  "card.close": "Закрыть",
-  "card.langs": "Языки этой формы",
-  "card.edition": "Издание",
-  "card.script": "письмо",
+  "card.close": "закрыть",
+  "card.langs": "так пишут",
+  "card.edition": "издание",
+  "card.script": "письменность",
   "card.family": "семья",
-  "card.area": "ареал",
+  "card.area": "регион",
   "card.verified": "написание выверено",
-  "card.unverified": "написание ждёт проверки носителем"
+  "card.unverified": "написание ждёт проверки носителем",
+  "card.speakers": "носители",
+  "card.hint": "коснитесь снаружи, чтобы закрыть",
+  "card.also": "также",
+  "card.no-edition": "описания издания в источнике нет",
+  "card.prev": "предыдущее издание",
+  "card.next": "следующее издание",
+  "card.speakers-mln": "млн носителей",
+  "card.speakers-mlrd": "млрд носителей"
 }

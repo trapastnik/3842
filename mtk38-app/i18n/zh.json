@@ -2,11 +2,19 @@
   "app.subtitle": "世界各民族语言中的列宁",
   "standby.call": "请触摸屏幕",
   "card.close": "关闭",
-  "card.langs": "使用此写法的语言",
+  "card.langs": "这样书写的语言数：",
   "card.edition": "出版物",
   "card.script": "文字",
   "card.family": "语系",
   "card.area": "分布",
   "card.verified": "写法已核对",
-  "card.unverified": "写法待母语者核对"
+  "card.unverified": "写法待母语者核对",
+  "card.speakers": "使用人数",
+  "card.hint": "点按外部关闭",
+  "card.also": "另见",
+  "card.no-edition": "来源中没有该出版物的描述",
+  "card.prev": "上一版",
+  "card.next": "下一版",
+  "card.speakers-mln": "百万使用者",
+  "card.speakers-mlrd": "十亿使用者"
 }

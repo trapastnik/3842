@@ -1,12 +1,20 @@
 {
   "app.subtitle": "Lenin in the languages of the world",
   "standby.call": "Touch the screen",
-  "card.close": "Close",
-  "card.langs": "Languages sharing this form",
-  "card.edition": "Edition",
+  "card.close": "close",
+  "card.langs": "written so by",
+  "card.edition": "edition",
   "card.script": "script",
   "card.family": "family",
   "card.area": "area",
   "card.verified": "form verified",
-  "card.unverified": "form awaits a native speaker's check"
+  "card.unverified": "form awaits a native speaker's check",
+  "card.speakers": "speakers",
+  "card.hint": "tap outside to close",
+  "card.also": "also",
+  "card.no-edition": "the source gives no description of the edition",
+  "card.prev": "previous edition",
+  "card.next": "next edition",
+  "card.speakers-mln": "mln speakers",
+  "card.speakers-mlrd": "bln speakers"
 }

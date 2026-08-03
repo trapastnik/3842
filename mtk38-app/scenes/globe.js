@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL } from "./shared.js?v=6";
-import { createCard } from "./card.js?v=6";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=6";
+import { loadData, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
+import { createCard } from "./card.js?v=7";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=7";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -46,6 +46,7 @@ export const globeScene = {
   },
 
   async mount(el, ctx) {
+    this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
     this._nLangs = data.langs.length;
@@ -62,7 +63,7 @@ export const globeScene = {
       '<button type="button" class="m38-pill kiosk-target" data-earth="physical"></button></nav>';
     el.appendChild(root);
     this._root = root;
-    this._card = createCard({ publications: data.pubs });
+    this._card = createCard({ publications: data.pubs, t: (k) => (this._app ? this._app.t(k) : null) });
 
     // глифы растеризуются в текстуры — без готовых шрифтов получим тофу
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
@@ -189,11 +190,15 @@ export const globeScene = {
     this._syncPills();
   },
 
-  /* Standby: фон-заставка. Карточку убираем, скорость поднимаем — глобус
-   * должен читаться как живая картинка, а не как забытый чужой экран. */
-  standby(on) {
-    this._standby = !!on;
-    if (on && this._card) this._card.close();
+  /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
+   * Отдаём тротлённую петлю (timings.standbyFps): зритель издалека видит саму
+   * сцену, а не оверлей ядра, при этом GPU ночью не молотит на 60 кадрах. */
+  standby() {
+    this.pause();                       // 60-FPS петля и слушатели ввода — прочь
+    if (this._card) this._card.close();
+    this._standby = true;               // в кадре: вращение вдвое живее
+    const stop = standbyLoop(standbyFps(this._app), () => this._frame());
+    return beginStandby(() => { stop(); this._standby = false; });
   },
 
   setLang(lang) {
@@ -217,7 +222,10 @@ export const globeScene = {
     for (const b of this._root.querySelectorAll("[data-earth]")) {
       b.textContent = T[b.getAttribute("data-earth")];
     }
+    this._syncCardLang();
   },
+
+  _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 

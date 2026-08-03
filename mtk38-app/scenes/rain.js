@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL } from "./shared.js?v=6";
-import { createCard } from "./card.js?v=6";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=6";
+import { loadData, famWord, PAL, beginStandby, standbyLoop, standbyFps } from "./shared.js?v=7";
+import { createCard } from "./card.js?v=7";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=7";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -46,6 +46,7 @@ export const rainScene = {
   },
 
   async mount(el, ctx) {
+    this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
 
@@ -57,7 +58,7 @@ export const rainScene = {
       '<h1 class="m38-title"></h1><p class="m38-sub"></p></header>';
     el.appendChild(root);
     this._root = root;
-    this._card = createCard({ publications: data.pubs });
+    this._card = createCard({ publications: data.pubs, t: (k) => (this._app ? this._app.t(k) : null) });
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
 
@@ -122,13 +123,17 @@ export const rainScene = {
     this._pr = 0;
   },
 
-  standby(on) {
-    this._standby = !!on;
-    if (on) {
-      if (this._card) this._card.close();
-      if (this._rain) this._rain.setPointer(new this._gpu.THREE.Vector3(0, 0, 0), 0);
-      this._pr = 0;
-    }
+  /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
+   * Отдаём тротлённую петлю (timings.standbyFps): зритель издалека видит саму
+   * сцену, а не оверлей ядра, при этом GPU ночью не молотит на 60 кадрах. */
+  standby() {
+    this.pause();
+    if (this._card) this._card.close();
+    if (this._rain) this._rain.setPointer(new this._gpu.THREE.Vector3(0, 0, 0), 0);
+    this._pr = 0;
+    this._standby = true;
+    const stop = standbyLoop(standbyFps(this._app), () => this._frame());
+    return beginStandby(() => { stop(); this._standby = false; });
   },
 
   setLang(lang) {
@@ -145,7 +150,10 @@ export const rainScene = {
     this._root.querySelector(".m38-kicker").textContent = T.kicker;
     this._root.querySelector(".m38-title").textContent = T.title;
     this._root.querySelector(".m38-sub").textContent = T.sub(this._forms.length);
+    this._syncCardLang();
   },
+
+  _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
