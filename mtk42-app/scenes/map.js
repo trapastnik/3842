@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=16";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=17";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -119,11 +119,16 @@ export const mapScene = {
 
     this._bindGestures();
 
-    this._lastW = 0;
+    /* Сравниваем обе стороны: при чисто вертикальном ресайзе ширина не
+     * меняется, и проверка только по width оставляла бы c.height stale. */
+    this._lastW = 0; this._lastH = 0;
     this._ro = new ResizeObserver(() => {
-      const w = this._canvas ? this._canvas.clientWidth : 0;
-      if (!w || Math.abs(w - this._lastW) < 2) return;
-      this._lastW = w;
+      const c2 = this._canvas;
+      if (!c2) return;
+      const w = c2.clientWidth, h = c2.clientHeight;
+      if (!w || !h) return;
+      if (Math.abs(w - this._lastW) < 2 && Math.abs(h - this._lastH) < 2) return;
+      this._lastW = w; this._lastH = h;
       this._size(); this._fit(); this._draw();
     });
     this._ro.observe(this._canvas);
@@ -195,11 +200,15 @@ export const mapScene = {
     const r = this._canvas.getBoundingClientRect();
     const buf = this._canvas.width;
     /* Не только «нарисовано столько же», но и «нарисовано в нужном
-     * разрешении»: дефолтные 300×150 при полноэкранном боксе — авария. */
-    if (r.width && buf < r.width * 0.9) {
+     * разрешении». Сверяем не с шириной бокса, а с ОЖИДАНИЕМ по
+     * фактическому dpr: бюджет 8.3 Мп законно опускает масштаб ниже
+     * единицы на боксе крупнее 4K (зум браузера 67% → dpr≈0.67), и
+     * сравнение с боксом горело бы красным на корректном буфере. */
+    const wantBuf = Math.floor(r.width * (this._dpr || 1));
+    if (r.width && buf < wantBuf * 0.9) {
       return { ok: false, detail: "буфер " + this._canvas.width + "×" +
-        this._canvas.height + " при боксе " + Math.round(r.width) + "×" +
-        Math.round(r.height) + " — карта в низком разрешении" };
+        this._canvas.height + " при ожидании " + wantBuf + " по ширине" +
+        " (бокс " + Math.round(r.width) + "×" + Math.round(r.height) + ")" };
     }
     return drawn === want && want > 0
       ? { ok: true, detail: "точек нарисовано " + drawn + ", буфер " +
@@ -312,8 +321,10 @@ export const mapScene = {
     if (!c) return;
     const r = c.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const want = Math.floor(r.width * (this._dpr || 1));
-    if (Math.abs(c.width - want) > 1 || !this._cam.worldW) {
+    const wantW = Math.floor(r.width * (this._dpr || 1));
+    const wantH = Math.floor(r.height * (this._dpr || 1));
+    if (Math.abs(c.width - wantW) > 1 || Math.abs(c.height - wantH) > 1 ||
+        !this._cam.worldW) {
       const first = !this._cam.worldW;
       this._size();
       if (first) this._fit();
@@ -423,14 +434,14 @@ export const mapScene = {
   _bindGestures() {
     const c = this._canvas;
     const pts = new Map();
-    let dragged = false, lastDist = 0, last = null;
+    let dragged = false, lastDist = 0, last = null, lastMid = null;
 
     this._onDown = (e) => {
       c.setPointerCapture && c.setPointerCapture(e.pointerId);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       dragged = false;
       last = { x: e.clientX, y: e.clientY };
-      lastDist = 0;
+      lastDist = 0; lastMid = null;
     };
     this._onMove = (e) => {
       if (!pts.has(e.pointerId)) return;
@@ -438,12 +449,19 @@ export const mapScene = {
       const arr = [...pts.values()];
       if (arr.length >= 2) {
         const d = Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y);
+        const mid = { x: (arr[0].x + arr[1].x) / 2, y: (arr[0].y + arr[1].y) / 2 };
         if (lastDist) {
-          const mid = { x: (arr[0].x + arr[1].x) / 2, y: (arr[0].y + arr[1].y) / 2 };
           this._zoomAt(mid, d / lastDist);
+          /* Карта должна ехать за пальцами: смещение середины щипка —
+           * это пан. Без него двумя пальцами можно было только масштаб. */
+          if (lastMid) {
+            this._cam.camX -= (mid.x - lastMid.x) / this._cam.zoom;
+            this._cam.camY -= (mid.y - lastMid.y) / this._cam.zoom;
+          }
           dragged = true;
         }
         lastDist = d;
+        lastMid = mid;
         this._draw();
         return;
       }
@@ -457,7 +475,7 @@ export const mapScene = {
     };
     this._onUp = (e) => {
       pts.delete(e.pointerId);
-      if (pts.size < 2) lastDist = 0;
+      if (pts.size < 2) { lastDist = 0; lastMid = null; }
       if (pts.size === 0) {
         if (!dragged) this._pick(e.clientX, e.clientY);
         last = null;
