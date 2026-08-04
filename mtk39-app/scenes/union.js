@@ -11,7 +11,7 @@
 
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
-  objectCardHtml, createCardPanel, createOffmap,
+  objectCardHtml, createCardPanel, createOffmap, isOffMap,
 } from "./shared.js?v=2";
 
 const REPUBLIC_ISO = new Set([
@@ -43,7 +43,10 @@ export const unionScene = {
 
   preload: {
     data: { corpus: DATA.corpus, countries: DATA.countries },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   settings: [
@@ -70,7 +73,7 @@ export const unionScene = {
 
     const corpus = ctx.data.corpus;
     const union = corpus.records.filter((r) => r.continent === "Бывший СССР");
-    const points = union.filter((r) => r.lat !== null && r.lng !== null);
+    const points = union.filter((r) => !isOffMap(r));
 
     el.classList.add("m39-scene", "m39-union");
     el.innerHTML =

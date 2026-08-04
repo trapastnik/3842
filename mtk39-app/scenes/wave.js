@@ -6,7 +6,7 @@
  * аргументов (lat, lng), аспект только из WT.ASPECT — своей математики нет). */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
+  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch, isOffMap,
 } from "./shared.js?v=2";
 
 const FROM = 1900;
@@ -29,7 +29,10 @@ export const waveScene = {
 
   preload: {
     data: { corpus: DATA.corpus, countries: DATA.countries },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   settings: [
@@ -56,7 +59,7 @@ export const waveScene = {
     this.appRef = app;
 
     const corpus = ctx.data.corpus;
-    const geolocated = corpus.records.filter((r) => r.lat !== null && r.lng !== null);
+    const geolocated = corpus.records.filter((r) => !isOffMap(r));
     const dated = geolocated.filter((r) => r.year_named || r.year_renamed);
     const undated = geolocated.filter((r) => !r.year_named && !r.year_renamed);
 
