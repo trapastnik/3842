@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=13";
+} from "./shared.js?v=17";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -119,6 +119,28 @@ export const archiveScene = {
     const d = {};
     for (const row of this.settings) d[row.key] = row.default;
     return d;
+  },
+
+  /* Пустая сетка при непустом отборе — авария. А вот пустой отбор бывает
+   * ЛЕГАЛЬНО: в данных шесть комбинаций эпоха×категория без единой записи
+   * (напр. «Назад к Ленину» × «Вожди»). Фильтры класса Б живут до idle-reset,
+   * так что оператор может запустить стенд ровно в это окно — и получить
+   * красный на здоровом киоске. Признак здоровья в таком случае — заглушка. */
+  healthcheck() {
+    if (!this._gridEl) return { ok: false, detail: "сцена не смонтирована" };
+    const tiles = this._gridEl.querySelectorAll(".m42-tile").length;
+    const want = this._items.filter((it) =>
+      (this._epoch === "all" || it.epoch === this._epoch) &&
+      (this._cat === "all" || it.category === this._cat)).length;
+    if (want === 0) {
+      const stub = !!this._gridEl.querySelector(".m42-archive__empty");
+      return stub
+        ? { ok: true, detail: "отбор пуст легально, показана заглушка" }
+        : { ok: false, detail: "отбор пуст, но заглушки нет" };
+    }
+    return tiles === want
+      ? { ok: true, detail: "карточек отрисовано " + tiles }
+      : { ok: false, detail: "карточек отрисовано " + tiles + " из " + want };
   },
 
   pause() {},   // нет rAF и таймеров — останавливать нечего

@@ -41,10 +41,15 @@ const nf = new Intl.NumberFormat("ru-RU");
 
 let width = 0;
 let height = 0;
-let worldW = 0;
+let baseW = 0;                // ширина мира при zoom = 1
+let baseH = 0;
+let worldW = 0;               // с учётом приближения
 let worldH = 0;
 let offX = 0;
 let offY = 0;
+let zoom = 1;
+let panX = 0;
+let panY = 0;
 let land = null;              // спроецированные контуры стран (world-px)
 let dated = [];               // объекты с годом
 let undated = [];             // объекты без года — тихий фон
@@ -72,16 +77,120 @@ function layout() {
   // карта занимает ширину сцены, поля — под заголовок и таймлайн
   const availW = width * 0.92;
   const availH = height * 0.66;
-  worldW = Math.min(availW, availH * WT.ASPECT);
-  worldH = worldW / WT.ASPECT;
-  offX = (width - worldW) / 2;
-  offY = (height - worldH) / 2 - height * 0.05;
+  baseW = Math.min(availW, availH * WT.ASPECT);
+  baseH = baseW / WT.ASPECT;
+  applyView();
+}
+
+/* Приближать дальше, чем «карта закрыла экран», незачем: это обзорная сцена,
+   а не атлас — за этим пределом начинается разглядывание пикселей. */
+const maxZoom = () => (baseW && baseH
+  ? Math.max(1, Math.max(width / baseW, height / baseH))
+  : 1);
+
+/* Стол, а не браузер: карту нельзя утащить в пустоту. Пока она уже экрана —
+   стоит на своём месте, когда шире — ходит ровно в пределах своих краёв. */
+function applyView() {
+  zoom = Math.max(1, Math.min(maxZoom(), zoom));
+  worldW = baseW * zoom;
+  worldH = baseH * zoom;
+
+  if (worldW <= width) {
+    panX = 0;
+  } else {
+    const lim = (worldW - width) / 2;
+    panX = Math.max(-lim, Math.min(lim, panX));
+  }
+  if (worldH <= height) {
+    panY = -height * 0.05;      // в исходном виде карта приподнята над таймлайном
+  } else {
+    const lim = (worldH - height) / 2;
+    panY = Math.max(-lim, Math.min(lim, panY));
+  }
+
+  offX = (width - worldW) / 2 + panX;
+  offY = (height - worldH) / 2 + panY;
 }
 
 const project = (lat, lng) => {
   const p = WT.project(lat, lng, worldW, worldH);
   return [p.x + offX, p.y + offY];
 };
+
+/* ------------------------------------------------------------ приближение */
+
+const hintEl = document.querySelector("[data-zoom-hint]");
+const local = (e) => {
+  const r = canvas.getBoundingClientRect();
+  return [e.clientX - r.left, e.clientY - r.top];
+};
+
+function zoomAt(factor, cx, cy) {
+  const next = Math.max(1, Math.min(maxZoom(), zoom * factor));
+  if (Math.abs(next - zoom) < 1e-6) return;
+  // точка под пальцем остаётся на месте
+  const wx = (cx - offX) / worldW;
+  const wy = (cy - offY) / worldH;
+  zoom = next;
+  panX = cx - (width - baseW * zoom) / 2 - wx * baseW * zoom;
+  panY = cy - (height - baseH * zoom) / 2 - wy * baseH * zoom;
+  applyView();
+  render();
+  if (hintEl) hintEl.classList.add("is-off");
+}
+
+function bindZoom() {
+  let dragging = false;
+  let lastX = 0;
+  let lastY = 0;
+
+  canvas.addEventListener("pointerdown", (e) => {
+    if (zoom <= 1) return;              // тянуть нечего, карта целиком в кадре
+    dragging = true;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    canvas.setPointerCapture(e.pointerId);
+  });
+  canvas.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    panX += e.clientX - lastX;
+    panY += e.clientY - lastY;
+    lastX = e.clientX;
+    lastY = e.clientY;
+    applyView();
+    render();
+  });
+  const stop = () => { dragging = false; };
+  canvas.addEventListener("pointerup", stop);
+  canvas.addEventListener("pointercancel", stop);
+
+  // Колесо — удобство на ноутбуке: на столе масштаб задают щипком.
+  canvas.addEventListener("wheel", (e) => {
+    e.preventDefault();
+    const [x, y] = local(e);
+    zoomAt(e.deltaY < 0 ? 1.1 : 1 / 1.1, x, y);
+  }, { passive: false });
+
+  let pinch = null;
+  const dist = (t) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
+  const mid = (t) => {
+    const r = canvas.getBoundingClientRect();
+    return [(t[0].clientX + t[1].clientX) / 2 - r.left,
+      (t[0].clientY + t[1].clientY) / 2 - r.top];
+  };
+  canvas.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) { dragging = false; pinch = dist(e.touches); }
+  }, { passive: true });
+  canvas.addEventListener("touchmove", (e) => {
+    if (pinch && e.touches.length === 2) {
+      const d = dist(e.touches);
+      const [cx, cy] = mid(e.touches);
+      zoomAt(d / pinch, cx, cy);
+      pinch = d;
+    }
+  }, { passive: true });
+  canvas.addEventListener("touchend", () => { pinch = null; }, { passive: true });
+}
 
 /* ------------------------------------------------------------------ данные */
 
@@ -252,6 +361,11 @@ function resetView() {
   year = FROM;
   scrub.value = String(FROM);
   setPlaying(true);
+  zoom = 1;
+  panX = 0;
+  panY = 0;
+  applyView();
+  if (hintEl) hintEl.classList.remove("is-off");
 }
 
 /* ------------------------------------------------------------------ запуск */
@@ -282,6 +396,7 @@ async function main() {
     + "Годы выведены из формулировок описаний и требуют выборочной проверки.";
 
   setPlaying(true);
+  bindZoom();
   armIdleReset(resetView);
   requestAnimationFrame(tick);
 }

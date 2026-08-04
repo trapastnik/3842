@@ -10,7 +10,7 @@
 import {
   DATA, STATUS_CLASS, nf, esc, plural, statusLabel,
   objectCardHtml, corpusPicture,
-} from "./shared.js?v=1";
+} from "./shared.js?v=2";
 
 // единственное в своём роде — по названию, а не по категории
 const ONE_OFF = /геоглиф|мавзолей|ленинланд|leninland|послание|сверхтяжёл|пик ленина|ледокол|астероид|владилена|ульянов \(|комсомол|пионер/i;
@@ -37,7 +37,10 @@ export const catalogScene = {
 
   preload: {
     data: { corpus: DATA.corpus },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   settings: [
@@ -237,6 +240,14 @@ export const catalogScene = {
         closeSheet();
         renderRubric(RUBRICS[0].key);
       },
+      health() {
+        const rubrics = rubricsHost.querySelectorAll("[data-rubric]").length;
+        const cards = cardsHost.querySelectorAll(".m39-card2").length;
+        if (!records.length) return { ok: false, detail: "корпус пуст" };
+        if (!rubrics) return { ok: false, detail: "рубрикатор не собран" };
+        if (!cards) return { ok: false, detail: "в открытой рубрике ни одной карточки" };
+        return { ok: true, detail: "рубрик " + rubrics + ", карточек в рубрике " + cards };
+      },
       destroy() {
         closeSheet();
         sheetClose.removeEventListener("click", onClose);
@@ -250,6 +261,10 @@ export const catalogScene = {
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
   setA11y() { if (this.api) this.api.rerender(); },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
+  },
 
   unmount() {
     if (this.api) this.api.destroy();

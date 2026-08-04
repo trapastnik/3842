@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.7.0";
+  var VERSION = "1.8.1";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -77,8 +77,9 @@
      * order: массив id в порядке листания (неизвестные игнорируются,
      * недостающие дописываются в порядке регистрации);
      * enabled: id → false выключает экран.
-     * Рядом в этом же объекте лежат настройки самих сцен (scenes[id]). */
-    scenes: {
+     * ОТДЕЛЬНО от config.scenes[id], где лежат настройки самих сцен:
+     * в общем объекте сцена с id «order» затёрла бы состав. */
+    screens: {
       order: [],
       enabled: {}
     },
@@ -101,10 +102,6 @@
   };
 
   var IDLE = { ACTIVE: "active", STANDBY: "standby" };
-
-  /* Внутри config.scenes рядом с настройками сцен живут состав и порядок.
-   * Сцену с таким id зарегистрировать нельзя — иначе она затёрла бы их. */
-  var RESERVED_SCENE_IDS = { order: 1, enabled: 1 };
 
   /* Подписи языков в переключателе — на своём языке, как в каноне. */
   var LANG_LABEL = { ru: "РУС", en: "ENG", zh: "中文" };
@@ -285,18 +282,25 @@
    * незаметно меняла бы другой. На этом уже попались: config.scenes
    * оказывался тем же объектом, что и патч оператора, и в localStorage
    * утекали все дефолты схемы вместо реально изменённых ключей. */
+  function cloneValue(v) {
+    /* Массивы тоже копируем: config.screens.order и патч оператора иначе
+     * делили бы одну ссылку, и правка одного меняла бы другой. */
+    if (Array.isArray(v)) return v.map(cloneValue);
+    return isObj(v) ? deepMerge(v, null) : v;
+  }
+
   function deepMerge(base, over) {
     var out = {}, k;
     for (k in base) {
       if (!Object.prototype.hasOwnProperty.call(base, k)) continue;
-      out[k] = isObj(base[k]) ? deepMerge(base[k], null) : base[k];
+      out[k] = cloneValue(base[k]);
     }
     if (!isObj(over)) return out;
     for (k in over) {
       if (!Object.prototype.hasOwnProperty.call(over, k)) continue;
       if (over[k] === undefined) continue;
       if (isObj(out[k]) && isObj(over[k])) out[k] = deepMerge(out[k], over[k]);
-      else out[k] = isObj(over[k]) ? deepMerge(over[k], null) : over[k];
+      else out[k] = cloneValue(over[k]);
     }
     return out;
   }
@@ -542,9 +546,6 @@
     if (this._started) throw new Error("[kiosk] registerScene() после start() — поздно");
     if (!def || !def.id) throw new Error("[kiosk] у сцены обязателен id");
     if (this._byId[def.id]) throw new Error("[kiosk] сцена «" + def.id + "» уже зарегистрирована");
-    if (RESERVED_SCENE_IDS[def.id]) {
-      throw new Error("[kiosk] id «" + def.id + "» зарезервирован под состав/порядок экранов");
-    }
 
     var rec = {
       id: def.id,
@@ -578,7 +579,7 @@
    * может отстать от кода, и это не повод потерять сцену. */
   KioskApp.prototype._orderedRecords = function () {
     var self = this;
-    var order = ((this.config.scenes || {}).order) || [];
+    var order = ((this.config.screens || {}).order) || [];
     var seen = Object.create(null);
     var out = [];
     if (Array.isArray(order)) {
@@ -594,7 +595,7 @@
   };
 
   KioskApp.prototype.isSceneEnabled = function (id) {
-    var map = (this.config.scenes || {}).enabled || {};
+    var map = (this.config.screens || {}).enabled || {};
     return map[id] !== false;
   };
 
@@ -628,7 +629,7 @@
       return this;
     }
     var wasOff = !this.isSceneEnabled(id);
-    this.setSetting("scenes.enabled." + id, on);
+    this.setSetting("screens.enabled." + id, on);
 
     /* Включили обратно в рантайме — её ассетов нет: на старте выключенные
      * экраны не прерольны (в этом и была экономия). Догружаем сейчас,
@@ -652,7 +653,7 @@
     if (i < 0 || j < 0 || j >= ids.length) return this;
     ids[i] = ids[j];
     ids[j] = id;
-    this.setSetting("scenes.order", ids);
+    this.setSetting("screens.order", ids);
     return this;
   };
 
@@ -730,11 +731,54 @@
     var self = this;
     if (!this.configUrl) { this._applyStoredConfig(); return Promise.resolve(); }
     return loadJson(this.configUrl)
-      .then(function (json) { self.config = deepMerge(self.config, json); })
+      .then(function (json) {
+        /* Файл мигрируем ДО слияния и до наложения патча. Иначе legacy-
+         * ключи из файла легли бы ПОВЕРХ screens.* оператора и откатывали
+         * бы его правки на каждом старте. */
+        self._migrateLegacyScreens(json, "конфиг");
+        self.config = deepMerge(self.config, json);
+      })
       .catch(function (err) {
         console.warn("[kiosk] kiosk.config.json не прочитан, работаем на дефолтах", err);
       })
       .then(function () { self._applyStoredConfig(); });
+  };
+
+  /* Миграция 1.6.0 → 1.8.1: состав экранов переехал из scenes.order /
+   * scenes.enabled в отдельный scenes-независимый ключ screens.
+   *
+   * Работает НАД ОДНИМ объектом (файл конфига либо патч оператора) —
+   * поэтому не ломает приоритет «патч поверх файла»: каждый источник
+   * приводится к новому формату до слияния.
+   *
+   * Ключ, совпадающий с id зарегистрированной сцены, НЕ ТРОГАЕМ: у сцены
+   * «enabled» её собственные настройки — тоже объект, и слепая проверка
+   * типа утащила бы их в состав экранов, а потом стёрла. Возвращает
+   * список перенесённого. */
+  KioskApp.prototype._migrateLegacyScreens = function (obj, what) {
+    if (!isObj(obj) || !isObj(obj.scenes)) return [];
+    var legacy = obj.scenes, moved = [];
+
+    if (Array.isArray(legacy.order) && !this._byId.order) {
+      if (!isObj(obj.screens)) obj.screens = {};
+      /* Патч оператора приоритетнее: если новый ключ уже заполнен, legacy
+       * только удаляем. */
+      if (!Array.isArray(obj.screens.order)) obj.screens.order = legacy.order;
+      delete legacy.order;
+      moved.push("order");
+    }
+    if (isObj(legacy.enabled) && !this._byId.enabled) {
+      if (!isObj(obj.screens)) obj.screens = {};
+      if (!isObj(obj.screens.enabled)) obj.screens.enabled = legacy.enabled;
+      delete legacy.enabled;
+      moved.push("enabled");
+    }
+    if (moved.length && !Object.keys(legacy).length) delete obj.scenes;
+    if (moved.length) {
+      this.log("info", "состав экранов перенесён (" + what + "): scenes." +
+        moved.join("/") + " → screens");
+    }
+    return moved;
   };
 
   /* Правки оператора из сервис-панели живут поверх файла конфига. */
@@ -745,10 +789,15 @@
       try {
         var patch = JSON.parse(raw);
         if (isObj(patch)) {
+          /* Патч мигрируем ЗДЕСЬ, а не после слияния: этот путь работает
+           * и при configUrl: null, когда файла нет вовсе. */
+          var moved = this._migrateLegacyScreens(patch, "правки оператора");
           /* Клон, а не сам объект: патч и живой конфиг не должны делить
            * поддеревья, иначе дефолты схемы утекут в сохранённый патч. */
           this._override = deepMerge(patch, null);
           this.config = deepMerge(this.config, patch);
+          /* Сохраняем сразу — иначе legacy-ключи всплывали бы каждый старт. */
+          if (moved.length) this._saveOverride();
         }
       } catch (err) {
         console.warn("[kiosk] повреждён localStorage-конфиг, игнорирую", err);
@@ -774,6 +823,19 @@
         merged[s.key] = stored[s.key] === undefined ? s["default"] : stored[s.key];
       });
       self.config.scenes[rec.id] = merged;
+    });
+  };
+
+  /* Схема настроек сцены (нормализованная копия). Нужна инструментам:
+   * перебору состояний, генераторам отчётов. Без неё они лезли бы в
+   * приватный _byId, как пришлось делать перебору МТК 39. */
+  KioskApp.prototype.sceneSchema = function (id) {
+    var rec = this._byId[id];
+    if (!rec) return [];
+    return rec.settings.map(function (s) {
+      var copy = deepMerge(s, null);
+      if (s.options) copy.options = s.options.map(function (o) { return [o[0], o[1]]; });
+      return copy;
     });
   };
 
@@ -1039,7 +1101,7 @@
     if (!path || path.indexOf("service.") === 0) this._applyGearMode();
     /* Состав или порядок изменились — перестроить точки и, если оператор
      * погасил экран прямо на нём, увести на дефолтный. */
-    if (path && /^scenes\.(order|enabled)/.test(path)) {
+    if (path && path.indexOf("screens.") === 0) {
       this._buildDots();
       this._syncNav();
       if (this._active && !this.isSceneEnabled(this._active.id)) {
@@ -1452,7 +1514,12 @@
       rec = this._byId[fallback];
       id = fallback;
     }
-    if (this._active === rec) return Promise.resolve();
+    if (this._active === rec) {
+      /* Уже активна — но могла стоять на паузе после standby. resume()
+       * обязан быть идемпотентным по контракту сцены. */
+      safeCall(rec, "resume");
+      return Promise.resolve();
+    }
 
     var prev = this._active;
     /* В скрытой вкладке анимировать нечего и нечем: rAF заморожен, таймеры
@@ -1705,10 +1772,18 @@
     }
     this._hideStandby();
 
-    /* Возврат — на дефолтную сцену в дефолтном состоянии. */
+    /* Возврат — на дефолтную сцену в дефолтном состоянии.
+     *
+     * БЕЗУСЛОВНО через очередь, без сравнения с activeSceneId: во время
+     * ротации сцен заставки может идти незавершённый кроссфейд, а _active
+     * присваивается только в его середине. Сравнение видело бы СТАРУЮ
+     * сцену, ветка не срабатывала, висящий переход доигрывал — и киоск
+     * просыпался на следующей сцене ротации вместо дефолтной. Очередь же
+     * гарантирует, что последним отработает именно переход на def, а
+     * _activate сам возобновит сцену, если она уже активна. */
     this._doIdleReset();
     var def = this._pickDefaultSceneId();
-    if (def && def !== this.activeSceneId) this.showScene(def);
+    if (def) this.showScene(def);
     else this._resumeActive();
 
     /* Отложенный ночной рестарт снимаем: у экрана снова кто-то есть,
@@ -1726,11 +1801,13 @@
    * Колбэк получает секунды с начала простоя. */
   KioskApp.prototype.standbyTicker = function (draw) {
     var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
-    var t0 = Date.now();
+    /* performance.now(), а не Date.now(): системные часы ночью подводит
+     * NTP, и скачок дёрнул бы картинку заставки. */
+    var t0 = performance.now();
     var self = this;
     var id = setInterval(function () {
       try {
-        draw((Date.now() - t0) / 1000);
+        draw((performance.now() - t0) / 1000);
       } catch (err) {
         clearInterval(id);
         self.log("error", "аттрактор сцены упал: " + errText(err));

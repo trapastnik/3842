@@ -24,7 +24,7 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
 
 /* ------------------------------------------------------------ сцена карточек */
 
-/* Верстаемся от полос, объявленных ядром: --kiosk-safe-top/-bottom уже
+/* Верстаемся от полос, объявленных ядром: --chrome-top/-bottom уже
  * учитывают навигацию, переключатель языков и шестерёнку. Хардкодить
  * отступы под чужой хром нельзя — оператор двигает его из настроек. */
 .demo-cards {
@@ -32,8 +32,8 @@ html, body { margin: 0; height: 100%; background: var(--amber-black); }
   inset: 0;
   display: flex;
   flex-direction: column;
-  padding: var(--kiosk-safe-top) var(--kiosk-safe-right)
-           var(--kiosk-safe-bottom) var(--kiosk-safe-left);
+  padding: var(--chrome-top) var(--chrome-right)
+           var(--chrome-bottom) var(--chrome-left);
   gap: 28px;
 }
 

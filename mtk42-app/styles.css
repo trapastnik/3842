@@ -4,9 +4,8 @@
  *  - размеры интерактива только из переменных кита (--touch-*, --edge-safe),
  *    тогда режим слабовидящих укрупняет интерфейс сам;
  *  - свои кегли масштабируются через calc(N * var(--a11y-scale));
- *  - верстаемся от РЕАЛЬНО занятых зон хрома: --m42-chrome-top/-bottom их
- *    меряет chrome-zones.js, потому что ядерные --kiosk-safe-* — это лишь
- *    отступ от кромки и место под кнопки языков они не учитывают;
+ *  - верстаемся от занятых зон хрома: --chrome-top/-bottom отдаёт ядро
+ *    с 1.6.0 (расчёт из конфига + фактический замер DOM);
  *  - скроллируемым контейнерам — класс .kiosk-scroll (видимая полоса).
  */
 
@@ -72,8 +71,8 @@
   flex-direction: column;
   color: var(--paper);
   font-family: var(--font-body);
-  padding: var(--m42-chrome-top, var(--kiosk-safe-top)) var(--edge-safe)
-           var(--m42-chrome-bottom, var(--kiosk-safe-bottom));
+  padding: var(--chrome-top, var(--kiosk-safe-top)) var(--edge-safe)
+           var(--chrome-bottom, var(--kiosk-safe-bottom));
   gap: 18px;
   overflow: hidden;
 }
@@ -82,7 +81,7 @@
 .m42-head { flex: 0 0 auto; pointer-events: none; }
 .m42-head--over {
   position: absolute;
-  top: var(--m42-chrome-top, var(--kiosk-safe-top));
+  top: var(--chrome-top, var(--kiosk-safe-top));
   left: var(--edge-safe);
   z-index: 3;
 }
@@ -116,7 +115,7 @@
   position: absolute;
   left: var(--edge-safe);
   right: var(--edge-safe);
-  bottom: var(--m42-chrome-bottom, var(--kiosk-safe-bottom));
+  bottom: var(--chrome-bottom, var(--kiosk-safe-bottom));
 }
 .m42-filters__row { display: flex; flex-wrap: wrap; gap: var(--touch-gap); }
 .m42-filter {

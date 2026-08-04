@@ -1,0 +1,53 @@
+{
+  "defaultScene": "globe",
+  "defaultLang": "ru",
+  "timings": {
+    "fade": 350,
+    "reset": 90,
+    "standby": 180,
+    "restartAt": "04:00",
+    "standbyFps": 10
+  },
+  "standby": {
+    "mode": "rotate",
+    "rotateSec": 25,
+    "scenes": ["globe", "rain", "map"]
+  },
+  "nav": {
+    "show": true,
+    "position": "bottom",
+    "size": 96,
+    "opacity": 0.92,
+    "showTitle": true,
+    "showArrows": true,
+    "showDots": true
+  },
+  "stripes": {
+    "on": true,
+    "opacity": 1,
+    "angle": 105
+  },
+  "i18n": {
+    "langs": ["ru", "en", "zh"],
+    "show": true
+  },
+  "a11y": {
+    "enabled": false,
+    "show": true
+  },
+  "tools": {
+    "position": "top-left"
+  },
+  "service": {
+    "gear": "always"
+  },
+  "watchdog": {
+    "stallSec": 30,
+    "sceneTimeoutSec": 20,
+    "restart": true,
+    "journalLimit": 200
+  },
+  "gpu": {
+    "maxPixels": 8300000
+  }
+}
