@@ -72,7 +72,16 @@ export function createCanvas(el, { onSize, onFrame }) {
     start() {
       if (raf) return;
       api.sync();
-      const tick = () => { raf = requestAnimationFrame(tick); onFrame(); };
+      /* Страховка на каждом кадре, а не только на старте: ResizeObserver в
+       * скрытой вкладке не доставляет ВООБЩЕ, включая первичную доставку
+       * (COORDINATION, грабли тиража 2026-08-04). Слой могли показать, пока
+       * вкладка была в фоне, — тогда единственный шанс узнать настоящий
+       * размер приходит здесь, на первом же нарисованном кадре. */
+      const tick = () => {
+        raf = requestAnimationFrame(tick);
+        if (measure() && onSize) onSize(lastW, lastH);
+        onFrame();
+      };
       raf = requestAnimationFrame(tick);
     },
     stop() {
@@ -215,14 +224,21 @@ export function chip(label, { pressed = false, accent = null, count = null, onCl
  * Подпись — из словаря, поэтому при смене языка подсказку пересобираем.
  */
 export function createHint(el, app, gesture, key) {
-  let h = null;
-  const make = () => {
-    if (!window.KioskHint) return;      // hint.js не подключён — молча без подсказки
-    h = window.KioskHint.attach(el, { gesture, label: app.t(key) });
-  };
-  make();
+  /* Смена языка — это повторный attach на тот же контейнер: кит 1.8.1 сам
+   * узнаёт подсказку и обновляет подпись, не пересоздавая её. Прежний путь
+   * destroy()+attach() оставлял на контейнере слушатели и взведённый таймер
+   * каждой снятой инстанции (утечка на keepAlive-сценах, DOM-счётчик её не
+   * видит) и заново взводил firstDelay — подсказка вспыхивала посреди
+   * взаимодействия. */
+  const attach = () => (window.KioskHint
+    ? window.KioskHint.attach(el, { gesture, label: app.t(key) })
+    : null);
+  let h = attach();
   return {
-    setLang() { if (h) { h.destroy(); h = null; } make(); },
-    destroy() { if (h) { h.destroy(); h = null; } },
+    setLang() { h = attach(); },
+    /* На время заставки подсказку прячем: ядро уже показывает свой призыв
+     * «Коснитесь экрана», и два призыва разом спорят друг с другом. */
+    hide() { if (h) h.hide(); },
+    destroy() { if (h) h.destroy(); h = null; },
   };
 }
