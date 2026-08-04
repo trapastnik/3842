@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=17";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=19";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -133,9 +133,15 @@ export const mapScene = {
     });
     this._ro.observe(this._canvas);
 
-    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан. */
+    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан.
+     * Вешаем на КОРЕНЬ сцены, а не на канвас: div внутри <canvas> — это
+     * fallback-контент, браузер его не рисует, и подсказка была невидима
+     * (находка ревью ядра 1.8.1). События гасителя всё равно долетают —
+     * pointerdown с канваса всплывает до корня. */
     if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(this._canvas, { gesture: "pinch" });
+      this._hint = window.KioskHint.attach(root, {
+        gesture: "pinch", label: this._app.t("hint.pinch"),
+      });
     }
 
     this._renderAll();
@@ -229,7 +235,13 @@ export const mapScene = {
     this._draw();
   },
 
-  setLang() { this._renderAll(); this._draw(); },
+  /* Подпись подсказки — тоже контент: без setLabel китайский посетитель
+   * читал бы русский дефолт KioskHint. */
+  setLang() {
+    this._renderAll();
+    if (this._hint) this._hint.setLabel(this._app.t("hint.pinch"));
+    this._draw();
+  },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);

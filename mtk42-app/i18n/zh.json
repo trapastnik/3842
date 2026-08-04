@@ -65,5 +65,7 @@
   "region.russia": "俄罗斯",
   "region.ussr": "苏联各加盟共和国",
   "region.east-eu": "东欧",
-  "region.world": "世界其他地区"
+  "region.world": "世界其他地区",
+  "hint.pinch": "双指缩放地图",
+  "hint.drag": "拖动以滚动"
 }

@@ -5,12 +5,12 @@
  * ядру (kiosk-core.js?v=…). Без версии Chrome отдаёт обе из кеша и
  * обновление ядра молча не доезжает до киоска. Поднимать при переходе
  * на каждый новый релиз ядра. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.7.0";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.8.1";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=17";
-import { archiveScene } from "./scenes/archive.js?v=17";
-import { timelineScene } from "./scenes/timeline.js?v=17";
-import { mapScene } from "./scenes/map.js?v=17";
+import { pendulumScene } from "./scenes/pendulum.js?v=19";
+import { archiveScene } from "./scenes/archive.js?v=19";
+import { timelineScene } from "./scenes/timeline.js?v=19";
+import { mapScene } from "./scenes/map.js?v=19";
 
 const app = createApp({
   appId: "mtk42",
@@ -20,7 +20,7 @@ const app = createApp({
   /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
    * и правки подписей не доезжали — ловил это руками не раз. Поднимать
    * вместе с ?v= остальных ассетов. */
-  i18nVersion: "17",
+  i18nVersion: "19",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
