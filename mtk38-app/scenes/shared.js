@@ -135,6 +135,13 @@ export function beginStandby(app, tick, cleanup) {
       console.warn("[standby tick]", e);
     }
   };
+  /* Гасим предыдущую петлю ПЕРЕД тем, как записать свою. Сейчас ротация делает
+   * это сама, и сюда мы приходим с пустым SB.sceneStop — но если когда-нибудь
+   * придём с непустым (показ сцены занял дольше целого такта), перезапись
+   * ссылки осиротила бы старый тикер до ночного рестарта. Одна строка вместо
+   * зависимости от порядка вызовов у зовущего. */
+  stopSceneStandby();
+
   const stopTicker = app && app.standbyTicker
     ? app.standbyTicker(draw)
     : fallbackTicker(app, draw);
