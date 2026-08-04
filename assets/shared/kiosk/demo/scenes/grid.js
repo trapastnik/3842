@@ -1,5 +1,5 @@
 /* Демо-сцена 2 «Сетка» — дрейфующая решётка. */
-import { createCanvasScene } from "./canvas-scene.js?v=23";
+import { createCanvasScene } from "./canvas-scene.js?v=24";
 
 export const gridScene = createCanvasScene({
   id: "grid",

@@ -202,10 +202,13 @@
       {
         name: "Отступ от кромки ≥ " + num(edge) + "/" + num(edgeBottom) + " px",
         ok: nearEdge.length === 0,
-        detail: nearEdge.length ? nearEdge.length + " у кромки: " + nearEdge.slice(0, 6).join("; ")
-          : "проверено " + fixed + " закреплённых элементов" +
-            (scrolled ? " (+" + scrolled + " в прокрутке — не считаются)" : "") +
-            ", все в безопасной зоне"
+        /* Сколько элементов не считались — говорим и в красном отчёте:
+         * иначе цифра «N у кромки» читается как доля от всех. */
+        detail: (nearEdge.length
+          ? nearEdge.length + " у кромки из " + fixed + " закреплённых: " +
+            nearEdge.slice(0, 6).join("; ")
+          : "проверено " + fixed + " закреплённых элементов, все в безопасной зоне") +
+          (scrolled ? " (+" + scrolled + " в прокрутке — не считаются)" : "")
       }
     ];
   }
@@ -247,17 +250,28 @@
         detail: "таких сцен нет — случай не проверяется этим прогоном"
       };
     }
+    /* Сверяем со СХЕМОЙ: sceneSettings всегда отдаёт объект, и проверка
+     * «это объект?» покраснеть не могла — ветки были мёртвые. Настоящий
+     * симптом порчи миграцией — потерянные или обнулённые до дефолтов
+     * ключи, а состав экранов рядом не должен быть пуст. */
     var bad = [];
     present.forEach(function (id) {
-      var vals = app.sceneSettings(id);
-      if (!vals || typeof vals !== "object") bad.push(id + ": настройки недоступны");
-      if (Array.isArray(vals)) bad.push(id + ": настройки подменены массивом состава");
+      var vals = app.sceneSettings(id) || {};
+      var schema = typeof app.sceneSchema === "function" ? app.sceneSchema(id) : [];
+      schema.forEach(function (s) {
+        if (!(s.key in vals)) bad.push(id + ": потерян ключ «" + s.key + "»");
+      });
+      var screens = (app.config && app.config.screens) || {};
+      if (screens.enabled && vals && screens.enabled[id] !== undefined &&
+          schema.length && !(id in (app.config.scenes || {}))) {
+        bad.push(id + ": настройки утекли в состав экранов");
+      }
     });
     return {
       name: "Сцены с id order/enabled",
       ok: bad.length === 0,
       detail: bad.length ? bad.join("; ")
-        : "зарегистрированы и настройки на месте: " + present.join(", ") +
+        : "зарегистрированы, ключи схемы на месте: " + present.join(", ") +
           " (персистентность через рестарт — проверить вручную)"
     };
   }
