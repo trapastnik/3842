@@ -8,6 +8,10 @@
     "restartAt": "04:00",
     "standbyFps": 10
   },
+  "screens": {
+    "order": ["pulse", "grid", "cards"],
+    "enabled": {}
+  },
   "scale": {
     "ui": 1,
     "content": 1
