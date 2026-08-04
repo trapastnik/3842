@@ -164,34 +164,48 @@
       document.querySelectorAll("button, [role=button], a[href], input, select, .kiosk-touch")
     ).filter(function (el) {
       if (el.closest(".kiosk-service")) return false;   /* панель оператора — не для посетителя */
+      /* ТОЛЬКО АКТИВНЫЙ СЛОЙ. Неактивные слои сняты с рендера через
+       * visibility/content-visibility, но не display:none — их кнопки
+       * попадали в выборку, и результат прогона зависел от того, какая
+       * сцена оказалась активной в конце (у 42: 382 элемента против ~152
+       * своих). Цифры разных МТК становились несопоставимы. */
+      if (el.closest(".kiosk-layer:not(.is-active)")) return false;
       var r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden";
     });
 
-    var small = [], nearEdge = [];
+    var small = [], nearEdge = [], scrolled = 0;
     els.forEach(function (el) {
       var r = el.getBoundingClientRect();
       if (r.width < min - 0.5 || r.height < min - 0.5) {
         small.push(label(el) + " " + num(r.width) + "×" + num(r.height));
       }
+      /* Отступ от кромки — про ПОЛОЖЕНИЕ элемента на панели. Содержимое
+       * прокручиваемого контейнера может оказаться где угодно, это его
+       * нормальная работа: у картотеки 42 таких было 270 из 272
+       * срабатываний. Размер таргета при этом проверяем и здесь. */
+      if (el.closest(".kiosk-scroll")) { scrolled++; return; }
       if (r.left < edge - 0.5 || r.top < edge - 0.5 ||
           vw - r.right < edge - 0.5 || vh - r.bottom < edgeBottom - 0.5) {
         nearEdge.push(label(el));
       }
     });
 
+    var fixed = els.length - scrolled;
     return [
       {
         name: "Тач-таргеты ≥ " + num(min) + " px",
         ok: small.length === 0,
         detail: small.length ? small.length + " мелких: " + small.slice(0, 6).join("; ")
-          : "проверено " + els.length + " элементов, все в норме"
+          : "проверено " + els.length + " элементов активного экрана, все в норме"
       },
       {
         name: "Отступ от кромки ≥ " + num(edge) + "/" + num(edgeBottom) + " px",
         ok: nearEdge.length === 0,
         detail: nearEdge.length ? nearEdge.length + " у кромки: " + nearEdge.slice(0, 6).join("; ")
-          : "проверено " + els.length + " элементов, все в безопасной зоне"
+          : "проверено " + fixed + " закреплённых элементов" +
+            (scrolled ? " (+" + scrolled + " в прокрутке — не считаются)" : "") +
+            ", все в безопасной зоне"
       }
     ];
   }
