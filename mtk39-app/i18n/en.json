@@ -47,6 +47,7 @@
   "wave.play": "Play",
   "wave.pause": "Pause",
   "wave.year": "Year",
+  "wave.hint": "pinch to zoom · drag the map",
 
   "streets.title": "Herbarium of streets",
   "streets.sub": "The real outlines of streets, squares and parks bearing Lenin's name — taken from OpenStreetMap and laid out like herbarium sheets.",
