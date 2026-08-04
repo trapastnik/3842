@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby } from "./shared.js?v=9";
-import { createCard } from "./card.js?v=9";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby } from "./shared.js?v=10";
+import { createCard } from "./card.js?v=10";
 
 export const catalogScene = {
   id: "catalog",

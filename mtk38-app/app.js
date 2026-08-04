@@ -7,11 +7,11 @@
  * приложение работало на 1.5.0, когда в репозитории уже лежало 1.7.0. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=170";
 
-import { globeScene } from "./scenes/globe.js?v=9";
-import { rainScene } from "./scenes/rain.js?v=9";
-import { mapScene } from "./scenes/map.js?v=9";
-import { catalogScene } from "./scenes/catalog.js?v=9";
-import { compositionsScene } from "./scenes/compositions.js?v=9";
+import { globeScene } from "./scenes/globe.js?v=10";
+import { rainScene } from "./scenes/rain.js?v=10";
+import { mapScene } from "./scenes/map.js?v=10";
+import { catalogScene } from "./scenes/catalog.js?v=10";
+import { compositionsScene } from "./scenes/compositions.js?v=10";
 
 const app = createApp({
   appId: "mtk38",
@@ -44,35 +44,55 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=9";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=10";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики
 function stopRotation() { clearInterval(rotTimer); rotTimer = 0; rotEpoch++; }
 onStandbyStop(stopRotation);
 
+/* Список ротации считаем на КАЖДОМ такте, а не один раз при входе: оператор
+ * гасит сцены в сервис-панели, и погашенную ядро показать не даст — оно уведёт
+ * на дефолтную, причём без resume, если та уже активна. Тик тогда переводил бы
+ * в заставку несмонтированную сцену: её _frame дёргал бы фантомный тикер, пока
+ * видимый глобус стоит замёрзший весь слот. */
+const rotationIds = () => {
+  const cfg = (app.config && app.config.standby) || {};
+  return (cfg.scenes || []).filter(
+    (id) => SCENES.some((s) => s.id === id) && app.isSceneEnabled(id));
+};
+
 app.on("standby", ({ own }) => {
   const cfg = (app.config && app.config.standby) || {};
   if (cfg.mode !== "rotate" || !own) return;   // сцена не отдала петлю — крутит ядро
-  const ids = (cfg.scenes || []).filter((id) => SCENES.some((s) => s.id === id));
-  if (ids.length < 2) return;
-  let i = Math.max(0, ids.indexOf(app.activeSceneId));
+  if (rotationIds().length < 2) return;
+  /* Активной может быть сцена вне списка (оператор увёл киоск на каталог) —
+   * тогда начинаем с начала списка, а не со второго его элемента. */
+  const at = rotationIds().indexOf(app.activeSceneId);
+  let i = at < 0 ? -1 : at;
   stopRotation();
   const tick = ++rotEpoch;
   rotTimer = setInterval(async () => {
+    const ids = rotationIds();
+    if (ids.length < 2) return;
     i = (i + 1) % ids.length;
+    const want = ids[i];
     stopSceneStandby();
-    await app.showScene(ids[i]);
-    /* Проверка ПОСЛЕ await обязательна. Кроссфейд длится ~350 мс, и касание в
-     * это окно уводит киоск в ACTIVE, пока тик ещё висит на await. Без сверки
-     * продолжение тика перевело бы в заставку уже активную сцену: посетитель
-     * получил бы дёрганый кадр с отвязанным тачем, а осиротевшая петля рисовала
-     * бы чужую сцену в общий канвас до ночного рестарта (ссылка на стоп к тому
-     * моменту перезаписана и потеряна). Эпоха — на случай повторного входа в
-     * standby за время того же await. */
-    if (tick !== rotEpoch || !rotTimer || app.idleState !== "standby") return;
-    const scene = SCENES.find((s) => s.id === ids[i]);
-    if (scene && scene.standby) scene.standby();
+    await app.showScene(want);
+    /* Сверка ПОСЛЕ await обязательна. Кроссфейд длится ~350 мс, и касание в это
+     * окно уводит киоск в ACTIVE, пока тик ещё висит на await; а если сцену
+     * погасили или ядро увело на дефолт, активной окажется вовсе не `want`.
+     * Без проверки продолжение тика перевело бы в заставку чужую или
+     * несмонтированную сцену, и осиротевшая петля рисовала бы её в общий канвас
+     * до ночного рестарта — ссылка на стоп к тому моменту уже перезаписана.
+     * Эпоха ловит повторный вход в standby, activeSceneId — увод на дефолт и
+     * наложение тиков, если показ занял больше такта. */
+    if (tick !== rotEpoch || !rotTimer) return;
+    if (app.idleState !== "standby" || app.activeSceneId !== want) return;
+    const scene = SCENES.find((s) => s.id === want);
+    /* Вне safeCall ядра: падение сцены не должно уносить ротацию. */
+    try { if (scene && scene.standby) scene.standby(); }
+    catch (e) { console.warn("[standby] сцена «" + want + "» не встала в заставку", e); }
   }, Math.max(8, cfg.rotateSec || 25) * 1000);
 });
 app.on("standby-exit", stopRotation);

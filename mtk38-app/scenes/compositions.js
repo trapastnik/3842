@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby } from "./shared.js?v=9";
-import { createCard } from "./card.js?v=9";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=9";
+import { loadData, PAL, beginStandby } from "./shared.js?v=10";
+import { createCard } from "./card.js?v=10";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=10";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.

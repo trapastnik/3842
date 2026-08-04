@@ -123,8 +123,17 @@ export function beginStandby(app, tick, cleanup) {
   const draw = () => {
     if (busy) return;
     busy = true;
-    Promise.resolve(tick()).catch((e) => console.warn("[standby tick]", e))
-      .finally(() => { busy = false; });
+    /* try/catch, а не только .catch(): у карты и каталога кадр синхронный, и
+     * синхронный бросок до создания промиса оставил бы busy=true навсегда —
+     * заставка замерла бы до ночного рестарта. */
+    try {
+      Promise.resolve(tick())
+        .catch((e) => console.warn("[standby tick]", e))
+        .finally(() => { busy = false; });
+    } catch (e) {
+      busy = false;
+      console.warn("[standby tick]", e);
+    }
   };
   const stopTicker = app && app.standbyTicker
     ? app.standbyTicker(draw)
