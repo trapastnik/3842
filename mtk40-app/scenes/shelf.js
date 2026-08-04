@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=21";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=25";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -94,6 +94,49 @@ export const shelfScene = {
 
   pause() { if (this.cv) this.cv.stop(); },
   resume() { if (this.cv) this.cv.start(); },
+
+  /* Заставка: полки медленно едут в разные стороны. Корешок читается с
+   * десяти метров, и метафора МТК видна без единого слова.
+   *
+   * Три условия канона, на которых спотыкались соседние МТК:
+   *  - поза считается от времени и сразу конечная: никаких твинов, которые
+   *    при остановленном rAF замерли бы на полпути (грабли 39);
+   *  - скорость задана в px/с и умножается на дельту времени тикера, а не на
+   *    номер кадра: оператор крутит FPS заставки ради нагрузки на панель, и
+   *    полки от этого не должны разгоняться (грабли 42);
+   *  - петлю держит ядро (standbyTicker), а не свой rAF: канон разрешает не
+   *    выше 10 кадров в секунду.
+   * Ход маятниковый, между началом полки и её концом: закольцованный сдвиг
+   * давал бы рывок в момент перескока. */
+  standby() {
+    const SPEED = 26;                 // дизайн-px в секунду
+    const RATE = [1, 0.78, 1.22];     // у каждой полки свой ход
+    /* Отсчёт — от позы, в которой сцену застала заставка. Простой обычно
+     * успевает сбросить полки в ноль, но если оператор укоротит тайминги и
+     * standby придёт раньше reset, полки всё равно поедут с места, а не
+     * прыгнут в начало цикла. */
+    const base = this.shelves.map((sh) => sh.scrollX);
+    if (this.hint) this.hint.hide();
+    return this.app.standbyTicker((t) => {
+      if (!this.cv || !this.cv.w) return;
+      const s = this.s;
+      const offsetX = 100 * s;
+      for (let i = 0; i < this.shelves.length; i++) {
+        const shelf = this.shelves[i];
+        shelf.velocityX = 0;
+        const span = Math.max(0, shelf.totalWidth + offsetX + 60 * s - this.cv.w);
+        if (span <= 1) { shelf.scrollX = 0; continue; }
+        /* Маятник: линейный ход отражается от краёв полки. Закольцованный
+         * сдвиг давал бы рывок в момент перескока. Полки расходятся ходом и
+         * длиной своего пути — разъезжаются сами, без стартового сдвига. */
+        const period = 2 * span;
+        const raw = base[i] + SPEED * RATE[i] * s * t;
+        const x = ((raw % period) + period) % period;
+        shelf.scrollX = x <= span ? x : period - x;
+      }
+      this.render();
+    });
+  },
 
   reset() {
     for (const s of this.shelves) { s.scrollX = 0; s.velocityX = 0; }
