@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=17";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=20";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -68,7 +68,11 @@ export const volumeScene = {
 
   preload: {
     data: { corpus: "../data/mtk40.json" },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
@@ -87,7 +91,11 @@ export const volumeScene = {
   mount(el, ctx) {
     this.app = ctx.app;
     this.corpus = corpusOf(ctx.data.corpus);
-    this.values = { areaMode: "pages", labels: true, tileGap: GAP };
+    /* Два слоя значений: operator — последний пуш схемы настроек, values —
+     * он же плюс зрительские правки чипами. Простой возвращает первый, иначе
+     * следующий посетитель получал бы метрику, выбранную предыдущим. */
+    this.operator = { areaMode: "pages", labels: true, tileGap: GAP };
+    this.values = { ...this.operator };
     this.selectedId = null;
     this.cells = [];
     this.groupRects = [];
@@ -137,6 +145,9 @@ export const volumeScene = {
   reset() {
     this.selectedId = null;
     if (this.card) this.card.hide();
+    this.values = { ...this.operator };
+    this.paintTools();
+    this.layout();
   },
 
   setLang() {
@@ -147,13 +158,17 @@ export const volumeScene = {
   setA11y() { this.layout(); },
 
   applySettings(v) {
-    this.values = v;
+    this.operator = { ...v };
+    this.values = { ...v };
     this.paintTools();
     this.layout();
   },
 
   healthcheck() {
-    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.cv) return { ok: true, detail: "не смонтирована" };
     if (!this.corpus.items.length) return { ok: false, detail: "корпус пуст" };
     if (!this.cv.w) return { ok: true, detail: "слой скрыт, раскладки ещё не было" };
     if (!this.cells.length) return { ok: false, detail: "плиток нет — раскладка пуста" };

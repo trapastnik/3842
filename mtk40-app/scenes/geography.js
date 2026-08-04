@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=17";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=20";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -31,7 +31,11 @@ export const geographyScene = {
       corpus: "../data/mtk40.json",
       world: "../data/ne_110m_countries.geojson",
     },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
@@ -107,6 +111,8 @@ export const geographyScene = {
     c.addEventListener("pointercancel", this.onUp);
     c.addEventListener("wheel", this.onWheel, { passive: false });
 
+    this.hint = createHint(this.cv.plot, this.app, "pinch", "hint.zoom");
+
     this.setLang();
     this.cv.observe();
     this.cv.sync();
@@ -124,7 +130,8 @@ export const geographyScene = {
     if (this.cv) this.cv.destroy();
     if (this.card) this.card.el.remove();
     for (const n of [this.tools, this.cityEl, this.homeBtn]) if (n) n.remove();
-    this.cv = this.card = this.tools = this.cityEl = this.homeBtn = null;
+    if (this.hint) this.hint.destroy();
+    this.cv = this.card = this.tools = this.cityEl = this.homeBtn = this.hint = null;
     this.root.classList.remove("m40-scene");
   },
 
@@ -149,6 +156,7 @@ export const geographyScene = {
     if (this.homeBtn) this.homeBtn.textContent = this.app.t("geography.home");
     if (this.cityEl) this.cityEl.querySelector(".m40-city__close").textContent = "✕";
     this.paintTools();
+    if (this.hint) this.hint.setLang();
     if (this.activeCity) this.showCity(this.activeCity, this.activeLane);
   },
 
@@ -157,7 +165,10 @@ export const geographyScene = {
   applySettings(v) { this.values = v; },
 
   healthcheck() {
-    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.cv) return { ok: true, detail: "не смонтирована" };
     const placed = this.cities.reduce((a, c) => a + c.items.length, 0);
     if (!this.cities.length) return { ok: false, detail: "ни один город не распознан" };
     if (placed < this.corpus.items.length) {
@@ -262,6 +273,35 @@ export const geographyScene = {
   },
 
   toScreen(wx, wy) { return { x: wx * this.k + this.ox, y: wy * this.k + this.oy }; },
+
+  /* Габарит городов в мировых координатах — считается один раз, по нему
+   * держится камера. */
+  bbox() {
+    if (this._bbox) return this._bbox;
+    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    for (const c of this.cities) {
+      x0 = Math.min(x0, c.wx); x1 = Math.max(x1, c.wx);
+      y0 = Math.min(y0, c.wy); y1 = Math.max(y1, c.wy);
+    }
+    this._bbox = { x0, y0, x1, y1 };
+    return this._bbox;
+  },
+
+  /* Без клампа карту можно утащить за кадр целиком: кнопка «домой» появляется
+   * только при zf > 1.05, и на общем плане посетитель оставался бы с пустым
+   * экраном до простоя (а healthcheck давал ложную тревогу). Держим габарит
+   * городов так, чтобы в кадре всегда оставалась хотя бы четверть его. */
+  clampCamera() {
+    if (!this.cities.length || !this.W) return;
+    const b = this.bbox();
+    const mx = this.W * 0.25, my = this.H * 0.25;
+    const x0 = b.x0 * this.k + this.ox, x1 = b.x1 * this.k + this.ox;
+    const y0 = b.y0 * this.k + this.oy, y1 = b.y1 * this.k + this.oy;
+    if (x1 < mx) this.ox += mx - x1;
+    else if (x0 > this.W - mx) this.ox -= x0 - (this.W - mx);
+    if (y1 < my) this.oy += my - y1;
+    else if (y0 > this.H - my) this.oy -= y0 - (this.H - my);
+  },
   zf() { return this.k / (this.k0 || 1); },
   thr(key, def) { const v = this.values[key]; return typeof v === "number" ? v : def; },
   levelFor(zf) {
@@ -379,6 +419,7 @@ export const geographyScene = {
       this.k = Math.max(MIN_K, Math.min(MAX_K, this.pinch.k * (d / this.pinch.dist)));
       this.ox = this.pinch.cx - this.pinch.wx * this.k;
       this.oy = this.pinch.cy - this.pinch.wy * this.k;
+      this.clampCamera();
       return;
     }
     if (!this.drag) return;
@@ -387,6 +428,7 @@ export const geographyScene = {
     if (Math.hypot(dx, dy) > 6 * this.s) this.drag.moved = true;
     if (!this.drag.moved) return;
     this.ox += dx; this.oy += dy;
+    this.clampCamera();
     this.drag.x = ev.offsetX; this.drag.y = ev.offsetY;
   },
   onUp: function (ev) {
@@ -418,6 +460,7 @@ export const geographyScene = {
     this.k = next;
     this.ox = px - wx * this.k;
     this.oy = py - wy * this.k;
+    this.clampCamera();
     this.anim = null;
   },
 
@@ -444,6 +487,7 @@ export const geographyScene = {
     this.k = a.k0 + (a.k1 - a.k0) * e;
     this.ox = a.ox0 + (a.ox1 - a.ox0) * e;
     this.oy = a.oy0 + (a.oy1 - a.oy0) * e;
+    this.clampCamera();
     if (t >= 1) this.anim = null;
   },
   drilldown(cluster) {

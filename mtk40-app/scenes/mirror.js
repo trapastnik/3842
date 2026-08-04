@@ -5,7 +5,7 @@
  * карточку и вытягивает ленты связей через середину кадра — отсюда
  * «зеркало»: верх и низ отражаются друг в друге через то, что он читал.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=17";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=20";
 
 const ORDER = ["by-lenin", "in-library", "about-lenin"];
 
@@ -21,13 +21,17 @@ export const mirrorScene = {
 
   preload: {
     data: { corpus: "../data/mtk40.json" },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
-    { key: "libraryPerRow", type: "range", min: 10, max: 30, step: 1, unit: " шт.", default: 18,
+    { key: "libraryPerRow", type: "range", min: 10, max: 30, step: 1, default: 18,
       label: { ru: "Книг в ряду средней полки", en: "Books per middle-shelf row", zh: "中层每行书数" } },
-    { key: "sideRows", type: "range", min: 1, max: 4, step: 1, unit: " ряд.", default: 2,
+    { key: "sideRows", type: "range", min: 1, max: 4, step: 1, default: 2,
       label: { ru: "Рядов в верхнем и нижнем ярусе", en: "Rows in top and bottom tiers", zh: "上下层行数" } },
     { key: "titles", type: "toggle", default: true,
       label: { ru: "Названия на корешках", en: "Titles on spines", zh: "书脊上的书名" } },
@@ -79,7 +83,10 @@ export const mirrorScene = {
   applySettings(v) { this.values = v; this.computeLayout(); },
 
   healthcheck() {
-    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.cv) return { ok: true, detail: "не смонтирована" };
     if (!this.corpus.items.length) return { ok: false, detail: "корпус пуст" };
     if (!this.cv.w) return { ok: true, detail: "слой скрыт, раскладки ещё не было" };
     if (!this.layoutData) return { ok: false, detail: "раскладка не посчитана" };

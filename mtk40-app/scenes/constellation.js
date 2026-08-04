@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=17";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=20";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
@@ -20,7 +20,11 @@ export const constellationScene = {
 
   preload: {
     data: { corpus: "../data/mtk40.json" },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
@@ -97,7 +101,10 @@ export const constellationScene = {
   applySettings(v) { this.values = v; this.layout(); },
 
   healthcheck() {
-    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.cv) return { ok: true, detail: "не смонтирована" };
     if (!this.corpus.connections.length) return { ok: false, detail: "связей в данных нет" };
     const orphan = this.corpus.connections.filter((c) =>
       !this.left.some((i) => i.id === c.from) || !this.right.some((i) => i.id === c.to)).length;

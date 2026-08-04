@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=17";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=20";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -21,7 +21,11 @@ export const shelfScene = {
 
   preload: {
     data: { corpus: "../data/mtk40.json" },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
@@ -65,6 +69,8 @@ export const shelfScene = {
     c.addEventListener("pointercancel", this.onUp);
     c.addEventListener("pointerleave", this.onUp);
 
+    this.hint = createHint(this.cv.plot, this.app, "drag", "hint.shelf");
+
     this.setLang(ctx.lang);
     this.cv.observe();
     this.cv.sync();
@@ -81,7 +87,8 @@ export const shelfScene = {
     }
     if (this.cv) this.cv.destroy();
     if (this.card) this.card.el.remove();
-    this.cv = this.card = null;
+    if (this.hint) this.hint.destroy();
+    this.cv = this.card = this.hint = null;
     this.root.classList.remove("m40-scene");
   },
 
@@ -95,9 +102,8 @@ export const shelfScene = {
   },
 
   setLang() {
-    /* Подпись о жесте несёт сама дорожка прокрутки на канве — отдельной
-     * строки-подсказки у этой сцены нет. */
     if (this.card) this.card.setLang();
+    if (this.hint) this.hint.setLang();
   },
 
   setA11y() { this.layout(); },
@@ -111,7 +117,10 @@ export const shelfScene = {
    * посчитала корешки. Структурные проверки этого не видят — канва на месте
    * и при пустом корпусе. */
   healthcheck() {
-    if (!this.cv) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.cv) return { ok: true, detail: "не смонтирована" };
     const empty = this.shelves.filter((s) => !s.items.length).map((s) => s.bucket);
     if (empty.length) return { ok: false, detail: "пустые полки: " + empty.join(", ") };
     /* Скрытый слой — не «пусто»: раскладка считается от ширины канвы, а у

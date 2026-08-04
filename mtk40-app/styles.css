@@ -16,6 +16,34 @@
  * масштаб задаёт ядро, а zoom поверх него дал бы двойное умножение.
  */
 
+/* ---------- брендовые начертания ----------
+   Объявлять ОБЯЗАНО само приложение: ни kiosk.css, ни kiosk-core.css их не
+   несут, а base.css прототипов сюда не подключён. Без @font-face преролл
+   `fonts: ["1em 'Nolde'"]` — no-op: document.fonts.load на необъявленное
+   семейство молча резолвится пустым, на дев-машине всё выглядит верно из-за
+   системно установленных OTF, а на киоске вся типографика (и канва, и DOM)
+   падает в Georgia/monospace. Найдено встречным ревью координатора. */
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600; font-display: swap;
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+@font-face {
+  font-family: "21 Cent";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");
+}
+
 .m40-scene {
   position: absolute;
   inset: 0;

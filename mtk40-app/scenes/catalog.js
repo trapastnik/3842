@@ -8,7 +8,7 @@
  * Канвы здесь нет вовсе — всё DOM, поэтому размеры идут прямо от переменных
  * кита, без дизайн-единицы s.
  */
-import { M, corpusOf, createCard, chip } from "./shared.js?v=17";
+import { M, corpusOf, createCard, chip } from "./shared.js?v=20";
 
 /* Типов в данных 19, половина встречается 1–2 раза. В фильтр идут только
  * заметные, остальное сворачивается в «прочее» — иначе строка чипов длиннее,
@@ -30,13 +30,21 @@ export const catalogScene = {
 
   preload: {
     data: { corpus: "../data/mtk40.json" },
-    fonts: ["1em 'Nolde'", "1em '20 Kopeek'"],
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
+     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
+     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
+     * начертание надо просить прероллом. */
+    fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
   settings: [
+    /* 520 px — не смена вида, а тот же размер, что у прототипа: там сетка
+     * minmax(184px) жила внутри zoom = W/1280, то есть на 3840 давала
+     * 184 × 3 = 552 реальных px. Здесь zoom'а нет, число указано сразу
+     * в экранных пикселях. */
     { key: "minCard", type: "range", min: 320, max: 760, step: 20, unit: " px", default: 520,
       label: { ru: "Минимальная ширина карточки", en: "Min card width", zh: "卡片最小宽度" } },
-    { key: "typeMinCount", type: "range", min: 2, max: 10, step: 1, unit: " шт.", default: 4,
+    { key: "typeMinCount", type: "range", min: 2, max: 10, step: 1, default: 4,
       label: { ru: "Тип в фильтре от N книг", en: "Type in filter from N books", zh: "类型进入筛选的最少书数" } },
     { key: "showAuthor", type: "toggle", default: true,
       label: { ru: "Автор в карточке списка", en: "Author in list card", zh: "列表卡显示作者" } },
@@ -125,7 +133,10 @@ export const catalogScene = {
   },
 
   healthcheck() {
-    if (!this.box) return { ok: false, detail: "сцена не смонтирована" };
+    /* Несмонтированная сцена — не авария, а её штатное состояние до
+     * первого показа (конвенция МТК 41). ok:false здесь давал стенду
+     * ложные аварии по всем сценам, кроме активной. */
+    if (!this.box) return { ok: true, detail: "не смонтирована" };
     if (!this.corpus.items.length) return { ok: false, detail: "корпус пуст" };
     const n = this.gridEl.querySelectorAll(".m40-cat__entry").length;
     /* Пустой список — законный результат фильтров, но при пустых фильтрах

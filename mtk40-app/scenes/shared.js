@@ -62,7 +62,7 @@ export function createCanvas(el, { onSize, onFrame }) {
   }
 
   const api = {
-    canvas, ctx,
+    canvas, ctx, plot,
     get w() { return lastW; },
     get h() { return lastH; },
     /* Меряем сами на входе: в скрытой вкладке ResizeObserver не доставляется,
@@ -135,6 +135,7 @@ export function createCard(el, corpus, app) {
   const q = (sel) => box.querySelector(sel);
   const closeBtn = q(".m40-card__close");
   let onClose = null;
+  let current = null;      // чтобы перерисовать открытую карточку при смене языка
 
   function paintChrome() {
     closeBtn.setAttribute("aria-label", app.t("card.close"));
@@ -143,6 +144,7 @@ export function createCard(el, corpus, app) {
   closeBtn.addEventListener("click", () => { hide(); if (onClose) onClose(); });
 
   function show(item) {
+    current = item;
     const meta = M.BUCKET_META[item.bucket];
     q(".m40-card__cat").textContent =
       `${app.t("bucket." + item.bucket)} · ${item.year_first ?? ""}`;
@@ -175,13 +177,16 @@ export function createCard(el, corpus, app) {
     }
     box.hidden = false;
   }
-  function hide() { box.hidden = true; }
+  function hide() { box.hidden = true; current = null; }
 
   paintChrome();
   return {
     el: box, show, hide,
     get visible() { return !box.hidden; },
-    setLang: paintChrome,
+    /* Открытую карточку перерисовываем целиком: в ней локализованы рубрика,
+     * тип, «стр.» и названия типов связи. Иначе смена языка чинилась только
+     * повторным тапом. */
+    setLang() { paintChrome(); if (current && !box.hidden) show(current); },
     set onClose(fn) { onClose = fn; },
   };
 }
@@ -202,4 +207,22 @@ export function chip(label, { pressed = false, accent = null, count = null, onCl
   if (accent) b.style.setProperty("--m40-chip-accent", accent);
   b.addEventListener("click", onClick);
   return b;
+}
+
+/**
+ * Призыв к жесту (пункт тач-стандарта): общий вид «рука/щипок» из hint.js.
+ * Виден при простое, гаснет по первому касанию, возвращается через полминуты.
+ * Подпись — из словаря, поэтому при смене языка подсказку пересобираем.
+ */
+export function createHint(el, app, gesture, key) {
+  let h = null;
+  const make = () => {
+    if (!window.KioskHint) return;      // hint.js не подключён — молча без подсказки
+    h = window.KioskHint.attach(el, { gesture, label: app.t(key) });
+  };
+  make();
+  return {
+    setLang() { if (h) { h.destroy(); h = null; } make(); },
+    destroy() { if (h) { h.destroy(); h = null; } },
+  };
 }
