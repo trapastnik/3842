@@ -8,8 +8,8 @@
  * есть ~7.8 ГБ декодированными, и преролл ядра держал бы их живыми. Оригиналы
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
-  DATA, byYear, createCard, esc, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=9";
+  DATA, byYear, cardUrl, createCard, esc, plural, thumbUrl, preloadThumbs,
+} from "./shared.js?v=13";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -118,6 +118,85 @@ export const canonScene = {
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
+  },
+
+  /* ─── Аттрактор простоя ──────────────────────────────────────────────
+   * Медленная ротация фотографий с городом и годом (решение координатора
+   * 2026-08-04 — выбрано вместо дрейфа силуэтов: материал настоящий).
+   *
+   * Три вещи, из-за которых это не просто «показать картинку»:
+   *  1. Снимок берём из карточного тира (1100 px), а не из миниатюры:
+   *     480 px на панели 3840 растянулись бы в мыло. Тир догружается по
+   *     одному кадру за такт — легально, checkNetwork с 1.7 понимает
+   *     разницу между локальным диском и внешним хостом.
+   *  2. Даже 1100 на 3840 — это ×3.5, поэтому не full-bleed: снимок стоит
+   *     по центру в своём размере, а фон закрывает растянутая и размытая
+   *     миниатюра. Мыло в подложке под блюром незаметно, в кадре — заметно.
+   *  3. Пока снимок грузится, показываем миниатюру: пустых кадров в
+   *     заставке быть не должно.
+   *
+   * Петля — standbyTicker ядра, а не свой rAF: он держит standbyFps из
+   * конфига (деф. 10) и сам гасится при касании. */
+  standby() {
+    if (!this._root) return null;
+
+    const withPhoto = this._order.filter((it) => thumbUrl(this._ctx.data.thumbs, it.m.id));
+    if (!withPhoto.length) return null;
+
+    const box = document.createElement("div");
+    box.className = "m41-standby";
+    box.innerHTML =
+      '<div class="m41-standby__bg"></div>' +
+      '<figure class="m41-standby__frame"><img alt="" /></figure>' +
+      '<div class="m41-standby__cap"><div class="m41-standby__city"></div>' +
+      '<div class="m41-standby__year"></div></div>';
+    this._root.appendChild(box);
+
+    const bg = box.querySelector(".m41-standby__bg");
+    const img = box.querySelector(".m41-standby__frame img");
+    const cityEl = box.querySelector(".m41-standby__city");
+    const yearEl = box.querySelector(".m41-standby__year");
+
+    const PERIOD = 7;              // секунд на кадр
+    let shown = -1;
+    let token = 0;                 // отсекает догрузку кадра, который уже сменился
+    /* Старт со случайного места: иначе заставка всегда начинается с Осташкова
+     * 1919 и посетитель, дважды заставший простой, видит одно и то же. */
+    const offset = Math.floor(Math.random() * withPhoto.length);
+
+    const step = (t) => {
+      const idx = (offset + Math.floor(t / PERIOD)) % withPhoto.length;
+      if (idx === shown) return;
+      shown = idx;
+      const m = withPhoto[idx].m;
+      const thumb = thumbUrl(this._ctx.data.thumbs, m.id);
+      const big = cardUrl(this._ctx.data.cards, m.id);
+
+      box.classList.remove("is-in");
+      if (thumb) {
+        img.src = thumb;
+        bg.style.backgroundImage = "url('" + encodeURI(thumb) + "')";
+      }
+      cityEl.textContent = m.city || m.country || "";
+      yearEl.textContent = m.year ? String(m.year) : "";
+      /* Перезапуск перехода — через принудительный рефлоу, а НЕ через
+       * requestAnimationFrame: в скрытой вкладке rAF не вызывается вовсе
+       * (README ядра), и класс is-in не навешивался — кадр с подписью
+       * оставались прозрачными, на экране был один размытый фон. */
+      void box.offsetWidth;
+      box.classList.add("is-in");
+
+      if (big) {
+        const my = ++token;
+        const probe = new Image();
+        probe.onload = () => { if (my === token && img.isConnected) img.src = big; };
+        probe.src = big;
+      }
+    };
+
+    step(0);
+    const stop = this._app.standbyTicker(step);
+    return () => { stop(); token += 1; box.remove(); };
   },
 
   applySettings(values) {
