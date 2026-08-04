@@ -34,6 +34,21 @@ import sys
 from urllib.parse import unquote
 
 SCAN_EXT = {".html", ".htm", ".css"}
+
+# JSON-индексы вида {"id": "portraits/01.jpg"} или {"id": {"src": "..."}}:
+# по ним сцены собирают пути в рантайме, в разметке этих ссылок нет.
+# Находка МТК 41: 7 миниатюр-сирот уезжали в преролл, ни разу не появившись
+# на экране, — по html/css такое не видно.
+JSON_EXT = {".json"}
+
+# Ключи, значение которых считаем путём к файлу.
+JSON_PATH_KEYS = {"src", "url", "path", "file", "image", "img", "thumb",
+                  "thumbnail", "preview", "poster", "photo", "asset"}
+
+# Похоже на относительный путь к файлу с расширением (а не на подпись/id).
+LOOKS_LIKE_PATH = re.compile(
+    r"^[^\s:*?\"<>|]+\.(?:jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mp3|ogg|wav|"
+    r"woff2?|otf|ttf|json|geojson|csv|txt)$", re.I)
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".claude", "venv", ".venv"}
 
 # Схемы и формы, которые к файлам на диске отношения не имеют.
@@ -113,11 +128,68 @@ def scan_file(path, repo):
     return broken
 
 
-def walk(root):
+def json_refs(node, owner=None):
+    """Пары (путь, ключ-владелец) внутри JSON.
+
+    Владелец — ближайший ключ словаря выше по дереву: у индексов вида
+    {"abakan-1970": ["photos/01.jpg"]} он и есть каталог, относительно
+    которого путь имеет смысл.
+
+    Берём только строки С РАЗДЕЛИТЕЛЕМ: голое «leti.jpg» — это имя, к
+    которому сцена сама приклеивает каталог, и проверять его нечем."""
+    out = []
+    if isinstance(node, dict):
+        for k, v in node.items():
+            out.extend(json_refs(v, k))
+    elif isinstance(node, list):
+        for v in node:
+            out.extend(json_refs(v, owner))
+    elif isinstance(node, str):
+        val = node.strip()
+        if "/" in val and LOOKS_LIKE_PATH.match(val):
+            out.append((val, owner))
+    return out
+
+
+def scan_json(path, repo):
+    """База у каждого индекса своя: у одних пути от каталога самого файла,
+    у других от корня репозитория, у третьих от каталога-ключа. Пробуем
+    всех кандидатов и ругаемся, только если не нашлось НИ ОДНОГО — иначе
+    инструмент тонет в ложных срабатываниях, и ему перестают верить."""
+    broken, seen = [], set()
+    try:
+        with open(path, "r", encoding="utf-8") as fh:
+            data = json.load(fh)
+    except (OSError, ValueError):
+        return broken            # битый json — забота других проверок
+
+    here = os.path.dirname(path)
+    for ref, owner in json_refs(data):
+        if ref in seen:
+            continue
+        seen.add(ref)
+        clean = unquote(ref.split("#", 1)[0].split("?", 1)[0])
+        bases = [here, repo]
+        if isinstance(owner, str) and owner and "/" not in owner:
+            bases.insert(0, os.path.join(here, owner))
+        if any(os.path.exists(os.path.normpath(os.path.join(b, clean))) for b in bases):
+            continue
+        broken.append({
+            "file": os.path.relpath(path, repo),
+            "line": 0,
+            "kind": "json-index",
+            "ref": ref,
+            "why": "нет файла ни от одной базы (" +
+                   ", ".join(os.path.relpath(b, repo) or "." for b in bases) + ")",
+        })
+    return broken
+
+
+def walk(root, exts):
     for base, dirs, files in os.walk(root):
         dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
         for name in sorted(files):
-            if os.path.splitext(name)[1].lower() in SCAN_EXT:
+            if os.path.splitext(name)[1].lower() in exts:
                 yield os.path.join(base, name)
 
 
@@ -132,9 +204,12 @@ def main():
 
     root = os.path.abspath(args.path)
     broken, scanned = [], 0
-    for path in walk(root):
+    for path in walk(root, SCAN_EXT):
         scanned += 1
         broken.extend(scan_file(path, repo))
+    for path in walk(root, JSON_EXT):
+        scanned += 1
+        broken.extend(scan_json(path, repo))
 
     if args.json:
         print(json.dumps({"scanned": scanned, "broken": broken},

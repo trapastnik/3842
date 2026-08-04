@@ -218,9 +218,68 @@
     };
   }
 
+  /* Сцены с id «order» и «enabled» — бывшие зарезервированные имена.
+   * Состав экранов уехал в свой ключ screens, но миграция legacy-формата
+   * осталась и рядом с этими именами она обязана быть аккуратной: их
+   * настройки нельзя ни принять за состав, ни удалить. Проверяем факт
+   * регистрации; персистентность через рестарт — вручную по инструкции. */
+  function checkReservedIds(app) {
+    var ids = ["order", "enabled"];
+    var present = ids.filter(function (id) { return !!app.getScene(id); });
+    if (!present.length) {
+      return {
+        name: "Сцены с id order/enabled",
+        ok: null,
+        detail: "таких сцен нет — случай не проверяется этим прогоном"
+      };
+    }
+    var bad = [];
+    present.forEach(function (id) {
+      var vals = app.sceneSettings(id);
+      if (!vals || typeof vals !== "object") bad.push(id + ": настройки недоступны");
+      if (Array.isArray(vals)) bad.push(id + ": настройки подменены массивом состава");
+    });
+    return {
+      name: "Сцены с id order/enabled",
+      ok: bad.length === 0,
+      detail: bad.length ? bad.join("; ")
+        : "зарегистрированы и настройки на месте: " + present.join(", ") +
+          " (персистентность через рестарт — проверить вручную)"
+    };
+  }
+
   /* ------------------------------------------------------------- прогон */
 
+  /* Глушим простой и ватчдог на время прогона. Канонические 50 циклов
+   * идут дольше двух минут и перешагивают idle-сброс (90 с): сцены
+   * сбрасывались бы ПОСРЕДИ замера, маскируя состояния, которые
+   * healthcheck и должен проверить (так у МТК 39 ложные тревоги прошли
+   * незамеченными), а дальше прогон подбирался бы к standby (180 с).
+   *
+   * Обёртка нужна, чтобы снять глушение и при СИНХРОННОМ сбое: без неё
+   * упавший прогон оставлял бы киоск без простоя и ватчдога до
+   * перезагрузки. */
   function run(app, opts) {
+    var idleHushed = app && typeof app.suspendIdle === "function";
+    var wdHushed = app && typeof app.suspendWatchdog === "function";
+    if (idleHushed) app.suspendIdle(true);
+    if (wdHushed) app.suspendWatchdog();
+    function unhush() {
+      if (idleHushed) app.suspendIdle(false);
+      if (wdHushed) app.resumeWatchdog();
+    }
+    try {
+      return runInner(app, opts, unhush).catch(function (err) {
+        unhush();
+        throw err;
+      });
+    } catch (err) {
+      unhush();
+      throw err;
+    }
+  }
+
+  function runInner(app, opts, unhush) {
     opts = opts || {};
     var cycles = opts.cycles || 50;
     var results = [];
@@ -311,10 +370,12 @@
 
           results.push(checkNetwork(startedAt));
           results.push(checkHealth(app));
+          results.push(checkReservedIds(app));
           results.push(checkCanvas());
           results.push(checkScroll());
           checkTouch().forEach(function (r) { results.push(r); });
 
+          unhush();
           return report(results, hidden);
         });
       });
