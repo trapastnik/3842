@@ -1,0 +1,185 @@
+/* МТК 38 · оформление сцен поверх kiosk-core.css.
+ * Дизайн-код 2026-05-12: Nolde — только крупные заголовки, 21 Cent — читаемый
+ * текст, 20 Kopeek — подписи и метаданные. Красный точечно, не заливкой.
+ */
+
+.m38-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #12161a;
+  color: #cfd0cf;
+  font-family: "21 Cent", system-ui, sans-serif;
+  --m38-grain: 0.06;
+  --m38-vign: 1;
+}
+
+.m38-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+  cursor: grab;
+}
+.m38-canvas:active { cursor: grabbing; }
+
+/* Виньетка и зерно — дёшево и кинематографично; зерно ещё и дробит бандинг
+ * градиентов, который на 4K-панели виден полосами. */
+.m38-vign {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: var(--m38-vign);
+  background: radial-gradient(ellipse 66% 66% at 50% 48%, transparent 32%, rgba(6, 8, 10, 0.86) 100%);
+}
+.m38-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  opacity: var(--m38-grain);
+  mix-blend-mode: soft-light;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 158px 158px;
+}
+
+/* ── шапка сцены ────────────────────────────────────────────────── */
+
+/* --kiosk-safe-top ядро считает уже С УЧЁТОМ панели посетителя (язык + a11y),
+ * поэтому здесь ничего добавлять не нужно: свой отступ увёл бы заголовок
+ * в середину экрана. */
+.m38-head {
+  position: absolute;
+  left: var(--kiosk-safe-left, 64px);
+  top: var(--kiosk-safe-top, 176px);
+  z-index: 4;
+  max-width: min(52ch, 62vw);
+  pointer-events: none;
+}
+.m38-kicker {
+  font-family: "20 Kopeek", ui-monospace, monospace;
+  font-size: clamp(10px, 0.72vw, 13px);
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9da3a8;
+}
+.m38-title {
+  margin: 0.35em 0 0;
+  font-family: "Nolde", "21 Cent", system-ui, sans-serif;
+  font-weight: 400;
+  font-size: clamp(30px, 3.1vw, 62px);
+  line-height: 1.04;
+  color: #f7f9ef;
+  text-shadow: 0 2px 34px rgba(0, 0, 0, 0.6);
+}
+.m38-sub {
+  margin: 0.7em 0 0;
+  font-size: clamp(13px, 0.95vw, 18px);
+  line-height: 1.45;
+  color: rgba(207, 208, 207, 0.82);
+  text-shadow: 0 1px 16px rgba(0, 0, 0, 0.7);
+}
+
+/* ── пилюли выбора на сцене (что показать / композиция) ─────────── */
+
+.m38-pills {
+  position: absolute;
+  left: var(--kiosk-safe-left, 64px);
+  bottom: var(--kiosk-safe-bottom, 80px);
+  z-index: 5;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 8px;
+  border: 1px solid rgba(210, 183, 115, 0.45);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(8px);
+}
+.m38-pills__lab {
+  align-self: center;
+  padding: 0 12px 0 8px;
+  font-family: "20 Kopeek", ui-monospace, monospace;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: #9da3a8;
+}
+.m38-pill {
+  min-height: 64px;              /* тач-канон киоска: цель не меньше 64 px */
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(247, 249, 239, 0.78);
+  font-family: "20 Kopeek", ui-monospace, monospace;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.m38-pill[aria-checked="true"] {
+  border-color: rgba(210, 183, 115, 0.72);
+  background: #d2b773;
+  color: #12161a;
+}
+
+/* ── пагинатор каталога ─────────────────────────────────────────── */
+
+.m38-pager {
+  position: absolute;
+  right: var(--kiosk-safe-right, 64px);
+  bottom: var(--kiosk-safe-bottom, 80px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border: 1px solid rgba(210, 183, 115, 0.35);
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(8px);
+}
+.m38-pager__btn {
+  width: 68px;
+  height: 64px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #d2b773;
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+.m38-pager__btn:active { background: rgba(210, 183, 115, 0.18); }
+.m38-pager__num {
+  min-width: 6ch;
+  text-align: center;
+  font-family: "20 Kopeek", ui-monospace, monospace;
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: rgba(247, 249, 239, 0.75);
+}
+
+/* ── режим слабовидящих ─────────────────────────────────────────── */
+
+.m38-scene.is-a11y .m38-sub { font-size: clamp(17px, 1.3vw, 24px); }
+.m38-scene.is-a11y .m38-pill { font-size: 13px; min-height: 76px; padding: 0 26px; }
+.m38-scene.is-a11y .m38-vign { opacity: calc(var(--m38-vign) * 0.4); }
+.m38-scene.is-a11y .m38-grain { opacity: 0; }
+
+/* На узком экране шапка ужимается, иначе перекрывает сцену целиком. */
+@media (max-width: 760px) {
+  .m38-head { max-width: 86vw; }
+  .m38-sub { display: none; }
+}
+
+/* Каталог: сетка занимает почти весь кадр, поэтому шапка здесь компактная —
+ * иначе заголовок ложится на первый ряд ячеек. */
+.m38-catalog .m38-title { font-size: clamp(22px, 1.9vw, 40px); }
+.m38-catalog .m38-sub { font-size: clamp(12px, 0.8vw, 15px); margin-top: 0.4em; }

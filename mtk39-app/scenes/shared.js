@@ -52,6 +52,17 @@ export const USSR_ISO = new Set([
   "GEO", "ARM", "AZE", "KAZ", "UZB", "TKM", "TJK", "KGZ",
 ]);
 
+/* Одно правило «не на карте» на все сцены и оба набора данных.
+
+   Раньше их было три и они расходились: свод считает точку по lat/lng,
+   избранное несёт отдельный флаг geolocated, а самопроверка смотрела только
+   на координаты. Пока данные согласованы, расхождение незаметно — но запись
+   с координатами и geolocated: false развела бы счётчик самопроверки и
+   реальный список по разные стороны. */
+export const isOffMap = (rec) => rec.geolocated === false
+  || rec.lat === null || rec.lat === undefined
+  || rec.lng === null || rec.lng === undefined;
+
 export const nf = new Intl.NumberFormat("ru-RU");
 
 export function esc(s) {
@@ -102,22 +113,9 @@ export function loop(fn) {
   };
 }
 
-/* Медленная петля для аттрактора: ядро просит не выше standbyFps. */
-export function slowLoop(fn, fps) {
-  const period = 1000 / Math.max(1, fps || 10);
-  let raf = 0;
-  let last = 0;
-  const step = (now) => {
-    raf = requestAnimationFrame(step);
-    if (now - last < period) return;
-    last = now;
-    fn(now);
-  };
-  return {
-    start() { if (!raf) { last = 0; raf = requestAnimationFrame(step); } },
-    stop() { if (raf) { cancelAnimationFrame(raf); raf = 0; } },
-  };
-}
+/* Своей петли для аттрактора здесь нет: с ядра 1.7.0 её даёт
+ * app.standbyTicker(draw) — он держит timings.standbyFps и не будит
+ * композитор каждый vsync, как это делал наш rAF. */
 
 /* ─── преролл снимков ───────────────────────────────────────────────────
  * Снимки уходят в data-URL, а не в <img src>: в рантайме киоск обязан не
@@ -272,7 +270,7 @@ export function createCardPanel(host, app, onClose) {
  * нет вовсе. Они не пропадают молча — открываются полноценной картотекой с
  * теми же карточками и перегруппировкой по типу, судьбе имени и стране. */
 export function createOffmap(host, app, records, opts) {
-  const off = records.filter((r) => r.lat === null || r.lng === null);
+  const off = records.filter(isOffMap);
   const countryKey = (opts && opts.countryKey) || "offmap.byCountry";
 
   const toggle = document.createElement("button");

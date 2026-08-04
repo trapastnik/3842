@@ -11,8 +11,8 @@
 
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
-  objectCardHtml, createCardPanel, createOffmap,
-} from "./shared.js?v=1";
+  objectCardHtml, createCardPanel, createOffmap, isOffMap,
+} from "./shared.js?v=2";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -43,7 +43,10 @@ export const unionScene = {
 
   preload: {
     data: { corpus: DATA.corpus, countries: DATA.countries },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   settings: [
@@ -70,7 +73,7 @@ export const unionScene = {
 
     const corpus = ctx.data.corpus;
     const union = corpus.records.filter((r) => r.continent === "Бывший СССР");
-    const points = union.filter((r) => r.lat !== null && r.lng !== null);
+    const points = union.filter((r) => !isOffMap(r));
 
     el.classList.add("m39-scene", "m39-union");
     el.innerHTML =
@@ -114,6 +117,7 @@ export const unionScene = {
     let fitZoom = 1;
     let fly = null;
     let dirty = true;
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
 
     const invalidate = () => { dirty = true; };
     const worldW = () => baseW * zoom;
@@ -306,6 +310,8 @@ export const unionScene = {
         }
       }
 
+      lastDrawn = visible.length;
+
       if (selected && shown(selected)) {
         const [x, y] = project(selected.lat, selected.lng);
         g.beginPath();
@@ -342,7 +348,9 @@ export const unionScene = {
         ({ zoom, panX, panY } = v);
       }
       clampView();
-      dirty = true;
+      // первый кадр — сразу, не дожидаясь rAF (см. world.js)
+      dirty = false;
+      render();
     });
 
     /* ---- карточка и картотека ---- */
@@ -579,6 +587,18 @@ export const unionScene = {
         hint.classList.remove("is-off");
         invalidate();
       },
+      /* Комбинация «республика × судьба имени» законно бывает пустой
+         (Азербайджан + «носит имя»), и это осмысленный ответ, а не поломка:
+         на экране контур республики, легенда с нулём и рубрикатор. Красным
+         помечаем только то, из-за чего показывать нечего в принципе. */
+      health() {
+        if (!land.length) return { ok: false, detail: "контуры республик не построены" };
+        if (!points.length) return { ok: false, detail: "в Союзе нет геолоцированных объектов" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        return { ok: true, detail: "точек в Союзе " + points.length +
+          ", при текущем фильтре " + points.filter(shown).length +
+          ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
+      },
       destroy() {
         anim.stop();
         canvas.removeEventListener("pointerdown", onDown);
@@ -618,6 +638,10 @@ export const unionScene = {
     if (!this.api) return;
     this.api.remeasure();
     this.api.invalidate();
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {
