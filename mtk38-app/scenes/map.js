@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=12";
+import { createCard } from "./card.js?v=12";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -117,7 +117,11 @@ export const mapScene = {
     this._ro = new ResizeObserver(() => { this._size(); this._rebuild(); this._draw(); });
     this._ro.observe(this._canvas);
 
-    if (window.KioskHint) this._hint = window.KioskHint.attach(this._canvas, { gesture: "pinch" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * это fallback-контент, браузер его не рисует, и все пять подсказок были
+     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
+     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
+    if (window.KioskHint) this._hint = window.KioskHint.attach(root, { gesture: "pinch" });
 
     this.setLang(ctx.lang || "ru");
     this._size();
@@ -334,6 +338,8 @@ export const mapScene = {
 
   _draw() {
     const ctx = this._ctx2d;
+    // ResizeObserver в фоне молчит, в том числе на первой доставке
+    if (pollSize(this, this._canvas)) { this._size(); this._rebuild(); }
     if (!ctx || !this._W) return;
     const c = this._cfg;
     ctx.clearRect(0, 0, this._W, this._H);

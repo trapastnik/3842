@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=11";
+import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=12";
+import { createCard } from "./card.js?v=12";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=12";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -137,7 +137,11 @@ export const globeScene = {
     this._ro = new ResizeObserver(() => this._fit());
     this._ro.observe(root);
     this._fit();
-    if (window.KioskHint) this._hint = window.KioskHint.attach(gpu.canvas, { gesture: "drag" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * это fallback-контент, браузер его не рисует, и все пять подсказок были
+     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
+     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
+    if (window.KioskHint) this._hint = window.KioskHint.attach(root, { gesture: "drag" });
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -404,6 +408,8 @@ export const globeScene = {
 
   async _frame() {
     if (!this._scene) return;
+    // ResizeObserver в фоне молчит — держим размер из штатного пути кадра
+    if (pollSize(this, this._root)) this._fit();
     const now = performance.now();
     const dt = Math.min(0.05, (now - this._prev) / 1000);
     this._prev = now;

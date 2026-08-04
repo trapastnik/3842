@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=11";
+import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=12";
+import { createCard } from "./card.js?v=12";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=12";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -144,7 +144,11 @@ export const compositionsScene = {
     this._ro = new ResizeObserver(() => this._fit());
     this._ro.observe(root);
     this._fit();
-    if (window.KioskHint) this._hint = window.KioskHint.attach(gpu.canvas, { gesture: "drag" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * это fallback-контент, браузер его не рисует, и все пять подсказок были
+     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
+     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
+    if (window.KioskHint) this._hint = window.KioskHint.attach(root, { gesture: "drag" });
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -443,6 +447,8 @@ export const compositionsScene = {
 
   async _frame() {
     if (!this._scene) return;
+    // ResizeObserver в фоне молчит — держим размер из штатного пути кадра
+    if (pollSize(this, this._root)) this._fit();
     const now = performance.now();
     const dtms = Math.min(40, now - this._prev);
     this._prev = now;

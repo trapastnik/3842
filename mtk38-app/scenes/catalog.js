@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=12";
+import { createCard } from "./card.js?v=12";
 
 export const catalogScene = {
   id: "catalog",
@@ -116,7 +116,14 @@ export const catalogScene = {
 
     this._ro = new ResizeObserver(() => { this._size(); this._build(); });
     this._ro.observe(this._canvas);
-    if (window.KioskHint) this._hint = window.KioskHint.attach(this._canvas, { gesture: "tap" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * это fallback-контент, браузер его не рисует, и все пять подсказок были
+     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
+     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "swipe", label: "Листайте · коснитесь ячейки" });
+    }
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
     this.setLang(ctx && ctx.lang);
@@ -282,6 +289,9 @@ export const catalogScene = {
 
   _draw() {
     const ctx = this._ctx2d;
+    // ResizeObserver в фоне молчит, в том числе на первой доставке: без этого
+    // сетка, собранная в скрытом слое, осталась бы пустой навсегда
+    if (pollSize(this, this._canvas)) { this._size(); this._build(); }
     if (!ctx || !this._W) return;
     const cfg = this._cfg || {};
     const time = (performance.now() - this._t0) / 1000;
