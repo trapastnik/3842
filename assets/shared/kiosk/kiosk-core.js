@@ -826,6 +826,19 @@
     });
   };
 
+  /* Схема настроек сцены (нормализованная копия). Нужна инструментам:
+   * перебору состояний, генераторам отчётов. Без неё они лезли бы в
+   * приватный _byId, как пришлось делать перебору МТК 39. */
+  KioskApp.prototype.sceneSchema = function (id) {
+    var rec = this._byId[id];
+    if (!rec) return [];
+    return rec.settings.map(function (s) {
+      var copy = deepMerge(s, null);
+      if (s.options) copy.options = s.options.map(function (o) { return [o[0], o[1]]; });
+      return copy;
+    });
+  };
+
   /* Текущие значения настроек сцены — то, что уходит в applySettings. */
   KioskApp.prototype.sceneSettings = function (id) {
     var v = (this.config.scenes || {})[id];
