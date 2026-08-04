@@ -9,11 +9,12 @@
  * Категории — контрол ПОСЕТИТЕЛЯ (класс Б): чипы на сцене, персиста нет,
  * reset() возвращает «все включены».
  *
- * Здесь же аттрактор приложения: в standby лента медленно прокручивается,
- * setInterval 100 мс = 10 fps, ровно потолок стандарта. */
+ * Здесь же аттрактор приложения: в standby лента медленно прокручивается.
+ * Петля — штатный app.standbyTicker() (ядро 1.7.0), темп берётся из
+ * timings.standbyFps; скорость дрейфа задана в px/с и от FPS не зависит. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=15";
+} from "./shared.js?v=16";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -208,11 +209,14 @@ export const pendulumScene = {
     const scroll = this._scrollEl;
     if (!scroll) return null;
     if (this._overlay) this._overlay.close();
-    let dir = 1;
-    this._driftStop = this._app.standbyTicker(() => {
+    let dir = 1, prev = 0;
+    const SPEED = 60;   // px/с — независимо от standbyFps
+    this._driftStop = this._app.standbyTicker((t) => {
       const max = scroll.scrollHeight - scroll.clientHeight;
+      const dt = Math.max(0, Math.min(1, t - prev));
+      prev = t;
       if (max <= 0) return;
-      let next = scroll.scrollTop + dir * 6;
+      let next = scroll.scrollTop + dir * SPEED * dt;
       if (next >= max) { next = max; dir = -1; }
       if (next <= 0) { next = 0; dir = 1; }
       scroll.scrollTop = next;

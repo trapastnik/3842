@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=15";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=16";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -234,7 +234,10 @@ export const mapScene = {
     if (!c) return;
     const rect = c.getBoundingClientRect();
     const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, rect.width * rect.height));
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, budget));
+    /* Пол в 1 нельзя ставить снаружи: на боксе крупнее 4K бюджет требует
+     * масштаба МЕНЬШЕ единицы, а Math.max(1, …) это требование обнулял бы.
+     * На прод-4K недостижимо, но формула должна быть верной. */
+    const dpr = Math.min(Math.max(1, Math.min(2, window.devicePixelRatio || 1)), budget);
     c.width = Math.max(1, Math.floor(rect.width * dpr));
     c.height = Math.max(1, Math.floor(rect.height * dpr));
     this._dpr = dpr;
@@ -462,8 +465,7 @@ export const mapScene = {
     };
     this._onWheel = (e) => {
       e.preventDefault();
-      const r = c.getBoundingClientRect();
-      this._zoomAt({ x: e.clientX - r.left, y: e.clientY - r.top },
+      this._zoomAt({ x: e.clientX, y: e.clientY },
         Math.exp(-e.deltaY * Number(this._cfg.zoomSensitivity) / 1000));
       this._draw();
     };
@@ -485,12 +487,15 @@ export const mapScene = {
     c.removeEventListener("wheel", this._onWheel);
   },
 
-  _zoomAt(pt, k) {
+  /* Принимает КЛИЕНТСКИЕ координаты и сам переводит их в локальные.
+   * Раньше колесо слало локальные, а пинч — клиентские, и разница
+   * маскировалась только тем, что канвас занимает весь экран. */
+  _zoomAt(clientPt, k) {
     const r = this._canvas.getBoundingClientRect();
-    const local = { x: pt.x - (pt.x > r.width ? r.left : 0), y: pt.y };
-    const before = this._toWorld(local.x, local.y);
+    const x = clientPt.x - r.left, y = clientPt.y - r.top;
+    const before = this._toWorld(x, y);
     this._cam.zoom = this._clampZoom(this._cam.zoom * k);
-    const after = this._toWorld(local.x, local.y);
+    const after = this._toWorld(x, y);
     this._cam.camX += before.x - after.x;
     this._cam.camY += before.y - after.y;
   },
