@@ -9,7 +9,7 @@
 
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
-  preloadPictures, filePicture, createCardPanel,
+  preloadPictures, filePicture, createCardPanel, isOffMap,
 } from "./shared.js?v=2";
 
 const USSR_ISO = new Set([
@@ -56,7 +56,10 @@ export const globeScene = {
 
   preload: {
     data: { countries: DATA.countries, picked: DATA.picked },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
     custom: preloadPictures,
   },
 
@@ -146,7 +149,7 @@ export const globeScene = {
     const pointDelays = new Map();
     const distances = items.map((it) => ({
       id: it.id,
-      d: it.lat == null ? Infinity : d3.geoDistance(ORIGIN, [it.lng, it.lat]),
+      d: isOffMap(it) ? Infinity : d3.geoDistance(ORIGIN, [it.lng, it.lat]),
     }));
     distances.sort((a, b) => a.d - b.d);
     distances.forEach((di, i) => pointDelays.set(di.id, i * 35));
@@ -228,7 +231,7 @@ export const globeScene = {
 
     function renderArc() {
       if (!opt().arcs || !selected) return;
-      if (selected.lat == null || selected.lng == null) return;
+      if (isOffMap(selected)) return;
       if (selected.id === "ulyanovsk-tank") return;      // начало совпадает с целью
 
       const interp = d3.geoInterpolate(ORIGIN, [selected.lng, selected.lat]);
@@ -386,7 +389,7 @@ export const globeScene = {
 
       const labelCandidates = [];
       for (const item of items) {
-        if (item.lat == null || item.lng == null) continue;
+        if (isOffMap(item)) continue;
         if (!isVisible(item.lng, item.lat)) continue;
         const pt = projection([item.lng, item.lat]);
         if (!pt) continue;
@@ -489,7 +492,7 @@ export const globeScene = {
           esc(item.image.credit || "") + "</figcaption></figure>"
         : "";
       const where = [item.city, item.country].filter(Boolean).join(" · ")
-        || (item.geolocated === false ? app.t("card.noCoords") : "");
+        || (isOffMap(item) ? app.t("card.noCoords") : "");
       return fig +
         '<div class="m39-card__orig">' +
           esc(CATEGORY_LABELS[item.category] || item.category || "") + "</div>" +
@@ -512,7 +515,7 @@ export const globeScene = {
     }
 
     function buildOfflist() {
-      const off = items.filter((it) => it.geolocated === false);
+      const off = items.filter(isOffMap);
       offlist.hidden = off.length === 0;
       offlistH.textContent = app.t("globe.offmap", { n: off.length });
       offlistUl.replaceChildren();
@@ -571,7 +574,7 @@ export const globeScene = {
       const hit = 28 * drawScale(app, width);
       let bestD = hit * hit;
       for (const item of items) {
-        if (item.lat == null || item.lng == null) continue;
+        if (isOffMap(item)) continue;
         if (!isVisible(item.lng, item.lat)) continue;
         if (!filterPasses(item)) continue;
         const pt = projection([item.lng, item.lat]);
@@ -729,7 +732,7 @@ export const globeScene = {
         if (!width || !height) return { ok: false, detail: "холст без размера" };
         const passing = items.filter(filterPasses);
         if (!passing.length) return { ok: false, detail: "фильтр не оставил ни одного объекта" };
-        const onGlobe = passing.filter((it) => it.lat != null && it.lng != null).length;
+        const onGlobe = passing.filter((it) => !isOffMap(it)).length;
         return { ok: true, detail: "к показу " + passing.length + " из " + total +
           " (на шаре " + onGlobe + ", списком «не на карте» " + (passing.length - onGlobe) +
           "), в последнем кадре " + lastDrawn };
