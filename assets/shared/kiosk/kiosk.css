@@ -37,6 +37,22 @@
   /* Кегли на 3840 (для clamp-формул прототипов) */
   --type-min-label: calc(24px * var(--ui-scale));  /* подписи, легенды */
   --type-min-ui:    calc(32px * var(--ui-scale));  /* текст на кнопках/чипах */
+
+  /* ---- Каналы брендовых цветов, для rgba() ----
+   * Сами цвета берутся как var(--brass, #D2B773) — так их переопределяет
+   * приложение. Но полупрозрачным нужен доступ к каналам, а зашитый
+   * rgba(210,183,115,…) молча разъезжается с токеном при смене палитры
+   * (на этом уже поймали серое «окно»: 157,163,166 против 157,163,168).
+   * ПЕРЕОПРЕДЕЛЯЕШЬ --brass — ПЕРЕОПРЕДЕЛИ И --brass-rgb.
+   * Значения — брендбук (COORDINATION → «Шрифтово-цветовые правила»). */
+  --paper-rgb:       247, 249, 239;
+  --brass-rgb:       210, 183, 115;
+  --red-rgb:         160, 33, 40;
+  --blue-grey-rgb:   93, 137, 112;
+  --window-rgb:      157, 163, 168;
+  --graphite-rgb:    67, 80, 89;
+  --telegrey-rgb:    207, 208, 207;
+  --amber-black-rgb: 0, 0, 0;
 }
 
 /* ---- Режим слабовидящих (класс .a11y на <html>, ставит kiosk-core) ----
@@ -47,7 +63,7 @@
  * Здесь остаётся только контраст-тема. */
 :root.a11y {
   /* Латунь уходит в чистый жёлтый, полупрозрачности убираются */
-  --a11y-accent: #FFD24A;
+  --a11y-accent: #FFD24A;   /* жёлтый контраст-темы: в брендбуке его нет */
   --a11y-bg:     #000000;
 }
 
@@ -81,20 +97,20 @@
  * Вешать на КАЖДЫЙ скроллируемый контейнер: class="kiosk-scroll" */
 .kiosk-scroll {
   scrollbar-width: auto;                       /* Firefox fallback */
-  scrollbar-color: rgba(210, 183, 115, 0.75) rgba(247, 249, 239, 0.08);
+  scrollbar-color: rgba(var(--brass-rgb, 210, 183, 115), 0.75) rgba(var(--paper-rgb, 247, 249, 239), 0.08);
 }
 .kiosk-scroll::-webkit-scrollbar {
   width: var(--scrollbar-w);
   height: var(--scrollbar-w);
 }
 .kiosk-scroll::-webkit-scrollbar-track {
-  background: rgba(247, 249, 239, 0.08);
+  background: rgba(var(--paper-rgb, 247, 249, 239), 0.08);
   border-radius: calc(var(--scrollbar-w) / 2);
 }
 .kiosk-scroll::-webkit-scrollbar-thumb {
-  background: rgba(210, 183, 115, 0.75);       /* латунь */
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.75);       /* латунь */
   border-radius: calc(var(--scrollbar-w) / 2);
-  border: 3px solid rgba(0, 0, 0, 0.35);
+  border: 3px solid rgba(var(--amber-black-rgb, 0, 0, 0), 0.35);
   min-height: 96px;
 }
 .kiosk-scroll::-webkit-scrollbar-thumb:active {
