@@ -497,13 +497,15 @@ export const worldScene = {
         });
         return () => { stop(); lastFrame = 0; anim.start(); };
       },
+      /* Проверяем, что сцене есть что показывать, а не текущую комбинацию
+         фильтров: «утрачено» без бывшего СССР законно даёт ноль точек, и это
+         не повод для тревоги — на экране карта, легенда и счётчики. */
       health() {
         const total = points.length;
-        const ready = points.filter(passes).length;
         if (!total) return { ok: false, detail: "корпус пуст: ни одной точки" };
         if (!width || !height) return { ok: false, detail: "холст без размера" };
-        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
-        return { ok: true, detail: "к показу " + ready + " из " + total +
+        return { ok: true, detail: "точек в своде " + total +
+          ", при текущем фильтре " + points.filter(passes).length +
           ", в последнем кадре " + lastDrawn };
       },
       destroy() {

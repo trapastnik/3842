@@ -682,31 +682,57 @@ export const globeScene = {
         hint.classList.remove("is-off");
         startIntro();
       },
-      /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро; угол и фаза
-         мерцания звёзд считаются от секунд простоя, а не от номера кадра. */
+      /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро, угол считаем
+         от секунд простоя — но рисуем по аптайму страницы.
+
+         Две ловушки, обе стоили пустого шара в заставке:
+          · интро прогонять нельзя. Твин «прилёта» (0.34 → полный размер)
+            двигается только rAF-циклом, а он в заставке остановлен, — шар
+            так и застыл бы уменьшенным. Ставим конечную позу сразу;
+          · render() принимает аптайм, а не секунды простоя. Прилёт точек и
+            мерцание звёзд сверяются с introT0 = performance.now() + 600:
+            на киоске, отработавшем день, «секунды простоя» этот порог не
+            догонят никогда, и ни одна точка не нарисуется. */
       standby(app_) {
         anim.stop();
-        this.reset();
+        filter = "all";
+        showCard(null);
+        buildFilter();
+        modeTween = null;
+        introT0 = 0;                       // точки уже «прилетели»
+        rotation = DEFAULT_ROTATE.slice();
+        scaleFactor = DEFAULT_SCALE;
+        applyProjection();
+
         const from = rotation[0];
         const stop = app_.standbyTicker((t) => {
           rotation[0] = (from + t * 4) % 360;
           applyProjection();
-          render(t * 1000);
+          render(performance.now());
         });
-        return () => { stop(); lastFrame = performance.now(); anim.start(); };
+        return () => {
+          stop();
+          lastFrame = performance.now();
+          this.reset();                    // вернуть открывающий вид с прилётом
+          anim.start();
+        };
       },
+      /* Ловим «загружено, но пусто», а не законные состояния экрана.
+         Не последний кадр: точки прилетают анимацией, и первые 600 мс кадр
+         честно пуст. Не «сколько точек на шаре»: повёрнутый к Тихому океану
+         шар — это норма, а у категории «Астероиды» обе записи вообще без
+         координат и живут в списке «не на карте» — это показанный контент,
+         а не пустота. */
       health() {
         const total = items.length;
         if (!total) return { ok: false, detail: "список избранного пуст" };
-        // Считаем то, что сцена готова показать, а не последний кадр: точки
-        // прилетают анимацией (первые 600 мс кадр честно пуст), а повёрнутый
-        // к Тихому океану шар — это не «загружено, но пусто».
-        const ready = items.filter((it) =>
-          it.lat != null && it.lng != null && filterPasses(it)).length;
         if (!width || !height) return { ok: false, detail: "холст без размера" };
-        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
-        return { ok: true, detail: "к показу " + ready + " из " + total +
-          ", в последнем кадре " + lastDrawn };
+        const passing = items.filter(filterPasses);
+        if (!passing.length) return { ok: false, detail: "фильтр не оставил ни одного объекта" };
+        const onGlobe = passing.filter((it) => it.lat != null && it.lng != null).length;
+        return { ok: true, detail: "к показу " + passing.length + " из " + total +
+          " (на шаре " + onGlobe + ", списком «не на карте» " + (passing.length - onGlobe) +
+          "), в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();

@@ -584,13 +584,16 @@ export const unionScene = {
         hint.classList.remove("is-off");
         invalidate();
       },
+      /* Комбинация «республика × судьба имени» законно бывает пустой
+         (Азербайджан + «носит имя»), и это осмысленный ответ, а не поломка:
+         на экране контур республики, легенда с нулём и рубрикатор. Красным
+         помечаем только то, из-за чего показывать нечего в принципе. */
       health() {
         if (!land.length) return { ok: false, detail: "контуры республик не построены" };
         if (!points.length) return { ok: false, detail: "в Союзе нет геолоцированных объектов" };
         if (!width || !height) return { ok: false, detail: "холст без размера" };
-        const ready = points.filter(shown).length;
-        if (!ready) return { ok: false, detail: "фильтр не оставил ни одной точки" };
-        return { ok: true, detail: "к показу " + ready + " из " + points.length +
+        return { ok: true, detail: "точек в Союзе " + points.length +
+          ", при текущем фильтре " + points.filter(shown).length +
           ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
       },
       destroy() {
