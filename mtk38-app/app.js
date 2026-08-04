@@ -7,11 +7,11 @@
  * приложение работало на 1.5.0, когда в репозитории уже лежало 1.7.0. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=170";
 
-import { globeScene } from "./scenes/globe.js?v=10";
-import { rainScene } from "./scenes/rain.js?v=10";
-import { mapScene } from "./scenes/map.js?v=10";
-import { catalogScene } from "./scenes/catalog.js?v=10";
-import { compositionsScene } from "./scenes/compositions.js?v=10";
+import { globeScene } from "./scenes/globe.js?v=11";
+import { rainScene } from "./scenes/rain.js?v=11";
+import { mapScene } from "./scenes/map.js?v=11";
+import { catalogScene } from "./scenes/catalog.js?v=11";
+import { compositionsScene } from "./scenes/compositions.js?v=11";
 
 const app = createApp({
   appId: "mtk38",
@@ -44,7 +44,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=10";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=11";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики
