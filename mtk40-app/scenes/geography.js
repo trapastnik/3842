@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=20";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=21";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -269,6 +269,10 @@ export const geographyScene = {
     this.k0 = this.k;
     this.ox = this.W / 2 - ((x0 + x1) / 2) * this.k;
     this.oy = (this.H / 2 + 20 * this.s) - ((y0 + y1) / 2) * this.k;
+    /* Поза «вся карта» — точка отсчёта для кнопки «домой»: уехать от неё
+     * можно и без масштабирования. */
+    this.fitOx = this.ox;
+    this.fitOy = this.oy;
     this.fitted = true;
   },
 
@@ -548,11 +552,23 @@ export const geographyScene = {
   },
 
   // ---------- кадр ----------
+  /* Кнопка «домой» пряталась при zf ≤ 1.05, но сдвинуть карту можно и на
+   * общем плане: кламп держит в кадре четверть габарита, то есть до двух
+   * третей городов посетитель всё равно уводит за край — и вернуться нечем
+   * до самого простоя. Поэтому смотрим и на масштаб, и на сдвиг от позы
+   * «вся карта». */
+  movedFromFit() {
+    if (this.zf() > 1.05) return true;
+    if (this.fitOx == null || !this.W) return false;
+    return Math.abs(this.ox - this.fitOx) > this.W * 0.08 ||
+           Math.abs(this.oy - this.fitOy) > this.H * 0.08;
+  },
+
   frame() {
     if (!this.fitted) this.fitToCities();   // догоняем, если кадр появился позже
     this.updateAnim();
     this.render();
-    if (this.homeBtn) this.homeBtn.hidden = !(this.zf() > 1.05);
+    if (this.homeBtn) this.homeBtn.hidden = !this.movedFromFit();
   },
 
   render() {

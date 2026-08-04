@@ -9,16 +9,16 @@
  * Проверено на себе: обёртка канвы жила в shared.js?v=1 и бралась из кеша,
  * хотя сцена и app уже были свежими.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=20";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=21";
 
-import { installChromeZones } from "./scenes/chrome-zones.js?v=20";
-import { shelfScene } from "./scenes/shelf.js?v=20";
-import { mirrorScene } from "./scenes/mirror.js?v=20";
-import { timelineScene } from "./scenes/timeline.js?v=20";
-import { catalogScene } from "./scenes/catalog.js?v=20";
-import { volumeScene } from "./scenes/volume.js?v=20";
-import { constellationScene } from "./scenes/constellation.js?v=20";
-import { geographyScene } from "./scenes/geography.js?v=20";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=21";
+import { shelfScene } from "./scenes/shelf.js?v=21";
+import { mirrorScene } from "./scenes/mirror.js?v=21";
+import { timelineScene } from "./scenes/timeline.js?v=21";
+import { catalogScene } from "./scenes/catalog.js?v=21";
+import { volumeScene } from "./scenes/volume.js?v=21";
+import { constellationScene } from "./scenes/constellation.js?v=21";
+import { geographyScene } from "./scenes/geography.js?v=21";
 
 const app = createApp({
   appId: "mtk40",
