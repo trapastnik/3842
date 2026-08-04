@@ -8,9 +8,9 @@
  * d3 подключён локально классическим <script> — офлайн-киоск. */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, slowLoop, sizeWatch,
+  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel,
-} from "./shared.js?v=1";
+} from "./shared.js?v=2";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -133,6 +133,7 @@ export const globeScene = {
     let modeTween = null;
     let introT0 = 0;
     let labelHits = [];
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
     let dragStart = null;
     let dragMoved = false;
     let pinch = null;
@@ -427,6 +428,7 @@ export const globeScene = {
           });
         }
       }
+      lastDrawn = labelCandidates.length;
       drawLabels(labelCandidates);
     }
 
@@ -473,6 +475,7 @@ export const globeScene = {
       fitCanvas(canvas, w, h);
       generateStars();
       applyProjection();
+      render(performance.now());     // первый кадр сразу (см. world.js)
     });
 
     /* ---- карточка ---- */
@@ -679,17 +682,57 @@ export const globeScene = {
         hint.classList.remove("is-off");
         startIntro();
       },
-      /* Аттрактор: тот же шар, но медленно и без интерфейса. */
-      standby(fps) {
+      /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро, угол считаем
+         от секунд простоя — но рисуем по аптайму страницы.
+
+         Две ловушки, обе стоили пустого шара в заставке:
+          · интро прогонять нельзя. Твин «прилёта» (0.34 → полный размер)
+            двигается только rAF-циклом, а он в заставке остановлен, — шар
+            так и застыл бы уменьшенным. Ставим конечную позу сразу;
+          · render() принимает аптайм, а не секунды простоя. Прилёт точек и
+            мерцание звёзд сверяются с introT0 = performance.now() + 600:
+            на киоске, отработавшем день, «секунды простоя» этот порог не
+            догонят никогда, и ни одна точка не нарисуется. */
+      standby(app_) {
         anim.stop();
-        this.reset();
-        const slow = slowLoop((now) => {
-          rotation[0] = (rotation[0] + 0.4) % 360;
+        filter = "all";
+        showCard(null);
+        buildFilter();
+        modeTween = null;
+        introT0 = 0;                       // точки уже «прилетели»
+        rotation = DEFAULT_ROTATE.slice();
+        scaleFactor = DEFAULT_SCALE;
+        applyProjection();
+
+        const from = rotation[0];
+        const stop = app_.standbyTicker((t) => {
+          rotation[0] = (from + t * 4) % 360;
           applyProjection();
-          render(now);
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = performance.now(); anim.start(); };
+          render(performance.now());
+        });
+        return () => {
+          stop();
+          lastFrame = performance.now();
+          this.reset();                    // вернуть открывающий вид с прилётом
+          anim.start();
+        };
+      },
+      /* Ловим «загружено, но пусто», а не законные состояния экрана.
+         Не последний кадр: точки прилетают анимацией, и первые 600 мс кадр
+         честно пуст. Не «сколько точек на шаре»: повёрнутый к Тихому океану
+         шар — это норма, а у категории «Астероиды» обе записи вообще без
+         координат и живут в списке «не на карте» — это показанный контент,
+         а не пустота. */
+      health() {
+        const total = items.length;
+        if (!total) return { ok: false, detail: "список избранного пуст" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        const passing = items.filter(filterPasses);
+        if (!passing.length) return { ok: false, detail: "фильтр не оставил ни одного объекта" };
+        const onGlobe = passing.filter((it) => it.lat != null && it.lng != null).length;
+        return { ok: true, detail: "к показу " + passing.length + " из " + total +
+          " (на шаре " + onGlobe + ", списком «не на карте» " + (passing.length - onGlobe) +
+          "), в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -723,9 +766,11 @@ export const globeScene = {
   setA11y() { if (this.api) this.api.remeasure(); },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {
