@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=12";
-import { createCard } from "./card.js?v=12";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
+import { createCard } from "./card.js?v=13";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -118,10 +118,13 @@ export const mapScene = {
     this._ro.observe(this._canvas);
 
     /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
-     * это fallback-контент, браузер его не рисует, и все пять подсказок были
-     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
-     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
-    if (window.KioskHint) this._hint = window.KioskHint.attach(root, { gesture: "pinch" });
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "pinch", label: this._hintLabel() });
+    }
 
     this.setLang(ctx.lang || "ru");
     this._size();
@@ -131,6 +134,7 @@ export const mapScene = {
   unmount() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     if (this._pills) this._pills.removeEventListener("click", this._onPill);
     this._unbind();
     if (this._card) { this._card.destroy(); this._card = null; }
@@ -197,8 +201,11 @@ export const mapScene = {
       b.textContent = T[b.getAttribute("data-layer")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
     this._syncPills();
   },
+
+  _hintLabel() { return this._app ? this._app.t("hint.map") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 

@@ -17,5 +17,10 @@
   "card.next": "下一版",
   "card.speakers-mln": "百万使用者",
   "card.speakers-mlrd": "十亿使用者",
-  "card.lang-other": "种语言使用此写法"
+  "card.lang-other": "种语言使用此写法",
+  "hint.globe": "拖动以旋转",
+  "hint.rain": "滑动手指 · 点按文字",
+  "hint.map": "双指缩放",
+  "hint.catalog": "滑动翻页 · 点按格子",
+  "hint.compositions": "拖动以旋转"
 }

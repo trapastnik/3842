@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=12";
-import { createCard } from "./card.js?v=12";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
+import { createCard } from "./card.js?v=13";
 
 export const catalogScene = {
   id: "catalog",
@@ -117,12 +117,12 @@ export const catalogScene = {
     this._ro = new ResizeObserver(() => { this._size(); this._build(); });
     this._ro.observe(this._canvas);
     /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
-     * это fallback-контент, браузер его не рисует, и все пять подсказок были
-     * невидимы. Заодно у глобуса, дождя и композиций канвас общий — на нём
-     * подсказка была бы одна на троих, а слой у каждой сцены свой. */
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
     if (window.KioskHint) {
       this._hint = window.KioskHint.attach(root,
-        { gesture: "swipe", label: "Листайте · коснитесь ячейки" });
+        { gesture: "swipe", label: this._hintLabel() });
     }
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
@@ -136,6 +136,7 @@ export const catalogScene = {
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     if (this._card) { this._card.destroy(); this._card = null; }
     if (this._root) this._root.remove();
     this._root = this._canvas = this._ctx2d = null;
@@ -196,8 +197,11 @@ export const catalogScene = {
       b.textContent = T[b.getAttribute("data-filter")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
     this._build();
   },
+
+  _hintLabel() { return this._app ? this._app.t("hint.catalog") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 

@@ -18,5 +18,10 @@
   "card.speakers-mln": "mln speakers",
   "card.speakers-mlrd": "bln speakers",
   "card.lang-one": "language",
-  "card.lang-other": "languages"
+  "card.lang-other": "languages",
+  "hint.globe": "Drag to rotate",
+  "hint.rain": "Move your finger · tap a word",
+  "hint.map": "Pinch to zoom",
+  "hint.catalog": "Swipe · tap a cell",
+  "hint.compositions": "Drag to rotate"
 }

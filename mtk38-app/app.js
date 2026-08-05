@@ -6,13 +6,13 @@
  * дальше в kiosk-core.js. Держать в ногу с версией ядра, иначе Chrome отдаёт
  * старое: так приложение сначала работало на 1.5.0 при 1.7.0 в репозитории, а
  * потом на 1.7.0 при 1.8.1 — метку забыли поднять вместе с merge. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=181";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=182";
 
-import { globeScene } from "./scenes/globe.js?v=12";
-import { rainScene } from "./scenes/rain.js?v=12";
-import { mapScene } from "./scenes/map.js?v=12";
-import { catalogScene } from "./scenes/catalog.js?v=12";
-import { compositionsScene } from "./scenes/compositions.js?v=12";
+import { globeScene } from "./scenes/globe.js?v=13";
+import { rainScene } from "./scenes/rain.js?v=13";
+import { mapScene } from "./scenes/map.js?v=13";
+import { catalogScene } from "./scenes/catalog.js?v=13";
+import { compositionsScene } from "./scenes/compositions.js?v=13";
 
 const app = createApp({
   appId: "mtk38",
@@ -21,7 +21,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7.0). Поднимать вместе с правкой i18n/*.json,
    * иначе Chrome на киоске покажет прежние подписи. */
-  i18nVersion: 9,
+  i18nVersion: 10,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
@@ -45,7 +45,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=12";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=13";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики
