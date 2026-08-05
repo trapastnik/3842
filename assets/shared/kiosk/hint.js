@@ -65,40 +65,60 @@
     return /(auto|scroll)/.test(cs.overflowY) || /(auto|scroll)/.test(cs.overflowX);
   }
 
-  /* Куда вешать на самом деле: сам контейнер либо его родитель. */
+  /* Ближайший прокручиваемый ПРЕДОК. Мало проверять сам узел: холст
+   * внутри скроллера лежит в обычном div-е, и подъём на этот div
+   * оставляет подсказку внутри прокрутки — она всё так же уезжает за
+   * кромку (ядро ещё и делает такой контейнер position:relative). */
+  function scrollParent(el) {
+    var p = el.parentElement;
+    while (p && p !== document.body) {
+      if (scrolls(p)) return p;
+      p = p.parentElement;
+    }
+    return null;
+  }
+
+  /* Куда вешать на самом деле.
+   *
+   * Обе причины подъёма проверяются В ЦИКЛЕ, а не по очереди: холст
+   * внутри скроллера проходил canvas-веткой и возвращал прокручиваемого
+   * родителя без единой проверки — то есть ровно тот случай y = −188,
+   * который считался закрытым (карта 42 вешает именно на холст). */
   function resolveHost(target) {
     if (!target || !target.tagName) return null;
 
-    /* Прокручиваемый контейнер: absolute внутри него отсчитывается от
-     * ВЫСОТЫ СОДЕРЖИМОГО, а не от видимой области — у маятника 42
-     * подсказка встала на y = −188, за верхней кромкой. Поднимаемся до
-     * первого непрокручиваемого предка. */
-    if (!VOID_HOSTS[target.tagName] && scrolls(target)) {
-      var up = target.parentElement;
-      while (up && up !== document.body && scrolls(up)) up = up.parentElement;
-      if (up && up !== document.body) {
-        console.warn("[KioskHint] контейнер прокручивается — подсказка повешена на " +
-          "ближайшего непрокручиваемого предка. Внутри скроллера absolute считается " +
-          "от высоты содержимого, и подсказка уезжает за кромку.");
-        return up;
+    var node = target, why = null, guard = 0;
+    while (node && node !== document.body && guard++ < 64) {
+      if (VOID_HOSTS[node.tagName]) {
+        /* Содержимое такого тега — запасной контент, браузер его не рисует. */
+        why = why || "void";
+        node = node.parentElement;
+        continue;
       }
-      console.warn("[KioskHint] контейнер прокручивается, непрокручиваемого предка " +
-        "нет — подсказка может уехать за кромку. Передавайте обёртку сцены.");
-      return target;
+      /* Выбираемся из ПРОКРУТКИ ЦЕЛИКОМ, а не на шаг: внутри скроллера
+       * absolute считается от высоты содержимого, и подсказка уезжает за
+       * кромку — хоть на самом скроллере, хоть на любом его потомке. */
+      var sc = scrolls(node) ? node : scrollParent(node);
+      if (sc && sc !== document.body) {
+        why = "scroll";
+        node = sc.parentElement;
+        continue;
+      }
+      break;
     }
 
-    if (!VOID_HOSTS[target.tagName]) return target;
-    var parent = target.parentElement;
-    if (!parent) {
-      console.warn("[KioskHint] <" + target.tagName.toLowerCase() + "> не отображает " +
-        "вложенные элементы, а родителя нет — подсказка не будет видна. " +
-        "Передавайте контейнер сцены, а не холст.");
-      return null;
+    if (!node || node === document.body) {
+      console.warn("[KioskHint] не нашёл подходящего контейнера " +
+        "(холст без родителя либо всё дерево прокручивается) — подсказка не будет " +
+        "видна или уедет за кромку. Передавайте обёртку сцены.");
+      return node && node !== document.body ? node : null;
     }
-    console.warn("[KioskHint] подсказка повешена на родителя: <" +
-      target.tagName.toLowerCase() + "> не отображает вложенные элементы " +
-      "(его содержимое — запасной контент). Передавайте контейнер сцены.");
-    return parent;
+    if (node !== target) {
+      console.warn("[KioskHint] подсказка поднята на <" + node.tagName.toLowerCase() +
+        ">: исходный контейнер " + (why === "scroll" ? "прокручивается" :
+        "не отображает вложенные элементы") + ". Передавайте обёртку сцены, а не холст.");
+    }
+    return node;
   }
 
   var EVENTS = ["pointerdown", "wheel", "touchstart"];

@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.9.0";
+  var VERSION = "1.9.1";
 
   /* Метка версии, с которой ядро запросили: ?v= из адреса собственного
    * скрипта (classic) или из обёртки (ESM). Расхождение с VERSION значит
@@ -701,6 +701,10 @@
 
     /* Журнал поднимаем первым — чтобы поймать и ошибки самого старта. */
     this._initJournal();
+    /* И сразу же — рассинхрон версий. Раньше запись шла в КОНЦЕ успешного
+     * старта: если рассинхрон сам старт и ронял, подсказки в журнале не
+     * оставалось вовсе. */
+    this._logVersionMismatch();
 
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
@@ -729,13 +733,6 @@
          * вопрос, на который после обновления нужен мгновенный ответ. */
         console.info("[kiosk] ядро " + VERSION + " · " + self.appId +
           " · запуск " + self.sessionId);
-        if (REQUESTED_VERSION && REQUESTED_VERSION !== VERSION) {
-          var msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
-            " — браузер отдал файл из кеша. Обнови ?v= у ВСЕХ файлов кита " +
-            "(и у импортов сцен: версия точки входа их не пробивает).";
-          console.warn("[kiosk] " + msg);
-          self.log("warn", msg);
-        }
         if (/[?&]service=1\b/.test(location.search)) self.openService(true);
         self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
@@ -761,6 +758,13 @@
      * не доехать до прогретого киоска НИКОГДА — ровно та болезнь, что
      * была у словарей до i18nVersion. */
     return loadJson(this.configUrl, "no-cache")
+      /* Ревалидация требует сети до сервера. Если он недоступен (а киоск
+       * обязан подниматься при любой погоде) — вторая попытка из кеша.
+       * Так свежесть остаётся правилом, а не условием запуска. */
+      .catch(function (err) {
+        self.log("warn", "конфиг не ревалидирован (" + errText(err) + "), беру из кеша");
+        return loadJson(self.configUrl, "force-cache");
+      })
       .then(function (json) {
         /* Файл мигрируем ДО слияния и до наложения патча. Иначе legacy-
          * ключи из файла легли бы ПОВЕРХ screens.* оператора и откатывали
@@ -770,6 +774,9 @@
       })
       .catch(function (err) {
         console.warn("[kiosk] kiosk.config.json не прочитан, работаем на дефолтах", err);
+        /* В журнал, а не только в консоль: на киоске консоль никто не
+         * читает, а «почему настройки не те» спрашивают у журнала. */
+        self.log("error", "конфиг не прочитан (" + errText(err) + "), работаю на дефолтах");
       })
       .then(function () { self._applyStoredConfig(); });
   };
@@ -1095,8 +1102,12 @@
     });
   };
 
-  /* Фактические габариты хрома. В скрытой вкладке и до первой раскладки
-   * прямоугольники нулевые — тогда замер не участвует, работает расчёт. */
+  /* Фактические габариты хрома.
+   *
+   * Нулевые прямоугольники бывают не «в фоне» (в фоновой вкладке
+   * getBoundingClientRect отдаёт настоящие числа — прежний комментарий
+   * тут врал), а до первой раскладки и в схлопнутом окне. В этих случаях
+   * замер не участвует и работает расчёт по конфигу. */
   KioskApp.prototype._measureChrome = function (gap) {
     var out = { top: 0, bottom: 0, side: 0 };
     var root = this._els.root;
@@ -2016,6 +2027,20 @@
     return this.appId + "-kiosk-log";
   };
 
+  /* Рассинхрон версий: обёртка кладёт сообщение в глобальную переменную
+   * (сверять из неё, а не из ядра — единственный способ поймать «свежая
+   * метка, старое тело»), ядро переносит его в журнал.
+   * Classic-путь сверяет сам себя — для старых ядер это не работает. */
+  KioskApp.prototype._logVersionMismatch = function () {
+    var msg = global.__kioskCoreVersionMismatch;
+    if (!msg && REQUESTED_VERSION && REQUESTED_VERSION !== VERSION) {
+      msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
+        " — браузер отдал файл из кеша.";
+      console.warn("[kiosk] " + msg);
+    }
+    if (msg) this.log("warn", msg);
+  };
+
   KioskApp.prototype._initJournal = function () {
     var self = this;
     if (this._journalReady) return;
@@ -2615,12 +2640,14 @@
     /* Класс на <html>: токены кегля/контраста/таргетов живут в kiosk.css
      * и достаются и ядру, и сценам, и прототипам. */
     document.documentElement.classList.toggle("a11y", on);
+    /* Масштабы — ДО того, как сцены узнают о режиме: иначе setA11y()
+     * отрабатывал бы на старых значениях токенов. */
+    this._applyScale();
+    this._applyInsets();
     this._records.forEach(function (rec) {
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
-    this._applyScale();           // режим домножает оба масштаба
-    this._applyInsets();          // таргеты выросли — полосы хрома тоже
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;

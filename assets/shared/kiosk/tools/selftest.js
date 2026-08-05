@@ -261,12 +261,20 @@
     } catch (err) { patch = {}; }
     var stored = (patch && patch.scenes) || {};
 
-    var bad = [], compared = 0;
+    var bad = [], stale = [], compared = 0;
     present.forEach(function (id) {
       var vals = app.sceneSettings(id) || {};
       var mine = stored[id];
       if (!mine || typeof mine !== "object") return;   /* оператор их не трогал */
+      var schema = typeof app.sceneSchema === "function" ? app.sceneSchema(id) : [];
+      var known = {};
+      schema.forEach(function (s) { known[s.key] = 1; });
+
       Object.keys(mine).forEach(function (k) {
+        /* Ключ, выпавший из схемы при штатной эволюции сцены, — не
+         * расхождение, а хвост в патче. Красный на здоровом киоске хуже
+         * пропуска: ему перестают верить. */
+        if (!known[k]) { stale.push(id + "." + k); return; }
         compared++;
         if (JSON.stringify(vals[k]) !== JSON.stringify(mine[k])) {
           bad.push(id + "." + k + ": в патче " + JSON.stringify(mine[k]) +
@@ -283,11 +291,12 @@
           "менял — сверять нечего. Покрутите любую и перезапустите."
       };
     }
+    var tail = stale.length ? "; вне текущей схемы (не сверялись): " + stale.join(", ") : "";
     return {
       name: "Сцены с id order/enabled",
       ok: bad.length === 0,
-      detail: bad.length ? "настройки разошлись с патчем: " + bad.join("; ")
-        : "сверено значений с патчем оператора: " + compared + " (" + present.join(", ") + ")"
+      detail: (bad.length ? "настройки разошлись с патчем: " + bad.join("; ")
+        : "сверено значений с патчем оператора: " + compared + " (" + present.join(", ") + ")") + tail
     };
   }
 

@@ -46,8 +46,12 @@ JSON_PATH_KEYS = {"src", "url", "path", "file", "image", "img", "thumb",
                   "thumbnail", "preview", "poster", "photo", "asset"}
 
 # Похоже на относительный путь к файлу с расширением (а не на подпись/id).
+# ПРОБЕЛЫ РАЗРЕШЕНЫ: в манифесте МТК 41 имена вида
+# «photos/01_Памятник Ленину в Костроме.jpg» — обычное дело. Пока пробел
+# был запрещён, такие пути (а) не проверялись на существование и (б) не
+# попадали в used-набор, отчего 19 живых файлов из 56 числились сиротами.
 LOOKS_LIKE_PATH = re.compile(
-    r"^[^\s:*?\"<>|]+\.(?:jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mp3|ogg|wav|"
+    r"^[^\n\r:*?\"<>|]+\.(?:jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mp3|ogg|wav|"
     r"woff2?|otf|ttf|json|geojson|csv|txt)$", re.I)
 SKIP_DIRS = {".git", "node_modules", "__pycache__", ".claude", "venv", ".venv"}
 

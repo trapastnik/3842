@@ -26,6 +26,27 @@ if (!core) {
   throw new Error("[kiosk] kiosk-core.js не инициализировался — проверь путь импорта");
 }
 
+/* СВЕРКА ВЕРСИЙ ЖИВЁТ ЗДЕСЬ, а не в ядре.
+ *
+ * Главный кейс залипшего кеша — свежая метка и СТАРОЕ тело ядра. Проверка
+ * внутри ядра его не ловит по определению: у версий до 1.9.0 её просто
+ * нет, и рассинхрон проходит молча. Обёртка же всегда свежая — её адрес
+ * и несёт бампнутую метку, — поэтому сверять надо отсюда.
+ *
+ * Classic-путь (<script src="kiosk-core.js?v=...">) для СТАРЫХ ядер так
+ * не закрыть: там некому сверять, кроме самого залипшего файла. Это
+ * принципиальная дыра, она названа в README. */
+const requested = here.searchParams.get("v");
+if (requested && core.version && requested !== core.version) {
+  const msg = "запрошено ядро " + requested + ", а работает " + core.version +
+    " — браузер отдал файл из кеша. Обнови ?v= у ВСЕХ файлов кита " +
+    "(и у импортов сцен: версия точки входа их не пробивает).";
+  console.warn("[kiosk] " + msg);
+  /* В журнал — через первое созданное приложение: оно поднимет журнал
+   * раньше, чем что-либо успеет упасть. */
+  window.__kioskCoreVersionMismatch = msg;
+}
+
 export const version = core.version;
 export const DEFAULT_CONFIG = core.DEFAULT_CONFIG;
 export const KioskApp = core.KioskApp;
