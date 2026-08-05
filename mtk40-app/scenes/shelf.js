@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=25";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=26";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -111,14 +111,35 @@ export const shelfScene = {
   standby() {
     const SPEED = 26;                 // дизайн-px в секунду
     const RATE = [1, 0.78, 1.22];     // у каждой полки свой ход
-    /* Отсчёт — от позы, в которой сцену застала заставка. Простой обычно
-     * успевает сбросить полки в ноль, но если оператор укоротит тайминги и
-     * standby придёт раньше reset, полки всё равно поедут с места, а не
-     * прыгнут в начало цикла. */
-    const base = this.shelves.map((sh) => sh.scrollX);
+
+    /* Свою петлю ОБЯЗАНЫ остановить сами: при сценном аттракторе ядро сцены
+     * не паузит («она же его и остановит»), и без этого rAF продолжал бы
+     * рисовать все корешки с текстом каждый vsync на 4K всю ночь, а тикер
+     * добавлял бы свои кадры сверху — ручка standbyFps не значила бы
+     * ничего. */
+    if (this.cv) this.cv.stop();
+
+    /* Следы посетителя убираем: под вуалью заставки открытая карточка и
+     * латунная рамка выделения оставались бы видны, если простой укоротили
+     * и standby пришёл раньше reset. */
+    this.activeId = null;
+    if (this.card) this.card.hide();
     if (this.hint) this.hint.hide();
-    return this.app.standbyTicker((t) => {
-      if (!this.cv || !this.cv.w) return;
+
+    /* Отсчёт — от позы, в которой сцену застала заставка, но ЗАЖАТОЙ в
+     * пределы полки. Поза может законно покоиться в оверскролле: пружина
+     * работает только за краями, и палец, отпущенный за краем без скорости,
+     * оставляет scrollX отрицательным. Отражение волны превратило бы такой
+     * base в зеркальный скачок на 2|base| — сотни физических пикселей на
+     * первом же кадре заставки. */
+    const base = this.shelves.map((sh) => sh.scrollX);
+
+    const stopTicker = this.app.standbyTicker((t) => {
+      if (!this.cv) return;
+      /* Страховка размера жила в rAF-петле, а она остановлена — тикеру нужна
+       * своя, иначе слой, показанный в фоне, останется с чужим буфером. */
+      this.cv.sync();
+      if (!this.cv.w) return;
       const s = this.s;
       const offsetX = 100 * s;
       for (let i = 0; i < this.shelves.length; i++) {
@@ -129,13 +150,23 @@ export const shelfScene = {
         /* Маятник: линейный ход отражается от краёв полки. Закольцованный
          * сдвиг давал бы рывок в момент перескока. Полки расходятся ходом и
          * длиной своего пути — разъезжаются сами, без стартового сдвига. */
+        const from = Math.min(Math.max(base[i], 0), span);
         const period = 2 * span;
-        const raw = base[i] + SPEED * RATE[i] * s * t;
+        const raw = from + SPEED * RATE[i] * s * t;
         const x = ((raw % period) + period) % period;
         shelf.scrollX = x <= span ? x : period - x;
       }
       this.render();
     });
+
+    /* Симметрия: петлю остановили мы — мы же её и возвращаем. И возвращаем
+     * подсказку: её одноразовый таймер к этому моменту давно отработал, а
+     * будящее касание ушло в оверлей ядра, так что сама она не покажется. */
+    return () => {
+      stopTicker();
+      if (this.cv) this.cv.start();
+      if (this.hint) this.hint.show();
+    };
   },
 
   reset() {

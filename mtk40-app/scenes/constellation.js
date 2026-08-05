@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=25";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=26";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
