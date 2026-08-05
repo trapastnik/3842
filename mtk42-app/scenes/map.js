@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=21";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=22";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -133,6 +133,18 @@ export const mapScene = {
     });
     this._ro.observe(this._canvas);
 
+    /* Лифт подсказки над собственными чипами — ОДИН механизм: наблюдатель на
+     * самом баре фильтров. Он закрывает разом язык (длина слов переносит
+     * строку), a11y (таргеты ×1.25), размер кнопок из настроек И ресайз окна
+     * (сужение переносит чипы во второй ряд). Точечные вызовы после каждого из
+     * этих событий не годятся: перелайаут чипов внутри .kiosk-layer
+     * (content-visibility) материализуется только на СЛЕДУЮЩЕМ кадре, а
+     * setTimeout(0) штатно бежит раньше — замер отдавал старую высоту.
+     * «А если RO молчит в фоне?» — там и раскладка не меняется, а на выходе
+     * из фона придёт первичная доставка. */
+    this._barRo = new ResizeObserver(() => this._liftHint());
+    this._barRo.observe(root.querySelector(".m42-filters--bottom"));
+
     /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан.
      * Вешаем на КОРЕНЬ сцены, а не на канвас: div внутри <canvas> — это
      * fallback-контент, браузер его не рисует, и подсказка была невидима
@@ -149,8 +161,8 @@ export const mapScene = {
   },
 
   unmount() {
-    clearTimeout(this._liftTimer); this._liftTimer = null;
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
+    if (this._barRo) { this._barRo.disconnect(); this._barRo = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._unbindGestures();
     if (this._statusRow) this._statusRow.removeEventListener("click", this._onFilter);
@@ -180,8 +192,7 @@ export const mapScene = {
       prev.viewPreset !== c.viewPreset || prev.lonMin !== c.lonMin ||
       prev.lonMax !== c.lonMax || prev.latMin !== c.latMin || prev.latMax !== c.latMax;
     if (reframe) { this._size(); this._fit(); }
-    this._liftHint();   // размер кнопок-фильтров меняет высоту панели
-    this._draw();
+    this._draw();   // высоту бара пересчитает наблюдатель на нём же
   },
 
   _defaults() {
@@ -245,16 +256,11 @@ export const mapScene = {
     this._draw();
   },
 
+  /* Лифт подсказки не трогаем: бар подрастёт от токенов a11y, и наблюдатель
+   * на баре пересчитает сам — на том кадре, когда перелайаут действительно
+   * случится. */
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
-    /* Меряем дважды. Свой класс уже стоит, но токены a11y (--touch-primary,
-     * --a11y-scale) ставит ЯДРО, и порядок не гарантирован: замер «сейчас»
-     * поймал чипы в старом размере — зазор вышел 8 px вместо 24. Повтор через
-     * макрозадачу берёт уже итоговую раскладку. Не rAF: в фоновой вкладке
-     * кадров нет, а таймеры идут. */
-    this._liftHint();
-    clearTimeout(this._liftTimer);
-    this._liftTimer = setTimeout(() => this._liftHint(), 0);
     this._draw();   // точки крупнее, подписи городов гаснут — см. _draw()
   },
 
@@ -579,16 +585,14 @@ export const mapScene = {
       '<button type="button" class="m42-filter kiosk-target' +
       (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
       esc(t("status." + v)) + "</button>").join("");
-    this._liftHint();
   },
 
   /* Сколько своя нижняя панель фильтров занимает над линией --chrome-bottom.
    * В CSS высоту соседнего элемента не узнать, поэтому меряем и публикуем
-   * переменной. Замер синхронный (getBoundingClientRect), НЕ через rAF или
-   * ResizeObserver: в фоновой вкладке они не срабатывают вовсе, и подсказка
-   * осталась бы на старом месте. Пересчитывать надо после каждой смены
-   * раскладки чипов: язык (длина слов переносит строку), a11y (кегли и
-   * таргеты крупнее), настройки размера кнопок. */
+   * переменной. Единственный вызов — из наблюдателя на самом баре (см. mount):
+   * он приходит тогда, когда перелайаут уже случился. Инвариант, по которому
+   * это проверяется на приёмке: зазор между низом подсказки и верхом чипов
+   * РОВНО 24 px, а не «перекрытий нет». */
   _liftHint() {
     if (!this._root) return;
     const bar = this._root.querySelector(".m42-filters--bottom");
