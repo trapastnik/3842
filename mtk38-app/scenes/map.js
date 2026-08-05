@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
+import { createCard } from "./card.js?v=13";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -117,7 +117,14 @@ export const mapScene = {
     this._ro = new ResizeObserver(() => { this._size(); this._rebuild(); this._draw(); });
     this._ro.observe(this._canvas);
 
-    if (window.KioskHint) this._hint = window.KioskHint.attach(this._canvas, { gesture: "pinch" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "pinch", label: this._hintLabel() });
+    }
 
     this.setLang(ctx.lang || "ru");
     this._size();
@@ -127,6 +134,7 @@ export const mapScene = {
   unmount() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     if (this._pills) this._pills.removeEventListener("click", this._onPill);
     this._unbind();
     if (this._card) { this._card.destroy(); this._card = null; }
@@ -193,8 +201,11 @@ export const mapScene = {
       b.textContent = T[b.getAttribute("data-layer")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
     this._syncPills();
   },
+
+  _hintLabel() { return this._app ? this._app.t("hint.map") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
@@ -334,6 +345,8 @@ export const mapScene = {
 
   _draw() {
     const ctx = this._ctx2d;
+    // ResizeObserver в фоне молчит, в том числе на первой доставке
+    if (pollSize(this, this._canvas)) { this._size(); this._rebuild(); }
     if (!ctx || !this._W) return;
     const c = this._cfg;
     ctx.clearRect(0, 0, this._W, this._H);

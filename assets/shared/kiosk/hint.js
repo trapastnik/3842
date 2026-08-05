@@ -30,6 +30,14 @@
       '<path d="M14 44 H30 M66 44 H82"/>' +
       '<path d="M22 36 L14 44 L22 52 M74 36 L82 44 L74 52"/>' +
       "</svg>",
+    /* палец касается — круги расходятся */
+    tap:
+      '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">' +
+      '<circle cx="48" cy="40" r="8"/>' +
+      '<circle cx="48" cy="40" r="18" opacity=".55"/>' +
+      '<circle cx="48" cy="40" r="28" opacity=".25"/>' +
+      '<path d="M34 74 C34 62 40 56 48 56 C56 56 62 62 62 74"/>' +
+      "</svg>",
     /* горизонтальный свайп */
     swipe:
       '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">' +
@@ -42,8 +50,32 @@
   var DEFAULT_LABEL = {
     pinch: "Сведите или разведите пальцы",
     drag: "Тяните, чтобы перемещаться",
+    tap: "Коснитесь, чтобы открыть",
     swipe: "Листайте свайпом",
   };
+
+  /* Элементы, внутрь которых браузер НЕ РИСУЕТ детей: их содержимое —
+   * запасной контент для тех, кто тег не поддерживает. Подсказка,
+   * повешенная на <canvas>, невидима с рождения — так она и жила у пяти
+   * сцен МТК 38 и на карте 42, пока не вскрылось ревью. */
+  var VOID_HOSTS = { CANVAS: 1, IMG: 1, VIDEO: 1, IFRAME: 1, OBJECT: 1 };
+
+  /* Куда вешать на самом деле: сам контейнер либо его родитель. */
+  function resolveHost(target) {
+    if (!target || !target.tagName) return null;
+    if (!VOID_HOSTS[target.tagName]) return target;
+    var parent = target.parentElement;
+    if (!parent) {
+      console.warn("[KioskHint] <" + target.tagName.toLowerCase() + "> не отображает " +
+        "вложенные элементы, а родителя нет — подсказка не будет видна. " +
+        "Передавайте контейнер сцены, а не холст.");
+      return null;
+    }
+    console.warn("[KioskHint] подсказка повешена на родителя: <" +
+      target.tagName.toLowerCase() + "> не отображает вложенные элементы " +
+      "(его содержимое — запасной контент). Передавайте контейнер сцены.");
+    return parent;
+  }
 
   var EVENTS = ["pointerdown", "wheel", "touchstart"];
 
@@ -58,6 +90,11 @@
     if (!target) return null;
     opts = opts || {};
 
+    /* Холст детей не рисует — вешаемся на родителя. Иначе подсказка
+     * существует в DOM и не видна никогда. */
+    target = resolveHost(target);
+    if (!target) return null;
+
     /* Повторный вызов — не новая подсказка, а обновление прежней.
      * И БЕЗ firstDelay: он для первого показа после загрузки, а на
      * смене языка вспыхивал бы посреди взаимодействия. */
@@ -67,6 +104,10 @@
       return existing;
     }
 
+    if (opts.gesture && !ICONS[opts.gesture]) {
+      console.warn("[KioskHint] нет жеста «" + opts.gesture + "», беру pinch. " +
+        "Доступны: " + Object.keys(ICONS).join(", "));
+    }
     var gesture = ICONS[opts.gesture] ? opts.gesture : "pinch";
     var idleMs = opts.idleMs || 30000;
     var firstDelay = opts.firstDelay || 1200; /* не мигать во время загрузки */
@@ -123,7 +164,15 @@
           gesture = next.gesture;
           iconEl.innerHTML = ICONS[gesture];
         }
-        if (next.idleMs) idleMs = next.idleMs;
+        if (next.idleMs && next.idleMs !== idleMs) {
+          idleMs = next.idleMs;
+          /* Перевзводим взведённый таймер: иначе новый интервал начал бы
+           * действовать только после следующего касания. */
+          if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(show, idleMs);
+          }
+        }
         handle.setLabel(next.label);
         return handle;
       },

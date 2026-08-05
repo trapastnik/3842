@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=11";
+import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=13";
+import { createCard } from "./card.js?v=13";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -144,7 +144,14 @@ export const compositionsScene = {
     this._ro = new ResizeObserver(() => this._fit());
     this._ro.observe(root);
     this._fit();
-    if (window.KioskHint) this._hint = window.KioskHint.attach(gpu.canvas, { gesture: "drag" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "drag", label: this._hintLabel() });
+    }
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -156,6 +163,7 @@ export const compositionsScene = {
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     this._unbind();
     if (this._card) { this._card.destroy(); this._card = null; }
     detachCanvas(this._gpu);
@@ -237,7 +245,10 @@ export const compositionsScene = {
       b.textContent = T[b.getAttribute("data-layout")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
   },
+
+  _hintLabel() { return this._app ? this._app.t("hint.compositions") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
@@ -443,6 +454,8 @@ export const compositionsScene = {
 
   async _frame() {
     if (!this._scene) return;
+    // ResizeObserver в фоне молчит — держим размер из штатного пути кадра
+    if (pollSize(this, this._root)) this._fit();
     const now = performance.now();
     const dtms = Math.min(40, now - this._prev);
     this._prev = now;
