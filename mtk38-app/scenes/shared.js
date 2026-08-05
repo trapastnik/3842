@@ -176,6 +176,22 @@ export function stopStandby() {
   if (fn) { try { fn(); } catch (e) { console.warn("[standby rotation stop]", e); } }
 }
 
+/* Размер контейнера, снятый в ШТАТНОМ пути отрисовки.
+ *
+ * ResizeObserver в фоновой вкладке не доставляет вообще — включая ПЕРВИЧНУЮ
+ * доставку (грабли МТК 42, COORDINATION). Сцена, смонтированная в скрытом слое,
+ * так и осталась бы с нулевым буфером: чёрный экран до первого ресайза окна.
+ * Поэтому каждый кадр дёшево сверяем размер и зовём fit только на изменении.
+ * Возвращает true, если размер сменился и сцене нужно пересобраться. */
+export function pollSize(scene, el) {
+  if (!el) return false;
+  const w = el.clientWidth | 0, h = el.clientHeight | 0;
+  if (!w || !h) return false;                    // слой ещё скрыт — ждём
+  if (w === scene._pollW && h === scene._pollH) return false;
+  scene._pollW = w; scene._pollH = h;
+  return true;
+}
+
 /* Кап буфера для WebGPU-сцен: на 4K-смоуке dpr=2 давал 3840×2160×4 = 33 Мп
  * и просадку до неиграбельного. 8.3 Мп — потолок, дальше режем dpr. */
 export const GPU_MAX_PIXELS = 8300000;

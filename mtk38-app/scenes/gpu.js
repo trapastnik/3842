@@ -10,7 +10,7 @@
  * платить 5 МБ вендора за старт киоска, который открывается на глобусе, но
  * может простоять смену на каталоге, незачем. Импорт-карта — в index.html.
  */
-import { GPU_MAX_PIXELS } from "./shared.js?v=11";
+import { GPU_MAX_PIXELS } from "./shared.js?v=13";
 
 let _boot = null;
 
