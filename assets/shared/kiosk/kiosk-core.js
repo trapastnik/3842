@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.8.1";
+  var VERSION = "1.8.2";
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -729,6 +729,10 @@
 
   KioskApp.prototype._loadConfig = function () {
     var self = this;
+    /* Inline-config из createApp слился с дефолтами ещё в конструкторе —
+     * мигрируем его здесь, когда сцены уже зарегистрированы (нужно для
+     * проверки id) и до того, как сверху лягут файл и патч. */
+    this._migrateLegacyScreens(this.config, "config в createApp");
     if (!this.configUrl) { this._applyStoredConfig(); return Promise.resolve(); }
     return loadJson(this.configUrl)
       .then(function (json) {
@@ -759,17 +763,23 @@
     if (!isObj(obj) || !isObj(obj.scenes)) return [];
     var legacy = obj.scenes, moved = [];
 
+    /* «Уже заполнено» — именно НЕПУСТОЕ: у дефолтов конфига screens.order
+     * это пустой массив, и проверка на один лишь тип отвергала бы
+     * миграцию inline-config из createApp (он сливается с дефолтами ещё
+     * в конструкторе). Пустой порядок и так значит «порядок не задан». */
     if (Array.isArray(legacy.order) && !this._byId.order) {
       if (!isObj(obj.screens)) obj.screens = {};
-      /* Патч оператора приоритетнее: если новый ключ уже заполнен, legacy
-       * только удаляем. */
-      if (!Array.isArray(obj.screens.order)) obj.screens.order = legacy.order;
+      if (!Array.isArray(obj.screens.order) || !obj.screens.order.length) {
+        obj.screens.order = legacy.order;
+      }
       delete legacy.order;
       moved.push("order");
     }
     if (isObj(legacy.enabled) && !this._byId.enabled) {
       if (!isObj(obj.screens)) obj.screens = {};
-      if (!isObj(obj.screens.enabled)) obj.screens.enabled = legacy.enabled;
+      if (!isObj(obj.screens.enabled) || !Object.keys(obj.screens.enabled).length) {
+        obj.screens.enabled = legacy.enabled;
+      }
       delete legacy.enabled;
       moved.push("enabled");
     }
