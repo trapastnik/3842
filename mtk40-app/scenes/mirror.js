@@ -5,7 +5,7 @@
  * карточку и вытягивает ленты связей через середину кадра — отсюда
  * «зеркало»: верх и низ отражаются друг в друге через то, что он читал.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=26";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=27";
 
 const ORDER = ["by-lenin", "in-library", "about-lenin"];
 
@@ -87,6 +87,8 @@ export const mirrorScene = {
      * первого показа (конвенция МТК 41). ok:false здесь давал стенду
      * ложные аварии по всем сценам, кроме активной. */
     if (!this.cv) return { ok: true, detail: "не смонтирована" };
+    const buf = this.cv.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер канвы " + buf.detail };
     if (!this.corpus.items.length) return { ok: false, detail: "корпус пуст" };
     if (!this.cv.w) return { ok: true, detail: "слой скрыт, раскладки ещё не было" };
     if (!this.layoutData) return { ok: false, detail: "раскладка не посчитана" };

@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=26";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=27";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
@@ -105,6 +105,8 @@ export const constellationScene = {
      * первого показа (конвенция МТК 41). ok:false здесь давал стенду
      * ложные аварии по всем сценам, кроме активной. */
     if (!this.cv) return { ok: true, detail: "не смонтирована" };
+    const buf = this.cv.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер канвы " + buf.detail };
     if (!this.corpus.connections.length) return { ok: false, detail: "связей в данных нет" };
     const orphan = this.corpus.connections.filter((c) =>
       !this.left.some((i) => i.id === c.from) || !this.right.some((i) => i.id === c.to)).length;

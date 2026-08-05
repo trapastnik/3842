@@ -11,7 +11,7 @@
  *  - двенадцать тюнингов прототипа объявлены схемой settings[] — панель их
  *    рисует и хранит сама, sessionStorage больше не нужен.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=26";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=27";
 
 const COLORS = M.COLORS;
 const BUCKET_META = M.BUCKET_META;
@@ -226,6 +226,8 @@ export const timelineScene = {
      * первого показа (конвенция МТК 41). ok:false здесь давал стенду
      * ложные аварии по всем сценам, кроме активной. */
     if (!this.cv) return { ok: true, detail: "не смонтирована" };
+    const buf = this.cv.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер канвы " + buf.detail };
     if (!this.items.length) return { ok: false, detail: "корпус пуст" };
     if (!this.byDecade.size) return { ok: false, detail: "ни одна книга не легла на ось" };
     if (this.lastClusters.length) {

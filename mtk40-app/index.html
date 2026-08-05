@@ -5,22 +5,22 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 40 · Библиотека Ленина</title>
     <!-- ?v=N обязателен: Chrome кеширует агрессивно, без версии правка не доедет до киоска. -->
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=3" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=3" />
-    <link rel="stylesheet" href="./styles.css?v=26" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.8.2" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.8.2" />
+    <link rel="stylesheet" href="./styles.css?v=27" />
   </head>
   <body>
     <!-- Канон проекции (COORDINATION 2026-07-08) — до модуля, чтобы
          window.MtkProjection был готов сцене «География». -->
     <script src="../assets/shared/lib/projection.js?v=1"></script>
     <!-- Единый призыв к жесту (тач-стандарт): window.KioskHint. -->
-    <script src="../assets/shared/kiosk/hint.js?v=2"></script>
+    <script src="../assets/shared/kiosk/hint.js?v=1.8.2"></script>
     <!-- Общая база МТК 40 — классические скрипты, один источник истины и для
          прототипов, и для сцен. Дублировать её ESM-копией значило бы завести
          вторую реализацию, которая разойдётся с первой. -->
     <script src="../assets/mtk40/lib/mtk40.js?v=26260802r"></script>
     <script src="../assets/mtk40/lib/places.js?v=5"></script>
     <!-- Разметку строит ядро: подложка, слои сцен, навигация, сплэш, панель. -->
-    <script type="module" src="./app.js?v=26"></script>
+    <script type="module" src="./app.js?v=27"></script>
   </body>
 </html>

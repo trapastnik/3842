@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=26";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=27";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -169,6 +169,8 @@ export const volumeScene = {
      * первого показа (конвенция МТК 41). ok:false здесь давал стенду
      * ложные аварии по всем сценам, кроме активной. */
     if (!this.cv) return { ok: true, detail: "не смонтирована" };
+    const buf = this.cv.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер канвы " + buf.detail };
     if (!this.corpus.items.length) return { ok: false, detail: "корпус пуст" };
     if (!this.cv.w) return { ok: true, detail: "слой скрыт, раскладки ещё не было" };
     if (!this.cells.length) return { ok: false, detail: "плиток нет — раскладка пуста" };

@@ -68,6 +68,23 @@ export function createCanvas(el, { onSize, onFrame }) {
     /* Идёт ли своя петля: нужна сценам, которые на время заставки её
      * останавливают, и проверяемо со стенда. */
     get running() { return !!raf; },
+    /* Сверка фактического буфера с ожидаемым ПО ФАКТИЧЕСКОМУ dpr. Счётчик
+     * сущностей этого не ловит: сцена честно рисует все объекты, но в чужом
+     * разрешении — у карты 42 так вышло 4% (GRABLI, «healthcheck»). */
+    bufferOk() {
+      const w = canvas.clientWidth, h = canvas.clientHeight;
+      if (!w || !h) return { ok: true, detail: "слой скрыт" };
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
+      let scale = dpr;
+      if (w * h * dpr * dpr > MAX_BUFFER_PX) scale = Math.sqrt(MAX_BUFFER_PX / (w * h));
+      const ew = Math.max(1, Math.floor(w * scale));
+      const eh = Math.max(1, Math.floor(h * scale));
+      const ok = Math.abs(canvas.width - ew) <= 1 && Math.abs(canvas.height - eh) <= 1;
+      return {
+        ok,
+        detail: canvas.width + "×" + canvas.height + (ok ? "" : " вместо " + ew + "×" + eh),
+      };
+    },
     /* Меряем сами на входе: в скрытой вкладке ResizeObserver не доставляется,
      * и первая раскладка по нему не придёт. Наблюдатель — только для
      * последующих изменений. */

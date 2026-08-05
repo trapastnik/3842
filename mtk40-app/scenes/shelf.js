@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=26";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=27";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -111,6 +111,7 @@ export const shelfScene = {
   standby() {
     const SPEED = 26;                 // дизайн-px в секунду
     const RATE = [1, 0.78, 1.22];     // у каждой полки свой ход
+    const SETTLE_TAU = 0.30;          // с, постоянная времени возврата из-за края
 
     /* Свою петлю ОБЯЗАНЫ остановить сами: при сценном аттракторе ядро сцены
      * не паузит («она же его и остановит»), и без этого rAF продолжал бы
@@ -119,6 +120,12 @@ export const shelfScene = {
      * ничего. */
     if (this.cv) this.cv.stop();
 
+    /* Палец мог остаться лежать на стекле: посетитель опёрся, ребёнок
+     * положил ладонь. pointermove ядро активностью не считает, поэтому
+     * заставка не прервётся, а живой drag таскал бы полку против тикера и
+     * по отрыву (moved=false) открыл бы карточку под вуалью. */
+    this.dragging = null;
+
     /* Следы посетителя убираем: под вуалью заставки открытая карточка и
      * латунная рамка выделения оставались бы видны, если простой укоротили
      * и standby пришёл раньше reset. */
@@ -126,13 +133,15 @@ export const shelfScene = {
     if (this.card) this.card.hide();
     if (this.hint) this.hint.hide();
 
-    /* Отсчёт — от позы, в которой сцену застала заставка, но ЗАЖАТОЙ в
-     * пределы полки. Поза может законно покоиться в оверскролле: пружина
-     * работает только за краями, и палец, отпущенный за краем без скорости,
-     * оставляет scrollX отрицательным. Отражение волны превратило бы такой
-     * base в зеркальный скачок на 2|base| — сотни физических пикселей на
-     * первом же кадре заставки. */
-    const base = this.shelves.map((sh) => sh.scrollX);
+    /* Поза может законно покоиться В ОВЕРСКРОЛЛЕ: пружина живёт только в
+     * rAF-петле, а она остановлена, и палец, отпущенный за краем без
+     * скорости, оставляет scrollX отрицательным. Прыгнуть сразу на волну
+     * нельзя — последний нарисованный кадр показывает ФАКТИЧЕСКУЮ позу, и
+     * разрыв виден целиком (на 4K это была сотня с лишним пикселей).
+     * Поэтому у каждой полки две фазы: сначала пружина доводит её до края,
+     * и только потом начинается ход. Волна отсчитывается от момента входа
+     * в диапазон, а не от начала заставки. */
+    const phase = this.shelves.map(() => ({ settled: false, from: 0, t0: 0, last: 0 }));
 
     const stopTicker = this.app.standbyTicker((t) => {
       if (!this.cv) return;
@@ -144,17 +153,35 @@ export const shelfScene = {
       const offsetX = 100 * s;
       for (let i = 0; i < this.shelves.length; i++) {
         const shelf = this.shelves[i];
+        const ph = phase[i];
         shelf.velocityX = 0;
         const span = Math.max(0, shelf.totalWidth + offsetX + 60 * s - this.cv.w);
         if (span <= 1) { shelf.scrollX = 0; continue; }
-        /* Маятник: линейный ход отражается от краёв полки. Закольцованный
-         * сдвиг давал бы рывок в момент перескока. Полки расходятся ходом и
-         * длиной своего пути — разъезжаются сами, без стартового сдвига. */
-        const from = Math.min(Math.max(base[i], 0), span);
-        const period = 2 * span;
-        const raw = from + SPEED * RATE[i] * s * t;
-        const x = ((raw % period) + period) % period;
-        shelf.scrollX = x <= span ? x : period - x;
+
+        if (!ph.settled) {
+          const target = Math.min(Math.max(shelf.scrollX, 0), span);
+          /* Сближение по дельте времени, а не по кадру: при любом
+           * standbyFps возврат занимает одни и те же доли секунды. На
+           * первом тике дельта нулевая — поза остаётся ровно той, что
+           * показывал последний кадр петли, и разрыва нет вовсе. */
+          const dt = Math.max(0, t - ph.last);
+          ph.last = t;
+          shelf.scrollX += (target - shelf.scrollX) * (1 - Math.exp(-dt / SETTLE_TAU));
+          if (Math.abs(target - shelf.scrollX) < 0.5) {
+            shelf.scrollX = target;
+            ph.settled = true;
+            ph.from = target;
+            ph.t0 = t;
+          }
+        } else {
+          /* Маятник: линейный ход отражается от краёв полки. Закольцованный
+           * сдвиг давал бы рывок в момент перескока. Полки расходятся ходом
+           * и длиной своего пути — разъезжаются сами. */
+          const period = 2 * span;
+          const raw = ph.from + SPEED * RATE[i] * s * (t - ph.t0);
+          const x = ((raw % period) + period) % period;
+          shelf.scrollX = x <= span ? x : period - x;
+        }
       }
       this.render();
     });
@@ -195,6 +222,8 @@ export const shelfScene = {
      * первого показа (конвенция МТК 41). ok:false здесь давал стенду
      * ложные аварии по всем сценам, кроме активной. */
     if (!this.cv) return { ok: true, detail: "не смонтирована" };
+    const buf = this.cv.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер канвы " + buf.detail };
     const empty = this.shelves.filter((s) => !s.items.length).map((s) => s.bucket);
     if (empty.length) return { ok: false, detail: "пустые полки: " + empty.join(", ") };
     /* Скрытый слой — не «пусто»: раскладка считается от ширины канвы, а у
