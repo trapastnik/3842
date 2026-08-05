@@ -60,9 +60,33 @@
    * сцен МТК 38 и на карте 42, пока не вскрылось ревью. */
   var VOID_HOSTS = { CANVAS: 1, IMG: 1, VIDEO: 1, IFRAME: 1, OBJECT: 1 };
 
+  function scrolls(el) {
+    var cs = getComputedStyle(el);
+    return /(auto|scroll)/.test(cs.overflowY) || /(auto|scroll)/.test(cs.overflowX);
+  }
+
   /* Куда вешать на самом деле: сам контейнер либо его родитель. */
   function resolveHost(target) {
     if (!target || !target.tagName) return null;
+
+    /* Прокручиваемый контейнер: absolute внутри него отсчитывается от
+     * ВЫСОТЫ СОДЕРЖИМОГО, а не от видимой области — у маятника 42
+     * подсказка встала на y = −188, за верхней кромкой. Поднимаемся до
+     * первого непрокручиваемого предка. */
+    if (!VOID_HOSTS[target.tagName] && scrolls(target)) {
+      var up = target.parentElement;
+      while (up && up !== document.body && scrolls(up)) up = up.parentElement;
+      if (up && up !== document.body) {
+        console.warn("[KioskHint] контейнер прокручивается — подсказка повешена на " +
+          "ближайшего непрокручиваемого предка. Внутри скроллера absolute считается " +
+          "от высоты содержимого, и подсказка уезжает за кромку.");
+        return up;
+      }
+      console.warn("[KioskHint] контейнер прокручивается, непрокручиваемого предка " +
+        "нет — подсказка может уехать за кромку. Передавайте обёртку сцены.");
+      return target;
+    }
+
     if (!VOID_HOSTS[target.tagName]) return target;
     var parent = target.parentElement;
     if (!parent) {
@@ -132,7 +156,18 @@
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
 
     function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
-    function hide() { shown = false; el.classList.remove("is-on"); }
+
+    /* hide() ПЕРЕВЗВОДИТ цикл. Раньше он только снимал класс, а таймер
+     * оставался отстрелянным: сцена, гасившая подсказку руками (например,
+     * при уходе в заставку), больше не показывала её никогда — у МТК 40
+     * будящее касание уходит в оверлей и до poke() не доходит. */
+    function hide() {
+      shown = false;
+      el.classList.remove("is-on");
+      if (dead) return;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(show, idleMs);
+    }
     function poke() {
       if (dead) return;
       if (shown) hide();
@@ -150,6 +185,16 @@
     var handle = {
       show: show,
       hide: hide,
+
+      /* Публичный перевзвод: сцена отмечает взаимодействие, которое до
+       * контейнера не дошло (жест перехвачен, касание съел оверлей). */
+      poke: poke,
+      rearm: function () {
+        if (dead) return handle;
+        if (idleTimer) clearTimeout(idleTimer);
+        idleTimer = setTimeout(show, idleMs);
+        return handle;
+      },
 
       /* Сменить подпись (и, если нужно, жест) без пересоздания. */
       setLabel: function (text) {
@@ -202,7 +247,11 @@
     cssDone = true;
     var s = document.createElement("style");
     s.textContent =
-      ".kiosk-hint{position:absolute;left:50%;bottom:calc(var(--edge-safe-bottom,80px) + 12px);" +
+      /* От --chrome-bottom, а не от кромки: под навигацией уже занято, и
+         подсказка ложилась прямо на неё (замер 42: хинт 1974..2076 при
+         навигации 1882..2080). Кромка — фолбэк, если ядра рядом нет. */
+      ".kiosk-hint{position:absolute;left:50%;" +
+      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px);" +
       "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
          разъезжаются с палитрой при её смене. */

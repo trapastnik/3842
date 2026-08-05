@@ -15,6 +15,10 @@
  * версия поднимается в ОДНОМ месте и расходится по всей цепочке.
  * ============================================================ */
 const here = new URL(import.meta.url);
+/* Передаём метку до импорта: в модуле document.currentScript пуст, и сам
+ * ядро свою запрошенную версию иначе не увидит. По ней оно предупредит,
+ * если браузер отдал файл из кеша. */
+window.__kioskCoreRequestedVersion = here.searchParams.get("v");
 await import("./kiosk-core.js" + here.search);
 
 const core = window.KioskCore;

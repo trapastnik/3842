@@ -19,7 +19,22 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.8.2";
+  var VERSION = "1.9.0";
+
+  /* Метка версии, с которой ядро запросили: ?v= из адреса собственного
+   * скрипта (classic) или из обёртки (ESM). Расхождение с VERSION значит
+   * залипший кеш — за день на это независимо наступили 38, 40 и 42, и
+   * ловилось оно глазами в отчёте, а не кодом. */
+  var REQUESTED_VERSION = (function () {
+    try {
+      if (global.__kioskCoreRequestedVersion) return String(global.__kioskCoreRequestedVersion);
+      var src = document.currentScript && document.currentScript.src;
+      if (!src) return null;
+      return new URL(src, location.href).searchParams.get("v");
+    } catch (err) {
+      return null;
+    }
+  })();
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -714,6 +729,13 @@
          * вопрос, на который после обновления нужен мгновенный ответ. */
         console.info("[kiosk] ядро " + VERSION + " · " + self.appId +
           " · запуск " + self.sessionId);
+        if (REQUESTED_VERSION && REQUESTED_VERSION !== VERSION) {
+          var msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
+            " — браузер отдал файл из кеша. Обнови ?v= у ВСЕХ файлов кита " +
+            "(и у импортов сцен: версия точки входа их не пробивает).";
+          console.warn("[kiosk] " + msg);
+          self.log("warn", msg);
+        }
         if (/[?&]service=1\b/.test(location.search)) self.openService(true);
         self.log("info", "старт: сцен " + self._records.length + ", версия ядра " + VERSION);
         self.emit("started", { app: self });
@@ -734,7 +756,11 @@
      * проверки id) и до того, как сверху лягут файл и патч. */
     this._migrateLegacyScreens(this.config, "config в createApp");
     if (!this.configUrl) { this._applyStoredConfig(); return Promise.resolve(); }
-    return loadJson(this.configUrl)
+    /* no-cache: конфиг маленький и читается раз за запуск, а залипший
+     * force-cache означал, что правка таймингов или настроек сцены может
+     * не доехать до прогретого киоска НИКОГДА — ровно та болезнь, что
+     * была у словарей до i18nVersion. */
+    return loadJson(this.configUrl, "no-cache")
       .then(function (json) {
         /* Файл мигрируем ДО слияния и до наложения патча. Иначе legacy-
          * ключи из файла легли бы ПОВЕРХ screens.* оператора и откатывали
@@ -1203,6 +1229,34 @@
     this._buildService();
     this._applyContentBox();
     this._applyInsets();
+    this._watchChrome();
+  };
+
+  /* Полосы хрома пересчитываются не только при правке настроек.
+   *
+   * Замер при сборке идёт до того, как раскладка устоялась: шрифты ещё
+   * грузятся, бар ещё не той высоты. У МТК 42 из-за этого --chrome-bottom
+   * обещал границу на 6 px выше фактического верха навигации, и чипы,
+   * прибитые к переменной, залезали под неё. Поэтому следим за размером
+   * самих блоков хрома, за окном и за готовностью шрифтов.
+   *
+   * Обратной связи нет: размеры хрома от --chrome-* не зависят, поэтому
+   * наблюдатель сам себя не разбудит. */
+  KioskApp.prototype._watchChrome = function () {
+    var self = this;
+    function recalc() { self._applyInsets(); }
+
+    if (typeof ResizeObserver === "function") {
+      this._chromeRO = new ResizeObserver(recalc);
+      ["nav", "tools", "gear"].forEach(function (key) {
+        var el = self._els[key];
+        if (el) self._chromeRO.observe(el);
+      });
+    }
+    window.addEventListener("resize", recalc, { passive: true });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(recalc).catch(function () {});
+    }
   };
 
   KioskApp.prototype._buildNav = function (doc) {

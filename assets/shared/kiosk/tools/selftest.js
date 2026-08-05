@@ -250,29 +250,44 @@
         detail: "таких сцен нет — случай не проверяется этим прогоном"
       };
     }
-    /* Сверяем со СХЕМОЙ: sceneSettings всегда отдаёт объект, и проверка
-     * «это объект?» покраснеть не могла — ветки были мёртвые. Настоящий
-     * симптом порчи миграцией — потерянные или обнулённые до дефолтов
-     * ключи, а состав экранов рядом не должен быть пуст. */
-    var bad = [];
+    /* Сверяем ЗНАЧЕНИЯ С ПАТЧЕМ ОПЕРАТОРА, а не наличие ключей: ключи
+     * всегда на месте — _seedSceneDefaults переписывает config.scenes[id]
+     * всей схемой ещё до прогона, поэтому «потерян ключ» недостижим.
+     * Целевая регрессия другая: миграция приняла настройки сцены за
+     * легаси-состав и СБРОСИЛА ИХ К ДЕФОЛТАМ, а в патче они лежат. */
+    var patch = {};
+    try {
+      patch = JSON.parse(localStorage.getItem(app.storageKey()) || "{}");
+    } catch (err) { patch = {}; }
+    var stored = (patch && patch.scenes) || {};
+
+    var bad = [], compared = 0;
     present.forEach(function (id) {
       var vals = app.sceneSettings(id) || {};
-      var schema = typeof app.sceneSchema === "function" ? app.sceneSchema(id) : [];
-      schema.forEach(function (s) {
-        if (!(s.key in vals)) bad.push(id + ": потерян ключ «" + s.key + "»");
+      var mine = stored[id];
+      if (!mine || typeof mine !== "object") return;   /* оператор их не трогал */
+      Object.keys(mine).forEach(function (k) {
+        compared++;
+        if (JSON.stringify(vals[k]) !== JSON.stringify(mine[k])) {
+          bad.push(id + "." + k + ": в патче " + JSON.stringify(mine[k]) +
+            ", у сцены " + JSON.stringify(vals[k]));
+        }
       });
-      var screens = (app.config && app.config.screens) || {};
-      if (screens.enabled && vals && screens.enabled[id] !== undefined &&
-          schema.length && !(id in (app.config.scenes || {}))) {
-        bad.push(id + ": настройки утекли в состав экранов");
-      }
     });
+
+    if (!compared) {
+      return {
+        name: "Сцены с id order/enabled",
+        ok: null,
+        detail: "сцены есть (" + present.join(", ") + "), но оператор их настроек не " +
+          "менял — сверять нечего. Покрутите любую и перезапустите."
+      };
+    }
     return {
       name: "Сцены с id order/enabled",
       ok: bad.length === 0,
-      detail: bad.length ? bad.join("; ")
-        : "зарегистрированы, ключи схемы на месте: " + present.join(", ") +
-          " (персистентность через рестарт — проверить вручную)"
+      detail: bad.length ? "настройки разошлись с патчем: " + bad.join("; ")
+        : "сверено значений с патчем оператора: " + compared + " (" + present.join(", ") + ")"
     };
   }
 

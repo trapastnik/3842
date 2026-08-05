@@ -185,6 +185,95 @@ def scan_json(path, repo):
     return broken
 
 
+# Что в каталоге ассетов не является контентом и сиротой считаться не должно.
+ORPHAN_SKIP = re.compile(
+    r"(^|/)(_|\.)|\.(md|py|txt|json|yml|yaml|sh|log)$|/(sources|raw|src|tools)/", re.I)
+
+
+def collect_referenced(root, repo):
+    """Все локальные пути, на которые хоть кто-то ссылается."""
+    used = set()
+
+    def add(path, ref, owner=None):
+        clean = unquote(ref.split("#", 1)[0].split("?", 1)[0])
+        if not clean or EXTERNAL.match(clean):
+            return
+        here = os.path.dirname(path)
+        bases = [here, repo]
+        if isinstance(owner, str) and owner and "/" not in owner:
+            bases.insert(0, os.path.join(here, owner))
+        if clean.startswith("/"):
+            bases = [repo]
+            clean = clean.lstrip("/")
+        for b in bases:
+            used.add(os.path.normpath(os.path.join(b, clean)))
+
+    for path in walk(root, SCAN_EXT):
+        try:
+            with open(path, "r", encoding="utf-8", errors="replace") as fh:
+                text = strip_comments(fh.read())
+        except OSError:
+            continue
+        for kind, rx in PATTERNS:
+            for m in rx.finditer(text):
+                for ref in candidates(kind, m.group(1)):
+                    add(path, ref)
+    for path in walk(root, JSON_EXT):
+        try:
+            with open(path, "r", encoding="utf-8") as fh:
+                data = json.load(fh)
+        except (OSError, ValueError):
+            continue
+        for ref, owner in json_refs(data):
+            add(path, ref, owner)
+    return used
+
+
+def find_orphans(root, repo):
+    """Медиа-файлы, на которые не ссылается никто.
+
+    Гигиена диска киоска: лишний файл не ломает экран, но едет на стенд и
+    попадает в преролл. Отчёт заведомо неполный — путь, собранный в JS из
+    переменных, скрипту не виден, поэтому проверка и живёт под флагом, а
+    не в обычном прогоне."""
+    used = collect_referenced(root, repo)
+    media = re.compile(r"\.(jpg|jpeg|png|webp|gif|svg|avif|mp4|webm|mp3|ogg|wav|woff2?|otf|ttf)$", re.I)
+
+    # Считаем по каталогам: сколько файлов упомянуто, сколько нет.
+    by_dir = {}
+    for base, dirs, files in os.walk(root):
+        dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
+        for name in sorted(files):
+            if not media.search(name):
+                continue
+            full = os.path.normpath(os.path.join(base, name))
+            rel = os.path.relpath(full, repo)
+            if ORPHAN_SKIP.search("/" + rel):
+                continue
+            d = by_dir.setdefault(os.path.dirname(rel), {"used": 0, "orphans": []})
+            if full in used:
+                d["used"] += 1
+            else:
+                d["orphans"].append(rel)
+
+    # Каталог, где НЕ УПОМЯНУТ НИ ОДИН файл, — почти наверняка тот, куда
+    # путь собирается в JS из переменной. Перечислять его пофайлово
+    # бессмысленно: у МТК 38 это дало бы 400 строк шума, в которых
+    # настоящая находка утонет. Показываем одной строкой.
+    # Одиночки в каталоге, который в остальном используется, — наоборот,
+    # самый ценный сигнал: ровно так выглядели 7 миниатюр-сирот у 41.
+    singles, whole = [], []
+    for d in sorted(by_dir):
+        info = by_dir[d]
+        if not info["orphans"]:
+            continue
+        if info["used"]:
+            singles.extend(info["orphans"])
+        else:
+            whole.append((d, len(info["orphans"])))
+    return {"singles": singles, "whole": whole}
+
+
 def walk(root, exts):
     for base, dirs, files in os.walk(root):
         dirs[:] = sorted(d for d in dirs if d not in SKIP_DIRS)
@@ -200,6 +289,8 @@ def main():
     ap = argparse.ArgumentParser(description="Аудит локальных ссылок BMK 38-42")
     ap.add_argument("--path", default=repo, help="что проверять (по умолчанию весь репозиторий)")
     ap.add_argument("--json", action="store_true", help="машинный вывод")
+    ap.add_argument("--orphans", action="store_true",
+                    help="дополнительно: медиа, на которые никто не ссылается (гигиена диска)")
     args = ap.parse_args()
 
     root = os.path.abspath(args.path)
@@ -211,14 +302,36 @@ def main():
         scanned += 1
         broken.extend(scan_json(path, repo))
 
+    orphans = find_orphans(root, repo) if args.orphans else {"singles": [], "whole": []}
+
     if args.json:
-        print(json.dumps({"scanned": scanned, "broken": broken},
+        print(json.dumps({"scanned": scanned, "broken": broken, "orphans": orphans},
                          ensure_ascii=False, indent=1))
         return 1 if broken else 0
 
     print("Аудит локальных ссылок · проверено файлов: %d" % scanned)
     print("Корень: %s" % root)
     print()
+
+    if args.orphans:
+        singles, whole = orphans["singles"], orphans["whole"]
+        if singles:
+            print("СИРОТЫ-ОДИНОЧКИ (%d) — в каталогах, которые в остальном используются." % len(singles))
+            print("Это и есть полезный сигнал: файл лежит и едет на стенд, а показать его некому.")
+            for o in singles[:40]:
+                print("    %s" % o)
+            if len(singles) > 40:
+                print("    … и ещё %d" % (len(singles) - 40))
+        else:
+            print("СИРОТ-ОДИНОЧЕК НЕТ.")
+        if whole:
+            print("\nКаталоги, где не упомянут ни один файл — почти наверняка путь")
+            print("собирается в JS из переменной; пофайлово не перечисляю:")
+            for d, n in whole:
+                print("    %-52s %d файл(ов)" % (d, n))
+        print("\n  (отчёт неполный: путь, собранный в JS, скрипту не виден)")
+        print()
+
     if not broken:
         print("БИТЫХ ССЫЛОК НЕТ.")
         return 0
