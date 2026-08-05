@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=19";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=21";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -149,6 +149,7 @@ export const mapScene = {
   },
 
   unmount() {
+    clearTimeout(this._liftTimer); this._liftTimer = null;
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._unbindGestures();
@@ -179,6 +180,7 @@ export const mapScene = {
       prev.viewPreset !== c.viewPreset || prev.lonMin !== c.lonMin ||
       prev.lonMax !== c.lonMax || prev.latMin !== c.latMin || prev.latMax !== c.latMax;
     if (reframe) { this._size(); this._fit(); }
+    this._liftHint();   // размер кнопок-фильтров меняет высоту панели
     this._draw();
   },
 
@@ -245,6 +247,14 @@ export const mapScene = {
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
+    /* Меряем дважды. Свой класс уже стоит, но токены a11y (--touch-primary,
+     * --a11y-scale) ставит ЯДРО, и порядок не гарантирован: замер «сейчас»
+     * поймал чипы в старом размере — зазор вышел 8 px вместо 24. Повтор через
+     * макрозадачу берёт уже итоговую раскладку. Не rAF: в фоновой вкладке
+     * кадров нет, а таймеры идут. */
+    this._liftHint();
+    clearTimeout(this._liftTimer);
+    this._liftTimer = setTimeout(() => this._liftHint(), 0);
     this._draw();   // точки крупнее, подписи городов гаснут — см. _draw()
   },
 
@@ -569,5 +579,20 @@ export const mapScene = {
       '<button type="button" class="m42-filter kiosk-target' +
       (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
       esc(t("status." + v)) + "</button>").join("");
+    this._liftHint();
+  },
+
+  /* Сколько своя нижняя панель фильтров занимает над линией --chrome-bottom.
+   * В CSS высоту соседнего элемента не узнать, поэтому меряем и публикуем
+   * переменной. Замер синхронный (getBoundingClientRect), НЕ через rAF или
+   * ResizeObserver: в фоновой вкладке они не срабатывают вовсе, и подсказка
+   * осталась бы на старом месте. Пересчитывать надо после каждой смены
+   * раскладки чипов: язык (длина слов переносит строку), a11y (кегли и
+   * таргеты крупнее), настройки размера кнопок. */
+  _liftHint() {
+    if (!this._root) return;
+    const bar = this._root.querySelector(".m42-filters--bottom");
+    const h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+    this._root.style.setProperty("--m42-hint-lift", h + "px");
   },
 };

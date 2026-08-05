@@ -14,7 +14,7 @@
  * timings.standbyFps; скорость дрейфа задана в px/с и от FPS не зависит. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=19";
+} from "./shared.js?v=21";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
