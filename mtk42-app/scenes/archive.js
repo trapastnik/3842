@@ -5,7 +5,7 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=17";
+} from "./shared.js?v=22";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];

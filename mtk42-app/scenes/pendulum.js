@@ -14,7 +14,7 @@
  * timings.standbyFps; скорость дрейфа задана в px/с и от FPS не зависит. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=17";
+} from "./shared.js?v=22";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -144,8 +144,15 @@ export const pendulumScene = {
     });
     this._ro.observe(this._scrollEl);
 
+    /* Вешаем на КОРЕНЬ сцены, а не на ленту прокрутки: подсказка позиционируется
+     * absolute от контейнера, и внутри скроллера её «bottom» отсчитывается от
+     * всего содержимого (тысячи px), а не от видимой области — замер показал
+     * y = −188, то есть за верхней кромкой экрана. Гасители работают: события
+     * из ленты всплывают до корня. */
     if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(this._scrollEl, { gesture: "drag" });
+      this._hint = window.KioskHint.attach(root, {
+        gesture: "drag", label: this._app.t("hint.drag"),
+      });
     }
 
     this._applyVars();
@@ -181,7 +188,12 @@ export const pendulumScene = {
     this._build();
   },
 
-  setLang() { this._renderChrome(); this._renderCats(); this._build(); },
+  setLang() {
+    this._renderChrome();
+    this._renderCats();
+    if (this._hint) this._hint.setLabel(this._app.t("hint.drag"));
+    this._build();
+  },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
