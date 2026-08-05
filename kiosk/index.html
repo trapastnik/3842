@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>МТК 38–42 · Киоск</title>
+  <link rel="icon" href="data:,">
+  <style>
+    @font-face {
+      font-family: "Nolde";
+      font-weight: 400;
+      font-display: swap;
+      src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");
+    }
+    @font-face {
+      font-family: "20 Kopeek";
+      font-weight: 600;
+      font-display: swap;
+      src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");
+    }
+    @font-face {
+      font-family: "21 Cent";
+      font-weight: 400;
+      font-display: swap;
+      src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");
+    }
+    :root {
+      --brass:    #D2B773;
+      --graphite: #435059;
+      --paper:    #F7F9EF;
+      --red:      #A02128;
+    }
+    *, *::before, *::after { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: clamp(20px, 3vh, 48px);
+      padding: clamp(32px, 4vh, 64px) clamp(32px, 4vw, 80px);
+      background: var(--graphite);
+      color: var(--paper);
+      font-family: "21 Cent", Georgia, serif;
+      -webkit-font-smoothing: antialiased;
+      touch-action: manipulation;
+    }
+    header { display: grid; gap: 10px; }
+    .subtitle {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: clamp(12px, 1.1vw, 18px);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    h1 {
+      margin: 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(40px, 6vw, 96px);
+      line-height: 0.95;
+    }
+    main {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: clamp(16px, 1.6vw, 28px);
+      align-content: stretch;
+    }
+    .card {
+      position: relative;
+      display: grid;
+      grid-template-rows: auto 1fr auto;
+      gap: 14px;
+      min-height: max(320px, 38vh);
+      padding: clamp(24px, 2.2vw, 40px);
+      border: 1px solid rgba(210, 183, 115, 0.4);
+      border-radius: 20px;
+      background: rgba(247, 249, 239, 0.04);
+      color: var(--paper);
+      text-decoration: none;
+      overflow: hidden;
+      isolation: isolate;
+      transition: border-color 140ms ease, background 140ms ease;
+    }
+    .card::before {
+      content: attr(data-num);
+      position: absolute;
+      right: -14px;
+      bottom: -30px;
+      font-family: "Nolde", Georgia, serif;
+      font-size: clamp(140px, 14vw, 230px);
+      line-height: 1;
+      color: rgba(210, 183, 115, 0.07);
+      pointer-events: none;
+      z-index: 0;
+    }
+    .card > * { position: relative; z-index: 1; }
+    .card:active, .card:hover, .card:focus-visible {
+      border-color: var(--brass);
+      background: rgba(247, 249, 239, 0.09);
+    }
+    .tag {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: clamp(11px, 1vw, 15px);
+      letter-spacing: 0.24em;
+      text-transform: uppercase;
+      color: var(--brass);
+    }
+    .card h2 {
+      margin: 8px 0 0;
+      font-family: "Nolde", Georgia, serif;
+      font-weight: 400;
+      font-size: clamp(26px, 2.4vw, 44px);
+      line-height: 1.03;
+    }
+    .card p {
+      margin: 0;
+      align-self: start;
+      font-size: clamp(14px, 1.15vw, 19px);
+      line-height: 1.5;
+      color: rgba(247, 249, 239, 0.78);
+    }
+    .meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(210, 183, 115, 0.18);
+    }
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 44px;
+      padding: 8px 18px;
+      border-radius: 999px;
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: clamp(11px, 0.95vw, 14px);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+    }
+    .chip--app {
+      border: 1px solid rgba(210, 183, 115, 0.7);
+      color: var(--brass);
+    }
+    .chip--proto {
+      border: 1px solid rgba(247, 249, 239, 0.28);
+      color: rgba(247, 249, 239, 0.6);
+    }
+    .count {
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: clamp(11px, 0.95vw, 14px);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      color: rgba(247, 249, 239, 0.6);
+    }
+    footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 20px;
+      flex-wrap: wrap;
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: clamp(10px, 0.9vw, 13px);
+      letter-spacing: 0.18em;
+      text-transform: uppercase;
+      color: rgba(247, 249, 239, 0.42);
+      padding-top: 16px;
+      border-top: 1px solid rgba(210, 183, 115, 0.12);
+    }
+    footer a { color: var(--brass); text-decoration: none; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="subtitle">Музей В.И. Ленина · мультимедийные комплексы · режим киоска</div>
+    <h1>МТК 38—42</h1>
+  </header>
+
+  <main>
+    <a class="card" href="../mtk38-app/" data-num="38">
+      <div>
+        <div class="tag">МТК · 38</div>
+        <h2>Ленин на языках мира</h2>
+      </div>
+      <p>Слово «Ленин» на 128 языках и письменностях: WebGPU-глобус, дождь имён, карта изданий, каталог и композиции — с карточками языков.</p>
+      <div class="meta">
+        <span class="count">5 сцен</span>
+        <span class="chip chip--app">Приложение</span>
+      </div>
+    </a>
+
+    <a class="card" href="../mtk39-app/" data-num="39">
+      <div>
+        <div class="tag">МТК · 39</div>
+        <h2>Имени Ленина</h2>
+      </div>
+      <p>1 203 объекта, носивших имя Ленина, в 74 странах: шар-карта, Карта Союза, столетие волной, гербарий улиц, картотека, свод и глобус избранного.</p>
+      <div class="meta">
+        <span class="count">7 сцен</span>
+        <span class="chip chip--app">Приложение</span>
+      </div>
+    </a>
+
+    <a class="card" href="../mtk42-app/" data-num="42">
+      <div>
+        <div class="tag">МТК · 42</div>
+        <h2>Осмысление наследия</h2>
+      </div>
+      <p>140 персон шести эпох с портретами и цитатами: картотека, маятник оценок, таймлайн и карта 56 ленинских музеев мира.</p>
+      <div class="meta">
+        <span class="count">4 сцены</span>
+        <span class="chip chip--app">Приложение</span>
+      </div>
+    </a>
+
+    <a class="card" href="../mtk40/" data-num="40">
+      <div>
+        <div class="tag">МТК · 40</div>
+        <h2>Библиотека Ленина</h2>
+      </div>
+      <p>99 книг по трём осям — им написано, о нём, им прочитано: полка, зеркало, хронология, картотека, созвездие влияний, география, объём.</p>
+      <div class="meta">
+        <span class="count">7 вариантов</span>
+        <span class="chip chip--proto">Прототипы · приложение в работе</span>
+      </div>
+    </a>
+
+    <a class="card" href="../mtk41/" data-num="41">
+      <div>
+        <div class="tag">МТК · 41</div>
+        <h2>Скульптуры</h2>
+      </div>
+      <p>283 памятника Ленину — от 1919 года до геоглифов и стального силуэта на горе: карта, хронология, скульпторы, масштабы, силуэты, иконостас.</p>
+      <div class="meta">
+        <span class="count">7 вариантов</span>
+        <span class="chip chip--proto">Прототипы · приложение в работе</span>
+      </div>
+    </a>
+  </main>
+
+  <footer>
+    <span>Музей В.И. Ленина · киоск-платформа BMK 38–42</span>
+    <a href="../">Все прототипы →</a>
+  </footer>
+</body>
+</html>
