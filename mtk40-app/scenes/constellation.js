@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=28";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=29";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
@@ -73,6 +73,7 @@ export const constellationScene = {
   },
 
   unmount() {
+    clearTimeout(this._a11yT);
     if (this.cv) {
       this.cv.canvas.removeEventListener("pointerdown", this.onTap);
       this.cv.destroy();
@@ -96,7 +97,15 @@ export const constellationScene = {
     this.paintLegend();
   },
 
-  setA11y() { this.layout(); },
+  setA11y() {
+    /* Раскладка меряет DOM, а токены ядра (--ui-scale ×1.25 в режиме
+     * слабовидящих) к моменту вызова могут быть ещё не применены — высота
+     * тогда стара, и резерв считается по прежнему кеглю (гонка 42, GRABLI).
+     * Меряем дважды: сразу и макрозадачей, когда токены точно на месте. */
+    this.layout();
+    clearTimeout(this._a11yT);
+    this._a11yT = setTimeout(() => { if (this.cv) this.layout(); }, 0);
+  },
 
   applySettings(v) { this.values = v; this.layout(); },
 

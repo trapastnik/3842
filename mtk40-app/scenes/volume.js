@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=28";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=29";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -128,6 +128,7 @@ export const volumeScene = {
   },
 
   unmount() {
+    clearTimeout(this._a11yT);
     if (this.cv) {
       this.cv.canvas.removeEventListener("pointerdown", this.onTap);
       this.cv.destroy();
@@ -155,7 +156,15 @@ export const volumeScene = {
     this.paintTools();
   },
 
-  setA11y() { this.layout(); },
+  setA11y() {
+    /* Раскладка меряет DOM, а токены ядра (--ui-scale ×1.25 в режиме
+     * слабовидящих) к моменту вызова могут быть ещё не применены — высота
+     * тогда стара, и резерв считается по прежнему кеглю (гонка 42, GRABLI).
+     * Меряем дважды: сразу и макрозадачей, когда токены точно на месте. */
+    this.layout();
+    clearTimeout(this._a11yT);
+    this._a11yT = setTimeout(() => { if (this.cv) this.layout(); }, 0);
+  },
 
   applySettings(v) {
     this.operator = { ...v };
