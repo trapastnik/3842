@@ -192,6 +192,31 @@ export function pollSize(scene, el) {
   return true;
 }
 
+/* Сцена смонтирована, но её слой не на экране (кроссфейд, фоновая вкладка,
+ * скрытый слой). Кадров нет — значит и судить по кадру нельзя: всё, что
+ * заполняется в отрисовке, законно пусто. */
+export function offScreen(el) {
+  return !el || !el.clientWidth || !el.clientHeight;
+}
+
+/* Сверка буфера для healthcheck.
+ *
+ * Канон GRABLI: сравнивать не с шириной бокса, а с ожиданием по ФАКТИЧЕСКОМУ
+ * dpr. Кап 8.3 Мп законно опускает масштаб ниже единицы на боксе крупнее 4K,
+ * и сравнение с боксом краснело бы на совершенно правильном буфере.
+ * Возвращает строку с претензией или null, если всё в порядке. */
+export function bufferComplaint(canvas, dpr) {
+  if (!canvas) return "канваса нет";
+  const r = canvas.getBoundingClientRect();
+  if (!r.width || !r.height) return null;        // слой скрыт — не наша беда
+  const want = Math.floor(r.width * (dpr || 1));
+  if (canvas.width < want * 0.9) {
+    return `буфер ${canvas.width}×${canvas.height} при ожидании ${want} по ширине `
+      + `(бокс ${Math.round(r.width)}×${Math.round(r.height)}, dpr ${(dpr || 1).toFixed(2)})`;
+  }
+  return null;
+}
+
 /* Кап буфера для WebGPU-сцен: на 4K-смоуке dpr=2 давал 3840×2160×4 = 33 Мп
  * и просадку до неиграбельного. 8.3 Мп — потолок, дальше режем dpr. */
 export const GPU_MAX_PIXELS = 8300000;

@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=15";
+import { createCard } from "./card.js?v=15";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=15";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -167,6 +167,18 @@ export const rainScene = {
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
+
+  healthcheck() {
+    if (!this._root) return { ok: true, detail: "не смонтирована" };
+    const bad = offScreen(this._root) ? null : bufferComplaint(this._canvas, this._dpr);
+    if (bad) return { ok: false, detail: bad };
+    /* Фоллбэк — не авария, а штатный путь без WebGPU: проверяем то, что
+     * есть в этом режиме, и говорим, в каком именно сцена работает. */
+    const n = this._gpuMode ? ((this._rain && this._rain.count) || 0)
+                            : ((this._particles && this._particles.length) || 0);
+    if (!n) return { ok: false, detail: "частиц ноль" };
+    return { ok: true, detail: `частиц ${n}, режим ${this._gpuMode ? "WebGPU-compute" : "Canvas 2D (фоллбэк)"}` };
+  },
 
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
@@ -429,10 +441,11 @@ export const rainScene = {
     this._W = Math.max(1, Math.round(r.width));
     this._H = Math.max(1, Math.round(r.height));
     if (this._gpuMode) {
-      fitTo(this._gpu.renderer, this._camera, this._root);
+      this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
       if (this._post) this._post.needsUpdate = true;
     } else {
       const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+      this._dpr = dpr;
       this._canvas.width = Math.round(this._W * dpr);
       this._canvas.height = Math.round(this._H * dpr);
       this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);

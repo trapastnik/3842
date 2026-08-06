@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=15";
+import { createCard } from "./card.js?v=15";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=15";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -254,6 +254,21 @@ export const compositionsScene = {
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
+  healthcheck() {
+    if (!this._root || !this._scene) return { ok: true, detail: "не смонтирована" };
+    const bad = offScreen(this._root) ? null : bufferComplaint(this._gpu && this._gpu.canvas, this._dpr);
+    if (bad) return { ok: false, detail: bad };
+    const n = this._sprites.length;
+    if (!n) return { ok: false, detail: "в сцене ни одного написания" };
+    /* Спрайты долетают до целей лерпом — на проверке они законно в пути. */
+    return { ok: true, detail: `написаний ${n}, раскладка «${this._layout}»`
+      + (this._quotes && this._cfg && this._cfg.quotesOn ? ", цитаты включены" : "") };
+  },
+
+  states() {
+    return LAYOUTS.map((k) => ({ name: "раскладка: " + k, apply: () => this._setLayout(k) }));
+  },
+
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
     if (!this._scene) return;
@@ -385,7 +400,9 @@ export const compositionsScene = {
 
   _fit() {
     if (!this._gpu || !this._root) return;
-    fitTo(this._gpu.renderer, this._camera, this._root);
+    // dpr держим у себя: healthcheck сверяет буфер с ожиданием по ФАКТИЧЕСКОМУ
+    // масштабу, а он ниже единицы, когда кап 8.3 Мп режет крупный бокс
+    this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
     if (this._post) this._post.needsUpdate = true;
   },
 

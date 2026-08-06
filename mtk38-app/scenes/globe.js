@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=15";
+import { createCard } from "./card.js?v=15";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=15";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -247,6 +247,35 @@ export const globeScene = {
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
+  /* Готов ли ПОКАЗАТЬ, а не «что было в последнем кадре»: сцена законно
+   * встречает проверку на любом повороте и в любой фазе вращения. */
+  healthcheck() {
+    if (!this._root || !this._scene) return { ok: true, detail: "не смонтирована" };
+    const n = (this._globe && this._globe.count) || 0;
+    if (!n) return { ok: false, detail: "кольца пусты: ни одного написания в сцене" };
+    if (offScreen(this._root)) {
+      return { ok: true, detail: `надписей в кольцах ${n}, слой не на экране` };
+    }
+    const bad = bufferComplaint(this._gpu && this._gpu.canvas, this._dpr);
+    if (bad) return { ok: false, detail: bad };
+    /* count — это ЭКЗЕМПЛЯРЫ на кольцах: 60 форм повторяются по параллелям,
+     * поэтому число законно больше числа написаний. */
+    return { ok: true, detail: `надписей в кольцах ${n} (${this._forms.length} форм), `
+      + `земля «${this._earthMode}»` + (this._earth ? "" : " (текстуры не поднялись)") };
+  },
+
+  /* Перебор для sweep: подложка Земли — выбор посетителя, в схеме её нет. */
+  states() {
+    return ["countries", "relief", "physical"].map((m) => ({
+      name: "земля: " + m,
+      apply: () => {
+        this._earthMode = m;
+        if (this._earth) this._earth.setMode(m, this._earthBorders);
+        this._syncPills();
+      },
+    }));
+  },
+
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
     const c = this._cfg;
@@ -342,7 +371,9 @@ export const globeScene = {
 
   _fit() {
     if (!this._gpu || !this._root) return;
-    fitTo(this._gpu.renderer, this._camera, this._root);
+    // dpr держим у себя: healthcheck сверяет буфер с ожиданием по ФАКТИЧЕСКОМУ
+    // масштабу, а он ниже единицы, когда кап 8.3 Мп режет крупный бокс
+    this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
     if (this._post) this._post.needsUpdate = true;
   },
 

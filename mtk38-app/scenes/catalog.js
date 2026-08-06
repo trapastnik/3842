@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=15";
+import { createCard } from "./card.js?v=15";
 
 export const catalogScene = {
   id: "catalog",
@@ -205,6 +205,35 @@ export const catalogScene = {
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
+  healthcheck() {
+    if (!this._root || !this._canvas) return { ok: true, detail: "не смонтирована" };
+    const bad = offScreen(this._canvas) ? null : bufferComplaint(this._canvas, this._dpr);
+    if (bad) return { ok: false, detail: bad };
+    const total = this._list().length;
+    /* Легально пустое состояние: фильтр «с изданием» на урезанном каноне может
+     * дать ноль — это честный ответ данных, а не поломка сцены. Красным здесь
+     * горело бы то, что посетителю показывают правильно. */
+    if (!total) return { ok: true, detail: `фильтр «${this._filter}» — языков нет (пусто по данным)` };
+    /* Сетка раскладывается от размера контейнера, а размер приходит из кадра.
+     * В скрытом слое ячеек законно ноль — это не «загружено, но пусто». */
+    if (offScreen(this._canvas)) {
+      return { ok: true, detail: `фильтр «${this._filter}»: ${total} языков готовы, слой не на экране` };
+    }
+    if (!this._cells.length) {
+      return { ok: false, detail: `в фильтре «${this._filter}» ${total} языков, а на странице ноль ячеек` };
+    }
+    return { ok: true, detail: `ячеек на странице ${this._cells.length}, `
+      + `страница ${this._page + 1} из ${this._pages}, фильтр «${this._filter}» (${total} языков)` };
+  },
+
+  /* Фильтр — выбор посетителя, в схеме настроек его нет: даём sweep явно. */
+  states() {
+    return ["all", "un", "pub"].map((k) => ({
+      name: "фильтр: " + k,
+      apply: () => { this._filter = k; this._page = 0; this._build(); },
+    }));
+  },
+
   setA11y(on) {
     this._a11y = !!on;
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
@@ -233,6 +262,7 @@ export const catalogScene = {
     const r = this._canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
     const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+    this._dpr = dpr;
     this._W = Math.round(r.width); this._H = Math.round(r.height);
     this._canvas.width = Math.round(this._W * dpr);
     this._canvas.height = Math.round(this._H * dpr);

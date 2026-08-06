@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=15";
+import { createCard } from "./card.js?v=15";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -208,6 +208,34 @@ export const mapScene = {
   _hintLabel() { return this._app ? this._app.t("hint.map") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
+
+  /* Считаем «что готов показать», а не последний кадр: _hits наполняются в
+   * отрисовке, и в скрытом слое они законно пусты. Судим по данным и по тому,
+   * что подложка собрана. */
+  healthcheck() {
+    if (!this._root || !this._canvas) return { ok: true, detail: "не смонтирована" };
+    if (!this._geo) return { ok: false, detail: "контуры стран не загрузились" };
+    const want = this._layer === "lang" ? this._langs.length
+      : this._layer === "pub" ? this._places.length
+      : this._langs.length + this._places.length;
+    if (!want) return { ok: false, detail: `слой «${this._layer}»: в данных пусто` };
+    if (offScreen(this._canvas)) {
+      return { ok: true, detail: `слой «${this._layer}»: ${want} объектов готовы, слой не на экране` };
+    }
+    const bad = bufferComplaint(this._canvas, this._dpr);
+    if (bad) return { ok: false, detail: bad };
+    if (!this._cache) return { ok: false, detail: "подложка карты не собрана" };
+    return { ok: true, detail: `слой «${this._layer}»: ${want} объектов, `
+      + `в кадре ${this._hits.length}, зум ${this._map.zoom.toFixed(2)}` };
+  },
+
+  /* Слой — выбор посетителя, в схеме его нет (класс Б). */
+  states() {
+    return ["lang", "pub", "both"].map((k) => ({
+      name: "слой: " + k,
+      apply: () => { this._layer = k; this._syncPills(); this._draw(); },
+    }));
+  },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
