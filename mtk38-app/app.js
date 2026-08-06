@@ -6,7 +6,7 @@
  * и передаёт дальше в kiosk-core.js. Поднимать при каждом merge main, иначе
  * Chrome отдаёт старое ядро: у меня так работало 1.5.0 при 1.7.0 в репозитории
  * и 1.7.0 при 1.8.1. С 1.9.0 ядро само сверит VERSION с меткой и заругается. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.8.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
 import { globeScene } from "./scenes/globe.js?v=15";
 import { rainScene } from "./scenes/rain.js?v=15";
