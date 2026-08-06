@@ -19,16 +19,25 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.9.2";
+  var VERSION = "1.9.3";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
    * в кеше, о новых проверках не знает по определению. */
-  var REQUESTED_VERSION = (function () {
+  /* Загрузили классическим тегом? (В модуле currentScript пуст — там
+   * сверяет обёртка.) Нужно различать «метки нет» и «мы не classic». */
+  var CLASSIC_SRC = (function () {
     try {
-      var src = document.currentScript && document.currentScript.src;
-      if (!src) return null;
-      return new URL(src, location.href).searchParams.get("v");
+      return (document.currentScript && document.currentScript.src) || null;
+    } catch (err) {
+      return null;
+    }
+  })();
+
+  var REQUESTED_VERSION = (function () {
+    if (!CLASSIC_SRC) return null;
+    try {
+      return new URL(CLASSIC_SRC, location.href).searchParams.get("v");
     } catch (err) {
       return null;
     }
@@ -2041,6 +2050,15 @@
    * метка, старое тело»), ядро переносит его в журнал.
    * Classic-путь сверяет сам себя — для старых ядер это не работает. */
   KioskApp.prototype._logVersionMismatch = function () {
+    /* Classic-подключение без метки: сверять не с чем, и залипание
+     * пройдёт молча — а канон объявляет метку обязательной. При
+     * ESM-загрузке молчим: там сверяет обёртка. */
+    if (CLASSIC_SRC && !REQUESTED_VERSION) {
+      console.info("[kiosk] у kiosk-core.js нет метки ?v= — сверка версий " +
+        "отключена, залипший кеш ловиться не будет. Канон: версионировать кит " +
+        "точной версией ядра (" + VERSION + ").");
+      return;
+    }
     if (!REQUESTED_VERSION || REQUESTED_VERSION === VERSION) return;
 
     /* Метка не в формате версии ядра либо отстала — это нарушение канона

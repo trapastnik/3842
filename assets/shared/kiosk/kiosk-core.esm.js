@@ -15,10 +15,6 @@
  * версия поднимается в ОДНОМ месте и расходится по всей цепочке.
  * ============================================================ */
 const here = new URL(import.meta.url);
-/* Передаём метку до импорта: в модуле document.currentScript пуст, и сам
- * ядро свою запрошенную версию иначе не увидит. По ней оно предупредит,
- * если браузер отдал файл из кеша. */
-window.__kioskCoreRequestedVersion = here.searchParams.get("v");
 await import("./kiosk-core.js" + here.search);
 
 const core = window.KioskCore;
@@ -50,7 +46,13 @@ function cmpSemver(a, b) {
 const requested = here.searchParams.get("v");
 let mismatch = null;
 
-if (requested && core.version && requested !== core.version) {
+if (!requested) {
+  /* Метки нет вовсе — сверять не с чем, и залипание пройдёт молча.
+   * README объявляет метку обязательной, значит и тишина здесь неуместна. */
+  console.info("[kiosk] у kiosk-core.esm.js нет метки ?v= — сверка версий " +
+    "отключена, залипший кеш ловиться не будет. Канон: версионировать кит " +
+    "точной версией ядра (" + core.version + ").");
+} else if (core.version && requested !== core.version) {
   if (!SEMVER.test(requested)) {
     /* Метка не в формате версии ядра (?v=182, ?v=2 — так помечены 38, 39
      * в main). Это нарушение канона версий, но НЕ признак залипшего
@@ -83,9 +85,18 @@ if (requested && core.version && requested !== core.version) {
 function journal(appId, msg) {
   try {
     const key = appId + "-kiosk-log";
-    const raw = localStorage.getItem(key);
-    const list = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(list)) return;
+    /* Битый журнал ПЕРЕЗАПИСЫВАЕМ, а не молча теряем запись: так делает
+     * core.log, и расхождение поведения было бы хуже самой порчи —
+     * предупреждение о залипшем кеше пропадало бы именно там, где с
+     * хранилищем уже что-то не так. */
+    let list = [];
+    try {
+      const raw = localStorage.getItem(key);
+      const parsed = raw ? JSON.parse(raw) : [];
+      if (Array.isArray(parsed)) list = parsed;
+    } catch (err) {
+      list = [];
+    }
     list.push({
       at: new Date().toISOString(),
       level: "warn",
