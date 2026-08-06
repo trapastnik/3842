@@ -26,9 +26,15 @@ faces.append('@font-face{font-family:"20 Kopeek";font-weight:600;src:url("./kope
 faces.append('@font-face{font-family:"21 Cent";src:url("./cent/21Cent.woff") format("woff");font-display:swap}')
 faces.append('@font-face{font-family:"21 Cent";font-weight:700;src:url("./cent/21Cent-Bold.woff") format("woff");font-display:swap}')
 faces.append('@font-face{font-family:"Nolde";src:url("./nolde/nolde.otf") format("opentype");font-display:swap}')
+NOTO_DIR = os.path.join(ROOT, "mtk38-v3", "fonts", "noto")
 for s in scripts:
     faces.append(f'@font-face{{font-family:"noto-{s}";src:url("./noto/{s}.woff2") format("woff2");font-display:swap}}')
-    faces.append(f'@font-face{{font-family:"noto-{s}";font-weight:700;src:url("./noto/{s}-700.woff2") format("woff2");font-display:swap}}')
+    # Полужирное начертание есть не у всех письменностей (у Noto Sans NKo и
+    # Tifinagh его нет вовсе). Объявлять несуществующий файл нельзя: браузер
+    # молча роняет всё семейство в фолбэк, и текст уходит в тофу — лучше
+    # оставить один вес и дать синтезировать жирность.
+    if os.path.exists(os.path.join(NOTO_DIR, f"{s}-700.woff2")):
+        faces.append(f'@font-face{{font-family:"noto-{s}";font-weight:700;src:url("./noto/{s}-700.woff2") format("woff2");font-display:swap}}')
 
 OUT_CSS = os.path.join(ROOT, "mtk38-v3", "fonts", "faces.css")
 with open(OUT_CSS, "w", encoding="utf-8") as f:

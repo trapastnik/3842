@@ -30,6 +30,14 @@
       '<path d="M14 44 H30 M66 44 H82"/>' +
       '<path d="M22 36 L14 44 L22 52 M74 36 L82 44 L74 52"/>' +
       "</svg>",
+    /* палец касается — круги расходятся */
+    tap:
+      '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">' +
+      '<circle cx="48" cy="40" r="8"/>' +
+      '<circle cx="48" cy="40" r="18" opacity=".55"/>' +
+      '<circle cx="48" cy="40" r="28" opacity=".25"/>' +
+      '<path d="M34 74 C34 62 40 56 48 56 C56 56 62 62 62 74"/>' +
+      "</svg>",
     /* горизонтальный свайп */
     swipe:
       '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round">' +
@@ -42,12 +50,64 @@
   var DEFAULT_LABEL = {
     pinch: "Сведите или разведите пальцы",
     drag: "Тяните, чтобы перемещаться",
+    tap: "Коснитесь, чтобы открыть",
     swipe: "Листайте свайпом",
   };
+
+  /* Элементы, внутрь которых браузер НЕ РИСУЕТ детей: их содержимое —
+   * запасной контент для тех, кто тег не поддерживает. Подсказка,
+   * повешенная на <canvas>, невидима с рождения — так она и жила у пяти
+   * сцен МТК 38 и на карте 42, пока не вскрылось ревью. */
+  var VOID_HOSTS = { CANVAS: 1, IMG: 1, VIDEO: 1, IFRAME: 1, OBJECT: 1 };
+
+  /* Куда вешать на самом деле: сам контейнер либо его родитель. */
+  function resolveHost(target) {
+    if (!target || !target.tagName) return null;
+    if (!VOID_HOSTS[target.tagName]) return target;
+    var parent = target.parentElement;
+    if (!parent) {
+      console.warn("[KioskHint] <" + target.tagName.toLowerCase() + "> не отображает " +
+        "вложенные элементы, а родителя нет — подсказка не будет видна. " +
+        "Передавайте контейнер сцены, а не холст.");
+      return null;
+    }
+    console.warn("[KioskHint] подсказка повешена на родителя: <" +
+      target.tagName.toLowerCase() + "> не отображает вложенные элементы " +
+      "(его содержимое — запасной контент). Передавайте контейнер сцены.");
+    return parent;
+  }
+
+  var EVENTS = ["pointerdown", "wheel", "touchstart"];
+
+  /* Уже созданные подсказки: контейнер → ручка. Нужен, чтобы повторный
+   * attach на тот же контейнер ОБНОВЛЯЛ подсказку, а не вешал вторую.
+   * Типовой паттерн сцен — «destroy + attach на смену языка» — иначе
+   * копил бы слушатели и таймеры весь день (сцены keepAlive, контейнер
+   * живёт до перезагрузки). */
+  var attached = typeof WeakMap === "function" ? new WeakMap() : null;
 
   function attach(target, opts) {
     if (!target) return null;
     opts = opts || {};
+
+    /* Холст детей не рисует — вешаемся на родителя. Иначе подсказка
+     * существует в DOM и не видна никогда. */
+    target = resolveHost(target);
+    if (!target) return null;
+
+    /* Повторный вызов — не новая подсказка, а обновление прежней.
+     * И БЕЗ firstDelay: он для первого показа после загрузки, а на
+     * смене языка вспыхивал бы посреди взаимодействия. */
+    var existing = attached && attached.get(target);
+    if (existing) {
+      existing.update(opts);
+      return existing;
+    }
+
+    if (opts.gesture && !ICONS[opts.gesture]) {
+      console.warn("[KioskHint] нет жеста «" + opts.gesture + "», беру pinch. " +
+        "Доступны: " + Object.keys(ICONS).join(", "));
+    }
     var gesture = ICONS[opts.gesture] ? opts.gesture : "pinch";
     var idleMs = opts.idleMs || 30000;
     var firstDelay = opts.firstDelay || 1200; /* не мигать во время загрузки */
@@ -57,32 +117,83 @@
     el.setAttribute("aria-hidden", "true");
     el.innerHTML =
       '<div class="kiosk-hint__icon">' + ICONS[gesture] + "</div>" +
-      '<div class="kiosk-hint__label">' + (opts.label || DEFAULT_LABEL[gesture]) + "</div>";
+      '<div class="kiosk-hint__label"></div>';
     injectCss();
+
+    var labelEl = el.querySelector(".kiosk-hint__label");
+    var iconEl = el.querySelector(".kiosk-hint__icon");
+    labelEl.textContent = opts.label || DEFAULT_LABEL[gesture];
 
     /* позиционируемся относительно контейнера */
     var cs = getComputedStyle(target);
     if (cs.position === "static") target.style.position = "relative";
     target.appendChild(el);
 
-    var idleTimer = null, shown = false;
+    var idleTimer = null, firstTimer = null, shown = false, dead = false;
 
-    function show() { shown = true; el.classList.add("is-on"); }
+    function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
     function hide() { shown = false; el.classList.remove("is-on"); }
     function poke() {
+      if (dead) return;
       if (shown) hide();
       if (idleTimer) clearTimeout(idleTimer);
       idleTimer = setTimeout(show, idleMs);
     }
 
-    ["pointerdown", "wheel", "touchstart"].forEach(function (ev) {
+    EVENTS.forEach(function (ev) {
       target.addEventListener(ev, poke, { passive: true });
     });
 
-    setTimeout(show, firstDelay);
+    firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
 
-    return { show: show, hide: hide, destroy: function () { el.remove(); } };
+    var handle = {
+      show: show,
+      hide: hide,
+
+      /* Сменить подпись (и, если нужно, жест) без пересоздания. */
+      setLabel: function (text) {
+        if (dead) return handle;
+        labelEl.textContent = text || DEFAULT_LABEL[gesture];
+        return handle;
+      },
+      update: function (next) {
+        if (dead) return handle;
+        next = next || {};
+        if (next.gesture && ICONS[next.gesture] && next.gesture !== gesture) {
+          gesture = next.gesture;
+          iconEl.innerHTML = ICONS[gesture];
+        }
+        if (next.idleMs && next.idleMs !== idleMs) {
+          idleMs = next.idleMs;
+          /* Перевзводим взведённый таймер: иначе новый интервал начал бы
+           * действовать только после следующего касания. */
+          if (idleTimer) {
+            clearTimeout(idleTimer);
+            idleTimer = setTimeout(show, idleMs);
+          }
+        }
+        handle.setLabel(next.label);
+        return handle;
+      },
+
+      /* Снимает ВСЁ своё: элемент, слушатели, оба таймера. Раньше уходил
+       * только элемент — слушатели на контейнере и взведённый таймер
+       * жили до перезагрузки страницы. */
+      destroy: function () {
+        if (dead) return;
+        dead = true;
+        if (idleTimer) clearTimeout(idleTimer);
+        if (firstTimer) clearTimeout(firstTimer);
+        idleTimer = firstTimer = null;
+        EVENTS.forEach(function (ev) { target.removeEventListener(ev, poke); });
+        el.remove();
+        if (attached) attached["delete"](target);
+      }
+    };
+
+    if (attached) attached.set(target, handle);
+    return handle;
   }
 
   var cssDone = false;
@@ -93,8 +204,11 @@
     s.textContent =
       ".kiosk-hint{position:absolute;left:50%;bottom:calc(var(--edge-safe-bottom,80px) + 12px);" +
       "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
-      "padding:18px 28px;border-radius:999px;background:rgba(12,16,18,.72);" +
-      "border:1px solid rgba(210,183,115,.45);color:var(--brass,#D2B773);" +
+      /* Цвета — через токены кита, как везде: зашитые каналы молча
+         разъезжаются с палитрой при её смене. */
+      "padding:18px 28px;border-radius:999px;" +
+      "background:rgba(var(--kiosk-ink-rgb,12,16,18),.72);" +
+      "border:1px solid rgba(var(--brass-rgb,210,183,115),.45);color:var(--brass,#D2B773);" +
       "opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;z-index:40;}" +
       ".kiosk-hint.is-on{opacity:1;transform:translateX(-50%) translateY(0);}" +
       ".kiosk-hint__icon{width:64px;height:64px;}" +

@@ -73,6 +73,16 @@ export const cardsScene = {
   pause() {},   // нечему останавливаться — сцена статична
   resume() {},
 
+  /* «Загружено, но пусто» — самый незаметный отказ: DOM на месте, сеть
+   * чиста, а карточек нет (данные не доехали, фильтр всё срезал). */
+  healthcheck() {
+    if (!this._gridEl) return { ok: false, detail: "сцена не смонтирована" };
+    var n = this._gridEl.children.length;
+    if (!this._items.length) return { ok: false, detail: "данные не загружены" };
+    if (!n) return { ok: false, detail: "ни одной карточки на экране" };
+    return { ok: true, detail: "карточек " + n + " из " + this._items.length };
+  },
+
   reset() {
     this._filter = "all";
     if (this._gridEl) {

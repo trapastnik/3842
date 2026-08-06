@@ -710,6 +710,16 @@
   pointer-events: none;
 }
 
+/* Подсказка о жесте в «Приливе» — под счётчиком года: внизу по центру стоит
+   таймлайн, там ей места нет. */
+.m39-wave .m39-hint {
+  left: auto;
+  right: var(--kiosk-safe-right);
+  top: calc(var(--kiosk-safe-top) + var(--m39-u) * 7.4);
+  bottom: auto;
+  transform: none;
+}
+
 .m39-wave .m39-legend {
   left: auto;
   right: var(--kiosk-safe-right);

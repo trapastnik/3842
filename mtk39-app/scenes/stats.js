@@ -8,7 +8,7 @@
  *    продублирован подписью, соседние сегменты разделены зазором;
  *  · ни одной диаграммы с двумя шкалами. */
 
-import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=1";
+import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=2";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 1000;   // ширина системы координат svg; высота у каждого графика своя
@@ -82,7 +82,10 @@ export const statsScene = {
 
   preload: {
     data: { corpus: DATA.corpus },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   opt: Object.assign({}, DEFAULTS),
@@ -500,6 +503,15 @@ export const statsScene = {
         scroll.scrollTo({ left: 0, behavior: "auto" });
         sync();
       },
+      health() {
+        const charts = el_.querySelectorAll(".m39-chart svg").length;
+        const bars = el_.querySelectorAll(".m39-chart svg path").length;
+        const hero = el_.querySelectorAll(".m39-hero__item").length;
+        if (!hero) return { ok: false, detail: "титульные цифры не собраны" };
+        if (charts < 5) return { ok: false, detail: "построено графиков: " + charts + " из 5" };
+        if (!bars) return { ok: false, detail: "графики пусты: ни одной полосы" };
+        return { ok: true, detail: "экранов 7, графиков " + charts + ", фигур " + bars };
+      },
       destroy() {
         scroll.removeEventListener("scroll", onScroll);
         watch.destroy();
@@ -514,6 +526,10 @@ export const statsScene = {
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
   setA11y() { if (this.api) this.api.redraw(); },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
+  },
 
   unmount() {
     if (this.api) this.api.destroy();
