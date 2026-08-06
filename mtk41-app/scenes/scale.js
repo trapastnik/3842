@@ -22,7 +22,7 @@
 import {
   DATA, FALLBACK_HEIGHT, HUMAN_HEIGHT_M, PALETTE, byYear, cardUrl, createCanvasHost,
   createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=14";
+} from "./shared.js?v=21";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
