@@ -14,8 +14,8 @@
  * Здесь — жизненный цикл сцены, камера, ввод и отрисовка. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=21";
-import { createMapCore } from "./map-core.js?v=21";
+} from "./shared.js?v=22";
+import { createMapCore } from "./map-core.js?v=22";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
