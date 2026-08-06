@@ -19,7 +19,31 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.8.2";
+  var VERSION = "1.9.2";
+
+  /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
+   * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
+   * в кеше, о новых проверках не знает по определению. */
+  var REQUESTED_VERSION = (function () {
+    try {
+      var src = document.currentScript && document.currentScript.src;
+      if (!src) return null;
+      return new URL(src, location.href).searchParams.get("v");
+    } catch (err) {
+      return null;
+    }
+  })();
+
+  var SEMVER_RE = /^\d+\.\d+\.\d+$/;
+
+  function semverNewer(a, b) {
+    var pa = a.split("."), pb = b.split("."), i, d;
+    for (i = 0; i < 3; i++) {
+      d = Number(pa[i]) - Number(pb[i]);
+      if (d) return d > 0;
+    }
+    return false;
+  }
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -686,6 +710,10 @@
 
     /* Журнал поднимаем первым — чтобы поймать и ошибки самого старта. */
     this._initJournal();
+    /* И сразу же — рассинхрон версий. Раньше запись шла в КОНЦЕ успешного
+     * старта: если рассинхрон сам старт и ронял, подсказки в журнале не
+     * оставалось вовсе. */
+    this._logVersionMismatch();
 
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
@@ -734,7 +762,18 @@
      * проверки id) и до того, как сверху лягут файл и патч. */
     this._migrateLegacyScreens(this.config, "config в createApp");
     if (!this.configUrl) { this._applyStoredConfig(); return Promise.resolve(); }
-    return loadJson(this.configUrl)
+    /* no-cache: конфиг маленький и читается раз за запуск, а залипший
+     * force-cache означал, что правка таймингов или настроек сцены может
+     * не доехать до прогретого киоска НИКОГДА — ровно та болезнь, что
+     * была у словарей до i18nVersion. */
+    return loadJson(this.configUrl, "no-cache")
+      /* Ревалидация требует сети до сервера. Если он недоступен (а киоск
+       * обязан подниматься при любой погоде) — вторая попытка из кеша.
+       * Так свежесть остаётся правилом, а не условием запуска. */
+      .catch(function (err) {
+        self.log("warn", "конфиг не ревалидирован (" + errText(err) + "), беру из кеша");
+        return loadJson(self.configUrl, "force-cache");
+      })
       .then(function (json) {
         /* Файл мигрируем ДО слияния и до наложения патча. Иначе legacy-
          * ключи из файла легли бы ПОВЕРХ screens.* оператора и откатывали
@@ -744,6 +783,9 @@
       })
       .catch(function (err) {
         console.warn("[kiosk] kiosk.config.json не прочитан, работаем на дефолтах", err);
+        /* В журнал, а не только в консоль: на киоске консоль никто не
+         * читает, а «почему настройки не те» спрашивают у журнала. */
+        self.log("error", "конфиг не прочитан (" + errText(err) + "), работаю на дефолтах");
       })
       .then(function () { self._applyStoredConfig(); });
   };
@@ -1069,8 +1111,12 @@
     });
   };
 
-  /* Фактические габариты хрома. В скрытой вкладке и до первой раскладки
-   * прямоугольники нулевые — тогда замер не участвует, работает расчёт. */
+  /* Фактические габариты хрома.
+   *
+   * Нулевые прямоугольники бывают не «в фоне» (в фоновой вкладке
+   * getBoundingClientRect отдаёт настоящие числа — прежний комментарий
+   * тут врал), а до первой раскладки и в схлопнутом окне. В этих случаях
+   * замер не участвует и работает расчёт по конфигу. */
   KioskApp.prototype._measureChrome = function (gap) {
     var out = { top: 0, bottom: 0, side: 0 };
     var root = this._els.root;
@@ -1203,6 +1249,34 @@
     this._buildService();
     this._applyContentBox();
     this._applyInsets();
+    this._watchChrome();
+  };
+
+  /* Полосы хрома пересчитываются не только при правке настроек.
+   *
+   * Замер при сборке идёт до того, как раскладка устоялась: шрифты ещё
+   * грузятся, бар ещё не той высоты. У МТК 42 из-за этого --chrome-bottom
+   * обещал границу на 6 px выше фактического верха навигации, и чипы,
+   * прибитые к переменной, залезали под неё. Поэтому следим за размером
+   * самих блоков хрома, за окном и за готовностью шрифтов.
+   *
+   * Обратной связи нет: размеры хрома от --chrome-* не зависят, поэтому
+   * наблюдатель сам себя не разбудит. */
+  KioskApp.prototype._watchChrome = function () {
+    var self = this;
+    function recalc() { self._applyInsets(); }
+
+    if (typeof ResizeObserver === "function") {
+      this._chromeRO = new ResizeObserver(recalc);
+      ["nav", "tools", "gear"].forEach(function (key) {
+        var el = self._els[key];
+        if (el) self._chromeRO.observe(el);
+      });
+    }
+    window.addEventListener("resize", recalc, { passive: true });
+    if (document.fonts && document.fonts.ready) {
+      document.fonts.ready.then(recalc).catch(function () {});
+    }
   };
 
   KioskApp.prototype._buildNav = function (doc) {
@@ -1962,6 +2036,29 @@
     return this.appId + "-kiosk-log";
   };
 
+  /* Рассинхрон версий: обёртка кладёт сообщение в глобальную переменную
+   * (сверять из неё, а не из ядра — единственный способ поймать «свежая
+   * метка, старое тело»), ядро переносит его в журнал.
+   * Classic-путь сверяет сам себя — для старых ядер это не работает. */
+  KioskApp.prototype._logVersionMismatch = function () {
+    if (!REQUESTED_VERSION || REQUESTED_VERSION === VERSION) return;
+
+    /* Метка не в формате версии ядра либо отстала — это нарушение канона
+     * версий, но НЕ признак залипшего кеша: файл может быть свежайшим.
+     * В main такие метки у трёх приложений из четырёх (?v=182, ?v=2,
+     * ?v=1.7.0), и жёсткая сверка копила бы им ложные записи на каждом
+     * старте. Совет — в консоль, журнал не трогаем. */
+    if (!SEMVER_RE.test(REQUESTED_VERSION) || !semverNewer(REQUESTED_VERSION, VERSION)) {
+      console.info("[kiosk] метка ?v=" + REQUESTED_VERSION + " не совпадает с версией " +
+        "ядра " + VERSION + ". Канон: версионировать кит точной версией ядра.");
+      return;
+    }
+    var msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
+      " — браузер отдал файл из кеша.";
+    console.warn("[kiosk] " + msg);
+    this.log("warn", msg);
+  };
+
   KioskApp.prototype._initJournal = function () {
     var self = this;
     if (this._journalReady) return;
@@ -2561,12 +2658,14 @@
     /* Класс на <html>: токены кегля/контраста/таргетов живут в kiosk.css
      * и достаются и ядру, и сценам, и прототипам. */
     document.documentElement.classList.toggle("a11y", on);
+    /* Масштабы — ДО того, как сцены узнают о режиме: иначе setA11y()
+     * отрабатывал бы на старых значениях токенов. */
+    this._applyScale();
+    this._applyInsets();
     this._records.forEach(function (rec) {
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
-    this._applyScale();           // режим домножает оба масштаба
-    this._applyInsets();          // таргеты выросли — полосы хрома тоже
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;
