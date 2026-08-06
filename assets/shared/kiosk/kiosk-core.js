@@ -19,15 +19,13 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.9.1";
+  var VERSION = "1.9.2";
 
-  /* Метка версии, с которой ядро запросили: ?v= из адреса собственного
-   * скрипта (classic) или из обёртки (ESM). Расхождение с VERSION значит
-   * залипший кеш — за день на это независимо наступили 38, 40 и 42, и
-   * ловилось оно глазами в отчёте, а не кодом. */
+  /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
+   * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
+   * в кеше, о новых проверках не знает по определению. */
   var REQUESTED_VERSION = (function () {
     try {
-      if (global.__kioskCoreRequestedVersion) return String(global.__kioskCoreRequestedVersion);
       var src = document.currentScript && document.currentScript.src;
       if (!src) return null;
       return new URL(src, location.href).searchParams.get("v");
@@ -35,6 +33,17 @@
       return null;
     }
   })();
+
+  var SEMVER_RE = /^\d+\.\d+\.\d+$/;
+
+  function semverNewer(a, b) {
+    var pa = a.split("."), pb = b.split("."), i, d;
+    for (i = 0; i < 3; i++) {
+      d = Number(pa[i]) - Number(pb[i]);
+      if (d) return d > 0;
+    }
+    return false;
+  }
 
   /* --------------------------------------------------------------- дефолты
    * Полный shape конфига приложения (mtkXX-app/kiosk.config.json).
@@ -2032,13 +2041,22 @@
    * метка, старое тело»), ядро переносит его в журнал.
    * Classic-путь сверяет сам себя — для старых ядер это не работает. */
   KioskApp.prototype._logVersionMismatch = function () {
-    var msg = global.__kioskCoreVersionMismatch;
-    if (!msg && REQUESTED_VERSION && REQUESTED_VERSION !== VERSION) {
-      msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
-        " — браузер отдал файл из кеша.";
-      console.warn("[kiosk] " + msg);
+    if (!REQUESTED_VERSION || REQUESTED_VERSION === VERSION) return;
+
+    /* Метка не в формате версии ядра либо отстала — это нарушение канона
+     * версий, но НЕ признак залипшего кеша: файл может быть свежайшим.
+     * В main такие метки у трёх приложений из четырёх (?v=182, ?v=2,
+     * ?v=1.7.0), и жёсткая сверка копила бы им ложные записи на каждом
+     * старте. Совет — в консоль, журнал не трогаем. */
+    if (!SEMVER_RE.test(REQUESTED_VERSION) || !semverNewer(REQUESTED_VERSION, VERSION)) {
+      console.info("[kiosk] метка ?v=" + REQUESTED_VERSION + " не совпадает с версией " +
+        "ядра " + VERSION + ". Канон: версионировать кит точной версией ядра.");
+      return;
     }
-    if (msg) this.log("warn", msg);
+    var msg = "запрошено ядро " + REQUESTED_VERSION + ", а работает " + VERSION +
+      " — браузер отдал файл из кеша.";
+    console.warn("[kiosk] " + msg);
+    this.log("warn", msg);
   };
 
   KioskApp.prototype._initJournal = function () {
