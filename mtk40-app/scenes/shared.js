@@ -20,6 +20,22 @@ export const DESIGN_W = 1280;
 const MAX_BUFFER_PX = 8.3e6;   // канон перф-бюджета
 
 /**
+ * Размер буфера канвы под данный бокс. Одна формула на всех: раньше её
+ * копия жила и в measure(), и в проверке — при первой же правке копии
+ * разошлись бы, и healthcheck начал бы сверять с собственной устаревшей
+ * арифметикой (совет ревью).
+ * Округление ТОЛЬКО вниз: при round обе стороны шли вверх и произведение
+ * перелезало кап на полторы тысячи пикселей (селфтест ловил как
+ * «4308×1927 сверх бюджета»). floor даёт cw·ch ≤ w·h·scale² = кап.
+ */
+function bufferFor(w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let scale = dpr;
+  if (w * h * dpr * dpr > MAX_BUFFER_PX) scale = Math.sqrt(MAX_BUFFER_PX / (w * h));
+  return { w: Math.max(1, Math.floor(w * scale)), h: Math.max(1, Math.floor(h * scale)) };
+}
+
+/**
  * Канва сцены с честным жизненным циклом.
  * Петля обязана полностью останавливаться на pause() — это проверяется
  * на приёмке (0 rAF у неактивных сцен).
@@ -48,14 +64,9 @@ export function createCanvas(el, { onSize, onFrame }) {
     if (!w || !h) return false;
     if (w === lastW && h === lastH) return false;
     lastW = w; lastH = h;
-    const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    let scale = dpr;
-    if (w * h * dpr * dpr > MAX_BUFFER_PX) scale = Math.sqrt(MAX_BUFFER_PX / (w * h));
-    // Округление ТОЛЬКО вниз: при round обе стороны шли вверх и произведение
-    // перелезало кап на полторы тысячи пикселей — селфтест это ловит
-    // («2 из 2 сверх бюджета: 4308×1927»). floor даёт cw·ch ≤ w·h·scale² = кап.
-    canvas.width = Math.max(1, Math.floor(w * scale));
-    canvas.height = Math.max(1, Math.floor(h * scale));
+    const buf = bufferFor(w, h);
+    canvas.width = buf.w;
+    canvas.height = buf.h;
     // рисуем в CSS-пикселях: масштаб буфера прячется в трансформе
     ctx.setTransform(canvas.width / w, 0, 0, canvas.height / h, 0, 0);
     return true;
@@ -74,15 +85,12 @@ export function createCanvas(el, { onSize, onFrame }) {
     bufferOk() {
       const w = canvas.clientWidth, h = canvas.clientHeight;
       if (!w || !h) return { ok: true, detail: "слой скрыт" };
-      const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      let scale = dpr;
-      if (w * h * dpr * dpr > MAX_BUFFER_PX) scale = Math.sqrt(MAX_BUFFER_PX / (w * h));
-      const ew = Math.max(1, Math.floor(w * scale));
-      const eh = Math.max(1, Math.floor(h * scale));
-      const ok = Math.abs(canvas.width - ew) <= 1 && Math.abs(canvas.height - eh) <= 1;
+      const exp = bufferFor(w, h);
+      const ok = Math.abs(canvas.width - exp.w) <= 1 && Math.abs(canvas.height - exp.h) <= 1;
       return {
         ok,
-        detail: canvas.width + "×" + canvas.height + (ok ? "" : " вместо " + ew + "×" + eh),
+        detail: canvas.width + "×" + canvas.height +
+          (ok ? "" : " вместо " + exp.w + "×" + exp.h),
       };
     },
     /* Меряем сами на входе: в скрытой вкладке ResizeObserver не доставляется,

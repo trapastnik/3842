@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=27";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=28";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -141,7 +141,7 @@ export const shelfScene = {
      * Поэтому у каждой полки две фазы: сначала пружина доводит её до края,
      * и только потом начинается ход. Волна отсчитывается от момента входа
      * в диапазон, а не от начала заставки. */
-    const phase = this.shelves.map(() => ({ settled: false, from: 0, t0: 0, last: 0 }));
+    const phase = this.shelves.map(() => ({ settled: false, from: 0, t0: 0, last: null }));
 
     const stopTicker = this.app.standbyTicker((t) => {
       if (!this.cv) return;
@@ -160,10 +160,16 @@ export const shelfScene = {
 
         if (!ph.settled) {
           const target = Math.min(Math.max(shelf.scrollX, 0), span);
-          /* Сближение по дельте времени, а не по кадру: при любом
-           * standbyFps возврат занимает одни и те же доли секунды. На
-           * первом тике дельта нулевая — поза остаётся ровно той, что
-           * показывал последний кадр петли, и разрыва нет вовсе. */
+          /* Сближение по дельте времени, а не по кадру: при любом standbyFps
+           * возврат занимает одни и те же доли секунды.
+           * Точку отсчёта берём ПО ПЕРВОМУ ТИКУ, а не по нулю эпохи:
+           * standbyTicker ядра — setInterval, и первый колбэк приходит через
+           * целый период. С нулём дельта первого кадра равнялась 1/standbyFps
+           * (при штатных 10 к/с — 28% оверскролла одним шагом, при законных
+           * операторских 1 к/с — 96%, то есть телепорт возвращался почти
+           * целиком). С сентинелом первый НАРИСОВАННЫЙ кадр буквально равен
+           * последнему живому. */
+          if (ph.last === null) ph.last = t;
           const dt = Math.max(0, t - ph.last);
           ph.last = t;
           shelf.scrollX += (target - shelf.scrollX) * (1 - Math.exp(-dt / SETTLE_TAU));
