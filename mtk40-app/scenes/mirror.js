@@ -5,7 +5,7 @@
  * карточку и вытягивает ленты связей через середину кадра — отсюда
  * «зеркало»: верх и низ отражаются друг в друге через то, что он читал.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=29";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=30";
 
 const ORDER = ["by-lenin", "in-library", "about-lenin"];
 
