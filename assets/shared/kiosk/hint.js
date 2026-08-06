@@ -60,21 +60,65 @@
    * сцен МТК 38 и на карте 42, пока не вскрылось ревью. */
   var VOID_HOSTS = { CANVAS: 1, IMG: 1, VIDEO: 1, IFRAME: 1, OBJECT: 1 };
 
-  /* Куда вешать на самом деле: сам контейнер либо его родитель. */
+  function scrolls(el) {
+    var cs = getComputedStyle(el);
+    return /(auto|scroll)/.test(cs.overflowY) || /(auto|scroll)/.test(cs.overflowX);
+  }
+
+  /* Ближайший прокручиваемый ПРЕДОК. Мало проверять сам узел: холст
+   * внутри скроллера лежит в обычном div-е, и подъём на этот div
+   * оставляет подсказку внутри прокрутки — она всё так же уезжает за
+   * кромку (ядро ещё и делает такой контейнер position:relative). */
+  function scrollParent(el) {
+    var p = el.parentElement;
+    while (p && p !== document.body) {
+      if (scrolls(p)) return p;
+      p = p.parentElement;
+    }
+    return null;
+  }
+
+  /* Куда вешать на самом деле.
+   *
+   * Обе причины подъёма проверяются В ЦИКЛЕ, а не по очереди: холст
+   * внутри скроллера проходил canvas-веткой и возвращал прокручиваемого
+   * родителя без единой проверки — то есть ровно тот случай y = −188,
+   * который считался закрытым (карта 42 вешает именно на холст). */
   function resolveHost(target) {
     if (!target || !target.tagName) return null;
-    if (!VOID_HOSTS[target.tagName]) return target;
-    var parent = target.parentElement;
-    if (!parent) {
-      console.warn("[KioskHint] <" + target.tagName.toLowerCase() + "> не отображает " +
-        "вложенные элементы, а родителя нет — подсказка не будет видна. " +
-        "Передавайте контейнер сцены, а не холст.");
-      return null;
+
+    var node = target, why = null, guard = 0;
+    while (node && node !== document.body && guard++ < 64) {
+      if (VOID_HOSTS[node.tagName]) {
+        /* Содержимое такого тега — запасной контент, браузер его не рисует. */
+        why = why || "void";
+        node = node.parentElement;
+        continue;
+      }
+      /* Выбираемся из ПРОКРУТКИ ЦЕЛИКОМ, а не на шаг: внутри скроллера
+       * absolute считается от высоты содержимого, и подсказка уезжает за
+       * кромку — хоть на самом скроллере, хоть на любом его потомке. */
+      var sc = scrolls(node) ? node : scrollParent(node);
+      if (sc && sc !== document.body) {
+        why = "scroll";
+        node = sc.parentElement;
+        continue;
+      }
+      break;
     }
-    console.warn("[KioskHint] подсказка повешена на родителя: <" +
-      target.tagName.toLowerCase() + "> не отображает вложенные элементы " +
-      "(его содержимое — запасной контент). Передавайте контейнер сцены.");
-    return parent;
+
+    if (!node || node === document.body) {
+      console.warn("[KioskHint] не нашёл подходящего контейнера " +
+        "(холст без родителя либо всё дерево прокручивается) — подсказка не будет " +
+        "видна или уедет за кромку. Передавайте обёртку сцены.");
+      return node && node !== document.body ? node : null;
+    }
+    if (node !== target) {
+      console.warn("[KioskHint] подсказка поднята на <" + node.tagName.toLowerCase() +
+        ">: исходный контейнер " + (why === "scroll" ? "прокручивается" :
+        "не отображает вложенные элементы") + ". Передавайте обёртку сцены, а не холст.");
+    }
+    return node;
   }
 
   var EVENTS = ["pointerdown", "wheel", "touchstart"];
@@ -100,6 +144,16 @@
      * смене языка вспыхивал бы посреди взаимодействия. */
     var existing = attached && attached.get(target);
     if (existing) {
+      /* Владение считается по ФИНАЛЬНОМУ хосту, а не по тому, что
+       * передали: после подъёма два разных контейнера внутри одного
+       * скроллера сходятся в один хост. Молчаливая перезапись жеста и
+       * подписи — как раз то, обо что спотыкаются сцены со списками. */
+      if (opts.gesture && existing.gesture && opts.gesture !== existing.gesture) {
+        console.warn("[KioskHint] на этом контейнере уже есть подсказка «" +
+          existing.gesture + "», перезаписываю на «" + opts.gesture + "». " +
+          "Два владельца сошлись в один хост (частый случай — оба внутри " +
+          "одного скроллера). Дайте им разные непрокручиваемые обёртки.");
+      }
       existing.update(opts);
       return existing;
     }
@@ -132,7 +186,18 @@
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
 
     function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
-    function hide() { shown = false; el.classList.remove("is-on"); }
+
+    /* hide() ПЕРЕВЗВОДИТ цикл. Раньше он только снимал класс, а таймер
+     * оставался отстрелянным: сцена, гасившая подсказку руками (например,
+     * при уходе в заставку), больше не показывала её никогда — у МТК 40
+     * будящее касание уходит в оверлей и до poke() не доходит. */
+    function hide() {
+      shown = false;
+      el.classList.remove("is-on");
+      if (dead) return;
+      if (idleTimer) clearTimeout(idleTimer);
+      idleTimer = setTimeout(show, idleMs);
+    }
     function poke() {
       if (dead) return;
       if (shown) hide();
@@ -150,6 +215,17 @@
     var handle = {
       show: show,
       hide: hide,
+      get gesture() { return gesture; },
+
+      /* Публичный перевзвод: сцена отмечает взаимодействие, которое до
+       * контейнера не дошло (жест перехвачен, касание съел оверлей). */
+      poke: poke,
+      rearm: function () {
+        if (dead) return handle;
+        if (idleTimer) clearTimeout(idleTimer);
+        idleTimer = setTimeout(show, idleMs);
+        return handle;
+      },
 
       /* Сменить подпись (и, если нужно, жест) без пересоздания. */
       setLabel: function (text) {
@@ -202,7 +278,11 @@
     cssDone = true;
     var s = document.createElement("style");
     s.textContent =
-      ".kiosk-hint{position:absolute;left:50%;bottom:calc(var(--edge-safe-bottom,80px) + 12px);" +
+      /* От --chrome-bottom, а не от кромки: под навигацией уже занято, и
+         подсказка ложилась прямо на неё (замер 42: хинт 1974..2076 при
+         навигации 1882..2080). Кромка — фолбэк, если ядра рядом нет. */
+      ".kiosk-hint{position:absolute;left:50%;" +
+      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px);" +
       "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
          разъезжаются с палитрой при её смене. */

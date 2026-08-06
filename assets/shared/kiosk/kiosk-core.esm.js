@@ -15,6 +15,10 @@
  * версия поднимается в ОДНОМ месте и расходится по всей цепочке.
  * ============================================================ */
 const here = new URL(import.meta.url);
+/* Передаём метку до импорта: в модуле document.currentScript пуст, и сам
+ * ядро свою запрошенную версию иначе не увидит. По ней оно предупредит,
+ * если браузер отдал файл из кеша. */
+window.__kioskCoreRequestedVersion = here.searchParams.get("v");
 await import("./kiosk-core.js" + here.search);
 
 const core = window.KioskCore;
@@ -22,9 +26,86 @@ if (!core) {
   throw new Error("[kiosk] kiosk-core.js не инициализировался — проверь путь импорта");
 }
 
+/* СВЕРКА ВЕРСИЙ ЖИВЁТ ЗДЕСЬ, а не в ядре.
+ *
+ * Главный кейс залипшего кеша — свежая метка и СТАРОЕ тело ядра. Проверка
+ * внутри ядра его не ловит по определению: у версий до 1.9.0 её просто
+ * нет, и рассинхрон проходит молча. Обёртка же всегда свежая — её адрес
+ * и несёт бампнутую метку, — поэтому сверять надо отсюда.
+ *
+ * Classic-путь (<script src="kiosk-core.js?v=...">) для СТАРЫХ ядер так
+ * не закрыть: там некому сверять, кроме самого залипшего файла. Это
+ * принципиальная дыра, она названа в README. */
+const SEMVER = /^\d+\.\d+\.\d+$/;
+
+function cmpSemver(a, b) {
+  const pa = a.split("."), pb = b.split(".");
+  for (let i = 0; i < 3; i++) {
+    const d = Number(pa[i]) - Number(pb[i]);
+    if (d) return d < 0 ? -1 : 1;
+  }
+  return 0;
+}
+
+const requested = here.searchParams.get("v");
+let mismatch = null;
+
+if (requested && core.version && requested !== core.version) {
+  if (!SEMVER.test(requested)) {
+    /* Метка не в формате версии ядра (?v=182, ?v=2 — так помечены 38, 39
+     * в main). Это нарушение канона версий, но НЕ признак залипшего
+     * кеша: файлы могут быть свежайшими. Совет в консоль, журнал не
+     * трогаем — иначе приёмка копила бы ложные записи на каждом старте. */
+    console.info("[kiosk] метка ?v=" + requested + " не в формате версии ядра (" +
+      core.version + "). Канон: версионировать кит точной версией ядра — " +
+      "тогда залипший кеш ловится автоматически.");
+  } else if (cmpSemver(requested, core.version) > 0) {
+    /* Запрошено НОВЕЕ, чем работает, — вот это и есть залипший кеш. */
+    mismatch = "запрошено ядро " + requested + ", а работает " + core.version +
+      " — браузер отдал файл из кеша. Обнови ?v= у ВСЕХ файлов кита " +
+      "(и у импортов сцен: версия точки входа их не пробивает).";
+    console.warn("[kiosk] " + mismatch);
+  } else {
+    /* Запрошено СТАРЕЕ, чем работает: файл свежий, просто метку не
+     * подняли после merge. Тоже совет, а не авария. */
+    console.info("[kiosk] метка ?v=" + requested + " отстала от ядра " +
+      core.version + " — подними её при следующем merge main.");
+  }
+}
+
+/* ЖУРНАЛИРУЕМ ИЗ ОБЁРТКИ, а не из ядра.
+ *
+ * Ядро ≤1.9.0 переносить сообщение в журнал не умеет — метода там просто
+ * нет, — а именно такие ядра и залипают. Раньше эта половина проверки
+ * была мертва ровно для того парка, ради которого затевалась. Пишем сами:
+ * формат журнала (localStorage["<appId>-kiosk-log"], кольцо записей
+ * {at, level, msg, scene, v, sid}) стабилен с 1.2.0. */
+function journal(appId, msg) {
+  try {
+    const key = appId + "-kiosk-log";
+    const raw = localStorage.getItem(key);
+    const list = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(list)) return;
+    list.push({
+      at: new Date().toISOString(),
+      level: "warn",
+      msg: msg,
+      scene: null,
+      v: core.version,
+      sid: "PRELOAD",          /* до старта приложения метки запуска ещё нет */
+    });
+    localStorage.setItem(key, JSON.stringify(list.slice(-200)));
+  } catch (err) {
+    /* приватный режим или переполнение — журнал не критичен */
+  }
+}
+
 export const version = core.version;
 export const DEFAULT_CONFIG = core.DEFAULT_CONFIG;
 export const KioskApp = core.KioskApp;
 export const util = core.util;
-export const createApp = (opts) => core.createApp(opts);
+export const createApp = (opts) => {
+  if (mismatch && opts && opts.appId) journal(opts.appId, mismatch);
+  return core.createApp(opts);
+};
 export default core;
