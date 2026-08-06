@@ -7,7 +7,7 @@
  * листе стоит масштабная линейка: форма сравнивается глазом, размер читается
  * по линейке. */
 
-import { DATA, nf, esc } from "./shared.js?v=2";
+import { DATA, nf, esc } from "./shared.js?v=3";
 
 const NS = "http://www.w3.org/2000/svg";
 const DEFAULTS = { leafW: 380, stroke: 2.6 };

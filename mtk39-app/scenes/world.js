@@ -13,7 +13,7 @@
 import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=2";
+} from "./shared.js?v=3";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -80,8 +80,7 @@ export const worldScene = {
       "</nav>" +
       '<aside class="m39-legend"></aside>' +
       '<div class="m39-offhost"></div>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -286,7 +285,6 @@ export const worldScene = {
     const legend = el.querySelector(".m39-legend");
     const chips = el.querySelector(".m39-chips");
     const filters = el.querySelector(".m39-filters");
-    const hint = el.querySelector(".m39-hint");
     const modes = el.querySelector(".m39-modes");
     const offhost = el.querySelector(".m39-offhost");
 
@@ -374,9 +372,11 @@ export const worldScene = {
       touched();
     }
 
+    /* Подсказку жеста ведёт кит (KioskHint): он сам гасит её по касанию
+       контейнера и возвращает через idleMs. Здесь остаётся только отметка
+       времени для авто-вращения. */
     function touched() {
       lastInteraction = performance.now();
-      hint.classList.add("is-off");
     }
 
     function retext() {
@@ -385,7 +385,7 @@ export const worldScene = {
         total: nf.format(corpus.records.length),
         countries: new Set(points.map((p) => p.country)).size,
       });
-      hint.textContent = app.t("world.hint");
+      if (hint) hint.setLabel(app.t("world.hint"));
       syncModeUI();
       buildFilters();
       buildLegend();
@@ -482,7 +482,7 @@ export const worldScene = {
         setMode(scene.opt.mode === "map" ? "map" : "globe", true);
         buildFilters();
         buildLegend();
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         applyProjection();
       },
       /* Аттрактор: шар без интерфейса. Петлю даёт ядро (standbyTicker держит
@@ -522,13 +522,19 @@ export const worldScene = {
         watch.destroy();
         offmap.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* Вешаем на контейнер сцены, а не на канву: браузер не рисует детей
+       холста, и подсказка внутри него невидима с рождения (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("world.hint") })
+      : null;
 
     retext();
     watch.measure(true);
     setMode(this.opt.mode === "map" ? "map" : "globe", true);
-    hint.classList.remove("is-off");
     anim.start();
   },
 
