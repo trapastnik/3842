@@ -322,10 +322,22 @@ def clean(mask_path, override=None):
         after_flare = picked
     else:
         after_flare, cut = flare_cut(picked, ov.get("flare_k", FLARE_K))
-    if ov.get("cut_y"):                       # ручная линия земли
+    if ov.get("cut_y"):                       # ручная линия земли в пикселях маски
         after_flare = picked.copy()
         after_flare[int(ov["cut_y"]):, :] = 0
         cut = int(ov["cut_y"])
+    elif ov.get("cut_norm"):
+        """Линия земли В ДОЛЯХ ВЫСОТЫ СИЛУЭТА — так её отдаёт инструмент
+        отбраковки: там режется уже вектор, нормированный по высоте, и
+        пикселей исходной маски человек не видит и видеть не должен.
+        Переводим в пиксели по габаритам ВЫБРАННОЙ компоненты, а не всего
+        кадра: доля считалась от фигуры."""
+        ys = np.nonzero(picked)[0]
+        if len(ys):
+            y0, y1 = int(ys.min()), int(ys.max())
+            cut = y0 + int(round((y1 - y0 + 1) * float(ov["cut_norm"])))
+            after_flare = picked.copy()
+            after_flare[cut:, :] = 0
 
     m = trim_shelf(after_flare)
     m = morph(m)
