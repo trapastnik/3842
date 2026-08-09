@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.11.2";
+  var VERSION = "1.12.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -125,7 +125,7 @@
     tools: {
       position: "top-left"       // top-left | top-right | bottom-left | bottom-right
     },
-    service: { gear: "always" }, // always | tripleTap | hidden (решится позже)
+    service: { gear: "always" }, // always | tripleTap | hidden — см. gearMode()
     watchdog: {
       stallSec: 30,              // главный поток завис дольше → это авария
       sceneTimeoutSec: 20,       // сцена с watchdog:true молчит дольше → авария
@@ -238,8 +238,38 @@
         { type: "choice", path: "defaultLang", label: "Язык",
           options: [["ru", "РУС"], ["en", "ENG"], ["zh", "中文"]] }
       ]
+    },
+    {
+      group: "Сервис-панель",
+      rows: [
+        { type: "choice", path: "service.gear", label: "Кнопка сервиса",
+          options: [["always", "Видна всегда"], ["tripleTap", "По тройному тапу"],
+                    ["hidden", "Скрыта совсем"]] }
+      ]
     }
   ];
+
+  /* Граница настройки живёт В ОДНОМ МЕСТЕ — в схеме.
+   *
+   * Иначе она расходится: у standbyFps в схеме стоял максимум 15, а в коде
+   * кламп до 30 (и в комментарии рядом — «канон не выше 10»). Три числа на
+   * одну величину, и какое из них настоящее, зависело от того, пришло
+   * значение из панели или из файла конфига. Кламп берём из схемы. */
+  function specRow(path) {
+    for (var i = 0; i < SETTINGS_SPEC.length; i++) {
+      var rows = SETTINGS_SPEC[i].rows || [];
+      for (var j = 0; j < rows.length; j++) if (rows[j].path === path) return rows[j];
+    }
+    return null;
+  }
+  function clampBySpec(path, value, def) {
+    var row = specRow(path);
+    var v = Number(value);
+    if (!isFinite(v)) v = def;
+    if (row && isFinite(row.min)) v = Math.max(row.min, v);
+    if (row && isFinite(row.max)) v = Math.min(row.max, v);
+    return v;
+  }
 
   /* --------------------------------------------- настройки сцены (v1.2)
    * Сцена ОБЪЯВЛЯЕТ свои параметры, ядро само рисует их в сервис-панели,
@@ -1980,7 +2010,7 @@
    * каждый vsync, хотя канон standby разрешает не выше standbyFps.
    * Колбэк получает секунды с начала простоя. */
   KioskApp.prototype.standbyTicker = function (draw) {
-    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var fps = clampBySpec("timings.standbyFps", (this.config.timings || {}).standbyFps, 10);
     /* performance.now(), а не Date.now(): системные часы ночью подводит
      * NTP, и скачок дёрнул бы картинку заставки. */
     var t0 = performance.now();
@@ -2012,13 +2042,14 @@
     }
     el.classList.remove("is-bare");
 
-    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var fps = clampBySpec("timings.standbyFps", (this.config.timings || {}).standbyFps, 10);
     var canvas = this._els.standbyCanvas;
     var ctx = canvas.getContext("2d");
     var t0 = Date.now();
 
-    /* setInterval, а не rAF: rAF будил бы композитор 60 раз в секунду,
-     * а канон standby — не выше 10 fps (GPU и выгорание панели). */
+    /* setInterval, а не rAF: rAF будил бы композитор 60 раз в секунду, а
+     * заставка висит часами — это GPU и выгорание панели. Потолок задаёт
+     * схема (timings.standbyFps), дефолт 10. */
     this._standbyTimer = setInterval(function () {
       var w = canvas.clientWidth, h = canvas.clientHeight;
       if (canvas.width !== w || canvas.height !== h) {
@@ -2316,27 +2347,60 @@
     this._bindTripleTap();
   };
 
-  KioskApp.prototype._applyGearMode = function () {
-    var mode = (this.config.service || {}).gear || "always";
-    if (this._els.gear) this._els.gear.hidden = mode !== "always";
+  /* always — шестерёнка на экране; tripleTap — спрятана, вход тройным тапом;
+   * hidden — экранного входа нет вовсе, только openService(true) из кода
+   * (заявка МТК-19: видеопанель без тача, вход по кнопочному комбо). */
+  KioskApp.prototype.gearMode = function () {
+    var m = (this.config.service || {}).gear;
+    return m === "tripleTap" || m === "hidden" ? m : "always";
   };
 
-  /* Тройной тап по заголовку — запасной вход, когда шестерёнку спрячут. */
+  KioskApp.prototype._applyGearMode = function () {
+    if (this._els.gear) this._els.gear.hidden = this.gearMode() !== "always";
+  };
+
+  /* Тройной тап — запасной вход, когда шестерёнку спрятали. */
   KioskApp.prototype._bindTripleTap = function () {
     var self = this;
-    var titleBox = this._els.nav && this._els.nav.querySelector(".kiosk-nav__title");
-    if (!titleBox) return;
     var taps = 0, timer = null;
-    titleBox.addEventListener("pointerdown", function () {
+
+    function hit() {
+      /* В режиме hidden экранного входа не должно быть совсем — иначе
+       * заявка «постоянная экранная иконка недопустима» выполнена только
+       * на вид, а вход остался, просто невидимый. */
+      if (self.gearMode() === "hidden") return;
       taps++;
       if (timer) clearTimeout(timer);
-      timer = setTimeout(function () { taps = 0; }, 1200);
+      timer = setTimeout(function () { taps = 0; timer = null; }, 1200);
       if (taps >= 3) {
         taps = 0;
         clearTimeout(timer);
+        timer = null;
         self.openService(true);
       }
-    });
+    }
+
+    var titleBox = this._els.nav && this._els.nav.querySelector(".kiosk-nav__title");
+    if (titleBox) titleBox.addEventListener("pointerdown", hit);
+
+    /* Заголовка может не быть вовсе: навигация скрыта или showTitle:false.
+     * Тогда единственный запасной вход исчезал бы вместе с ним, и режим
+     * «по тройному тапу» запирал бы сервис намертво — а выбирают его как
+     * раз из панели, то есть оператор запер бы себя сам.
+     *
+     * Второй вход — УГОЛ САМОЙ ШЕСТЕРЁНКИ: когда она скрыта, это место
+     * свободно по определению, и промахнуться мимо чужого контрола нельзя.
+     * Слушаем координаты на корне, а не кладём туда элемент: невидимая
+     * накладка перехватывала бы касания сцены под собой. */
+    this._els.root.addEventListener("pointerdown", function (e) {
+      if (self.gearMode() !== "tripleTap") return;
+      var cs = getComputedStyle(document.documentElement);
+      var edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
+      var size = parseFloat(cs.getPropertyValue("--touch-primary")) || 96;
+      var r = self._els.root.getBoundingClientRect();
+      if (e.clientX >= r.right - edge - size && e.clientX <= r.right - edge &&
+          e.clientY >= r.top + edge && e.clientY <= r.top + edge + size) hit();
+    }, { passive: true });
   };
 
   KioskApp.prototype.openService = function (on) {
@@ -2629,6 +2693,15 @@
       if (ch) {
         var p = ch.getAttribute("data-path");
         var v = ch.getAttribute("data-choice");
+        /* Единственная настройка, которой оператор может запереть себя:
+         * hidden убирает и шестерёнку, и тройной тап, а сам выбор хранится
+         * в localStorage и переживает перезагрузку. Обратно — только
+         * openService(true) из кода приложения. Спрашиваем прямо. */
+        if (p === "service.gear" && v === "hidden" &&
+            !confirm("Сервис-панель больше нельзя будет открыть с экрана: " +
+              "ни кнопкой, ни тройным тапом. Вход останется только из кода " +
+              "приложения — openService(true). Настройка сохранится и после " +
+              "перезагрузки. Продолжить?")) return;
         self.setSetting(p, v);
         Array.prototype.forEach.call(
           body.querySelectorAll('[data-path="' + p + '"][data-choice]'),
