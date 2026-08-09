@@ -77,6 +77,15 @@ export function createCanvasScene({ id, title, draw, reset, settings }) {
     id,
     title,
     settings,
+    /* Общая настройка приложения приходит СЮДА же, отдельным методом:
+     * ядро зовёт applyAppSettings у всех смонтированных сцен. */
+    applyAppSettings(v) {
+      state.app = v;
+      if (ctx && canvas) {
+        frames++;
+        draw(ctx, { t: 0, w: canvas.clientWidth, h: canvas.clientHeight, state });
+      }
+    },
     applySettings(v) {
       values = v;
       state.settings = v;

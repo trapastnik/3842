@@ -185,7 +185,33 @@
 
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
 
-    function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
+    /* ПОЗИЦИЯ СЧИТАЕТСЯ ОТ РЕАЛЬНОГО НИЗА КОНТЕЙНЕРА, а не от зоны хрома.
+     *
+     * Голое bottom: var(--chrome-bottom) годится только когда хост — во
+     * весь экран. У МТК 40 хост это поле канвы, УЖЕ отбитое от хрома, и
+     * отступ считался дважды: подсказка висела на ~92 px выше нужного,
+     * им пришлось заводить локальное правило-компенсацию. Считаем, сколько
+     * хост уже отбил сам, и добираем только недостающее.
+     *
+     * Это же снимает вертикальный дефицит из замеров 40: пилюля растёт от
+     * ×1.25 на 26 px при зазоре до навигации 12 px, и без пересчёта наехала
+     * бы на неё именно в режиме слабовидящих. */
+    function place() {
+      if (dead || !el.isConnected) return;
+      var root = el.closest(".kiosk-app") || document.documentElement;
+      var cs = getComputedStyle(root);
+      var ui = parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue("--ui-scale")) || 1;
+      var chrome = parseFloat(cs.getPropertyValue("--chrome-bottom")) ||
+        parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
+      var host = target.getBoundingClientRect();
+      if (!host.height) return;                       /* раскладки ещё нет */
+      var cleared = window.innerHeight - host.bottom; /* хост уже отбит на столько */
+      var need = Math.max(0, chrome - cleared);
+      el.style.bottom = Math.round(need + 12 * ui) + "px";
+    }
+
+    function show() { if (dead) return; place(); shown = true; el.classList.add("is-on"); }
 
     /* hide() ПЕРЕВЗВОДИТ цикл. Раньше он только снимал класс, а таймер
      * оставался отстрелянным: сцена, гасившая подсказку руками (например,
@@ -209,8 +235,18 @@
       target.addEventListener(ev, poke, { passive: true });
     });
 
+    /* Пересчёт позиции: хост меняет размер (a11y, поворот, чужая
+     * раскладка) — подсказка едет следом. */
+    var ro = null;
+    if (typeof ResizeObserver === "function") {
+      ro = new ResizeObserver(place);
+      ro.observe(target);
+    }
+    window.addEventListener("resize", place, { passive: true });
+
     firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
+    place();
 
     var handle = {
       show: show,
@@ -262,6 +298,8 @@
         if (idleTimer) clearTimeout(idleTimer);
         if (firstTimer) clearTimeout(firstTimer);
         idleTimer = firstTimer = null;
+        if (ro) { ro.disconnect(); ro = null; }
+        window.removeEventListener("resize", place);
         EVENTS.forEach(function (ev) { target.removeEventListener(ev, poke); });
         el.remove();
         if (attached) attached["delete"](target);
@@ -285,6 +323,8 @@
          зашитые пиксели означали, что в режиме слабовидящих растёт весь
          интерфейс, кроме единственного призыва к жесту (находка 40).
          Фолбэк 1 — если кит подключён без ядра. */
+      /* bottom здесь — только на время до первого place(): дальше его
+         считает JS от реального низа контейнера. */
       ".kiosk-hint{position:absolute;left:50%;" +
       "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1));" +
       "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;" +

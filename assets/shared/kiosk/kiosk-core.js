@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.10.0";
+  var VERSION = "1.11.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -521,6 +521,14 @@
      * словарь после обновления сборки и новые ключи не доезжали (нашли 38):
      * приложение поднимает ?v= у своих файлов, а адрес словаря строит ядро,
      * и версию туда передать было нечем. */
+    /* Настройки УРОВНЯ ПРИЛОЖЕНИЯ — та же декларативная схема, что у
+     * сцены, но значение общее. Нужны там, где эффект принадлежит не
+     * сцене: у МТК 42 цвет портретов делят картотека и маятник. Объявить
+     * такое в одной сцене — семантическая ложь («меняю цвет в Картотеке,
+     * меняется и Маятник»), в обеих — два независимых значения на один
+     * эффект. Пока их не было, addSettings() нельзя было и задепрекать. */
+    this._appSettings = normSceneSettings(opts.appSettings);
+
     this.i18nUrl = opts.i18nUrl || null;
     this.i18nVersion = opts.i18nVersion == null ? null : String(opts.i18nVersion);
     this._strings = {};
@@ -727,7 +735,7 @@
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
       .then(function () { return self._loadStrings(); })
-      .then(function () { self._seedSceneDefaults(); })
+      .then(function () { self._seedSceneDefaults(); self._seedAppDefaults(); })
       .then(function () { return domReady(); })
       .then(function () {
         self._buildChrome();
@@ -898,6 +906,65 @@
       if (s.options) copy.options = s.options.map(function (o) { return [o[0], o[1]]; });
       return copy;
     });
+  };
+
+  /* ---------------------------------- настройки уровня приложения (v1.11) */
+
+  KioskApp.prototype.appSchema = function () {
+    return this._appSettings.map(function (s) {
+      var copy = deepMerge(s, null);
+      if (s.options) copy.options = s.options.map(function (o) { return [o[0], o[1]]; });
+      return copy;
+    });
+  };
+
+  KioskApp.prototype.appSettings = function () {
+    var v = this.config.app;
+    return isObj(v) ? deepMerge(v, null) : {};
+  };
+
+  KioskApp.prototype.setAppSetting = function (key, value) {
+    return this.setSetting("app." + key, value);
+  };
+
+  /* Без записи в патч — для диагностики, как и у сцен. */
+  KioskApp.prototype.setAppSettingLive = function (key, value) {
+    setByPath(this.config, "app." + key, value);
+    this._pushAppSettings();
+    return this;
+  };
+
+  KioskApp.prototype.resetAppSettings = function () {
+    var self = this;
+    this._appSettings.forEach(function (s) {
+      setByPath(self.config, "app." + s.key, s["default"]);
+    });
+    if (isObj(this._override.app)) delete this._override.app;
+    this._saveOverride();
+    this._pushAppSettings();
+    this.log("info", "общие настройки сброшены к дефолтам");
+    return this;
+  };
+
+  /* Значение общее, поэтому получают ВСЕ смонтированные сцены: именно
+   * из-за этого настройка и живёт на уровне приложения. */
+  KioskApp.prototype._pushAppSettings = function () {
+    if (!this._appSettings.length) return;
+    var values = this.appSettings();
+    this._records.forEach(function (rec) {
+      if (rec.mounted) safeCall(rec, "applyAppSettings", values);
+    });
+    this.emit("app-settings", values);
+  };
+
+  KioskApp.prototype._seedAppDefaults = function () {
+    if (!this._appSettings.length) return;
+    var stored = isObj(this.config.app) ? this.config.app : {};
+    var merged = {};
+    this._appSettings.forEach(function (s) {
+      merged[s.key] = stored[s.key] === undefined ? s["default"] : stored[s.key];
+    });
+    this.config.app = merged;
   };
 
   /* Текущие значения настроек сцены — то, что уходит в applySettings. */
@@ -1194,6 +1261,7 @@
     if (path && path.indexOf("scenes.") === 0) {
       this._pushSceneSettings(this._byId[path.split(".")[1]]);
     }
+    if (path && path.indexOf("app.") === 0) this._pushAppSettings();
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
@@ -1680,7 +1748,11 @@
       .then(function () { return rec.scene.mount ? rec.scene.mount(el, self.context()) : null; })
       /* Настройки отдаём сразу после монтирования: сцена строится в
        * дефолтном виде, а затем получает то, что накрутил оператор. */
-      .then(function () { self._pushSceneSettings(rec); })
+      .then(function () {
+        self._pushSceneSettings(rec);
+        /* Общие настройки тоже: сцена смонтировалась позже их правки. */
+        if (self._appSettings.length) safeCall(rec, "applyAppSettings", self.appSettings());
+      })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
 
@@ -2307,6 +2379,7 @@
     }).join("");
 
     html = this._screensHtml() + html;
+    html += this._appGroupHtml();
     html += this._sceneGroupsHtml();
 
     html += '<section class="kiosk-set__group">' +
@@ -2373,6 +2446,45 @@
       '<div class="kiosk-set__note">Порядок листания и состав. Выключенный экран не ' +
       "грузится на старте, его точка скрыта, ссылка на него ведёт на стартовый.</div>" +
       rows + "</section>";
+  };
+
+  /* Общие настройки приложения — отдельной группой, рядом со сценами и
+   * по тем же правилам: сворачивается, считает параметры, сбрасывается. */
+  KioskApp.prototype._appGroupHtml = function () {
+    var self = this;
+    if (!this._appSettings.length) return "";
+    var open = !!this._openSceneGroups["__app"];
+    var rows = this._appSettings.map(function (s) {
+      return self._rowHtml(self._appRowSpec(s));
+    }).join("");
+
+    return '<section class="kiosk-set__group kiosk-set__group--scene' +
+      (open ? " is-open" : "") + '" data-scene-group="__app">' +
+      '<button type="button" class="kiosk-set__fold" data-fold="__app">' +
+      '<span class="kiosk-set__fold-mark" aria-hidden="true"></span>' +
+      '<span class="kiosk-set__fold-title">Настройки МТК · общие</span>' +
+      '<span class="kiosk-set__fold-count">' + this._appSettings.length + "</span>" +
+      "</button>" +
+      '<div class="kiosk-set__fold-body">' +
+      '<div class="kiosk-set__note">Действуют на все сцены сразу — здесь то, ' +
+      'что принадлежит приложению, а не отдельному экрану.</div>' + rows +
+      '<button type="button" class="kiosk-set__mini" data-app-reset>Сбросить общие</button>' +
+      "</div></section>";
+  };
+
+  KioskApp.prototype._appRowSpec = function (s) {
+    var spec = {
+      path: "app." + s.key,
+      label: pickLabel(s.label, this.lang),
+      type: s.type === "select" ? "choice" : s.type
+    };
+    if (s.type === "range") {
+      spec.min = s.min; spec.max = s.max; spec.step = s.step; spec.unit = s.unit;
+    } else if (s.type === "select") {
+      var lang = this.lang;
+      spec.options = s.options.map(function (o) { return [o[0], pickLabel(o[1], lang)]; });
+    }
+    return spec;
   };
 
   /* Настройки сцен: своя группа на сцену, свёрнутая по умолчанию.
@@ -2556,6 +2668,11 @@
         fold.parentNode.classList.toggle("is-open", self._openSceneGroups[fid]);
         return;
       }
+      if (e.target.closest("[data-app-reset]")) {
+        self.resetAppSettings();
+        self._rebuildService();
+        return;
+      }
       var sreset = e.target.closest("[data-scene-reset]");
       if (sreset) {
         self.resetSceneSettings(sreset.getAttribute("data-scene-reset"));
@@ -2574,6 +2691,13 @@
     /* Настройки сцен в _settingsSpec не лежат — собираем спеку на лету,
      * иначе подпись значения у слайдера сцены не обновлялась бы. */
     var parts = path.split(".");
+    if (parts[0] === "app" && parts.length === 2) {
+      var self2 = this;
+      this._appSettings.forEach(function (s2) {
+        if (s2.key === parts[1]) found = self2._appRowSpec(s2);
+      });
+      return found;
+    }
     if (parts[0] !== "scenes" || parts.length < 3) return null;
     var rec = this._byId[parts[1]];
     if (!rec) return null;

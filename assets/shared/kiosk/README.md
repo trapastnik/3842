@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.10.0" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.10.0" />
-    <link rel="stylesheet" href="./styles.css?v=1.10.0" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.0" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.0" />
+    <link rel="stylesheet" href="./styles.css?v=1.11.0" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.10.0"></script>
+    <script type="module" src="./app.js?v=1.11.0"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.10.0";
-import { mapScene } from "./scenes/map.js?v=1.10.0";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.10.0";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.0";
+import { mapScene } from "./scenes/map.js?v=1.11.0";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.11.0";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.10.0",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.11.0",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.10.0"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.11.0"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -353,13 +353,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.10.0">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.11.0">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.10.0"` загрузит и
-`kiosk-core.js?v=1.10.0`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.11.0"` загрузит и
+`kiosk-core.js?v=1.11.0`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -368,14 +368,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.10.0" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.10.0" />
-<script type="module" src="./app.js?v=1.10.0"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.0" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.0" />
+<script type="module" src="./app.js?v=1.11.0"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.10.0";
-import { mapScene }  from "./scenes/map.js?v=1.10.0";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.0";
+import { mapScene }  from "./scenes/map.js?v=1.11.0";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя
@@ -614,8 +614,39 @@ export const mapScene = {
   шестидесяти — развёрнутыми они превратили бы панель в ленту, где ничего не найти.
 - `applySettings` вызывается сразу после `mount()` и при каждом изменении.
 
-Императивный `app.addSettings(группа, строки)` **устарел**, но продолжает работать —
-пилот 42 переезжает на схему следующим шагом. В консоли он один раз предупредит.
+## Настройки уровня приложения
+
+Когда эффект принадлежит не сцене, а приложению — объявляйте его в `createApp`,
+не в сцене:
+
+```js
+const app = createApp({
+  appId: "mtk42",
+  appSettings: [
+    { key: "photoColor", label: { ru: "Цвет фотографий" }, type: "select",
+      default: "mono", options: [["mono", "Монохром"], ["color", "Цвет"]] },
+  ],
+});
+```
+
+```js
+// в КАЖДОЙ сцене, которой это касается:
+applyAppSettings(values) { this.setPhotoMode(values.photoColor); }
+```
+
+Ядро зовёт `applyAppSettings` у **всех смонтированных сцен** — в этом и смысл.
+Группа в панели называется «Настройки МТК · общие», хранение — `app.<key>`,
+сброс отдельной кнопкой.
+
+Почему не через сцену: у МТК 42 цвет портретов делят картотека и маятник.
+Объявить в одной — оператор меняет «цвет фото» в группе «Картотека», а меняется и
+маятник: подпись врёт. Объявить в обеих — два независимых значения на один
+эффект. Ровно из-за этого пробела `addSettings()` и нельзя было объявить
+устаревшим по-настоящему.
+
+Императивный `app.addSettings(группа, строки)` **устарел**: для настроек сцены
+есть `settings:[]`, для общих — `appSettings:[]`. Он продолжает работать и один
+раз предупреждает в консоли.
 
 ## Сервис-панель
 
