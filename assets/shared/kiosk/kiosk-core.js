@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.14.0";
+  var VERSION = "1.14.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1220,6 +1220,47 @@
     bottom = Math.max(bottom, m.bottom);
     side = Math.max(side, m.side);
 
+    /* КЛАМП: легальные настройки оператора не должны давать сцене
+     * ОТРИЦАТЕЛЬНОЕ поле.
+     *
+     * Хром считается от размера кнопок и масштаба, экран в этот счёт не
+     * входит вовсе — и на невысоком окне сумма зон легко перерастает
+     * высоту: 1440×900 при size 160 и ui 1.5 в a11y давали 380 + 538 при
+     * высоте 900, то есть поле −18. Сцена, свёрстанная от зон (жёсткое
+     * правило кита), при этом схлопывается вся.
+     *
+     * Ужимаем зоны пропорционально до минимального поля. Это ЗАВЕДОМО
+     * ХУДШИЙ экран — сцена краем уходит под бар, — но деградация вместо
+     * развала, и настройки при этом остаются рабочими. Факт ужатия
+     * запоминаем: перебор сочетаний обязан по-прежнему называть такую
+     * конфигурацию плохой, иначе кламп просто закрасил бы её зелёным. */
+    var box = root.getBoundingClientRect();
+    var vw = box.width || window.innerWidth || 0;
+    var vh = box.height || window.innerHeight || 0;
+    var clamped = null;
+
+    function squeeze(a, b, space, floor) {
+      var min = Math.max(floor, Math.round(space * 0.25));
+      if (space <= 0 || a + b <= space - min) return null;
+      var room = Math.max(0, space - min);
+      var k = (a + b) > 0 ? room / (a + b) : 0;
+      return { a: a * k, b: b * k, было: Math.round(a + b), стало: Math.round(room) };
+    }
+
+    var sq = squeeze(top, bottom, vh, 120);
+    if (sq) { top = sq.a; bottom = sq.b; clamped = { ось: "по высоте", было: sq.было, стало: sq.стало }; }
+    var sqx = squeeze(side, side, vw, 240);
+    if (sqx) { side = sqx.a; clamped = clamped || { ось: "по ширине", было: sqx.было, стало: sqx.стало }; }
+
+    this._chromeClamped = clamped;
+    if (clamped && !this._warnedClamp) {
+      this._warnedClamp = true;
+      console.warn("[kiosk] зоны хрома не помещаются на экран " + Math.round(vw) + "×" +
+        Math.round(vh) + " (" + clamped.ось + ": " + clamped.было + " → " + clamped.стало +
+        ") — ужал, чтобы полю сцены осталось место. Причина в настройках: " +
+        "размер кнопок навигации × масштаб интерфейса. Уменьшите nav.size или scale.ui.");
+    }
+
     var vals = {
       "top": Math.round(top), "bottom": Math.round(bottom),
       "left": Math.round(side), "right": Math.round(side)
@@ -1958,6 +1999,14 @@
     if (this.idleState === IDLE.STANDBY) return;
     this.idleState = IDLE.STANDBY;
 
+    /* Подавление подсказок — на СЕМАНТИЧЕСКОЙ границе простоя, а не в шаге
+     * отрисовки заставки. Раньше оно жило в _showStandby/_hideStandby, и
+     * порядок выходил неверный: standby() сцены и её стоп-функция бегут
+     * ДО этих шагов. Стоп-функция МТК 40 зовёт hint.show() — и показ
+     * съедался подавлением, которое ещё не снято: свежий посетитель
+     * оставался без призыва до следующего 30-секундного простоя. */
+    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(true);
+
     var rec = this._active;
     var own = rec ? safeCall(rec, "standby") : null;
 
@@ -1979,6 +2028,10 @@
   KioskApp.prototype._exitStandby = function () {
     if (this.idleState !== IDLE.STANDBY) return;
     this.idleState = IDLE.ACTIVE;
+
+    /* ПЕРВЫМ ДЕЛОМ, до стоп-функции сцены: именно в ней МТК 40 показывает
+     * призыв руками, и снятие подавления обязано её опережать. */
+    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(false);
     this._didReset = false;
     this._lastActivity = Date.now();
     this._lastBeat = Date.now();
@@ -2036,13 +2089,6 @@
 
   KioskApp.prototype._showStandby = function (drawAttractor) {
     var self = this;
-    /* Подсказки жеста гасим на всё время заставки. Своим одиночным
-     * hide() сцена этого не добьётся: он перевзводит цикл, и призыв
-     * возвращается через полминуты ПОВЕРХ аттрактора (вуаль заставки
-     * полупрозрачна и не прячет), где спорит с её собственным призывом.
-     * Делает ядро, а не сцены: забывшая сцена дала бы дефект, который
-     * проступает только через полминуты простоя и горит до утра. */
-    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(true);
     if (!this._els.standby) this._buildStandby();
     var el = this._els.standby;
     el.classList.add("is-on");
@@ -2074,10 +2120,6 @@
   };
 
   KioskApp.prototype._hideStandby = function () {
-    /* Снимаем ДО того, как сцена получит управление: у МТК 40 паттерн
-     * «на выходе из заставки показать призыв руками», и подавление,
-     * снятое после, съело бы этот show() молча. */
-    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(false);
     if (this._standbyTimer) { clearInterval(this._standbyTimer); this._standbyTimer = null; }
     if (this._els.root) this._els.root.classList.remove("is-standby");
     var el = this._els.standby;

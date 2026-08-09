@@ -64,6 +64,15 @@
 
       if (w <= 0 || h <= 0) out.беды.push("полю сцены не осталось места: " + w + "×" + h);
 
+      /* Кламп зон спасает вёрстку от развала, но конфигурацию НЕ оправдывает:
+       * сцена краем уходит под бар. Без этой проверки правка кита просто
+       * закрасила бы плохие сочетания зелёным — и стенд стал бы врать. */
+      if (app._chromeClamped) {
+        out.беды.push("хром не помещается на экран, зоны ужаты (" +
+          app._chromeClamped.ось + ": " + app._chromeClamped.было + " → " +
+          app._chromeClamped.стало + ") — сцена краем под баром");
+      }
+
       CHROME.forEach(function (sel) {
         Array.prototype.forEach.call(document.querySelectorAll(sel), function (el) {
           if (el.hidden || getComputedStyle(el).display === "none") return;
@@ -91,6 +100,13 @@
     keys.forEach(function (k) { saved[k] = app.getSetting(k); });
     var savedA11y = !!app.a11y;
 
+    /* ЖУРНАЛ ТОЖЕ СЛЕД. Прогон гоняет сотни переключений, каждое пишет
+     * запись, и кольцо на 200 вытесняет настоящую историю — а её как раз
+     * и смотрят, когда что-то случилось на витрине. «Не оставляет следов»
+     * должно быть правдой и про журнал, а не только про настройки. */
+    var savedLog = null;
+    try { savedLog = localStorage.getItem(app.journalKey()); } catch (e) {}
+
     var combos = [{}];
     Object.keys(AXES).forEach(function (axis) {
       var next = [];
@@ -115,6 +131,10 @@
 
     keys.forEach(function (k) { app.setSetting(k, saved[k]); });
     app.setA11y(savedA11y);
+    try {
+      if (savedLog === null) localStorage.removeItem(app.journalKey());
+      else localStorage.setItem(app.journalKey(), savedLog);
+    } catch (e) {}
 
     var report = {
       версия: (global.KioskCore || {}).version,
