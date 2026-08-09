@@ -12,8 +12,8 @@
 
 import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
-  slowLoop, sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap,
-} from "./shared.js?v=1";
+  sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
+} from "./shared.js?v=3";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -32,7 +32,10 @@ export const worldScene = {
 
   preload: {
     data: { corpus: DATA.corpus, countries: DATA.countries },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
     // снимки — один раз на всё приложение, data-URL вместо сети (см. shared.js)
     custom: preloadPictures,
   },
@@ -65,7 +68,7 @@ export const worldScene = {
 
     const corpus = ctx.data.corpus;
     const countries = ctx.data.countries;
-    const points = corpus.records.filter((r) => r.lat !== null && r.lng !== null);
+    const points = corpus.records.filter((r) => !isOffMap(r));
 
     el.classList.add("m39-scene", "m39-world");
     el.innerHTML =
@@ -77,8 +80,7 @@ export const worldScene = {
       "</nav>" +
       '<aside class="m39-legend"></aside>' +
       '<div class="m39-offhost"></div>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -98,6 +100,7 @@ export const worldScene = {
     let selected = null;
     let visible = [];
     let dirty = true;
+    let lastDrawn = 0;          // сколько точек легло в последний кадр (healthcheck)
     let lastFrame = 0;
     let lastInteraction = performance.now();
 
@@ -229,6 +232,8 @@ export const worldScene = {
         }
       }
 
+      lastDrawn = visible.length;
+
       if (selected && isVisible(selected.lng, selected.lat)) {
         const pt = projection([selected.lng, selected.lat]);
         g.beginPath();
@@ -269,6 +274,10 @@ export const worldScene = {
       width = w; height = h;
       fitCanvas(canvas, w, h);
       applyProjection();
+      // первый кадр — сразу, не дожидаясь rAF: иначе слой проявляется пустым,
+      // а healthcheck честно докладывает «ни одной точки»
+      dirty = false;
+      render();
     });
 
     /* ---- панели ---- */
@@ -276,7 +285,6 @@ export const worldScene = {
     const legend = el.querySelector(".m39-legend");
     const chips = el.querySelector(".m39-chips");
     const filters = el.querySelector(".m39-filters");
-    const hint = el.querySelector(".m39-hint");
     const modes = el.querySelector(".m39-modes");
     const offhost = el.querySelector(".m39-offhost");
 
@@ -364,9 +372,11 @@ export const worldScene = {
       touched();
     }
 
+    /* Подсказку жеста ведёт кит (KioskHint): он сам гасит её по касанию
+       контейнера и возвращает через idleMs. Здесь остаётся только отметка
+       времени для авто-вращения. */
     function touched() {
       lastInteraction = performance.now();
-      hint.classList.add("is-off");
     }
 
     function retext() {
@@ -375,7 +385,7 @@ export const worldScene = {
         total: nf.format(corpus.records.length),
         countries: new Set(points.map((p) => p.country)).size,
       });
-      hint.textContent = app.t("world.hint");
+      if (hint) hint.setLabel(app.t("world.hint"));
       syncModeUI();
       buildFilters();
       buildLegend();
@@ -472,21 +482,34 @@ export const worldScene = {
         setMode(scene.opt.mode === "map" ? "map" : "globe", true);
         buildFilters();
         buildLegend();
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         applyProjection();
       },
-      /* Аттрактор: шар без интерфейса, крутится не выше потолка ядра. */
-      standby(fps) {
+      /* Аттрактор: шар без интерфейса. Петлю даёт ядро (standbyTicker держит
+         standbyFps и не будит композитор каждый vsync), угол считаем от
+         секунд простоя — тогда картинка не зависит от частоты тиков. */
+      standby(app_) {
         anim.stop();
         this.reset();
         setMode("globe", true);
-        const slow = slowLoop(() => {
-          rotation[0] = (rotation[0] + 0.35) % 360;
+        const from = rotation[0];
+        const stop = app_.standbyTicker((t) => {
+          rotation[0] = (from + t * 3.5) % 360;
           applyProjection();
           render();
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = 0; anim.start(); };
+        });
+        return () => { stop(); lastFrame = 0; anim.start(); };
+      },
+      /* Проверяем, что сцене есть что показывать, а не текущую комбинацию
+         фильтров: «утрачено» без бывшего СССР законно даёт ноль точек, и это
+         не повод для тревоги — на экране карта, легенда и счётчики. */
+      health() {
+        const total = points.length;
+        if (!total) return { ok: false, detail: "корпус пуст: ни одной точки" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        return { ok: true, detail: "точек в своде " + total +
+          ", при текущем фильтре " + points.filter(passes).length +
+          ", в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -499,13 +522,19 @@ export const worldScene = {
         watch.destroy();
         offmap.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* Вешаем на контейнер сцены, а не на канву: браузер не рисует детей
+       холста, и подсказка внутри него невидима с рождения (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("world.hint") })
+      : null;
 
     retext();
     watch.measure(true);
     setMode(this.opt.mode === "map" ? "map" : "globe", true);
-    hint.classList.remove("is-off");
     anim.start();
   },
 
@@ -535,9 +564,13 @@ export const worldScene = {
   },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  /* Структурные проверки не видят «загружено, но пусто»: DOM на месте,
+     сеть чиста, а на шаре ни одной точки. */
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

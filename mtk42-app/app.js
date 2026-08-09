@@ -1,19 +1,26 @@
 /* МТК 42 «Осмысление наследия» — киоск-приложение на общем ядре.
  * Пилот фазы 1 (PLAN-KIOSK.md): четыре прежних прототипа стали сценами
  * одной страницы. Открывать только по http — ES-модули из file:// не идут. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js";
-import { installChromeZones } from "./scenes/chrome-zones.js?v=14";
+/* ?v= обязателен: обёртка берёт версию из СВОЕГО адреса и передаёт её
+ * ядру (kiosk-core.js?v=…). Без версии Chrome отдаёт обе из кеша и
+ * обновление ядра молча не доезжает до киоска. Поднимать при переходе
+ * на каждый новый релиз ядра. */
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=13";
-import { archiveScene } from "./scenes/archive.js?v=13";
-import { timelineScene } from "./scenes/timeline.js?v=13";
-import { mapScene } from "./scenes/map.js?v=13";
+import { pendulumScene } from "./scenes/pendulum.js?v=24";
+import { archiveScene } from "./scenes/archive.js?v=24";
+import { timelineScene } from "./scenes/timeline.js?v=24";
+import { mapScene } from "./scenes/map.js?v=24";
 
 const app = createApp({
   appId: "mtk42",
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
+  /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
+   * и правки подписей не доезжали — ловил это руками не раз. Поднимать
+   * вместе с ?v= остальных ассетов. */
+  i18nVersion: "24",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
@@ -27,10 +34,9 @@ app.registerScene(mapScene);
  * группирует в сервис-панели, сеет дефолты в config.scenes[id] и отдаёт
  * значения сцене. Временный settings-bridge.js снят. */
 
-/* Реальные зоны хрома в CSS-переменные: ядро отдаёт только отступ от
- * кромки, а кнопки языков занимают заметно больше. Заявка на экспорт
- * зон из ядра — в COORDINATION; до неё меряем сами. */
-installChromeZones(app);
+/* Зоны хрома с ядра 1.6.0 отдаёт само ядро: --chrome-top/-bottom/-left/-right
+ * (и пересчитанные --kiosk-safe-* как синонимы). Временный chrome-zones.js
+ * снят — заявка закрыта. */
 
 /* Общеприкладная настройка, не принадлежащая ни одной сцене. */
 app.addSettings("Портреты", [

@@ -15,6 +15,10 @@
  * ВАЖНО: прогонять в ВИДИМОЙ вкладке. В фоне браузер замораживает rAF и
  * душит таймеры — проверки кадров там бессмысленны, и стенд об этом
  * честно скажет, а не покажет зелёный результат.
+ *
+ * И НЕ МЕНЯТЬ СОСТАВ ЭКРАНОВ ПО ХОДУ ПРОГОНА: включённая посреди замера
+ * сцена монтируется уже после базовой линии, и рост DOM/heap засчитается
+ * как утечка. Сначала настроили состав — потом прогон.
  * ============================================================ */
 (function (global) {
   "use strict";
@@ -160,34 +164,51 @@
       document.querySelectorAll("button, [role=button], a[href], input, select, .kiosk-touch")
     ).filter(function (el) {
       if (el.closest(".kiosk-service")) return false;   /* панель оператора — не для посетителя */
+      /* ТОЛЬКО АКТИВНЫЙ СЛОЙ. Неактивные слои сняты с рендера через
+       * visibility/content-visibility, но не display:none — их кнопки
+       * попадали в выборку, и результат прогона зависел от того, какая
+       * сцена оказалась активной в конце (у 42: 382 элемента против ~152
+       * своих). Цифры разных МТК становились несопоставимы. */
+      if (el.closest(".kiosk-layer:not(.is-active)")) return false;
       var r = el.getBoundingClientRect();
       return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== "hidden";
     });
 
-    var small = [], nearEdge = [];
+    var small = [], nearEdge = [], scrolled = 0;
     els.forEach(function (el) {
       var r = el.getBoundingClientRect();
       if (r.width < min - 0.5 || r.height < min - 0.5) {
         small.push(label(el) + " " + num(r.width) + "×" + num(r.height));
       }
+      /* Отступ от кромки — про ПОЛОЖЕНИЕ элемента на панели. Содержимое
+       * прокручиваемого контейнера может оказаться где угодно, это его
+       * нормальная работа: у картотеки 42 таких было 270 из 272
+       * срабатываний. Размер таргета при этом проверяем и здесь. */
+      if (el.closest(".kiosk-scroll")) { scrolled++; return; }
       if (r.left < edge - 0.5 || r.top < edge - 0.5 ||
           vw - r.right < edge - 0.5 || vh - r.bottom < edgeBottom - 0.5) {
         nearEdge.push(label(el));
       }
     });
 
+    var fixed = els.length - scrolled;
     return [
       {
         name: "Тач-таргеты ≥ " + num(min) + " px",
         ok: small.length === 0,
         detail: small.length ? small.length + " мелких: " + small.slice(0, 6).join("; ")
-          : "проверено " + els.length + " элементов, все в норме"
+          : "проверено " + els.length + " элементов активного экрана, все в норме"
       },
       {
         name: "Отступ от кромки ≥ " + num(edge) + "/" + num(edgeBottom) + " px",
         ok: nearEdge.length === 0,
-        detail: nearEdge.length ? nearEdge.length + " у кромки: " + nearEdge.slice(0, 6).join("; ")
-          : "проверено " + els.length + " элементов, все в безопасной зоне"
+        /* Сколько элементов не считались — говорим и в красном отчёте:
+         * иначе цифра «N у кромки» читается как доля от всех. */
+        detail: (nearEdge.length
+          ? nearEdge.length + " у кромки из " + fixed + " закреплённых: " +
+            nearEdge.slice(0, 6).join("; ")
+          : "проверено " + fixed + " закреплённых элементов, все в безопасной зоне") +
+          (scrolled ? " (+" + scrolled + " в прокрутке — не считаются)" : "")
       }
     ];
   }
@@ -214,9 +235,103 @@
     };
   }
 
+  /* Сцены с id «order» и «enabled» — бывшие зарезервированные имена.
+   * Состав экранов уехал в свой ключ screens, но миграция legacy-формата
+   * осталась и рядом с этими именами она обязана быть аккуратной: их
+   * настройки нельзя ни принять за состав, ни удалить. Проверяем факт
+   * регистрации; персистентность через рестарт — вручную по инструкции. */
+  function checkReservedIds(app) {
+    var ids = ["order", "enabled"];
+    var present = ids.filter(function (id) { return !!app.getScene(id); });
+    if (!present.length) {
+      return {
+        name: "Сцены с id order/enabled",
+        ok: null,
+        detail: "таких сцен нет — случай не проверяется этим прогоном"
+      };
+    }
+    /* Сверяем ЗНАЧЕНИЯ С ПАТЧЕМ ОПЕРАТОРА, а не наличие ключей: ключи
+     * всегда на месте — _seedSceneDefaults переписывает config.scenes[id]
+     * всей схемой ещё до прогона, поэтому «потерян ключ» недостижим.
+     * Целевая регрессия другая: миграция приняла настройки сцены за
+     * легаси-состав и СБРОСИЛА ИХ К ДЕФОЛТАМ, а в патче они лежат. */
+    var patch = {};
+    try {
+      patch = JSON.parse(localStorage.getItem(app.storageKey()) || "{}");
+    } catch (err) { patch = {}; }
+    var stored = (patch && patch.scenes) || {};
+
+    var bad = [], stale = [], compared = 0;
+    present.forEach(function (id) {
+      var vals = app.sceneSettings(id) || {};
+      var mine = stored[id];
+      if (!mine || typeof mine !== "object") return;   /* оператор их не трогал */
+      var schema = typeof app.sceneSchema === "function" ? app.sceneSchema(id) : [];
+      var known = {};
+      schema.forEach(function (s) { known[s.key] = 1; });
+
+      Object.keys(mine).forEach(function (k) {
+        /* Ключ, выпавший из схемы при штатной эволюции сцены, — не
+         * расхождение, а хвост в патче. Красный на здоровом киоске хуже
+         * пропуска: ему перестают верить. */
+        if (!known[k]) { stale.push(id + "." + k); return; }
+        compared++;
+        if (JSON.stringify(vals[k]) !== JSON.stringify(mine[k])) {
+          bad.push(id + "." + k + ": в патче " + JSON.stringify(mine[k]) +
+            ", у сцены " + JSON.stringify(vals[k]));
+        }
+      });
+    });
+
+    if (!compared) {
+      return {
+        name: "Сцены с id order/enabled",
+        ok: null,
+        detail: "сцены есть (" + present.join(", ") + "), но оператор их настроек не " +
+          "менял — сверять нечего. Покрутите любую и перезапустите."
+      };
+    }
+    var tail = stale.length ? "; вне текущей схемы (не сверялись): " + stale.join(", ") : "";
+    return {
+      name: "Сцены с id order/enabled",
+      ok: bad.length === 0,
+      detail: (bad.length ? "настройки разошлись с патчем: " + bad.join("; ")
+        : "сверено значений с патчем оператора: " + compared + " (" + present.join(", ") + ")") + tail
+    };
+  }
+
   /* ------------------------------------------------------------- прогон */
 
+  /* Глушим простой и ватчдог на время прогона. Канонические 50 циклов
+   * идут дольше двух минут и перешагивают idle-сброс (90 с): сцены
+   * сбрасывались бы ПОСРЕДИ замера, маскируя состояния, которые
+   * healthcheck и должен проверить (так у МТК 39 ложные тревоги прошли
+   * незамеченными), а дальше прогон подбирался бы к standby (180 с).
+   *
+   * Обёртка нужна, чтобы снять глушение и при СИНХРОННОМ сбое: без неё
+   * упавший прогон оставлял бы киоск без простоя и ватчдога до
+   * перезагрузки. */
   function run(app, opts) {
+    var idleHushed = app && typeof app.suspendIdle === "function";
+    var wdHushed = app && typeof app.suspendWatchdog === "function";
+    if (idleHushed) app.suspendIdle(true);
+    if (wdHushed) app.suspendWatchdog();
+    function unhush() {
+      if (idleHushed) app.suspendIdle(false);
+      if (wdHushed) app.resumeWatchdog();
+    }
+    try {
+      return runInner(app, opts, unhush).catch(function (err) {
+        unhush();
+        throw err;
+      });
+    } catch (err) {
+      unhush();
+      throw err;
+    }
+  }
+
+  function runInner(app, opts, unhush) {
     opts = opts || {};
     var cycles = opts.cycles || 50;
     var results = [];
@@ -307,10 +422,12 @@
 
           results.push(checkNetwork(startedAt));
           results.push(checkHealth(app));
+          results.push(checkReservedIds(app));
           results.push(checkCanvas());
           results.push(checkScroll());
           checkTouch().forEach(function (r) { results.push(r); });
 
+          unhush();
           return report(results, hidden);
         });
       });

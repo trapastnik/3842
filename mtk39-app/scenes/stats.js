@@ -8,7 +8,7 @@
  *    продублирован подписью, соседние сегменты разделены зазором;
  *  · ни одной диаграммы с двумя шкалами. */
 
-import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=1";
+import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=3";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 1000;   // ширина системы координат svg; высота у каждого графика своя
@@ -82,7 +82,10 @@ export const statsScene = {
 
   preload: {
     data: { corpus: DATA.corpus },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   opt: Object.assign({}, DEFAULTS),
@@ -115,12 +118,10 @@ export const statsScene = {
               : '<div class="m39-chart"></div>') +
         "</div></section>").join("") +
       "</div>" +
-      '<nav class="m39-dots" aria-label="Экраны"></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-dots" aria-label="Экраны"></nav>';
 
     const scroll = el_.querySelector(".m39-scroll");
     const dots = el_.querySelector(".m39-dots");
-    const hint = el_.querySelector(".m39-hint");
     const screens = [...el_.querySelectorAll(".m39-screen")];
     const massCanvas = el_.querySelector(".m39-mass");
 
@@ -464,7 +465,6 @@ export const statsScene = {
         if (j <= i) sc.classList.add("is-live");
         if (dots.children[j]) dots.children[j].setAttribute("aria-current", String(i === j));
       });
-      hint.classList.toggle("is-off", i > 0);
     }
 
     const onScroll = () => sync();
@@ -481,7 +481,7 @@ export const statsScene = {
         vis(i, ".m39-screen__head").textContent = app.t("stats.screen." + keys[i]);
         vis(i, ".m39-screen__sub").textContent = app.t("stats.sub." + keys[i]);
       }
-      hint.textContent = app.t("stats.hint");
+      if (hint) hint.setLabel(app.t("stats.hint"));
       buildDots();
       renderHero();
       renderContinents();
@@ -499,12 +499,30 @@ export const statsScene = {
       reset() {
         scroll.scrollTo({ left: 0, behavior: "auto" });
         sync();
+        if (hint) hint.show();   // экран вернулся к первому — зовём жест сразу
+      },
+      health() {
+        const charts = el_.querySelectorAll(".m39-chart svg").length;
+        const bars = el_.querySelectorAll(".m39-chart svg path").length;
+        const hero = el_.querySelectorAll(".m39-hero__item").length;
+        if (!hero) return { ok: false, detail: "титульные цифры не собраны" };
+        if (charts < 5) return { ok: false, detail: "построено графиков: " + charts + " из 5" };
+        if (!bars) return { ok: false, detail: "графики пусты: ни одной полосы" };
+        return { ok: true, detail: "экранов 7, графиков " + charts + ", фигур " + bars };
       },
       destroy() {
         scroll.removeEventListener("scroll", onScroll);
         watch.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* Хост — контейнер сцены, а не прокручиваемая лента экранов: внутри
+       скроллера absolute считается от высоты содержимого, и подсказка уехала
+       бы за кромку (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el_, { gesture: "swipe", label: app.t("stats.hint") })
+      : null;
 
     retext();
     watch.measure(true);
@@ -514,6 +532,10 @@ export const statsScene = {
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
   setA11y() { if (this.api) this.api.redraw(); },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
+  },
 
   unmount() {
     if (this.api) this.api.destroy();

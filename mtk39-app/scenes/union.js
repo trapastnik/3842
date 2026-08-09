@@ -11,8 +11,8 @@
 
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
-  objectCardHtml, createCardPanel, createOffmap,
-} from "./shared.js?v=1";
+  objectCardHtml, createCardPanel, createOffmap, isOffMap,
+} from "./shared.js?v=3";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -43,7 +43,10 @@ export const unionScene = {
 
   preload: {
     data: { corpus: DATA.corpus, countries: DATA.countries },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
   },
 
   settings: [
@@ -70,7 +73,7 @@ export const unionScene = {
 
     const corpus = ctx.data.corpus;
     const union = corpus.records.filter((r) => r.continent === "Бывший СССР");
-    const points = union.filter((r) => r.lat !== null && r.lng !== null);
+    const points = union.filter((r) => !isOffMap(r));
 
     el.classList.add("m39-scene", "m39-union");
     el.innerHTML =
@@ -82,8 +85,7 @@ export const unionScene = {
         '<div class="m39-offhost"></div>' +
       "</aside>" +
       '<aside class="m39-legend"></aside>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -93,7 +95,6 @@ export const unionScene = {
     const republics = el.querySelector(".m39-republics");
     const legend = el.querySelector(".m39-legend");
     const chips = el.querySelector(".m39-chips");
-    const hint = el.querySelector(".m39-hint");
     const offhost = el.querySelector(".m39-offhost");
 
     /* ---- состояние ---- */
@@ -114,6 +115,7 @@ export const unionScene = {
     let fitZoom = 1;
     let fly = null;
     let dirty = true;
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
 
     const invalidate = () => { dirty = true; };
     const worldW = () => baseW * zoom;
@@ -306,6 +308,8 @@ export const unionScene = {
         }
       }
 
+      lastDrawn = visible.length;
+
       if (selected && shown(selected)) {
         const [x, y] = project(selected.lat, selected.lng);
         g.beginPath();
@@ -342,7 +346,9 @@ export const unionScene = {
         ({ zoom, panX, panY } = v);
       }
       clampView();
-      dirty = true;
+      // первый кадр — сразу, не дожидаясь rAF (см. world.js)
+      dirty = false;
+      render();
     });
 
     /* ---- карточка и картотека ---- */
@@ -451,7 +457,7 @@ export const unionScene = {
 
     function retext() {
       railTitle.textContent = app.t("union.title");
-      hint.textContent = app.t("union.hint");
+      if (hint) hint.setLabel(app.t("union.hint"));
       buildFilters();
       buildRepublics();
       offmap.setLang();
@@ -481,7 +487,7 @@ export const unionScene = {
       const r = canvas.getBoundingClientRect();
       return [e.clientX - r.left, e.clientY - r.top];
     };
-    const touched = () => hint.classList.add("is-off");
+    // подсказку гасит и возвращает сам кит — сцене отмечать нечего
 
     const onDown = (e) => {
       dragging = true;
@@ -490,7 +496,6 @@ export const unionScene = {
       lastY = e.clientY;
       fly = null;
       canvas.setPointerCapture(e.pointerId);
-      touched();
     };
     const onMove = (e) => {
       if (!dragging) return;
@@ -527,7 +532,6 @@ export const unionScene = {
       fly = null;
       const [x, y] = local(e);
       zoomAt(e.deltaY < 0 ? 1.08 : 1 / 1.08, x, y);
-      touched();
     };
 
     let pinch = null;
@@ -576,8 +580,20 @@ export const unionScene = {
         offmap.close();
         buildFilters();
         setRepublic(null, allBtn, true);
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         invalidate();
+      },
+      /* Комбинация «республика × судьба имени» законно бывает пустой
+         (Азербайджан + «носит имя»), и это осмысленный ответ, а не поломка:
+         на экране контур республики, легенда с нулём и рубрикатор. Красным
+         помечаем только то, из-за чего показывать нечего в принципе. */
+      health() {
+        if (!land.length) return { ok: false, detail: "контуры республик не построены" };
+        if (!points.length) return { ok: false, detail: "в Союзе нет геолоцированных объектов" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        return { ok: true, detail: "точек в Союзе " + points.length +
+          ", при текущем фильтре " + points.filter(shown).length +
+          ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -592,11 +608,16 @@ export const unionScene = {
         watch.destroy();
         offmap.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
 
+    /* На контейнер сцены, а не на канву: детей холста браузер не рисует. */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("union.hint") })
+      : null;
+
     railTitle.textContent = app.t("union.title");
-    hint.textContent = app.t("union.hint");
     buildFilters();
     buildRepublics();
     watch.measure(true);
@@ -618,6 +639,10 @@ export const unionScene = {
     if (!this.api) return;
     this.api.remeasure();
     this.api.invalidate();
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

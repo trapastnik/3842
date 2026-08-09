@@ -1,0 +1,518 @@
+/* МТК 40 · стили сцен киоск-приложения.
+ *
+ * Размеры берутся только из переменных кита: контролы — от --touch-* и
+ * --type-min-*, контент — через calc(N * var(--content-scale)). Тогда оба
+ * регулятора масштаба и режим слабовидящих срабатывают сами.
+ * Числа в calc() задаются СРАЗУ ПОД 3840, как и сам кит: --content-scale —
+ * ручка оператора (по умолчанию 1), а не множитель «кадр шире 1280».
+ * Кегли текста поэтому идут через max(--type-min-*, …) — порог кита и есть
+ * канонный минимум читаемости на панели.
+ * Отступы — от РЕАЛЬНО занятых зон хрома: --m40-chrome-top/-bottom их меряет
+ * chrome-zones.js. Ядерные --kiosk-safe-* — это лишь отступ от кромки, а не
+ * место под кнопками языков и глазом; свёрстанный от них заголовок ложится
+ * ровно под них (на этом споткнулся и пилот 42).
+ *
+ * Приёма прототипов с `zoom: var(--zoom)` здесь нет намеренно: в киоске
+ * масштаб задаёт ядро, а zoom поверх него дал бы двойное умножение.
+ */
+
+/* ---------- брендовые начертания ----------
+   Объявлять ОБЯЗАНО само приложение: ни kiosk.css, ни kiosk-core.css их не
+   несут, а base.css прототипов сюда не подключён. Без @font-face преролл
+   `fonts: ["1em 'Nolde'"]` — no-op: document.fonts.load на необъявленное
+   семейство молча резолвится пустым, на дев-машине всё выглядит верно из-за
+   системно установленных OTF, а на киоске вся типографика (и канва, и DOM)
+   падает в Georgia/monospace. Найдено встречным ревью координатора. */
+@font-face {
+  font-family: "Nolde";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/nolde/nolde.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-book.otf") format("opentype");
+}
+@font-face {
+  font-family: "20 Kopeek";
+  font-weight: 600; font-display: swap;
+  src: url("../assets/shared/fonts/brand/kopeek/20-kopeek-demibold.otf") format("opentype");
+}
+@font-face {
+  font-family: "21 Cent";
+  font-weight: 400; font-display: swap;
+  src: url("../assets/shared/fonts/brand/cent/21Cent.woff") format("woff");
+}
+
+.m40-scene {
+  position: absolute;
+  inset: 0;
+  /* Без padding: дети (поле канвы, карточка, чип «домой») позиционируются от
+     зон хрома сами. С padding отступ применился бы дважды — обёртка канвы
+     отсчитывается от padding-box родителя, и сцена сплющивалась в полоску. */
+  overflow: hidden;
+}
+
+/* Безопасная область для канвы: при inset:0 прямо в слое она игнорировала бы
+   padding родителя и рисовала под кнопками языков. */
+.m40-plot {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  right: var(--edge-safe);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  left: var(--edge-safe);
+}
+.m40-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  touch-action: none;
+}
+
+/* ---------- строка-подсказка сцены ----------
+   Название сцены пишет ядро в баре навигации — второй заголовок на канве
+   был бы дублем и съедал бы верх кадра. Здесь только подсказка о жесте,
+   и она отступает вниз на ряд инструментов (языки, глаз, шестерёнка). */
+.m40-head {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  left: var(--edge-safe);
+  right: var(--edge-safe);
+  z-index: 3;
+  pointer-events: none;
+}
+.m40-head__sub {
+  margin: 0;
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: max(var(--type-min-label), calc(11px * var(--content-scale)));
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.62);
+}
+
+/* ---------- чипы (фильтры, режимы) ---------- */
+.m40-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--touch-gap);
+}
+.m40-chip {
+  min-height: var(--touch-min);
+  padding: 0 calc(var(--touch-gap) * 1.5);
+  border: 1px solid rgba(247, 249, 239, 0.2);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.72);
+  color: rgba(247, 249, 239, 0.72);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-ui);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.m40-chip[aria-pressed="true"] {
+  color: #0c1012;
+  background: var(--m40-chip-accent, var(--brass, #d2b773));
+  border-color: var(--m40-chip-accent, var(--brass, #d2b773));
+}
+.m40-chip__n { opacity: 0.55; margin-left: 0.5em; }
+
+/* ---------- карточка книги ----------
+   Кегли — от китовых порогов (--type-min-*), а НЕ от --content-scale: он у
+   ядра равен единице и означает ручку оператора, а не «во сколько раз кадр
+   шире дизайнерских 1280». Свёрстанная от него карточка давала 16 px тела
+   при канонном минимуме 24 px — вдвое мельче подписей на самой канве, где
+   кегль умножается на s = W/1280. Числа кита уже заданы под 3840. */
+.m40-card {
+  position: absolute;
+  right: var(--edge-safe);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  z-index: 6;
+  width: min(calc(920px * var(--content-scale)), 42%);
+  max-height: 62%;
+  overflow-y: auto;
+  padding: calc(40px * var(--content-scale));
+  border: 1px solid rgba(210, 183, 115, 0.55);
+  border-radius: calc(14px * var(--content-scale));
+  background: rgba(12, 16, 18, 0.92);
+  color: var(--paper-white, #f7f9ef);
+}
+.m40-card[hidden] { display: none; }
+.m40-card__close {
+  position: absolute;
+  top: calc(6px * var(--content-scale));
+  right: calc(6px * var(--content-scale));
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper-white, #f7f9ef);
+  font-size: var(--type-min-ui);
+  cursor: pointer;
+}
+.m40-card__cat {
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: max(var(--type-min-label), calc(11px * var(--content-scale)));
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--m40-accent, var(--brass, #d2b773));
+  margin-bottom: calc(8px * var(--content-scale));
+  padding-right: var(--touch-min);
+}
+.m40-card__name {
+  margin: 0 0 calc(12px * var(--content-scale));
+  font-family: var(--font-display, "Nolde", Georgia, serif);
+  font-size: max(calc(var(--type-min-ui) * 1.4), calc(48px * var(--content-scale)));
+  font-weight: 400;
+  line-height: 1.18;
+}
+.m40-card__author {
+  margin: 0 0 calc(16px * var(--content-scale));
+  font-size: max(var(--type-min-ui), calc(32px * var(--content-scale)));
+  font-style: italic;
+  color: rgba(247, 249, 239, 0.84);
+}
+.m40-card__where {
+  margin: 0 0 calc(22px * var(--content-scale));
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: max(var(--type-min-label), calc(11px * var(--content-scale)));
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.6);
+}
+.m40-card__text {
+  margin: 0;
+  font-size: max(var(--type-min-ui), calc(32px * var(--content-scale)));
+  line-height: 1.5;
+  color: rgba(247, 249, 239, 0.9);
+}
+.m40-card__conns {
+  margin: calc(12px * var(--content-scale)) 0 0;
+  padding: calc(12px * var(--content-scale)) 0 0;
+  list-style: none;
+  border-top: 1px dashed rgba(210, 183, 115, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: calc(6px * var(--content-scale));
+  max-height: calc(400px * var(--content-scale));
+  overflow-y: auto;
+}
+.m40-card__conns[hidden] { display: none; }
+.m40-card__conns li {
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: max(var(--type-min-label), calc(11px * var(--content-scale)));
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 239, 0.74);
+  line-height: 1.45;
+}
+.m40-card__conns b { color: var(--brass, #d2b773); margin-right: 0.4em; }
+
+/* ---------- чип «домой» у сцен с масштабом ---------- */
+.m40-home {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  right: var(--edge-safe);
+  z-index: 5;
+  min-height: var(--touch-min);
+  padding: 0 calc(var(--touch-gap) * 1.6);
+  border: 1px solid rgba(210, 183, 115, 0.55);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.72);
+  color: var(--brass, #d2b773);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-ui);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.m40-home[hidden] { display: none; }
+
+/* ---------- картотека ----------
+   Фильтры в левой колонке, а не строкой сверху: строкой они забирали треть
+   высоты, и на карточки оставалось меньше, чем на меню к ним (правка по
+   замечанию пользователя). Указатель по природе горизонтальный — 20+ букв в
+   узкой колонке рвались бы на пять рядов. */
+.m40-catalog {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  right: var(--edge-safe);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  left: var(--edge-safe);
+  display: grid;
+  grid-template-columns: minmax(0, calc(var(--touch-min) * 12)) 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "side idx" "side grid";
+  column-gap: calc(var(--touch-gap) * 2);
+  row-gap: var(--touch-gap);
+  min-height: 0;
+}
+
+.m40-cat__side {
+  grid-area: side;
+  align-self: stretch;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) * 1.5);
+  padding: calc(var(--touch-gap) * 1.2);
+  border: 1px solid rgba(247, 249, 239, 0.14);
+  border-radius: calc(14px * var(--content-scale));
+  background: rgba(12, 16, 18, 0.55);
+}
+.m40-cat__g { display: flex; flex-direction: column; gap: calc(var(--touch-gap) * 0.6); }
+.m40-cat__legend {
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.42);
+}
+.m40-cat__tail {
+  margin-top: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--touch-gap);
+}
+.m40-cat__count {
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.14em;
+  color: var(--brass, #d2b773);
+}
+
+.m40-cat__idx {
+  grid-area: idx;
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap);
+  padding: calc(var(--touch-gap) * 0.6) calc(var(--touch-gap) * 1.2);
+  border: 1px solid rgba(247, 249, 239, 0.12);
+  border-radius: 999px;
+  background: rgba(12, 16, 18, 0.45);
+  overflow-x: auto;
+}
+.m40-cat__idx .m40-cat__legend { flex: none; }
+.m40-cat__alpha { flex-wrap: nowrap; }
+.m40-chip--alpha { letter-spacing: 0; padding: 0 calc(var(--touch-gap) * 0.9); }
+
+.m40-cat__grid {
+  grid-area: grid;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(var(--m40-cat-min, 520px), 1fr));
+  gap: var(--touch-gap);
+  align-content: start;
+  padding-right: var(--touch-gap);
+}
+.m40-cat__alphahead {
+  grid-column: 1 / -1;
+  font-family: var(--font-display, "Nolde", Georgia, serif);
+  font-size: calc(var(--type-min-ui) * 1.2);
+  color: var(--brass, #d2b773);
+}
+.m40-cat__empty {
+  grid-column: 1 / -1;
+  font-size: var(--type-min-ui);
+  color: rgba(247, 249, 239, 0.6);
+}
+
+.m40-cat__entry {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) * 0.4);
+  min-height: calc(var(--touch-min) * 3);
+  padding: calc(var(--touch-gap) * 1.1) calc(var(--touch-gap) * 1.2)
+           calc(var(--touch-gap) * 1.1) calc(var(--touch-gap) * 1.8);
+  border: 1px solid rgba(247, 249, 239, 0.12);
+  border-radius: calc(10px * var(--content-scale));
+  background: rgba(12, 16, 18, 0.5);
+  text-align: left;
+  cursor: pointer;
+  overflow: hidden;
+}
+.m40-cat__entry::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: calc(8px * var(--content-scale));
+  background: var(--m40-spine);
+}
+.m40-cat__entry[aria-pressed="true"] {
+  border-color: var(--brass, #d2b773);
+  background: rgba(210, 183, 115, 0.1);
+}
+.m40-cat__top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: var(--touch-gap);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.14em;
+  color: rgba(247, 249, 239, 0.5);
+}
+.m40-cat__year { color: var(--brass, #d2b773); }
+.m40-cat__name {
+  margin: 0;
+  font-family: var(--font-display, "Nolde", Georgia, serif);
+  font-size: calc(var(--type-min-ui) * 1.15);
+  font-weight: 400;
+  line-height: 1.22;
+  color: var(--paper-white, #f7f9ef);
+}
+.m40-cat__author {
+  font-size: var(--type-min-ui);
+  font-style: italic;
+  line-height: 1.3;
+  color: rgba(247, 249, 239, 0.7);
+}
+.m40-cat__meta {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--touch-gap) * 0.8);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 239, 0.55);
+}
+.m40-cat__star { color: var(--brass, #d2b773); }
+
+/* ---------- ряд чипов и строка пояснения над канвой ----------
+   Лежат в тех же зонах хрома, что и поле канвы; сцена вычитает их
+   измеренную высоту из раскладки, а не держит константу — иначе режим
+   слабовидящих (таргеты ×1.25) наезжает на содержимое. */
+.m40-tools {
+  position: absolute;
+  top: var(--m40-chrome-top, var(--kiosk-safe-top));
+  left: var(--edge-safe);
+  z-index: 4;
+}
+.m40-note {
+  position: absolute;
+  left: var(--edge-safe);
+  right: calc(var(--edge-safe) + var(--touch-min) * 2);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  z-index: 4;
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+  pointer-events: none;
+}
+
+/* ---------- легенда типов связи ---------- */
+.m40-legend {
+  position: absolute;
+  left: var(--edge-safe);
+  right: calc(var(--edge-safe) + var(--touch-min) * 2);
+  bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
+  z-index: 4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--touch-gap) * 0.6) calc(var(--touch-gap) * 2);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.55);
+  pointer-events: none;
+}
+.m40-legend__row { display: inline-flex; align-items: center; gap: calc(var(--touch-gap) * 0.6); }
+.m40-legend__sw {
+  width: calc(var(--touch-gap) * 2.5);
+  border-top-width: calc(3px * var(--content-scale));
+  border-top-color: currentColor;
+  border-top-style: solid;
+}
+
+/* ---------- панель города (география) ----------
+   Стоит справа под хромом; карточка книги живёт ниже, поэтому высота
+   панели ограничена — иначе они перекрывают друг друга. */
+.m40-city {
+  position: absolute;
+  top: calc(var(--m40-chrome-top, var(--kiosk-safe-top)) + var(--touch-min) + var(--touch-gap));
+  right: var(--edge-safe);
+  z-index: 5;
+  width: min(calc(760px * var(--content-scale)), 34%);
+  max-height: 34%;
+  overflow-y: auto;
+  padding: calc(var(--touch-gap) * 1.4);
+  border: 1px solid rgba(247, 249, 239, 0.14);
+  border-radius: calc(14px * var(--content-scale));
+  background: rgba(12, 16, 18, 0.88);
+  color: var(--paper-white, #f7f9ef);
+}
+.m40-city[hidden] { display: none; }
+.m40-city__close {
+  position: absolute;
+  top: calc(var(--touch-gap) * 0.4);
+  right: calc(var(--touch-gap) * 0.4);
+  min-width: var(--touch-min);
+  min-height: var(--touch-min);
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--paper-white, #f7f9ef);
+  font-size: var(--type-min-ui);
+  cursor: pointer;
+}
+.m40-city__name {
+  font-family: var(--font-display, "Nolde", Georgia, serif);
+  font-size: calc(var(--type-min-ui) * 1.2);
+  padding-right: var(--touch-min);
+}
+.m40-city__sub {
+  margin-top: calc(var(--touch-gap) * 0.4);
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 239, 0.6);
+}
+.m40-city__list {
+  margin: var(--touch-gap) 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) * 0.5);
+}
+.m40-city__list button {
+  display: flex;
+  align-items: center;
+  gap: var(--touch-gap);
+  width: 100%;
+  min-height: var(--touch-min);
+  padding: calc(var(--touch-gap) * 0.5) var(--touch-gap);
+  border: none;
+  border-left: calc(6px * var(--content-scale)) solid var(--m40-spine);
+  border-radius: calc(6px * var(--content-scale));
+  background: rgba(247, 249, 239, 0.06);
+  color: var(--paper-white, #f7f9ef);
+  font-size: var(--type-min-ui);
+  text-align: left;
+  cursor: pointer;
+}
+.m40-city__yr {
+  flex: none;
+  font-family: var(--font-mono, "20 Kopeek", monospace);
+  font-size: var(--type-min-label);
+  color: var(--brass, #d2b773);
+}
+
+/* Призыв к жесту живёт внутри поля канвы, а поле уже отбито от кромки
+   зонами хрома — иначе запас --edge-safe-bottom кита считается второй раз и
+   подсказка висит на сотню пикселей выше низа поля. Правка косметическая и
+   ограничена нашим контейнером: сам hint.js не трогаем. */
+.m40-plot .kiosk-hint { bottom: var(--touch-gap); }

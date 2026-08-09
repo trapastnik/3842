@@ -1,8 +1,12 @@
+// Библиотека раскладки — из локального вендора приложения, а не с esm.sh:
+// прототипы стоят на хабе и на проде, и внешний импорт делал офлайн-канон
+// дырявым ровно здесь. Вендор появился вместе со сценой «Плакат»
+// (mtk38-app/vendor/pretext, MIT, ноль зависимостей).
 import {
   prepareWithSegments,
   layoutNextLineRange,
   materializeLineRange
-} from "https://esm.sh/@chenglou/pretext";
+} from "../mtk38-app/vendor/pretext/layout.js?v=0.0.8";
 
 const canvas = document.getElementById("poster");
 const ctx = canvas.getContext("2d", { alpha: true });

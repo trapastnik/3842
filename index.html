@@ -192,6 +192,25 @@
     footer .coord-tag {
       color: rgba(247, 249, 239, 0.32);
     }
+    .kiosk-link {
+      display: inline-flex;
+      align-items: center;
+      min-height: 56px;
+      padding: 14px 28px;
+      border: 1px solid var(--brass);
+      border-radius: 999px;
+      font-family: "20 Kopeek", "Courier New", monospace;
+      font-size: 14px;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--brass);
+      text-decoration: none;
+      transition: background 140ms ease, color 140ms ease;
+    }
+    .kiosk-link:hover, .kiosk-link:focus-visible {
+      background: var(--brass);
+      color: var(--graphite);
+    }
   </style>
 </head>
 <body>
@@ -202,6 +221,9 @@
       Пять мультимедийных арт-объектов музея. Каждый — отдельный экран с несколькими
       вариантами визуализации. Выберите МТК — внутри стрелками или точками переключайте
       решения.
+    </p>
+    <p>
+      <a class="kiosk-link" href="./kiosk/">Режим киоска →</a>
     </p>
   </header>
 

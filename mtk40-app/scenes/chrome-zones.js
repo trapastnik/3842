@@ -1,5 +1,9 @@
 /* Безопасные зоны хрома — временная замена тому, что должно приезжать из ядра.
  *
+ * Тот же приём, что у пилота 42 (его chrome-zones.js): импортировать из чужой
+ * зоны нельзя, поэтому здесь своя копия со своим префиксом переменных. Обе
+ * умрут вместе, когда ядро отдаст настоящие зоны — заявка в COORDINATION.
+ *
  * Ядро объявляет `--kiosk-safe-top/bottom`, но это просто отступ от кромки
  * (64/80 px), а не место, реально занятое хромом. Группа «языки + глаз»
  * (.kiosk-tools) и шестерёнка стоят поверх сцены и на 3840 доходят до ~174 px
@@ -8,8 +12,8 @@
  *
  * Пока ядро не экспортирует настоящие зоны (заявка в COORDINATION), меряем
  * элементы хрома сами и публикуем:
- *     --m42-chrome-top     — докуда занято сверху (+ зазор)
- *     --m42-chrome-bottom  — докуда занято снизу (+ зазор)
+ *     --m40-chrome-top     — докуда занято сверху (+ зазор)
+ *     --m40-chrome-bottom  — докуда занято снизу (+ зазор)
  * Когда ядро отдаст свои переменные, этот файл удаляется, а в styles.css
  * меняется только имя переменной.
  */
@@ -44,8 +48,8 @@ export function measureChrome() {
   const edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
   const edgeB = parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
 
-  root.style.setProperty("--m42-chrome-top", Math.round(Math.max(edge, top + GAP)) + "px");
-  root.style.setProperty("--m42-chrome-bottom", Math.round(Math.max(edgeB, bottom + GAP)) + "px");
+  root.style.setProperty("--m40-chrome-top", Math.round(Math.max(edge, top + GAP)) + "px");
+  root.style.setProperty("--m40-chrome-bottom", Math.round(Math.max(edgeB, bottom + GAP)) + "px");
 }
 
 export function installChromeZones(app) {

@@ -8,9 +8,9 @@
  * d3 подключён локально классическим <script> — офлайн-киоск. */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, slowLoop, sizeWatch,
-  preloadPictures, filePicture, createCardPanel,
-} from "./shared.js?v=1";
+  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
+  preloadPictures, filePicture, createCardPanel, isOffMap,
+} from "./shared.js?v=3";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -56,7 +56,10 @@ export const globeScene = {
 
   preload: {
     data: { countries: DATA.countries, picked: DATA.picked },
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    // Канва не запускает загрузку шрифта сама (находка 40 ядра), а рисует
+    // подписи начертанием 600 — просим его явно. Ядро грузит список один раз
+    // на приложение, так что дубли в сценах ничего не стоят.
+    fonts: ["1em '20 Kopeek'", "600 1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
     custom: preloadPictures,
   },
 
@@ -107,8 +110,7 @@ export const globeScene = {
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="in">+</button>' +
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="out">−</button>' +
       "</nav>" +
-      '<aside class="m39-offlist" hidden><h2 class="m39-offlist__h"></h2><ul></ul></aside>' +
-      '<div class="m39-hint"></div>';
+      '<aside class="m39-offlist" hidden><h2 class="m39-offlist__h"></h2><ul></ul></aside>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -119,7 +121,6 @@ export const globeScene = {
     const offlist = el.querySelector(".m39-offlist");
     const offlistH = el.querySelector(".m39-offlist__h");
     const offlistUl = offlist.querySelector("ul");
-    const hint = el.querySelector(".m39-hint");
 
     let width = 0;
     let height = 0;
@@ -133,6 +134,7 @@ export const globeScene = {
     let modeTween = null;
     let introT0 = 0;
     let labelHits = [];
+    let lastDrawn = 0;          // точек в последнем кадре (healthcheck)
     let dragStart = null;
     let dragMoved = false;
     let pinch = null;
@@ -145,7 +147,7 @@ export const globeScene = {
     const pointDelays = new Map();
     const distances = items.map((it) => ({
       id: it.id,
-      d: it.lat == null ? Infinity : d3.geoDistance(ORIGIN, [it.lng, it.lat]),
+      d: isOffMap(it) ? Infinity : d3.geoDistance(ORIGIN, [it.lng, it.lat]),
     }));
     distances.sort((a, b) => a.d - b.d);
     distances.forEach((di, i) => pointDelays.set(di.id, i * 35));
@@ -227,7 +229,7 @@ export const globeScene = {
 
     function renderArc() {
       if (!opt().arcs || !selected) return;
-      if (selected.lat == null || selected.lng == null) return;
+      if (isOffMap(selected)) return;
       if (selected.id === "ulyanovsk-tank") return;      // начало совпадает с целью
 
       const interp = d3.geoInterpolate(ORIGIN, [selected.lng, selected.lat]);
@@ -385,7 +387,7 @@ export const globeScene = {
 
       const labelCandidates = [];
       for (const item of items) {
-        if (item.lat == null || item.lng == null) continue;
+        if (isOffMap(item)) continue;
         if (!isVisible(item.lng, item.lat)) continue;
         const pt = projection([item.lng, item.lat]);
         if (!pt) continue;
@@ -427,6 +429,7 @@ export const globeScene = {
           });
         }
       }
+      lastDrawn = labelCandidates.length;
       drawLabels(labelCandidates);
     }
 
@@ -473,6 +476,7 @@ export const globeScene = {
       fitCanvas(canvas, w, h);
       generateStars();
       applyProjection();
+      render(performance.now());     // первый кадр сразу (см. world.js)
     });
 
     /* ---- карточка ---- */
@@ -486,7 +490,7 @@ export const globeScene = {
           esc(item.image.credit || "") + "</figcaption></figure>"
         : "";
       const where = [item.city, item.country].filter(Boolean).join(" · ")
-        || (item.geolocated === false ? app.t("card.noCoords") : "");
+        || (isOffMap(item) ? app.t("card.noCoords") : "");
       return fig +
         '<div class="m39-card__orig">' +
           esc(CATEGORY_LABELS[item.category] || item.category || "") + "</div>" +
@@ -509,7 +513,7 @@ export const globeScene = {
     }
 
     function buildOfflist() {
-      const off = items.filter((it) => it.geolocated === false);
+      const off = items.filter(isOffMap);
       offlist.hidden = off.length === 0;
       offlistH.textContent = app.t("globe.offmap", { n: off.length });
       offlistUl.replaceChildren();
@@ -568,7 +572,7 @@ export const globeScene = {
       const hit = 28 * drawScale(app, width);
       let bestD = hit * hit;
       for (const item of items) {
-        if (item.lat == null || item.lng == null) continue;
+        if (isOffMap(item)) continue;
         if (!isVisible(item.lng, item.lat)) continue;
         if (!filterPasses(item)) continue;
         const pt = projection([item.lng, item.lat]);
@@ -587,7 +591,6 @@ export const globeScene = {
           dragStart = { x: e.x, y: e.y, r: rotation.slice() };
           dragMoved = false;
           lastInteraction = performance.now();
-          hint.classList.add("is-off");
         })
         .on("drag", (e) => {
           if (pinch || !dragStart) return;
@@ -643,7 +646,7 @@ export const globeScene = {
     function retext() {
       title.textContent = app.t("globe.title");
       sub.textContent = app.t("globe.sub");
-      hint.textContent = app.t("globe.hint");
+      if (hint) hint.setLabel(app.t("globe.hint"));
       buildFilter();
       buildOfflist();
       syncOfflist();
@@ -676,20 +679,60 @@ export const globeScene = {
         filter = "all";
         showCard(null);
         buildFilter();
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         startIntro();
       },
-      /* Аттрактор: тот же шар, но медленно и без интерфейса. */
-      standby(fps) {
+      /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро, угол считаем
+         от секунд простоя — но рисуем по аптайму страницы.
+
+         Две ловушки, обе стоили пустого шара в заставке:
+          · интро прогонять нельзя. Твин «прилёта» (0.34 → полный размер)
+            двигается только rAF-циклом, а он в заставке остановлен, — шар
+            так и застыл бы уменьшенным. Ставим конечную позу сразу;
+          · render() принимает аптайм, а не секунды простоя. Прилёт точек и
+            мерцание звёзд сверяются с introT0 = performance.now() + 600:
+            на киоске, отработавшем день, «секунды простоя» этот порог не
+            догонят никогда, и ни одна точка не нарисуется. */
+      standby(app_) {
         anim.stop();
-        this.reset();
-        const slow = slowLoop((now) => {
-          rotation[0] = (rotation[0] + 0.4) % 360;
+        filter = "all";
+        showCard(null);
+        buildFilter();
+        modeTween = null;
+        introT0 = 0;                       // точки уже «прилетели»
+        rotation = DEFAULT_ROTATE.slice();
+        scaleFactor = DEFAULT_SCALE;
+        applyProjection();
+
+        const from = rotation[0];
+        const stop = app_.standbyTicker((t) => {
+          rotation[0] = (from + t * 4) % 360;
           applyProjection();
-          render(now);
-        }, fps);
-        slow.start();
-        return () => { slow.stop(); lastFrame = performance.now(); anim.start(); };
+          render(performance.now());
+        });
+        return () => {
+          stop();
+          lastFrame = performance.now();
+          this.reset();                    // вернуть открывающий вид с прилётом
+          anim.start();
+        };
+      },
+      /* Ловим «загружено, но пусто», а не законные состояния экрана.
+         Не последний кадр: точки прилетают анимацией, и первые 600 мс кадр
+         честно пуст. Не «сколько точек на шаре»: повёрнутый к Тихому океану
+         шар — это норма, а у категории «Астероиды» обе записи вообще без
+         координат и живут в списке «не на карте» — это показанный контент,
+         а не пустота. */
+      health() {
+        const total = items.length;
+        if (!total) return { ok: false, detail: "список избранного пуст" };
+        if (!width || !height) return { ok: false, detail: "холст без размера" };
+        const passing = items.filter(filterPasses);
+        if (!passing.length) return { ok: false, detail: "фильтр не оставил ни одного объекта" };
+        const onGlobe = passing.filter((it) => !isOffMap(it)).length;
+        return { ok: true, detail: "к показу " + passing.length + " из " + total +
+          " (на шаре " + onGlobe + ", списком «не на карте» " + (passing.length - onGlobe) +
+          "), в последнем кадре " + lastDrawn };
       },
       destroy() {
         anim.stop();
@@ -702,8 +745,14 @@ export const globeScene = {
         zoomNav.removeEventListener("click", onZoom);
         watch.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* На контейнер сцены, а не на канву (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("globe.hint") })
+      : null;
 
     retext();
     watch.measure(true);
@@ -723,9 +772,11 @@ export const globeScene = {
   setA11y() { if (this.api) this.api.remeasure(); },
 
   standby() {
-    if (!this.api) return null;
-    const fps = ((this.appRef && this.appRef.config.timings) || {}).standbyFps || 10;
-    return this.api.standby(fps);
+    return this.api ? this.api.standby(this.appRef) : null;
+  },
+
+  healthcheck() {
+    return this.api ? this.api.health() : { ok: false, detail: "сцена не смонтирована" };
   },
 
   unmount() {

@@ -281,6 +281,19 @@ body {
 .legend__dot--gone { background: #c9545a; }
 .legend__dot--bg { background: rgba(157, 163, 168, 0.35); }
 
+/* подсказка о жесте — под счётчиком года; гаснет после первого приближения */
+.year__hint {
+  margin-top: calc(var(--u) * 0.5);
+  font-family: var(--font-mono);
+  font-size: calc(var(--u) * 0.72);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(157, 163, 168, 0.5);
+  transition: opacity 0.5s;
+}
+
+.year__hint.is-off { opacity: 0; }
+
 .note {
   position: absolute;
   right: calc(var(--pad) * 1.3);

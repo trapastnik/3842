@@ -4,7 +4,7 @@
  * Полосы позиционируются в px внутри content-box, который начинается после
  * padding-left = --m42-label-col; ширину меряем по вычисленному padding
  * (переменная — clamp(), parseFloat по ней дал бы NaN). */
-import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=13";
+import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=24";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 
@@ -163,6 +163,18 @@ export const timelineScene = {
   },
 
   _scale() { return Math.min(2, Math.max(1, window.innerWidth / 1920)); },
+
+  /* Полосы позиционируются по измеренной ширине: если контейнер оказался
+   * нулевым, данные есть, а на экране пусто. */
+  healthcheck() {
+    if (!this._innerEl) return { ok: false, detail: "сцена не смонтирована" };
+    const bars = this._innerEl.querySelectorAll(".m42-timeline__bar").length;
+    const want = this._data.items.filter((it) =>
+      this._status === "all" || it.status === this._status).length;
+    return bars === want && want > 0
+      ? { ok: true, detail: "полос отрисовано " + bars }
+      : { ok: false, detail: "полос отрисовано " + bars + " из " + want };
+  },
 
   pause() {},   // статичный DOM — ни rAF, ни таймеров
   resume() {},

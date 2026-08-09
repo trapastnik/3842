@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=13";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=24";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -119,18 +119,44 @@ export const mapScene = {
 
     this._bindGestures();
 
-    this._lastW = 0;
+    /* Сравниваем обе стороны: при чисто вертикальном ресайзе ширина не
+     * меняется, и проверка только по width оставляла бы c.height stale. */
+    this._lastW = 0; this._lastH = 0;
     this._ro = new ResizeObserver(() => {
-      const w = this._canvas ? this._canvas.clientWidth : 0;
-      if (!w || Math.abs(w - this._lastW) < 2) return;
-      this._lastW = w;
+      const c2 = this._canvas;
+      if (!c2) return;
+      const w = c2.clientWidth, h = c2.clientHeight;
+      if (!w || !h) return;
+      if (Math.abs(w - this._lastW) < 2 && Math.abs(h - this._lastH) < 2) return;
+      this._lastW = w; this._lastH = h;
       this._size(); this._fit(); this._draw();
+      /* Теснота считается не только от высоты бара: экран может стать ниже при
+       * той же раскладке чипов, и подсказка упрётся в шапку без участия бара. */
+      this._liftHint();
     });
     this._ro.observe(this._canvas);
 
-    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан. */
+    /* Лифт подсказки над собственными чипами — ОДИН механизм: наблюдатель на
+     * самом баре фильтров. Он закрывает разом язык (длина слов переносит
+     * строку), a11y (таргеты ×1.25), размер кнопок из настроек И ресайз окна
+     * (сужение переносит чипы во второй ряд). Точечные вызовы после каждого из
+     * этих событий не годятся: перелайаут чипов внутри .kiosk-layer
+     * (content-visibility) материализуется только на СЛЕДУЮЩЕМ кадре, а
+     * setTimeout(0) штатно бежит раньше — замер отдавал старую высоту.
+     * «А если RO молчит в фоне?» — там и раскладка не меняется, а на выходе
+     * из фона придёт первичная доставка. */
+    this._barRo = new ResizeObserver(() => this._liftHint());
+    this._barRo.observe(root.querySelector(".m42-filters--bottom"));
+
+    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан.
+     * Вешаем на КОРЕНЬ сцены, а не на канвас: div внутри <canvas> — это
+     * fallback-контент, браузер его не рисует, и подсказка была невидима
+     * (находка ревью ядра 1.8.1). События гасителя всё равно долетают —
+     * pointerdown с канваса всплывает до корня. */
     if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(this._canvas, { gesture: "pinch" });
+      this._hint = window.KioskHint.attach(root, {
+        gesture: "pinch", label: this._app.t("hint.pinch"),
+      });
     }
 
     this._renderAll();
@@ -139,6 +165,7 @@ export const mapScene = {
 
   unmount() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
+    if (this._barRo) { this._barRo.disconnect(); this._barRo = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._unbindGestures();
     if (this._statusRow) this._statusRow.removeEventListener("click", this._onFilter);
@@ -168,7 +195,7 @@ export const mapScene = {
       prev.viewPreset !== c.viewPreset || prev.lonMin !== c.lonMin ||
       prev.lonMax !== c.lonMax || prev.latMin !== c.latMin || prev.latMax !== c.latMax;
     if (reframe) { this._size(); this._fit(); }
-    this._draw();
+    this._draw();   // высоту бара пересчитает наблюдатель на нём же
   },
 
   _defaults() {
@@ -186,8 +213,33 @@ export const mapScene = {
 
   _uiScale() { return Math.min(2, Math.max(1, window.innerWidth / 1920)); },
 
+  /* Канвас нельзя опросить как DOM, поэтому считаем в самой отрисовке:
+   * _draw() кладёт сюда число нарисованных точек и размер буфера. */
+  healthcheck() {
+    if (!this._canvas) return { ok: false, detail: "сцена не смонтирована" };
+    const drawn = this._drawn || 0;
+    const want = this._items().length;
+    const r = this._canvas.getBoundingClientRect();
+    const buf = this._canvas.width;
+    /* Не только «нарисовано столько же», но и «нарисовано в нужном
+     * разрешении». Сверяем не с шириной бокса, а с ОЖИДАНИЕМ по
+     * фактическому dpr: бюджет 8.3 Мп законно опускает масштаб ниже
+     * единицы на боксе крупнее 4K (зум браузера 67% → dpr≈0.67), и
+     * сравнение с боксом горело бы красным на корректном буфере. */
+    const wantBuf = Math.floor(r.width * (this._dpr || 1));
+    if (r.width && buf < wantBuf * 0.9) {
+      return { ok: false, detail: "буфер " + this._canvas.width + "×" +
+        this._canvas.height + " при ожидании " + wantBuf + " по ширине" +
+        " (бокс " + Math.round(r.width) + "×" + Math.round(r.height) + ")" };
+    }
+    return drawn === want && want > 0
+      ? { ok: true, detail: "точек нарисовано " + drawn + ", буфер " +
+          this._canvas.width + "×" + this._canvas.height }
+      : { ok: false, detail: "точек нарисовано " + drawn + " из " + want };
+  },
+
   pause() {},   // петли нет: рисуем только по жесту
-  resume() { this._draw(); },
+  resume() { this._ensureSized(); this._draw(); },
 
   reset() {
     this._status = "all";
@@ -199,8 +251,17 @@ export const mapScene = {
     this._draw();
   },
 
-  setLang() { this._renderAll(); this._draw(); },
+  /* Подпись подсказки — тоже контент: без setLabel китайский посетитель
+   * читал бы русский дефолт KioskHint. */
+  setLang() {
+    this._renderAll();
+    if (this._hint) this._hint.setLabel(this._app.t("hint.pinch"));
+    this._draw();
+  },
 
+  /* Лифт подсказки не трогаем: бар подрастёт от токенов a11y, и наблюдатель
+   * на баре пересчитает сам — на том кадре, когда перелайаут действительно
+   * случится. */
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
     this._draw();   // точки крупнее, подписи городов гаснут — см. _draw()
@@ -213,7 +274,10 @@ export const mapScene = {
     if (!c) return;
     const rect = c.getBoundingClientRect();
     const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, rect.width * rect.height));
-    const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, budget));
+    /* Пол в 1 нельзя ставить снаружи: на боксе крупнее 4K бюджет требует
+     * масштаба МЕНЬШЕ единицы, а Math.max(1, …) это требование обнулял бы.
+     * На прод-4K недостижимо, но формула должна быть верной. */
+    const dpr = Math.min(Math.max(1, Math.min(2, window.devicePixelRatio || 1)), budget);
     c.width = Math.max(1, Math.floor(rect.width * dpr));
     c.height = Math.max(1, Math.floor(rect.height * dpr));
     this._dpr = dpr;
@@ -279,9 +343,29 @@ export const mapScene = {
 
   /* ─── отрисовка ─────────────────────────────────────────────────────── */
 
+  /* Буфер обязан соответствовать CSS-боксу. Сцена монтируется в невидимом
+   * слое, где ResizeObserver может не сработать ни разу, — тогда канвас
+   * остаётся с дефолтными 300×150 и карта рисуется в 4% разрешения.
+   * Поэтому сверяем перед каждой отрисовкой: это одно сравнение. */
+  _ensureSized() {
+    const c = this._canvas;
+    if (!c) return;
+    const r = c.getBoundingClientRect();
+    if (!r.width || !r.height) return;
+    const wantW = Math.floor(r.width * (this._dpr || 1));
+    const wantH = Math.floor(r.height * (this._dpr || 1));
+    if (Math.abs(c.width - wantW) > 1 || Math.abs(c.height - wantH) > 1 ||
+        !this._cam.worldW) {
+      const first = !this._cam.worldW;
+      this._size();
+      if (first) this._fit();
+    }
+  },
+
   _draw() {
     const c = this._canvas, ctx = this._ctx2d;
     if (!c || !ctx) return;
+    this._ensureSized();
     const r = c.getBoundingClientRect();
     const W = r.width, H = r.height;
     const a11y = this._app.a11y;
@@ -341,6 +425,7 @@ export const mapScene = {
 
   _drawDots(ctx, a11y) {
     const R = this._dotRadius(a11y);
+    this._drawn = 0;
     for (const it of this._items()) {
       if (typeof it.lat !== "number") continue;
       const w = this._project(it.lat, it.lng);
@@ -352,6 +437,7 @@ export const mapScene = {
       ctx.lineWidth = Math.max(1.5, R * 0.14);
       ctx.strokeStyle = "rgba(12, 16, 18, 0.75)";
       ctx.stroke();
+      this._drawn++;
     }
   },
 
@@ -379,14 +465,14 @@ export const mapScene = {
   _bindGestures() {
     const c = this._canvas;
     const pts = new Map();
-    let dragged = false, lastDist = 0, last = null;
+    let dragged = false, lastDist = 0, last = null, lastMid = null;
 
     this._onDown = (e) => {
       c.setPointerCapture && c.setPointerCapture(e.pointerId);
       pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
       dragged = false;
       last = { x: e.clientX, y: e.clientY };
-      lastDist = 0;
+      lastDist = 0; lastMid = null;
     };
     this._onMove = (e) => {
       if (!pts.has(e.pointerId)) return;
@@ -394,12 +480,19 @@ export const mapScene = {
       const arr = [...pts.values()];
       if (arr.length >= 2) {
         const d = Math.hypot(arr[0].x - arr[1].x, arr[0].y - arr[1].y);
+        const mid = { x: (arr[0].x + arr[1].x) / 2, y: (arr[0].y + arr[1].y) / 2 };
         if (lastDist) {
-          const mid = { x: (arr[0].x + arr[1].x) / 2, y: (arr[0].y + arr[1].y) / 2 };
           this._zoomAt(mid, d / lastDist);
+          /* Карта должна ехать за пальцами: смещение середины щипка —
+           * это пан. Без него двумя пальцами можно было только масштаб. */
+          if (lastMid) {
+            this._cam.camX -= (mid.x - lastMid.x) / this._cam.zoom;
+            this._cam.camY -= (mid.y - lastMid.y) / this._cam.zoom;
+          }
           dragged = true;
         }
         lastDist = d;
+        lastMid = mid;
         this._draw();
         return;
       }
@@ -413,7 +506,7 @@ export const mapScene = {
     };
     this._onUp = (e) => {
       pts.delete(e.pointerId);
-      if (pts.size < 2) lastDist = 0;
+      if (pts.size < 2) { lastDist = 0; lastMid = null; }
       if (pts.size === 0) {
         if (!dragged) this._pick(e.clientX, e.clientY);
         last = null;
@@ -421,8 +514,7 @@ export const mapScene = {
     };
     this._onWheel = (e) => {
       e.preventDefault();
-      const r = c.getBoundingClientRect();
-      this._zoomAt({ x: e.clientX - r.left, y: e.clientY - r.top },
+      this._zoomAt({ x: e.clientX, y: e.clientY },
         Math.exp(-e.deltaY * Number(this._cfg.zoomSensitivity) / 1000));
       this._draw();
     };
@@ -444,12 +536,15 @@ export const mapScene = {
     c.removeEventListener("wheel", this._onWheel);
   },
 
-  _zoomAt(pt, k) {
+  /* Принимает КЛИЕНТСКИЕ координаты и сам переводит их в локальные.
+   * Раньше колесо слало локальные, а пинч — клиентские, и разница
+   * маскировалась только тем, что канвас занимает весь экран. */
+  _zoomAt(clientPt, k) {
     const r = this._canvas.getBoundingClientRect();
-    const local = { x: pt.x - (pt.x > r.width ? r.left : 0), y: pt.y };
-    const before = this._toWorld(local.x, local.y);
+    const x = clientPt.x - r.left, y = clientPt.y - r.top;
+    const before = this._toWorld(x, y);
     this._cam.zoom = this._clampZoom(this._cam.zoom * k);
-    const after = this._toWorld(local.x, local.y);
+    const after = this._toWorld(x, y);
     this._cam.camX += before.x - after.x;
     this._cam.camY += before.y - after.y;
   },
@@ -493,5 +588,33 @@ export const mapScene = {
       '<button type="button" class="m42-filter kiosk-target' +
       (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
       esc(t("status." + v)) + "</button>").join("");
+  },
+
+  /* Сколько своя нижняя панель фильтров занимает над линией --chrome-bottom.
+   * В CSS высоту соседнего элемента не узнать, поэтому меряем и публикуем
+   * переменной. Единственный вызов — из наблюдателя на самом баре (см. mount):
+   * он приходит тогда, когда перелайаут уже случился. Инвариант, по которому
+   * это проверяется на приёмке: зазор между низом подсказки и верхом чипов
+   * РОВНО 24 px, а не «перекрытий нет». */
+  _liftHint() {
+    if (!this._root) return;
+    const bar = this._root.querySelector(".m42-filters--bottom");
+    const h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+    this._root.style.setProperty("--m42-hint-lift", h + "px");
+
+    /* На узко-высоком экране в a11y бар разрастается до трёх рядов, подсказка
+     * уезжает вверх и упирается в заголовок сцены (замер координатора:
+     * 1280×1080, бар 400 → хинт на y=196). Зазор до чипов при этом честные 24,
+     * но выше места уже нет — держать оба инварианта физически невозможно.
+     * Выбор: гасим подсказку, а не заголовок. Она вспомогательная и всё равно
+     * исчезает по первому касанию, а перечёркнутый заголовок выглядит поломкой.
+     * Гасим через visibility, а не display: бокс остаётся измеримым, иначе
+     * следующий замер увидел бы нули и класс залип бы навсегда. */
+    const hint = this._root.querySelector(".kiosk-hint");
+    const head = this._root.querySelector(".m42-head");
+    if (!hint || !head) return;
+    const hr = hint.getBoundingClientRect(), fr = head.getBoundingClientRect();
+    if (!hr.height) return;                       // ещё не отрисована — не судим
+    this._root.classList.toggle("is-hint-cramped", hr.top < fr.bottom + 12);
   },
 };
