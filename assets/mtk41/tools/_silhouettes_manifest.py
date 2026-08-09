@@ -32,12 +32,21 @@
 import argparse
 import importlib.util
 import json
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 CORPUS = ROOT.parent.parent / "data" / "mtk41.json"
 OUT = ROOT / "silhouettes_paths.json"
 VERSION = "2026-08-09"
+
+# Растровые маски — ИСХОДНИК, а не поставка: в репозиторий едут только вектор и
+# манифест (решение координатора 2026-08-09). Их 358 штук на 37 МБ, и репозиторий
+# при бюджете 300 МБ занят на ~252 — маски его переполнили бы. Лежат снаружи,
+# рядом с репозиторием; пересобираются из фотографий за ~50 с.
+MASKS = Path(os.environ.get(
+    "MTK41_MASKS", Path.home() / "Desktop/WWWWW/BMK/mtk41-silhouette-masks"))
+
 
 # Плоские объекты: силуэт ФИГУРЫ им не положен по типу. Это не брак вырезки —
 # это неверно поставленный вопрос: у геоглифа и барельефа нет силуэта в том
@@ -135,7 +144,7 @@ def main():
             continue
 
         def clean_frame(rel):
-            mask = ROOT / mid / "silhouettes" / (Path(rel).stem + ".png")
+            mask = MASKS / mid / (Path(rel).stem + ".png")
             if not mask.exists():
                 return None, None
             try:

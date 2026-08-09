@@ -24,6 +24,7 @@
 import argparse
 import io
 import json
+import os
 import sys
 import time
 from pathlib import Path
@@ -34,6 +35,14 @@ from PIL import Image
 ROOT = Path(__file__).resolve().parent.parent
 CORPUS = ROOT.parent.parent / "data" / "mtk41.json"
 MAX_SIDE = 1400
+
+# Растровые маски — ИСХОДНИК, а не поставка: в репозиторий едут только вектор и
+# манифест (решение координатора 2026-08-09). Их 358 штук на 37 МБ, и репозиторий
+# при бюджете 300 МБ занят на ~252 — маски его переполнили бы. Лежат снаружи,
+# рядом с репозиторием; пересобираются из фотографий за ~50 с.
+MASKS = Path(os.environ.get(
+    "MTK41_MASKS", Path.home() / "Desktop/WWWWW/BMK/mtk41-silhouette-masks"))
+
 
 
 def verdict(mask_img):
@@ -132,8 +141,8 @@ def main():
         if not src.exists():
             report.append((mid, "негодно", {"reason": "снимок потерян"}))
             continue
-        sil_dir = ROOT / mid / "silhouettes"
-        sil_dir.mkdir(exist_ok=True)
+        sil_dir = MASKS / mid
+        sil_dir.mkdir(parents=True, exist_ok=True)
 
         def mask_for(rel_photo):
             """Маска для одного кадра — с диска, если уже считана."""
