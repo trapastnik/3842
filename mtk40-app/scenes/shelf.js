@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=38";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=39";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -156,6 +156,12 @@ export const shelfScene = {
 
     const stopTicker = this.app.standbyTicker((t) => {
       if (!this.cv) return;
+      /* Держим подсказку погашенной ВСЮ заставку: hide() кита перевзводит
+       * таймер показа, а тик приходит минимум раз в секунду (при потолке
+       * standbyFps в 1 к/с) против тридцати секунд ожидания — запас
+       * тридцатикратный, загореться не успевает. Снимется, когда кит отдаст
+       * suppress()/resume(); заявка ушла. */
+      if (this.hint) this.hint.poke();
       /* Страховка размера жила в rAF-петле, а она остановлена — тикеру нужна
        * своя, иначе слой, показанный в фоне, останется с чужим буфером. */
       this.cv.sync();
