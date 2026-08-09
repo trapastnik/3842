@@ -10,7 +10,7 @@
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel, isOffMap,
-} from "./shared.js?v=5";
+} from "./shared.js?v=6";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",

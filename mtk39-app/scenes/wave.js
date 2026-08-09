@@ -7,7 +7,7 @@
 
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch, isOffMap,
-} from "./shared.js?v=5";
+} from "./shared.js?v=6";
 
 const FROM = 1900;
 const TO = 2025;
@@ -67,7 +67,8 @@ export const waveScene = {
     el.innerHTML =
       '<canvas class="m39-canvas"></canvas>' +
       '<header class="m39-head m39-head--over">' +
-        '<h1 class="m39-title"></h1><p class="m39-sub"></p></header>' +
+        '<h1 class="m39-title"></h1><p class="m39-sub"></p>' +
+        '<p class="m39-note"></p></header>' +
       '<div class="m39-year"><div class="m39-year__num">1900</div>' +
         '<div class="m39-year__counts"></div></div>' +
       '<aside class="m39-legend"></aside>' +
@@ -76,8 +77,7 @@ export const waveScene = {
         '<input class="m39-scrub" type="range" min="' + FROM + '" max="' + TO +
           '" step="1" value="' + FROM + '" />' +
         '<div class="m39-ticks"></div>' +
-      "</div>" +
-      '<p class="m39-note"></p>';
+      "</div>";
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
