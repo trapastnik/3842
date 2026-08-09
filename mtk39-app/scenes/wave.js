@@ -7,7 +7,7 @@
 
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch, isOffMap,
-} from "./shared.js?v=3";
+} from "./shared.js?v=4";
 
 const FROM = 1900;
 const TO = 2025;
@@ -409,6 +409,7 @@ export const waveScene = {
         setPlaying(true);
         const span = TO - FROM;
         const stop = app_.standbyTicker((t) => {
+          if (hint) hint.poke();   // иначе призыв загорится поверх заставки через 30 с
           year = FROM + ((t * (scene.opt.speed || DEFAULTS.speed)) % span);
           scrub.value = String(Math.floor(year));
           render();
