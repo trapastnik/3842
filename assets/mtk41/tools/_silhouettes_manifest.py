@@ -128,12 +128,29 @@ def main():
 
     ids = args.ids or sorted(corpus)
     items, skipped, failed, multi = {}, [], [], 0
-    rescued, unfit = [], []
+    rescued, unfit, manual = [], [], []
 
     for mid in ids:
         m = corpus.get(mid)
         if not m:
             continue
+        ov = overrides.get(mid) or {}
+
+        # ── ручное поверх автоматики ────────────────────────────────────
+        # Если в поправках лежит готовый путь `d`, он берётся как есть и
+        # автоматика для этого объекта не запускается вовсе. Так попадают в
+        # ряд объекты, которые вырезка не берёт в принципе: у Ветлосяна это
+        # ажурные леса с приваренным профилем — rembg отдаёт решётку с
+        # просветами, а заливка дыр (пробовал 6/12/20 %) даёт бесформенное
+        # пятно вместо профиля. Форма при этом известна буквально, так что
+        # обводка руками — не компромисс, а правильный инструмент.
+        # Путь ждём в тех же единицах, что и автоматический: y ∈ [0,1].
+        if ov.get("d"):
+            items[mid] = {"d": ov["d"], "ar": round(float(ov.get("ar", 1.0)), 3),
+                          "src": "manual"}
+            manual.append((mid, ov.get("note", "")))
+            continue
+
         kind = m.get("kind")
         if kind in NONFIGURATIVE:
             skipped.append((mid, f"нефигуративный ({kind})"))
@@ -148,7 +165,7 @@ def main():
             if not mask.exists():
                 return None, None
             try:
-                return sc.clean(mask, overrides.get(mid)), mask
+                return sc.clean(mask, ov), mask
             except Exception:                                    # noqa: BLE001
                 return None, None
 
@@ -199,6 +216,7 @@ def main():
           f"отказов {len(failed)}; корпус {len(corpus)}")
     print(f"=== кадр 01 не годился у {multi} многокадровых — пробовали запасные")
     print(f"=== НЕ ГОДЯТСЯ и запасного кадра нет: {len(unfit)} (кандидаты в ручной список)")
+    print(f"=== ручных путей (manual > auto): {len(manual)}")
     print(f"=== файл {out.name}: {out.stat().st_size / 1024:.0f} КБ")
     for mid, why in skipped[:14]:
         print(f"  пропуск: {mid:34s} {why}")
