@@ -5,12 +5,12 @@
  * ядру (kiosk-core.js?v=…). Без версии Chrome отдаёт обе из кеша и
  * обновление ядра молча не доезжает до киоска. Поднимать при переходе
  * на каждый новый релиз ядра. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.12.0";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=24";
-import { archiveScene } from "./scenes/archive.js?v=24";
-import { timelineScene } from "./scenes/timeline.js?v=24";
-import { mapScene } from "./scenes/map.js?v=24";
+import { pendulumScene } from "./scenes/pendulum.js?v=25";
+import { archiveScene } from "./scenes/archive.js?v=25";
+import { timelineScene } from "./scenes/timeline.js?v=25";
+import { mapScene } from "./scenes/map.js?v=25";
 
 const app = createApp({
   appId: "mtk42",
@@ -20,7 +20,23 @@ const app = createApp({
   /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
    * и правки подписей не доезжали — ловил это руками не раз. Поднимать
    * вместе с ?v= остальных ассетов. */
-  i18nVersion: "24",
+  i18nVersion: "25",
+
+  /* Общая настройка МТК: цвет портретов делят картотека и маятник, поэтому
+   * она не принадлежит ни одной сцене. С ядра 1.12.0 для такого есть
+   * appSettings — ядро зовёт applyAppSettings() у всех смонтированных сцен.
+   * До 1.12.0 приходилось звать императивный addSettings(), который ядро
+   * объявляло устаревшим, не имея замены; заявка закрыта, warn ушёл.
+   *
+   * Монохром базовым — кураторское решение, не техническое: оба флага лишь
+   * возвращают снимкам исходный цвет, отдельно для обычного режима и для
+   * режима слабовидящих. По умолчанию выключены оба. */
+  appSettings: [
+    { key: "photoColor", label: { ru: "Цвет фото" },
+      type: "toggle", default: false },
+    { key: "photoColorA11y", label: { ru: "Цвет фото в режиме слабовидящих" },
+      type: "toggle", default: false },
+  ],
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
@@ -38,25 +54,9 @@ app.registerScene(mapScene);
  * (и пересчитанные --kiosk-safe-* как синонимы). Временный chrome-zones.js
  * снят — заявка закрыта. */
 
-/* Общеприкладная настройка, не принадлежащая ни одной сцене. */
-app.addSettings("Портреты", [
-  { type: "toggle", path: "photos.color", label: "Цвет фото" },
-  { type: "toggle", path: "photos.a11yColor",
-    label: "Цвет фото в режиме слабовидящих" },
-]);
-
-/* Монохром — базовый вид экспозиции, но это кураторское решение, а не
- * техническое: оба флага возвращают снимкам исходный цвет — отдельно для
- * обычного режима и для режима слабовидящих. По умолчанию оба выключены. */
-function applyPhotoColor() {
-  const root = document.documentElement;
-  root.classList.toggle("m42-photo-color", app.getSetting("photos.color") === true);
-  root.classList.toggle("m42-a11y-color", app.getSetting("photos.a11yColor") === true);
-}
-app.on("started", applyPhotoColor);
-app.on("setting", ({ path }) => {
-  if (path.split(".")[0] === "photos") applyPhotoColor();
-});
+/* Применение цвета портретов живёт в сценах: ядро зовёт applyAppSettings()
+ * у каждой смонтированной сцены, общая реализация — applyPhotoMode() в
+ * scenes/shared.js. Здесь подписок больше нет. */
 
 app.start();
 

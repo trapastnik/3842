@@ -14,7 +14,8 @@
  * timings.standbyFps; скорость дрейфа задана в px/с и от FPS не зависит. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=24";
+  applyPhotoMode,
+} from "./shared.js?v=25";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -202,6 +203,10 @@ export const pendulumScene = {
   },
 
   /* Схема v1.2: ядро (пока — мост) отдаёт готовые значения. */
+  /* Общая настройка МТК: ядро зовёт это у всех смонтированных сцен.
+   * Реализация одна на всех — см. shared.js. */
+  applyAppSettings(values) { applyPhotoMode(values); },
+
   applySettings(values) {
     this._cfg = Object.assign(this._defaults(), values || {});
     if (!this._root) return;
@@ -224,6 +229,15 @@ export const pendulumScene = {
     let dir = 1, prev = 0;
     const SPEED = 60;   // px/с — независимо от standbyFps
     this._driftStop = this._app.standbyTicker((t) => {
+      /* Призыв к жесту не должен загораться поверх заставки. Его 30-секундный
+       * таймер живёт своей жизнью и в простое не останавливается: без этого
+       * вызова подсказка вспыхнет через полминуты после ухода в standby и
+       * будет гореть до утра. Одиночного hide() на входе мало — он ПЕРЕВЗВОДИТ
+       * тот же таймер, то есть просто отодвигает вспышку на 30 с (грабля
+       * GRABLI, поймана живьём у МТК 41). Поэтому дёргаем в КАЖДОМ тике.
+       * Убрать, когда в ките появятся suppress()/resume(). */
+      if (this._hint && this._hint.poke) this._hint.poke();
+
       const max = scroll.scrollHeight - scroll.clientHeight;
       const dt = Math.max(0, Math.min(1, t - prev));
       prev = t;
@@ -233,7 +247,12 @@ export const pendulumScene = {
       if (next <= 0) { next = 0; dir = 1; }
       scroll.scrollTop = next;
     });
-    return () => this._stopDrift();
+    /* На выходе из заставки таймер перевзводим явно: за время простоя он был
+     * многократно сдвинут, и без rearm() подсказка могла бы не прийти вовсе. */
+    return () => {
+      this._stopDrift();
+      if (this._hint && this._hint.rearm) this._hint.rearm();
+    };
   },
 
   _stopDrift() {
