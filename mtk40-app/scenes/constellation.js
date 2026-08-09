@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=28";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=38";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
@@ -19,7 +19,7 @@ export const constellationScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное
@@ -68,11 +68,22 @@ export const constellationScene = {
     this.cv.canvas.addEventListener("pointerdown", this.onTap);
 
     this.paintLegend();
+    /* Наблюдатель на самом меряемом элементе — легенде, чья высота зависит
+     * от языка и режима слабовидящих. Ловит и смену языка, и настройки, и
+     * токены a11y: шире, чем разовый пересчёт по событию (канон README
+     * ядра). */
+    if (typeof ResizeObserver === "function") {
+      this._sizeRo = new ResizeObserver(() => this.layout());
+      this._sizeRo.observe(this.legendEl);
+    }
+
     this.cv.observe();
     this.cv.sync();
   },
 
   unmount() {
+    cancelAnimationFrame(this._a11yRaf);
+    if (this._sizeRo) { this._sizeRo.disconnect(); this._sizeRo = null; }
     if (this.cv) {
       this.cv.canvas.removeEventListener("pointerdown", this.onTap);
       this.cv.destroy();
@@ -96,7 +107,16 @@ export const constellationScene = {
     this.paintLegend();
   },
 
-  setA11y() { this.layout(); },
+  setA11y() {
+    /* Замер после смены токенов — только следующим кадром: перелайаут
+     * content-visibility-поддерева материализуется в нём, а setTimeout(0)
+     * бежит РАНЬШЕ и ловит старую раскладку (сага 42, поправка GRABLI от
+     * 2026-08-06 — прежний совет «повтори макрозадачей» был неверен).
+     * Синхронный вызов оставлен для случая, когда токены уже применены. */
+    this.layout();
+    cancelAnimationFrame(this._a11yRaf);
+    this._a11yRaf = requestAnimationFrame(() => { if (this.cv) this.layout(); });
+  },
 
   applySettings(v) { this.values = v; this.layout(); },
 

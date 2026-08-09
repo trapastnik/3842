@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=28";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=38";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -67,7 +67,7 @@ export const volumeScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное
@@ -123,11 +123,22 @@ export const volumeScene = {
     this.cv.canvas.addEventListener("pointerdown", this.onTap);
 
     this.paintTools();
+    /* Наблюдатель на самом меряемом элементе — строке пояснения, чья высота
+     * зависит от языка и режима слабовидящих. Ловит и смену языка, и
+     * настройки, и токены a11y: шире, чем разовый пересчёт по событию
+     * (канон README ядра). */
+    if (typeof ResizeObserver === "function") {
+      this._sizeRo = new ResizeObserver(() => this.layout());
+      this._sizeRo.observe(this.noteEl);
+    }
+
     this.cv.observe();
     this.cv.sync();
   },
 
   unmount() {
+    cancelAnimationFrame(this._a11yRaf);
+    if (this._sizeRo) { this._sizeRo.disconnect(); this._sizeRo = null; }
     if (this.cv) {
       this.cv.canvas.removeEventListener("pointerdown", this.onTap);
       this.cv.destroy();
@@ -155,7 +166,16 @@ export const volumeScene = {
     this.paintTools();
   },
 
-  setA11y() { this.layout(); },
+  setA11y() {
+    /* Замер после смены токенов — только следующим кадром: перелайаут
+     * content-visibility-поддерева материализуется в нём, а setTimeout(0)
+     * бежит РАНЬШЕ и ловит старую раскладку (сага 42, поправка GRABLI от
+     * 2026-08-06 — прежний совет «повтори макрозадачей» был неверен).
+     * Синхронный вызов оставлен для случая, когда токены уже применены. */
+    this.layout();
+    cancelAnimationFrame(this._a11yRaf);
+    this._a11yRaf = requestAnimationFrame(() => { if (this.cv) this.layout(); });
+  },
 
   applySettings(v) {
     this.operator = { ...v };
@@ -330,9 +350,12 @@ export const volumeScene = {
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const lines = M.wrapLines(ctx, c.book.title, w - padX * 2, 3);
+      /* Обрубок «Публикац…» на плитке — мусор: плитка и так читается цветом
+       * и площадью, а название посетитель получает тапом. */
+      const годится = lines.length && !lines.join(" ").includes("…");
       let ty = c.y + 6 * s;
-      for (const ln of lines) { ctx.fillText(ln, c.x + padX, ty); ty += fs * 1.14; }
-      if (h > 52 * s) {
+      if (годится) for (const ln of lines) { ctx.fillText(ln, c.x + padX, ty); ty += fs * 1.14; }
+      if (годится && h > 52 * s) {
         ctx.font = `400 ${Math.max(9 * s, fs * 0.72)}px "20 Kopeek", monospace`;
         ctx.fillStyle = M.rgba(M.COLORS.ink, 0.6);
         ctx.fillText(this.app.t("card.pages", { n: this.num(c.book.pages_approx) }), c.x + padX, ty + 2 * s);

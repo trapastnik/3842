@@ -55,6 +55,7 @@
       "id": "by-druzya-naroda",
       "bucket": "by-lenin",
       "title": "Что такое «друзья народа» и как они воюют против социал-демократов?",
+      "title_spine": "Друзья народа",
       "subtitle": "Ответ на статьи «Русского богатства» против марксистов",
       "author": "В.И. Ленин (В. Ильин)",
       "year_first": 1894,
@@ -66,7 +67,12 @@
       "height_cm": 21,
       "cover_color": "#6E6E68",
       "significance": 4,
-      "tags": ["early", "narodniki", "samizdat-era", "polemics"],
+      "tags": [
+        "early",
+        "narodniki",
+        "samizdat-era",
+        "polemics"
+      ],
       "short_text": "Первая крупная теоретическая работа Ленина против народников; распространялась нелегально на гектографе."
     },
     {
@@ -84,7 +90,12 @@
       "height_cm": 24,
       "cover_color": "#5E2027",
       "significance": 5,
-      "tags": ["economics", "monograph", "early", "siberian-exile"],
+      "tags": [
+        "economics",
+        "monograph",
+        "early",
+        "siberian-exile"
+      ],
       "short_text": "Первая монография; написана в шушенской ссылке, опубликована легально под псевдонимом."
     },
     {
@@ -102,7 +113,13 @@
       "height_cm": 20,
       "cover_color": "#6B1F2A",
       "significance": 5,
-      "tags": ["party-theory", "iskra", "emigration", "stuttgart", "key-text"],
+      "tags": [
+        "party-theory",
+        "iskra",
+        "emigration",
+        "stuttgart",
+        "key-text"
+      ],
       "short_text": "Программная книга 1902 года: концепция партии нового типа из профессиональных революционеров."
     },
     {
@@ -120,13 +137,19 @@
       "height_cm": 20,
       "cover_color": "#7A2A2E",
       "significance": 4,
-      "tags": ["party-theory", "split", "geneva", "menshevik-bolshevik"],
+      "tags": [
+        "party-theory",
+        "split",
+        "geneva",
+        "menshevik-bolshevik"
+      ],
       "short_text": "Раскол на II съезде РСДРП — анализ Ленина после фракционной победы большевиков."
     },
     {
       "id": "by-dve-taktiki",
       "bucket": "by-lenin",
       "title": "Две тактики социал-демократии в демократической революции",
+      "title_spine": "Две тактики",
       "subtitle": null,
       "author": "В.И. Ленин",
       "year_first": 1905,
@@ -138,13 +161,18 @@
       "height_cm": 20,
       "cover_color": "#6B1F2A",
       "significance": 4,
-      "tags": ["1905", "tactics", "geneva"],
+      "tags": [
+        "1905",
+        "tactics",
+        "geneva"
+      ],
       "short_text": "Тактическая программа большевиков в революции 1905 года."
     },
     {
       "id": "by-materializm-empirio",
       "bucket": "by-lenin",
       "title": "Материализм и эмпириокритицизм",
+      "title_spine": "Мат. и эмпириокритицизм",
       "subtitle": "Критические заметки об одной реакционной философии",
       "author": "В.И. Ленин (Вл. Ильин)",
       "year_first": 1909,
@@ -156,7 +184,12 @@
       "height_cm": 22,
       "cover_color": "#2A3A5C",
       "significance": 5,
-      "tags": ["philosophy", "polemics", "key-text", "geneva-paris"],
+      "tags": [
+        "philosophy",
+        "polemics",
+        "key-text",
+        "geneva-paris"
+      ],
       "short_text": "Главный философский труд: атака на махизм/эмпириокритицизм Богданова и Базарова."
     },
     {
@@ -174,7 +207,11 @@
       "height_cm": 22,
       "cover_color": "#8A857A",
       "significance": 4,
-      "tags": ["theory", "journalistic", "popular"],
+      "tags": [
+        "theory",
+        "journalistic",
+        "popular"
+      ],
       "short_text": "Короткая программная статья к 30-летию смерти Маркса; стала каноническим школьным текстом."
     },
     {
@@ -192,7 +229,11 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 4,
-      "tags": ["national-question", "polemics", "krakow"],
+      "tags": [
+        "national-question",
+        "polemics",
+        "krakow"
+      ],
       "short_text": "Полемика с Розой Люксембург и австромарксистами по национальному вопросу."
     },
     {
@@ -210,17 +251,26 @@
       "height_cm": 20,
       "cover_color": "#6E6E68",
       "significance": 3,
-      "tags": ["wwi", "internationalism", "geneva", "zimmerwald"],
+      "tags": [
+        "wwi",
+        "internationalism",
+        "geneva",
+        "zimmerwald"
+      ],
       "short_text": "Платформа большевиков перед Циммервальдской конференцией: «превращение империалистической войны в гражданскую»."
     },
     {
       "id": "by-imperializm",
       "bucket": "by-lenin",
       "title": "Империализм как высшая стадия капитализма",
+      "title_spine": "Империализм",
       "subtitle": "Популярный очерк",
       "author": "В.И. Ленин",
       "year_first": 1917,
-      "year_range": [1916, 1917],
+      "year_range": [
+        1916,
+        1917
+      ],
       "type": "monograph",
       "language_first": "ru",
       "place_first": "Петроград (написана в Цюрихе 1916)",
@@ -228,7 +278,12 @@
       "height_cm": 21,
       "cover_color": "#5E2027",
       "significance": 5,
-      "tags": ["wwi", "economics", "key-text", "zurich"],
+      "tags": [
+        "wwi",
+        "economics",
+        "key-text",
+        "zurich"
+      ],
       "short_text": "Написана в эмиграции в Цюрихе; теория империализма как монополистической стадии капитализма."
     },
     {
@@ -246,7 +301,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["1917", "february-revolution", "zurich", "epistolary"],
+      "tags": [
+        "1917",
+        "february-revolution",
+        "zurich",
+        "epistolary"
+      ],
       "short_text": "Анализ Февральской революции и подготовка к возвращению в Россию через пломбированный вагон."
     },
     {
@@ -264,13 +324,19 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 5,
-      "tags": ["1917", "key-text", "soviet-power", "petrograd"],
+      "tags": [
+        "1917",
+        "key-text",
+        "soviet-power",
+        "petrograd"
+      ],
       "short_text": "Программа перехода от Февраля к социалистической революции; десять тезисов от 4 апреля 1917."
     },
     {
       "id": "by-grozyaschaya-katastrofa",
       "bucket": "by-lenin",
       "title": "Грозящая катастрофа и как с ней бороться",
+      "title_spine": "Грозящая катастрофа",
       "subtitle": null,
       "author": "В.И. Ленин",
       "year_first": 1917,
@@ -282,13 +348,18 @@
       "height_cm": 20,
       "cover_color": "#7A2A2E",
       "significance": 3,
-      "tags": ["1917", "economics", "petrograd"],
+      "tags": [
+        "1917",
+        "economics",
+        "petrograd"
+      ],
       "short_text": "Написана в подполье в сентябре 1917: программа экстренных экономических мер."
     },
     {
       "id": "by-uderzhat-li-bolsheviki",
       "bucket": "by-lenin",
       "title": "Удержат ли большевики государственную власть?",
+      "title_spine": "Удержат ли большевики власть?",
       "subtitle": null,
       "author": "В.И. Ленин",
       "year_first": 1917,
@@ -300,7 +371,11 @@
       "height_cm": 20,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["1917", "soviet-power", "petrograd"],
+      "tags": [
+        "1917",
+        "soviet-power",
+        "petrograd"
+      ],
       "short_text": "Накануне Октября: ответ скептикам о способности большевиков управлять страной."
     },
     {
@@ -310,7 +385,10 @@
       "subtitle": "Учение марксизма о государстве и задачи пролетариата в революции",
       "author": "В.И. Ленин",
       "year_first": 1918,
-      "year_range": [1917, 1918],
+      "year_range": [
+        1917,
+        1918
+      ],
       "type": "monograph",
       "language_first": "ru",
       "place_first": "Петроград (написана в подполье в Разливе и Финляндии)",
@@ -318,7 +396,13 @@
       "height_cm": 21,
       "cover_color": "#5E2027",
       "significance": 5,
-      "tags": ["state-theory", "key-text", "razliv", "finland", "underground"],
+      "tags": [
+        "state-theory",
+        "key-text",
+        "razliv",
+        "finland",
+        "underground"
+      ],
       "short_text": "Главный текст о государстве: написана летом-осенью 1917 в подполье, осталась незаконченной (главу VII прервал Октябрь)."
     },
     {
@@ -336,7 +420,12 @@
       "height_cm": 30,
       "cover_color": "#BCB6A0",
       "significance": 5,
-      "tags": ["1917", "decree", "key-text", "october"],
+      "tags": [
+        "1917",
+        "decree",
+        "key-text",
+        "october"
+      ],
       "short_text": "26 октября 1917: первый декрет советской власти, обращение к воюющим народам с предложением мира."
     },
     {
@@ -354,7 +443,13 @@
       "height_cm": 30,
       "cover_color": "#BCB6A0",
       "significance": 5,
-      "tags": ["1917", "decree", "key-text", "october", "agrarian"],
+      "tags": [
+        "1917",
+        "decree",
+        "key-text",
+        "october",
+        "agrarian"
+      ],
       "short_text": "26 октября 1917: отмена помещичьей собственности на землю; основан на эсеровской аграрной программе («Наказ» 242 крестьянских наказов)."
     },
     {
@@ -372,13 +467,18 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 4,
-      "tags": ["soviet-power", "moscow", "post-october"],
+      "tags": [
+        "soviet-power",
+        "moscow",
+        "post-october"
+      ],
       "short_text": "Программа управления после взятия власти: учёт, контроль, дисциплина, тейлоризм."
     },
     {
       "id": "by-renegat-kautsky",
       "bucket": "by-lenin",
       "title": "Пролетарская революция и ренегат Каутский",
+      "title_spine": "Ренегат Каутский",
       "subtitle": null,
       "author": "В.И. Ленин",
       "year_first": 1918,
@@ -390,7 +490,11 @@
       "height_cm": 20,
       "cover_color": "#6B1F2A",
       "significance": 3,
-      "tags": ["polemics", "ii-international", "moscow"],
+      "tags": [
+        "polemics",
+        "ii-international",
+        "moscow"
+      ],
       "short_text": "Жёсткая полемика с Карлом Каутским и западной социал-демократией; обоснование «диктатуры пролетариата»."
     },
     {
@@ -408,7 +512,11 @@
       "height_cm": 20,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["civil-war", "labor", "subbotnik"],
+      "tags": [
+        "civil-war",
+        "labor",
+        "subbotnik"
+      ],
       "short_text": "О «коммунистических субботниках» — мобилизационный пафос времён Гражданской войны."
     },
     {
@@ -426,13 +534,18 @@
       "height_cm": 21,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["comintern", "tactics", "key-text"],
+      "tags": [
+        "comintern",
+        "tactics",
+        "key-text"
+      ],
       "short_text": "Программное письмо II конгрессу Коминтерна о компромиссах и парламентской работе компартий."
     },
     {
       "id": "by-o-prodnaloge",
       "bucket": "by-lenin",
       "title": "О продовольственном налоге",
+      "title_spine": "О продналоге",
       "subtitle": "Значение новой политики и её условия",
       "author": "В.И. Ленин",
       "year_first": 1921,
@@ -444,7 +557,11 @@
       "height_cm": 20,
       "cover_color": "#7A2A2E",
       "significance": 4,
-      "tags": ["nep", "economics", "post-civil-war"],
+      "tags": [
+        "nep",
+        "economics",
+        "post-civil-war"
+      ],
       "short_text": "Обоснование перехода от продразвёрстки к продналогу — первый шаг НЭПа."
     },
     {
@@ -462,7 +579,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 4,
-      "tags": ["nep", "testament", "diktovki", "late"],
+      "tags": [
+        "nep",
+        "testament",
+        "diktovki",
+        "late"
+      ],
       "short_text": "Из последних статей-«диктовок» 1923 года; пересмотр взгляда на роль кооперации в социализме."
     },
     {
@@ -480,7 +602,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["testament", "diktovki", "late", "rabkrin"],
+      "tags": [
+        "testament",
+        "diktovki",
+        "late",
+        "rabkrin"
+      ],
       "short_text": "Последняя прижизненно опубликованная статья (март 1923): о реформе Рабкрина."
     },
     {
@@ -498,7 +625,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 2,
-      "tags": ["testament", "diktovki", "late", "literacy"],
+      "tags": [
+        "testament",
+        "diktovki",
+        "late",
+        "literacy"
+      ],
       "short_text": "О школе и грамотности; одна из последних диктовок."
     },
     {
@@ -508,7 +640,10 @@
       "subtitle": "т.н. «Завещание Ленина»",
       "author": "В.И. Ленин",
       "year_first": 1956,
-      "year_range": [1922, 1923],
+      "year_range": [
+        1922,
+        1923
+      ],
       "type": "letter",
       "language_first": "ru",
       "place_first": "Горки (диктовка); опубликовано на XX съезде КПСС, 1956",
@@ -516,7 +651,14 @@
       "height_cm": 22,
       "cover_color": "#3B3B3B",
       "significance": 5,
-      "tags": ["testament", "diktovki", "late", "stalin", "trotsky", "key-text"],
+      "tags": [
+        "testament",
+        "diktovki",
+        "late",
+        "stalin",
+        "trotsky",
+        "key-text"
+      ],
       "short_text": "Закрытая для партии до 1956 года записка с характеристиками ближайших сотрудников и предложением сместить Сталина."
     },
     {
@@ -526,7 +668,10 @@
       "subtitle": "5-е издание, в 55 томах",
       "author": "Институт марксизма-ленинизма при ЦК КПСС",
       "year_first": 1958,
-      "year_range": [1958, 1965],
+      "year_range": [
+        1958,
+        1965
+      ],
       "type": "collected-works",
       "language_first": "ru",
       "place_first": "Москва, Госполитиздат / Политиздат",
@@ -534,7 +679,13 @@
       "height_cm": 22,
       "cover_color": "#6B1F2A",
       "significance": 5,
-      "tags": ["pss", "canon", "monument", "key-text", "imel"],
+      "tags": [
+        "pss",
+        "canon",
+        "monument",
+        "key-text",
+        "imel"
+      ],
       "short_text": "55 томов и 3 справочных. ~9000 документов, из них ~1100 опубликованы впервые. Узнаваемый тёмно-вишнёвый ряд с золотым тиснением."
     },
     {
@@ -544,7 +695,10 @@
       "subtitle": "Дополнительные материалы к ПСС, тома I–XL",
       "author": "Институт Ленина / ИМЛ при ЦК КПСС",
       "year_first": 1924,
-      "year_range": [1924, 1985],
+      "year_range": [
+        1924,
+        1985
+      ],
       "type": "collected-works",
       "language_first": "ru",
       "place_first": "Москва",
@@ -552,7 +706,12 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 4,
-      "tags": ["pss", "supplement", "imel", "long-running"],
+      "tags": [
+        "pss",
+        "supplement",
+        "imel",
+        "long-running"
+      ],
       "short_text": "40 томов архивных материалов: записки, наброски, документы, не вошедшие в основное собрание. Издавались более 60 лет."
     },
     {
@@ -562,7 +721,10 @@
       "subtitle": "Конспекты Гегеля, Аристотеля, Фейербаха, Лассаля",
       "author": "В.И. Ленин",
       "year_first": 1933,
-      "year_range": [1914, 1916],
+      "year_range": [
+        1914,
+        1916
+      ],
       "type": "notebook",
       "language_first": "ru",
       "place_first": "Берн / Цюрих (1914–16); издано как т.29 ПСС",
@@ -570,7 +732,14 @@
       "height_cm": 22,
       "cover_color": "#2A3A5C",
       "significance": 4,
-      "tags": ["philosophy", "conspectus", "bern", "zurich", "emigration", "marginalia"],
+      "tags": [
+        "philosophy",
+        "conspectus",
+        "bern",
+        "zurich",
+        "emigration",
+        "marginalia"
+      ],
       "short_text": "Личные тетради Ленина-читателя: построчный конспект «Науки логики» Гегеля и других философов в швейцарской эмиграции."
     },
     {
@@ -580,7 +749,10 @@
       "subtitle": "Том 55 ПСС",
       "author": "В.И. Ленин",
       "year_first": 1965,
-      "year_range": [1893, 1922],
+      "year_range": [
+        1893,
+        1922
+      ],
       "type": "letters",
       "language_first": "ru",
       "place_first": "Москва, ПСС т.55",
@@ -588,7 +760,13 @@
       "height_cm": 22,
       "cover_color": "#6B1F2A",
       "significance": 3,
-      "tags": ["pss", "letters", "private", "family", "ulyanov"],
+      "tags": [
+        "pss",
+        "letters",
+        "private",
+        "family",
+        "ulyanov"
+      ],
       "short_text": "279 писем матери, сёстрам, брату Дмитрию — основной личный (не политический) корпус Ленина."
     },
     {
@@ -598,7 +776,10 @@
       "subtitle": "Программные статьи редакции и корреспонденции",
       "author": "В.И. Ленин",
       "year_first": 1900,
-      "year_range": [1900, 1903],
+      "year_range": [
+        1900,
+        1903
+      ],
       "type": "newspaper-cycle",
       "language_first": "ru",
       "place_first": "Лейпциг → Мюнхен → Лондон → Женева",
@@ -606,7 +787,15 @@
       "height_cm": 30,
       "cover_color": "#A02128",
       "significance": 4,
-      "tags": ["newspaper", "iskra", "emigration", "leipzig", "munich", "london", "geneva"],
+      "tags": [
+        "newspaper",
+        "iskra",
+        "emigration",
+        "leipzig",
+        "munich",
+        "london",
+        "geneva"
+      ],
       "short_text": "Корпус статей в общерусской социал-демократической газете до раскола РСДРП в 1903 году."
     },
     {
@@ -616,7 +805,10 @@
       "subtitle": "Статьи и заметки 1912–1922",
       "author": "В.И. Ленин",
       "year_first": 1912,
-      "year_range": [1912, 1922],
+      "year_range": [
+        1912,
+        1922
+      ],
       "type": "newspaper-cycle",
       "language_first": "ru",
       "place_first": "Санкт-Петербург / Петроград / Москва",
@@ -624,7 +816,13 @@
       "height_cm": 30,
       "cover_color": "#A02128",
       "significance": 4,
-      "tags": ["newspaper", "pravda", "petrograd", "moscow", "krakow"],
+      "tags": [
+        "newspaper",
+        "pravda",
+        "petrograd",
+        "moscow",
+        "krakow"
+      ],
       "short_text": "Сотни публикаций в большевистской газете — от Кракова до Кремля."
     },
     {
@@ -634,7 +832,10 @@
       "subtitle": "Цикл из семи статей, в т.ч. «Лев Толстой как зеркало русской революции»",
       "author": "В.И. Ленин",
       "year_first": 1908,
-      "year_range": [1908, 1911],
+      "year_range": [
+        1908,
+        1911
+      ],
       "type": "article",
       "language_first": "ru",
       "place_first": "«Пролетарий», «Социал-демократ», «Звезда»",
@@ -642,7 +843,13 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 3,
-      "tags": ["literature", "tolstoy", "emigration", "russian-literature", "criticism"],
+      "tags": [
+        "literature",
+        "tolstoy",
+        "emigration",
+        "russian-literature",
+        "criticism"
+      ],
       "short_text": "Семь статей 1908–1911 годов о Толстом, написанных в швейцарской и парижской эмиграции; знаменитая формула «зеркало русской революции»."
     },
     {
@@ -660,10 +867,14 @@
       "height_cm": 22,
       "cover_color": "#5C7A7E",
       "significance": 2,
-      "tags": ["literature", "herzen", "emigration", "revolutionary-tradition"],
+      "tags": [
+        "literature",
+        "herzen",
+        "emigration",
+        "revolutionary-tradition"
+      ],
       "short_text": "Статья к столетию Герцена с формулой «три поколения русских революционеров»: декабристы → разночинцы → пролетарии."
     },
-
     {
       "id": "ab-krupskaya-vospominaniya",
       "bucket": "about-lenin",
@@ -671,7 +882,10 @@
       "subtitle": null,
       "author": "Н.К. Крупская",
       "year_first": 1925,
-      "year_range": [1925, 1934],
+      "year_range": [
+        1925,
+        1934
+      ],
       "type": "memoir",
       "language_first": "ru",
       "place_first": "Москва",
@@ -679,7 +893,12 @@
       "height_cm": 22,
       "cover_color": "#5C7A7E",
       "significance": 5,
-      "tags": ["memoir", "wife", "primary-source", "soviet-canon"],
+      "tags": [
+        "memoir",
+        "wife",
+        "primary-source",
+        "soviet-canon"
+      ],
       "short_text": "Канонический мемуар жены и соратницы; основной личный источник о Ленине-эмигранте и Ленине-вожде."
     },
     {
@@ -697,7 +916,12 @@
       "height_cm": 21,
       "cover_color": "#6E6E68",
       "significance": 4,
-      "tags": ["memoir", "essay", "literary", "first-narkompros"],
+      "tags": [
+        "memoir",
+        "essay",
+        "literary",
+        "first-narkompros"
+      ],
       "short_text": "Литературные портреты вождей революции наркома просвещения; глава о Ленине — один из лучших ранних очерков."
     },
     {
@@ -715,7 +939,11 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 3,
-      "tags": ["memoir", "sovnarkom", "bytovoy"],
+      "tags": [
+        "memoir",
+        "sovnarkom",
+        "bytovoy"
+      ],
       "short_text": "Мемуары управделами Совнаркома: бытовая сторона работы Ленина в 1917–1924."
     },
     {
@@ -725,7 +953,10 @@
       "subtitle": "Литературный портрет",
       "author": "Максим Горький",
       "year_first": 1924,
-      "year_range": [1924, 1930],
+      "year_range": [
+        1924,
+        1930
+      ],
       "type": "memoir",
       "language_first": "ru",
       "place_first": "Москва (журнал «Русский современник»)",
@@ -733,7 +964,12 @@
       "height_cm": 22,
       "cover_color": "#4A6B8C",
       "significance": 4,
-      "tags": ["memoir", "literary", "capri", "writer"],
+      "tags": [
+        "memoir",
+        "literary",
+        "capri",
+        "writer"
+      ],
       "short_text": "Самый литературный из мемуаров: написан сразу после смерти Ленина и переработан в 1930. Знаменитая фраза о «Лунной сонате»."
     },
     {
@@ -751,7 +987,12 @@
       "height_cm": 22,
       "cover_color": "#3B3B3B",
       "significance": 4,
-      "tags": ["memoir", "trotsky", "banned-in-ussr", "octobrist"],
+      "tags": [
+        "memoir",
+        "trotsky",
+        "banned-in-ussr",
+        "octobrist"
+      ],
       "short_text": "Личные воспоминания и оценки; вычеркнут из советского канона почти сразу после публикации."
     },
     {
@@ -769,7 +1010,12 @@
       "height_cm": 21,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["memoir", "comintern", "germany", "women-question"],
+      "tags": [
+        "memoir",
+        "comintern",
+        "germany",
+        "women-question"
+      ],
       "short_text": "Известный фрагмент о беседах Ленина с Цеткин — в т.ч. о женском вопросе и о современном искусстве."
     },
     {
@@ -787,7 +1033,12 @@
       "height_cm": 21,
       "cover_color": "#5C7A7E",
       "significance": 2,
-      "tags": ["memoir", "secretary", "kremlin", "late-period"],
+      "tags": [
+        "memoir",
+        "secretary",
+        "kremlin",
+        "late-period"
+      ],
       "short_text": "Записи личного секретаря Совнаркома; ключевой источник по последним годам Ленина в Горках."
     },
     {
@@ -805,7 +1056,12 @@
       "height_cm": 21,
       "cover_color": "#5C5448",
       "significance": 2,
-      "tags": ["memoir", "sister", "family", "childhood"],
+      "tags": [
+        "memoir",
+        "sister",
+        "family",
+        "childhood"
+      ],
       "short_text": "Мемуары старшей сестры — главный источник о детстве и семейном фоне Ульяновых."
     },
     {
@@ -815,7 +1071,10 @@
       "subtitle": "Издание ИМЛ при ЦК КПСС",
       "author": "Институт марксизма-ленинизма",
       "year_first": 1960,
-      "year_range": [1960, 1986],
+      "year_range": [
+        1960,
+        1986
+      ],
       "type": "biography",
       "language_first": "ru",
       "place_first": "Москва, Политиздат",
@@ -823,17 +1082,26 @@
       "height_cm": 24,
       "cover_color": "#6B1F2A",
       "significance": 4,
-      "tags": ["soviet-canon", "official", "imel", "mass-edition"],
+      "tags": [
+        "soviet-canon",
+        "official",
+        "imel",
+        "mass-edition"
+      ],
       "short_text": "Канонический советский биографический том; переиздавался регулярно с 1960 по 1986, многомиллионные тиражи."
     },
     {
       "id": "ab-biokhronika",
       "bucket": "about-lenin",
       "title": "Владимир Ильич Ленин. Биографическая хроника",
+      "title_spine": "Биографическая хроника",
       "subtitle": "В 12 томах",
       "author": "Институт марксизма-ленинизма",
       "year_first": 1970,
-      "year_range": [1970, 1982],
+      "year_range": [
+        1970,
+        1982
+      ],
       "type": "reference",
       "language_first": "ru",
       "place_first": "Москва, Политиздат",
@@ -841,7 +1109,12 @@
       "height_cm": 24,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["soviet-canon", "reference", "imel", "monument"],
+      "tags": [
+        "soviet-canon",
+        "reference",
+        "imel",
+        "monument"
+      ],
       "short_text": "День-за-днём: 12 томов фактической хронологии жизни Ленина с 1870 по 1924 год."
     },
     {
@@ -859,7 +1132,13 @@
       "height_cm": 22,
       "cover_color": "#B22222",
       "significance": 5,
-      "tags": ["poetry", "mass-edition", "constructivism", "key-text", "art-fiction"],
+      "tags": [
+        "poetry",
+        "mass-edition",
+        "constructivism",
+        "key-text",
+        "art-fiction"
+      ],
       "short_text": "Поэма ~3000 строк, написана в 1924 после смерти Ленина; первое чтение в Большом театре сопровождалось 20-минутной овацией."
     },
     {
@@ -877,7 +1156,10 @@
       "height_cm": 22,
       "cover_color": "#B22222",
       "significance": 3,
-      "tags": ["poetry", "art-fiction"],
+      "tags": [
+        "poetry",
+        "art-fiction"
+      ],
       "short_text": "«Товарищ Ленин, я вам докладываю…» — короткое программное стихотворение."
     },
     {
@@ -887,7 +1169,10 @@
       "subtitle": "Тетралогия: «Билет по истории», «Первая Всероссийская», «Семья Ульяновых», «Четыре урока у Ленина»",
       "author": "М.С. Шагинян",
       "year_first": 1937,
-      "year_range": [1937, 1971],
+      "year_range": [
+        1937,
+        1971
+      ],
       "type": "tetralogy",
       "language_first": "ru",
       "place_first": "Москва",
@@ -895,7 +1180,13 @@
       "height_cm": 21,
       "cover_color": "#B89A45",
       "significance": 5,
-      "tags": ["art-fiction", "mass-edition", "lenin-prize", "family", "decade-long-project"],
+      "tags": [
+        "art-fiction",
+        "mass-edition",
+        "lenin-prize",
+        "family",
+        "decade-long-project"
+      ],
       "short_text": "Главный художественный эпос о семье Ульяновых; Ленинская премия 1972, миллионные тиражи."
     },
     {
@@ -913,7 +1204,12 @@
       "height_cm": 21,
       "cover_color": "#4A6B8C",
       "significance": 3,
-      "tags": ["art-fiction", "razliv", "1917", "underground"],
+      "tags": [
+        "art-fiction",
+        "razliv",
+        "1917",
+        "underground"
+      ],
       "short_text": "Повесть о Ленине и Зиновьеве в шалаше в Разливе летом 1917; одна из первых попыток художественной «оттепели» в лениниане."
     },
     {
@@ -931,7 +1227,12 @@
       "height_cm": 21,
       "cover_color": "#5C5448",
       "significance": 3,
-      "tags": ["art-fiction", "paris", "emigration", "modernist"],
+      "tags": [
+        "art-fiction",
+        "paris",
+        "emigration",
+        "modernist"
+      ],
       "short_text": "Лирико-документальная повесть о парижском периоде Ленина; стилистически контрастирует с шаблонной ленинианой."
     },
     {
@@ -941,7 +1242,10 @@
       "subtitle": "Дилогия о Ленине: «Большой зачин» и «Точка опоры»",
       "author": "А.Л. Коптелов",
       "year_first": 1962,
-      "year_range": [1962, 1980],
+      "year_range": [
+        1962,
+        1980
+      ],
       "type": "novel",
       "language_first": "ru",
       "place_first": "Новосибирск / Москва",
@@ -949,7 +1253,11 @@
       "height_cm": 21,
       "cover_color": "#6B5C3F",
       "significance": 2,
-      "tags": ["art-fiction", "siberia", "shushenskoe"],
+      "tags": [
+        "art-fiction",
+        "siberia",
+        "shushenskoe"
+      ],
       "short_text": "Дилогия о шушенской ссылке и эмиграции; типичная официальная художественная лениниана 60–70-х."
     },
     {
@@ -967,7 +1275,12 @@
       "height_cm": 17,
       "cover_color": "#B89A45",
       "significance": 3,
-      "tags": ["art-fiction", "children", "school-canon", "mass-edition"],
+      "tags": [
+        "art-fiction",
+        "children",
+        "school-canon",
+        "mass-edition"
+      ],
       "short_text": "Канонические детские рассказы о Ленине, по которым выросли поколения школьников."
     },
     {
@@ -985,7 +1298,12 @@
       "height_cm": 17,
       "cover_color": "#B89A45",
       "significance": 3,
-      "tags": ["art-fiction", "children", "school-canon", "mass-edition"],
+      "tags": [
+        "art-fiction",
+        "children",
+        "school-canon",
+        "mass-edition"
+      ],
       "short_text": "Параллельный детский канон Кононова — переиздавался десятилетиями миллионными тиражами."
     },
     {
@@ -1003,7 +1321,14 @@
       "height_cm": 21,
       "cover_color": "#6B5C3F",
       "significance": 5,
-      "tags": ["art-fiction", "tamizdat", "ymca-press", "anti-canon", "zurich", "emigration"],
+      "tags": [
+        "art-fiction",
+        "tamizdat",
+        "ymca-press",
+        "anti-canon",
+        "zurich",
+        "emigration"
+      ],
       "short_text": "Художественная антибиография: Ленин-эмигрант глазами Солженицына — впервые опубликована в Париже, в СССР — самиздат."
     },
     {
@@ -1021,7 +1346,13 @@
       "height_cm": 20,
       "cover_color": "#E8DFC8",
       "significance": 4,
-      "tags": ["essay", "deconstruction", "perestroika", "anti-canon", "montage"],
+      "tags": [
+        "essay",
+        "deconstruction",
+        "perestroika",
+        "anti-canon",
+        "montage"
+      ],
       "short_text": "Монтаж цитат самого Ленина из ПСС с минимальным комментарием — ироническая деконструкция канона."
     },
     {
@@ -1039,7 +1370,12 @@
       "height_cm": 24,
       "cover_color": "#3B3B3B",
       "significance": 5,
-      "tags": ["post-soviet-bio", "archives-1991", "revisionist", "key-text"],
+      "tags": [
+        "post-soviet-bio",
+        "archives-1991",
+        "revisionist",
+        "key-text"
+      ],
       "short_text": "Первая биография, использовавшая рассекреченные архивы Политбюро; задала тон постсоветской критической ленинианы 1990-х."
     },
     {
@@ -1049,7 +1385,10 @@
       "subtitle": "«Выбор пути» / «Как стать вождём» / «На грани возможного» / «Сим победиши»",
       "author": "В.Т. Логинов",
       "year_first": 2018,
-      "year_range": [2005, 2018],
+      "year_range": [
+        2005,
+        2018
+      ],
       "type": "biography",
       "language_first": "ru",
       "place_first": "Москва, Алгоритм / Молодая гвардия",
@@ -1057,7 +1396,12 @@
       "height_cm": 24,
       "cover_color": "#5C1818",
       "significance": 5,
-      "tags": ["post-soviet-bio", "academic", "apologetic", "longread"],
+      "tags": [
+        "post-soviet-bio",
+        "academic",
+        "apologetic",
+        "longread"
+      ],
       "short_text": "Многотомная позитивная биография: «Выбор пути» (2005), «Как стать вождём» (2010), «Сим победиши» (2017); сведена в один том в 2018."
     },
     {
@@ -1075,7 +1419,11 @@
       "height_cm": 22,
       "cover_color": "#5E2027",
       "significance": 3,
-      "tags": ["post-soviet-bio", "historiography", "academic"],
+      "tags": [
+        "post-soviet-bio",
+        "historiography",
+        "academic"
+      ],
       "short_text": "Историографический обзор: как менялись интерпретации Ленина в советской и зарубежной науке."
     },
     {
@@ -1093,13 +1441,18 @@
       "height_cm": 24,
       "cover_color": "#3B3B3B",
       "significance": 5,
-      "tags": ["western-bio", "academic", "standard-reference"],
+      "tags": [
+        "western-bio",
+        "academic",
+        "standard-reference"
+      ],
       "short_text": "Стандартная западная биография 2000-х; русский перевод 2002. Сухой, академический тон."
     },
     {
       "id": "ab-ulam-bolsheviks",
       "bucket": "about-lenin",
       "title": "The Bolsheviks: The Intellectual and Political History of the Triumph of Communism in Russia",
+      "title_spine": "The Bolsheviks",
       "subtitle": null,
       "author": "Adam B. Ulam",
       "year_first": 1965,
@@ -1111,7 +1464,12 @@
       "height_cm": 23,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["western-bio", "academic", "cold-war", "harvard"],
+      "tags": [
+        "western-bio",
+        "academic",
+        "cold-war",
+        "harvard"
+      ],
       "short_text": "Гарвардский классический очерк большевизма; одна из главных биографий Ленина в англоязычной академии."
     },
     {
@@ -1129,7 +1487,11 @@
       "height_cm": 23,
       "cover_color": "#6B5C3F",
       "significance": 4,
-      "tags": ["western-bio", "pulitzer", "journalistic"],
+      "tags": [
+        "western-bio",
+        "pulitzer",
+        "journalistic"
+      ],
       "short_text": "Пулитцеровская биография 1964 года; журналистский, а не академический подход."
     },
     {
@@ -1147,7 +1509,12 @@
       "height_cm": 24,
       "cover_color": "#2A3A5C",
       "significance": 4,
-      "tags": ["western-bio", "academic", "revisionist", "monograph"],
+      "tags": [
+        "western-bio",
+        "academic",
+        "revisionist",
+        "monograph"
+      ],
       "short_text": "Ревизионистское исследование 2006 года, реабилитирующее ортодоксально-марксистскую интерпретацию «Что делать?»."
     },
     {
@@ -1165,7 +1532,11 @@
       "height_cm": 20,
       "cover_color": "#1F2D4A",
       "significance": 3,
-      "tags": ["western-bio", "concise", "revisionist"],
+      "tags": [
+        "western-bio",
+        "concise",
+        "revisionist"
+      ],
       "short_text": "Краткая биография в серии «Critical Lives»; популярная версия ревизионистского взгляда Лиха."
     },
     {
@@ -1183,7 +1554,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["western-bio", "narrative", "centenary-2017", "sealed-train"],
+      "tags": [
+        "western-bio",
+        "narrative",
+        "centenary-2017",
+        "sealed-train"
+      ],
       "short_text": "К столетию Октября: подробная реконструкция возвращения Ленина в Россию через пломбированный вагон в апреле 1917."
     },
     {
@@ -1201,13 +1577,19 @@
       "height_cm": 24,
       "cover_color": "#3B3B3B",
       "significance": 3,
-      "tags": ["western-bio", "popular", "centenary-2017", "personal"],
+      "tags": [
+        "western-bio",
+        "popular",
+        "centenary-2017",
+        "personal"
+      ],
       "short_text": "Популярная биография к столетию революции; фокус на личной жизни и психологическом портрете."
     },
     {
       "id": "ab-ali-dilemmas",
       "bucket": "about-lenin",
       "title": "The Dilemmas of Lenin: Terrorism, War, Empire, Love, Revolution",
+      "title_spine": "The Dilemmas of Lenin",
       "subtitle": null,
       "author": "Tariq Ali",
       "year_first": 2017,
@@ -1219,13 +1601,19 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["western-bio", "left-political", "centenary-2017", "verso"],
+      "tags": [
+        "western-bio",
+        "left-political",
+        "centenary-2017",
+        "verso"
+      ],
       "short_text": "Левое политическое прочтение к столетию Октября — из «Verso»."
     },
     {
       "id": "ab-zizek-revolution-gates",
       "bucket": "about-lenin",
       "title": "Revolution at the Gates: Žižek on Lenin, the 1917 Writings",
+      "title_spine": "Revolution at the Gates",
       "subtitle": null,
       "author": "Slavoj Žižek",
       "year_first": 2002,
@@ -1237,7 +1625,12 @@
       "height_cm": 22,
       "cover_color": "#C42021",
       "significance": 4,
-      "tags": ["philosophy", "essay", "verso", "return-to-lenin"],
+      "tags": [
+        "philosophy",
+        "essay",
+        "verso",
+        "return-to-lenin"
+      ],
       "short_text": "Философское «возвращение к Ленину»: тексты 1917 года с радикальным комментарием Жижека."
     },
     {
@@ -1255,13 +1648,21 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 3,
-      "tags": ["western-bio", "narrative", "emigration", "london", "paris", "zurich"],
+      "tags": [
+        "western-bio",
+        "narrative",
+        "emigration",
+        "london",
+        "paris",
+        "zurich"
+      ],
       "short_text": "О Ленине-эмигранте: Лондон, Париж, Цюрих, Краков — двадцать лет до возвращения."
     },
     {
       "id": "ab-wolfe-three",
       "bucket": "about-lenin",
       "title": "Three Who Made a Revolution: A Biographical History",
+      "title_spine": "Three Who Made a Revolution",
       "subtitle": "Lenin, Trotsky, Stalin",
       "author": "Bertram D. Wolfe",
       "year_first": 1948,
@@ -1273,7 +1674,11 @@
       "height_cm": 23,
       "cover_color": "#6B5C3F",
       "significance": 3,
-      "tags": ["western-bio", "early-cold-war", "triple-biography"],
+      "tags": [
+        "western-bio",
+        "early-cold-war",
+        "triple-biography"
+      ],
       "short_text": "Параллельные биографии Ленина, Троцкого и Сталина; одна из первых англоязычных классик о большевизме."
     },
     {
@@ -1291,10 +1696,13 @@
       "height_cm": 22,
       "cover_color": "#5E2027",
       "significance": 3,
-      "tags": ["western-bio", "academic", "concise"],
+      "tags": [
+        "western-bio",
+        "academic",
+        "concise"
+      ],
       "short_text": "Компактная академическая биография начала 2000-х; стандартный учебный текст."
     },
-
     {
       "id": "lib-marx-kapital",
       "bucket": "in-library",
@@ -1310,13 +1718,20 @@
       "height_cm": 24,
       "cover_color": "#5E2027",
       "significance": 5,
-      "tags": ["lenin-read", "marginalia", "primary-influence", "marx", "key-text"],
+      "tags": [
+        "lenin-read",
+        "marginalia",
+        "primary-influence",
+        "marx",
+        "key-text"
+      ],
       "short_text": "Главный экономический источник для Ленина с гимназических лет; русский перевод 1872 года был известен ему смолоду."
     },
     {
       "id": "lib-marx-manifest",
       "bucket": "in-library",
       "title": "Манифест Коммунистической партии",
+      "title_spine": "Манифест компартии",
       "subtitle": null,
       "author": "К. Маркс, Ф. Энгельс",
       "year_first": 1848,
@@ -1328,7 +1743,13 @@
       "height_cm": 18,
       "cover_color": "#A02128",
       "significance": 5,
-      "tags": ["lenin-read", "primary-influence", "marx", "engels", "key-text"],
+      "tags": [
+        "lenin-read",
+        "primary-influence",
+        "marx",
+        "engels",
+        "key-text"
+      ],
       "short_text": "Программный текст, к которому Ленин возвращался всю жизнь; первая публичная декламация — гимназистом."
     },
     {
@@ -1346,7 +1767,14 @@
       "height_cm": 24,
       "cover_color": "#2A3A5C",
       "significance": 5,
-      "tags": ["lenin-read", "marginalia", "conspectus", "bern-1914", "philosophy", "key-text"],
+      "tags": [
+        "lenin-read",
+        "marginalia",
+        "conspectus",
+        "bern-1914",
+        "philosophy",
+        "key-text"
+      ],
       "short_text": "Конспектировал в Берне в 1914–15; результат — «Философские тетради». Знаменитая фраза: «Нельзя вполне понять „Капитала“… не проштудировав…»."
     },
     {
@@ -1364,7 +1792,12 @@
       "height_cm": 22,
       "cover_color": "#3A4A2A",
       "significance": 3,
-      "tags": ["lenin-read", "conspectus", "philosophy", "bern-1915"],
+      "tags": [
+        "lenin-read",
+        "conspectus",
+        "philosophy",
+        "bern-1915"
+      ],
       "short_text": "Конспект в эмиграции, вошёл в «Философские тетради»."
     },
     {
@@ -1382,7 +1815,11 @@
       "height_cm": 22,
       "cover_color": "#2A3A5C",
       "significance": 2,
-      "tags": ["lenin-read", "conspectus", "philosophy"],
+      "tags": [
+        "lenin-read",
+        "conspectus",
+        "philosophy"
+      ],
       "short_text": "Один из конспектов «Философских тетрадей»; Ленин цитировал Фейербаха ещё в «Материализме и эмпириокритицизме»."
     },
     {
@@ -1400,7 +1837,11 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 2,
-      "tags": ["lenin-read", "conspectus", "philosophy"],
+      "tags": [
+        "lenin-read",
+        "conspectus",
+        "philosophy"
+      ],
       "short_text": "Ещё один объект конспектирования в швейцарской эмиграции."
     },
     {
@@ -1418,13 +1859,19 @@
       "height_cm": 21,
       "cover_color": "#5E2027",
       "significance": 5,
-      "tags": ["lenin-read", "youth-influence", "russian-literature", "title-source"],
+      "tags": [
+        "lenin-read",
+        "youth-influence",
+        "russian-literature",
+        "title-source"
+      ],
       "short_text": "Любимый роман юности; именно отсюда Ленин взял заглавие своей книги 1902 года. Сам говорил, что Чернышевский «всего меня перепахал»."
     },
     {
       "id": "lib-plekhanov-monistic",
       "bucket": "in-library",
       "title": "К вопросу о развитии монистического взгляда на историю",
+      "title_spine": "Монистический взгляд",
       "subtitle": null,
       "author": "Г.В. Плеханов (Н. Бельтов)",
       "year_first": 1895,
@@ -1436,7 +1883,12 @@
       "height_cm": 22,
       "cover_color": "#5C7A7E",
       "significance": 3,
-      "tags": ["lenin-read", "menshevism", "marxism-russia", "early-influence"],
+      "tags": [
+        "lenin-read",
+        "menshevism",
+        "marxism-russia",
+        "early-influence"
+      ],
       "short_text": "Главное теоретическое введение в марксизм для русского поколения 1890-х, включая Ленина."
     },
     {
@@ -1454,7 +1906,12 @@
       "height_cm": 23,
       "cover_color": "#5E2027",
       "significance": 3,
-      "tags": ["lenin-read", "economics", "ii-international", "agrarian"],
+      "tags": [
+        "lenin-read",
+        "economics",
+        "ii-international",
+        "agrarian"
+      ],
       "short_text": "Одна из главных книг, повлиявших на «Развитие капитализма в России» и аграрные работы Ленина."
     },
     {
@@ -1472,7 +1929,13 @@
       "height_cm": 22,
       "cover_color": "#6B5C3F",
       "significance": 4,
-      "tags": ["lenin-read", "marginalia", "primary-source", "imperialism", "english"],
+      "tags": [
+        "lenin-read",
+        "marginalia",
+        "primary-source",
+        "imperialism",
+        "english"
+      ],
       "short_text": "Главный источник для книги Ленина «Империализм как высшая стадия капитализма»; конспектировался в Цюрихе в 1916."
     },
     {
@@ -1490,7 +1953,12 @@
       "height_cm": 23,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["lenin-read", "primary-source", "imperialism", "austromarxism"],
+      "tags": [
+        "lenin-read",
+        "primary-source",
+        "imperialism",
+        "austromarxism"
+      ],
       "short_text": "Второй ключевой источник для книги об империализме; обширно конспектировался в швейцарских тетрадях."
     },
     {
@@ -1500,7 +1968,10 @@
       "subtitle": null,
       "author": "Н.И. Бухарин",
       "year_first": 1918,
-      "year_range": [1915, 1918],
+      "year_range": [
+        1915,
+        1918
+      ],
       "type": "economics",
       "language_first": "ru",
       "place_first": "Цюрих (рукопись 1915), Петроград (изд. 1918)",
@@ -1508,7 +1979,12 @@
       "height_cm": 22,
       "cover_color": "#A02128",
       "significance": 3,
-      "tags": ["lenin-read", "bolshevik-theory", "imperialism", "predecessor"],
+      "tags": [
+        "lenin-read",
+        "bolshevik-theory",
+        "imperialism",
+        "predecessor"
+      ],
       "short_text": "Книга молодого Бухарина, к которой Ленин писал предисловие; шла параллельно с собственным «Империализмом»."
     },
     {
@@ -1526,7 +2002,12 @@
       "height_cm": 21,
       "cover_color": "#3B3B3B",
       "significance": 3,
-      "tags": ["lenin-read", "marginalia", "management", "soviet-power"],
+      "tags": [
+        "lenin-read",
+        "marginalia",
+        "management",
+        "soviet-power"
+      ],
       "short_text": "Тейлор интересовал Ленина как теоретик организации производства; знаменитый поворот в «Очередных задачах Советской власти»."
     },
     {
@@ -1544,7 +2025,13 @@
       "height_cm": 23,
       "cover_color": "#3A4A2A",
       "significance": 3,
-      "tags": ["lenin-read", "marginalia", "wwi", "war-theory", "bern-1915"],
+      "tags": [
+        "lenin-read",
+        "marginalia",
+        "wwi",
+        "war-theory",
+        "bern-1915"
+      ],
       "short_text": "Конспект и пометки 1915 года; знаменитый интерес Ленина к Клаузевицу как «диалектику»."
     },
     {
@@ -1562,7 +2049,12 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 2,
-      "tags": ["lenin-read", "youth-influence", "russian-criticism", "60s-radicals"],
+      "tags": [
+        "lenin-read",
+        "youth-influence",
+        "russian-criticism",
+        "60s-radicals"
+      ],
       "short_text": "Один из «учителей» юного Ульянова из плеяды русских революционных критиков."
     },
     {
@@ -1580,7 +2072,13 @@
       "height_cm": 22,
       "cover_color": "#6B1F2A",
       "significance": 4,
-      "tags": ["lenin-read", "marx", "primary-influence", "history", "bonapartism"],
+      "tags": [
+        "lenin-read",
+        "marx",
+        "primary-influence",
+        "history",
+        "bonapartism"
+      ],
       "short_text": "Любимый исторический текст Маркса у Ленина; источник терминов «бонапартизм» и анализа переворота 1851 года. Ленин ссылается на него в работах 1905 и 1917."
     },
     {
@@ -1598,7 +2096,14 @@
       "height_cm": 22,
       "cover_color": "#6B1F2A",
       "significance": 5,
-      "tags": ["lenin-read", "marx", "primary-source", "state-theory", "paris-commune", "key-text"],
+      "tags": [
+        "lenin-read",
+        "marx",
+        "primary-source",
+        "state-theory",
+        "paris-commune",
+        "key-text"
+      ],
       "short_text": "Главный источник для «Государства и революции»: уроки Парижской Коммуны 1871 года как прообраз «государства-коммуны»."
     },
     {
@@ -1608,7 +2113,10 @@
       "subtitle": "Kritik des Gothaer Programms",
       "author": "Карл Маркс",
       "year_first": 1891,
-      "year_range": [1875, 1891],
+      "year_range": [
+        1875,
+        1891
+      ],
       "type": "essay",
       "language_first": "de",
       "place_first": "написана 1875, опубл. Энгельсом 1891 в «Die Neue Zeit»",
@@ -1616,7 +2124,13 @@
       "height_cm": 22,
       "cover_color": "#6B1F2A",
       "significance": 4,
-      "tags": ["lenin-read", "marx", "primary-source", "state-theory", "two-phases"],
+      "tags": [
+        "lenin-read",
+        "marx",
+        "primary-source",
+        "state-theory",
+        "two-phases"
+      ],
       "short_text": "Ключевой источник для V главы «Государства и революции»: «низшая» и «высшая» фазы коммунизма, «каждому по труду / по потребностям»."
     },
     {
@@ -1634,13 +2148,20 @@
       "height_cm": 23,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["lenin-read", "engels", "primary-influence", "philosophy", "classic-marxism"],
+      "tags": [
+        "lenin-read",
+        "engels",
+        "primary-influence",
+        "philosophy",
+        "classic-marxism"
+      ],
       "short_text": "Главный энциклопедический труд Энгельса; через него поколение русских марксистов осваивало диалектику. Часто цитируется в «Материализме и эмпириокритицизме»."
     },
     {
       "id": "lib-engels-origin",
       "bucket": "in-library",
       "title": "Происхождение семьи, частной собственности и государства",
+      "title_spine": "Происхождение семьи",
       "subtitle": null,
       "author": "Фридрих Энгельс",
       "year_first": 1884,
@@ -1652,7 +2173,13 @@
       "height_cm": 22,
       "cover_color": "#5E2027",
       "significance": 4,
-      "tags": ["lenin-read", "engels", "primary-source", "state-theory", "anthropology"],
+      "tags": [
+        "lenin-read",
+        "engels",
+        "primary-source",
+        "state-theory",
+        "anthropology"
+      ],
       "short_text": "Источник для первой главы «Государства и революции»; теория государства как продукта классового общества."
     },
     {
@@ -1662,7 +2189,10 @@
       "subtitle": "Статьи по философии",
       "author": "А.А. Богданов",
       "year_first": 1906,
-      "year_range": [1904, 1906],
+      "year_range": [
+        1904,
+        1906
+      ],
       "type": "philosophy",
       "language_first": "ru",
       "place_first": "Санкт-Петербург, «Колокол»",
@@ -1670,13 +2200,20 @@
       "height_cm": 22,
       "cover_color": "#5C5448",
       "significance": 4,
-      "tags": ["lenin-read", "polemical-target", "russian-marxism", "philosophy", "bolshevik-split"],
+      "tags": [
+        "lenin-read",
+        "polemical-target",
+        "russian-marxism",
+        "philosophy",
+        "bolshevik-split"
+      ],
       "short_text": "Главный объект разгрома в «Материализме и эмпириокритицизме» — попытка Богданова соединить марксизм с эмпириокритицизмом Маха и Авенариуса."
     },
     {
       "id": "lib-bernstein-premises",
       "bucket": "in-library",
       "title": "Предпосылки социализма и задачи социал-демократии",
+      "title_spine": "Предпосылки социализма",
       "subtitle": "Die Voraussetzungen des Sozialismus",
       "author": "Эдуард Бернштейн",
       "year_first": 1899,
@@ -1688,7 +2225,12 @@
       "height_cm": 22,
       "cover_color": "#6E6E68",
       "significance": 3,
-      "tags": ["lenin-read", "polemical-target", "revisionism", "ii-international"],
+      "tags": [
+        "lenin-read",
+        "polemical-target",
+        "revisionism",
+        "ii-international"
+      ],
       "short_text": "«Библия ревизионизма» — главный объект полемики ортодоксальных марксистов (Каутский, Плеханов, Ленин) на рубеже веков."
     },
     {
@@ -1706,7 +2248,12 @@
       "height_cm": 23,
       "cover_color": "#2A3A5C",
       "significance": 3,
-      "tags": ["lenin-read", "marx", "biography", "ii-international"],
+      "tags": [
+        "lenin-read",
+        "marx",
+        "biography",
+        "ii-international"
+      ],
       "short_text": "Каноническая марксистская биография Маркса; одна из последних книг, прочитанных Лениным после революции."
     },
     {
@@ -1724,7 +2271,12 @@
       "height_cm": 21,
       "cover_color": "#5C5448",
       "significance": 4,
-      "tags": ["lenin-read", "russian-literature", "tolstoy", "lenin-wrote-about"],
+      "tags": [
+        "lenin-read",
+        "russian-literature",
+        "tolstoy",
+        "lenin-wrote-about"
+      ],
       "short_text": "Толстой — единственный современный писатель, о котором Ленин написал серию отдельных статей (1908–1911), включая «Лев Толстой как зеркало русской революции»."
     },
     {
@@ -1734,7 +2286,10 @@
       "subtitle": null,
       "author": "М.Е. Салтыков-Щедрин",
       "year_first": 1870,
-      "year_range": [1869, 1870],
+      "year_range": [
+        1869,
+        1870
+      ],
       "type": "novel",
       "language_first": "ru",
       "place_first": "журнал «Отечественные записки»",
@@ -1742,7 +2297,12 @@
       "height_cm": 21,
       "cover_color": "#6B5C3F",
       "significance": 3,
-      "tags": ["lenin-read", "russian-literature", "satire", "frequent-quotation"],
+      "tags": [
+        "lenin-read",
+        "russian-literature",
+        "satire",
+        "frequent-quotation"
+      ],
       "short_text": "Самый цитируемый Лениным русский сатирик: «иудушка», «помпадуры», «органчик» — постоянные ярлыки в публицистике."
     },
     {
@@ -1752,7 +2312,10 @@
       "subtitle": null,
       "author": "А.И. Герцен",
       "year_first": 1868,
-      "year_range": [1855, 1868],
+      "year_range": [
+        1855,
+        1868
+      ],
       "type": "memoir",
       "language_first": "ru",
       "place_first": "London, «Полярная звезда»",
@@ -1760,7 +2323,13 @@
       "height_cm": 22,
       "cover_color": "#5C7A7E",
       "significance": 3,
-      "tags": ["lenin-read", "russian-literature", "herzen", "emigration-classic", "lenin-wrote-about"],
+      "tags": [
+        "lenin-read",
+        "russian-literature",
+        "herzen",
+        "emigration-classic",
+        "lenin-wrote-about"
+      ],
       "short_text": "Ленин написал отдельную статью «Памяти Герцена» (1912); Герцен — связующее звено между русской эмиграцией XIX и XX веков."
     },
     {
@@ -1778,7 +2347,12 @@
       "height_cm": 20,
       "cover_color": "#5C5448",
       "significance": 2,
-      "tags": ["lenin-read", "russian-literature", "youth-reading", "turgenev"],
+      "tags": [
+        "lenin-read",
+        "russian-literature",
+        "youth-reading",
+        "turgenev"
+      ],
       "short_text": "Чтение симбирской юности; Тургенев упоминается в работах Ленина о крестьянском вопросе."
     },
     {
@@ -1788,7 +2362,10 @@
       "subtitle": null,
       "author": "Н.А. Некрасов",
       "year_first": 1877,
-      "year_range": [1869, 1877],
+      "year_range": [
+        1869,
+        1877
+      ],
       "type": "poem",
       "language_first": "ru",
       "place_first": "журнал «Отечественные записки»",
@@ -1796,7 +2373,13 @@
       "height_cm": 20,
       "cover_color": "#6B5C3F",
       "significance": 2,
-      "tags": ["lenin-read", "russian-literature", "youth-reading", "poetry", "peasants"],
+      "tags": [
+        "lenin-read",
+        "russian-literature",
+        "youth-reading",
+        "poetry",
+        "peasants"
+      ],
       "short_text": "Некрасова Ленин знал с гимназии, цитировал и в эмиграции, и в советский период."
     },
     {
@@ -1806,7 +2389,10 @@
       "subtitle": "Полемические выступления против марксистов",
       "author": "Н.К. Михайловский",
       "year_first": 1894,
-      "year_range": [1893, 1895],
+      "year_range": [
+        1893,
+        1895
+      ],
       "type": "essay",
       "language_first": "ru",
       "place_first": "Санкт-Петербург, журнал «Русское богатство»",
@@ -1814,7 +2400,12 @@
       "height_cm": 22,
       "cover_color": "#8A857A",
       "significance": 3,
-      "tags": ["lenin-read", "polemical-target", "narodniki", "russian-criticism"],
+      "tags": [
+        "lenin-read",
+        "polemical-target",
+        "narodniki",
+        "russian-criticism"
+      ],
       "short_text": "Главный идеолог народников 1890-х; именно ему отвечал молодой Ленин в работе «Что такое „друзья народа“…»."
     },
     {
@@ -1832,7 +2423,12 @@
       "height_cm": 26,
       "cover_color": "#6B1F2A",
       "significance": 4,
-      "tags": ["reference", "kremlin-library", "8400-titles", "monument"],
+      "tags": [
+        "reference",
+        "kremlin-library",
+        "8400-titles",
+        "monument"
+      ],
       "short_text": "Опубликованный каталог личной библиотеки Ленина в Кремле: ~8400 названий книг, журналов, газет на разных языках."
     }
   ],
