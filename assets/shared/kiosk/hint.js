@@ -208,7 +208,17 @@
       if (!host.height) return;                       /* раскладки ещё нет */
       var cleared = window.innerHeight - host.bottom; /* хост уже отбит на столько */
       var need = Math.max(0, chrome - cleared);
-      el.style.bottom = Math.round(need + 12 * ui) + "px";
+
+      /* Ставим ПЕРЕМЕННУЮ, а не bottom.
+       *
+       * Инлайновый bottom бил бы любые правила приложений — а они там не от
+       * невежества: кит не знает про НИЖНИЕ КОНТРОЛЫ САМОЙ СЦЕНЫ (плеер со
+       * шкалой лет у 39, ряд чипов у 42), и подъём над ними может задать
+       * только сцена. Разделяем ответственность: база (обойти хром ядра) —
+       * наша, добавка (обойти своё) — их, через --kiosk-hint-lift.
+       * Заодно старые правила с bottom продолжают работать как раньше:
+       * миграция становится добровольной, а не обязательной в день merge. */
+      el.style.setProperty("--kiosk-hint-base", Math.round(need + 12 * ui) + "px");
     }
 
     function show() { if (dead) return; place(); shown = true; el.classList.add("is-on"); }
@@ -323,10 +333,14 @@
          зашитые пиксели означали, что в режиме слабовидящих растёт весь
          интерфейс, кроме единственного призыва к жесту (находка 40).
          Фолбэк 1 — если кит подключён без ядра. */
-      /* bottom здесь — только на время до первого place(): дальше его
-         считает JS от реального низа контейнера. */
+      /* База считается в JS от реального низа контейнера (--kiosk-hint-base);
+         до первого place() работает фолбэк от зоны хрома. Добавка сцены —
+         --kiosk-hint-lift: подъём над СВОИМИ нижними контролами, о которых
+         кит знать не может. */
       ".kiosk-hint{position:absolute;left:50%;" +
-      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1));" +
+      "bottom:calc(var(--kiosk-hint-base," +
+      "calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1)))" +
+      " + var(--kiosk-hint-lift,0px));" +
       "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;" +
       "gap:calc(18px * var(--ui-scale,1));" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
