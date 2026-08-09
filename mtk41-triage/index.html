@@ -192,7 +192,7 @@ function edge(on, x1, y1, x2, y2) {
   return on ? '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 +
     '" stroke="var(--red)" stroke-width="0.004" stroke-dasharray="0.02 0.02"/>' : "";
 }
-const V = "?v=33";
+const V = "?v=34";
 
 Promise.all([
   fetch("../data/mtk41.json" + V).then((r) => r.json()),
