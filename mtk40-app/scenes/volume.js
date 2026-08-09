@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=30";
+import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=31";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -123,12 +123,22 @@ export const volumeScene = {
     this.cv.canvas.addEventListener("pointerdown", this.onTap);
 
     this.paintTools();
+    /* Наблюдатель на самом меряемом элементе — строке пояснения, чья высота
+     * зависит от языка и режима слабовидящих. Ловит и смену языка, и
+     * настройки, и токены a11y: шире, чем разовый пересчёт по событию
+     * (канон README ядра). */
+    if (typeof ResizeObserver === "function") {
+      this._sizeRo = new ResizeObserver(() => this.layout());
+      this._sizeRo.observe(this.noteEl);
+    }
+
     this.cv.observe();
     this.cv.sync();
   },
 
   unmount() {
-    clearTimeout(this._a11yT);
+    cancelAnimationFrame(this._a11yRaf);
+    if (this._sizeRo) { this._sizeRo.disconnect(); this._sizeRo = null; }
     if (this.cv) {
       this.cv.canvas.removeEventListener("pointerdown", this.onTap);
       this.cv.destroy();
@@ -157,13 +167,14 @@ export const volumeScene = {
   },
 
   setA11y() {
-    /* Раскладка меряет DOM, а токены ядра (--ui-scale ×1.25 в режиме
-     * слабовидящих) к моменту вызова могут быть ещё не применены — высота
-     * тогда стара, и резерв считается по прежнему кеглю (гонка 42, GRABLI).
-     * Меряем дважды: сразу и макрозадачей, когда токены точно на месте. */
+    /* Замер после смены токенов — только следующим кадром: перелайаут
+     * content-visibility-поддерева материализуется в нём, а setTimeout(0)
+     * бежит РАНЬШЕ и ловит старую раскладку (сага 42, поправка GRABLI от
+     * 2026-08-06 — прежний совет «повтори макрозадачей» был неверен).
+     * Синхронный вызов оставлен для случая, когда токены уже применены. */
     this.layout();
-    clearTimeout(this._a11yT);
-    this._a11yT = setTimeout(() => { if (this.cv) this.layout(); }, 0);
+    cancelAnimationFrame(this._a11yRaf);
+    this._a11yRaf = requestAnimationFrame(() => { if (this.cv) this.layout(); });
   },
 
   applySettings(v) {

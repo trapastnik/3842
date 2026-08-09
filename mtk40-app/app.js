@@ -11,14 +11,14 @@
  */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { installChromeZones } from "./scenes/chrome-zones.js?v=30";
-import { shelfScene } from "./scenes/shelf.js?v=30";
-import { mirrorScene } from "./scenes/mirror.js?v=30";
-import { timelineScene } from "./scenes/timeline.js?v=30";
-import { catalogScene } from "./scenes/catalog.js?v=30";
-import { volumeScene } from "./scenes/volume.js?v=30";
-import { constellationScene } from "./scenes/constellation.js?v=30";
-import { geographyScene } from "./scenes/geography.js?v=30";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=31";
+import { shelfScene } from "./scenes/shelf.js?v=31";
+import { mirrorScene } from "./scenes/mirror.js?v=31";
+import { timelineScene } from "./scenes/timeline.js?v=31";
+import { catalogScene } from "./scenes/catalog.js?v=31";
+import { volumeScene } from "./scenes/volume.js?v=31";
+import { constellationScene } from "./scenes/constellation.js?v=31";
+import { geographyScene } from "./scenes/geography.js?v=31";
 
 const app = createApp({
   appId: "mtk40",

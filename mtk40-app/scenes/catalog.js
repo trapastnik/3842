@@ -8,7 +8,7 @@
  * Канвы здесь нет вовсе — всё DOM, поэтому размеры идут прямо от переменных
  * кита, без дизайн-единицы s.
  */
-import { M, corpusOf, createCard, chip } from "./shared.js?v=30";
+import { M, corpusOf, createCard, chip } from "./shared.js?v=31";
 
 /* Типов в данных 19, половина встречается 1–2 раза. В фильтр идут только
  * заметные, остальное сворачивается в «прочее» — иначе строка чипов длиннее,
@@ -73,7 +73,7 @@ export const catalogScene = {
         '<div class="m40-cat__tail"><span class="m40-cat__count"></span>' +
           '<button type="button" class="m40-chip m40-cat__reset"></button></div>' +
       "</aside>" +
-      '<div class="m40-cat__idx"><span class="m40-cat__legend"></span>' +
+      '<div class="m40-cat__idx kiosk-scroll"><span class="m40-cat__legend"></span>' +
         '<div class="m40-chips m40-cat__alpha"></div></div>' +
       '<div class="m40-cat__grid kiosk-scroll"></div>';
     el.appendChild(box);
