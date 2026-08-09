@@ -87,7 +87,24 @@
     }
 
     var scenes = (opts.scenes || app.listScenes().map(function (s) { return s.id; }));
-    var bad = [], checked = 0, skipped = 0, noSchema = [];
+    var bad = [], checked = 0, skipped = 0, noSchema = [], noRestore = [];
+
+    /* Куда вернуться в конце: перебор не должен оставлять киоск на
+     * последней сцене списка (вердикт по 38 — так и оставлял). */
+    var sceneBefore = app.activeSceneId;
+
+    /* Пишем настройки ЖИВЬЁМ, минуя патч оператора. Если ядро старое и
+     * такого метода нет — падаем на обычный сеттер, но предупреждаем:
+     * перебор в этом случае оставит следы в localStorage. */
+    var live = typeof app.setSceneSettingLive === "function";
+    if (!live) {
+      console.warn("[sweep] ядро без setSceneSettingLive — значения пойдут в " +
+        "операторский патч. Обновите ядро, иначе перебор оставит там дефолты.");
+    }
+    function put(id, key, value) {
+      if (live) app.setSceneSettingLive(id, key, value);
+      else app.setSceneSetting(id, key, value);
+    }
 
     function checkState(id, trail) {
       checked++;
@@ -117,10 +134,10 @@
         /* Одиночные: каждая настройка по очереди, остальные — как были. */
         schema.forEach(function (s) {
           valuesOf(s).forEach(function (v) {
-            app.setSceneSetting(id, s.key, v);
+            put(id, s.key, v);
             checkState(id, [s.key + "=" + v]);
           });
-          app.setSceneSetting(id, s.key, saved[s.key]);
+          put(id, s.key, saved[s.key]);
         });
 
         if (mode === "single") return;
@@ -132,20 +149,43 @@
           va.forEach(function (a) {
             vb.forEach(function (b) {
               if (checked >= limit) { skipped++; return; }
-              app.setSceneSetting(id, p[0].key, a);
-              app.setSceneSetting(id, p[1].key, b);
+              put(id, p[0].key, a);
+              put(id, p[1].key, b);
               checkState(id, [p[0].key + "=" + a, p[1].key + "=" + b]);
             });
           });
-          app.setSceneSetting(id, p[0].key, saved[p[0].key]);
-          app.setSceneSetting(id, p[1].key, saved[p[1].key]);
+          put(id, p[0].key, saved[p[0].key]);
+          put(id, p[1].key, saved[p[1].key]);
         });
       }).then(function () {
-        /* Возвращаем сцену как было — перебор не должен оставлять следов. */
-        Object.keys(saved).forEach(function (k) {
-          app.setSceneSetting(id, k, saved[k]);
-        });
+        /* Возвращаем схемные настройки как были. */
+        Object.keys(saved).forEach(function (k) { put(id, k, saved[k]); });
+        restoreStates(id, scene, custom);
       });
+    }
+
+    /* Посетительские состояния перебор оставлял как есть: у 38 после
+     * прогона каталог стоял на «pub», карта на «both» — до idle-сброса
+     * посетитель видел следы сервиса. Возврат по двум путям:
+     *   1) явный restoreState() у сцены — если объявлен, он главный;
+     *   2) иначе ПЕРВОЕ состояние в states() считается дефолтным.
+     * Сцены без обоих попадают в отчёт: молча оставлять их нельзя. */
+    function restoreStates(id, scene, custom) {
+      if (!custom.length) return;
+      if (scene && typeof scene.restoreState === "function") {
+        try { scene.restoreState(); return; } catch (err) {
+          noRestore.push(id + " (restoreState упал: " + (err && err.message) + ")");
+          return;
+        }
+      }
+      var first = custom[0];
+      if (first && typeof first.apply === "function") {
+        try { first.apply(); } catch (err) {
+          noRestore.push(id + " (первое состояние не встало)");
+        }
+        return;
+      }
+      noRestore.push(id);
     }
 
     var chain = Promise.resolve();
@@ -154,9 +194,13 @@
     });
 
     return chain.then(function () {
+      /* И возвращаем ту сцену, с которой начали. */
+      return sceneBefore ? app.showScene(sceneBefore) : null;
+    }).then(function () {
       unhush();
       return report({ checked: checked, skipped: skipped, bad: bad,
-                      noSchema: noSchema, limit: limit, mode: mode });
+                      noSchema: noSchema, noRestore: noRestore,
+                      restoredTo: sceneBefore, limit: limit, mode: mode });
     }, function (err) {
       unhush();
       throw err;
@@ -170,6 +214,12 @@
     if (r.noSchema.length) {
       console.log("%cбез схемы и без states(), перебирать нечего: " + r.noSchema.join(", "),
         "color:#9DA3A8");
+    }
+    if (r.restoredTo) console.log("вернулись на сцену: " + r.restoredTo);
+    if (r.noRestore && r.noRestore.length) {
+      /* Молчать здесь нельзя: посетитель увидит следы сервиса. */
+      console.log("%cсостояния НЕ восстановлены (нет restoreState() и пустой states()): " +
+        r.noRestore.join(", "), "color:#A02128");
     }
     if (r.bad.length) {
       console.log("%cсцена краснеет на " + r.bad.length + " состояниях — " +

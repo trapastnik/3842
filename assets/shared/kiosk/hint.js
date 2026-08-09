@@ -185,7 +185,47 @@
 
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
 
-    function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
+    /* ПОЗИЦИЯ СЧИТАЕТСЯ ОТ РЕАЛЬНОГО НИЗА КОНТЕЙНЕРА, а не от зоны хрома.
+     *
+     * Голое bottom: var(--chrome-bottom) годится только когда хост — во
+     * весь экран. У МТК 40 хост это поле канвы, УЖЕ отбитое от хрома, и
+     * отступ считался дважды: подсказка висела на ~92 px выше нужного,
+     * им пришлось заводить локальное правило-компенсацию. Считаем, сколько
+     * хост уже отбил сам, и добираем только недостающее.
+     *
+     * Это же снимает вертикальный дефицит из замеров 40: пилюля растёт от
+     * ×1.25 на 26 px при зазоре до навигации 12 px, и без пересчёта наехала
+     * бы на неё именно в режиме слабовидящих. */
+    function place() {
+      if (dead || !el.isConnected) return;
+      var root = el.closest(".kiosk-app") || document.documentElement;
+      var cs = getComputedStyle(root);
+      var ui = parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue("--ui-scale")) || 1;
+      /* Ноль — это ЗНАЧЕНИЕ, а не отсутствие. Через `||` нулевая зона
+       * хрома (сцена спрятала навигацию) проваливалась бы до кромки и
+       * дальше до 80 px, и подсказка висела бы на пустом месте. */
+      var chrome = parseFloat(cs.getPropertyValue("--chrome-bottom"));
+      if (!isFinite(chrome)) chrome = parseFloat(cs.getPropertyValue("--edge-safe-bottom"));
+      if (!isFinite(chrome)) chrome = 80;
+      var host = target.getBoundingClientRect();
+      if (!host.height) return;                       /* раскладки ещё нет */
+      var cleared = window.innerHeight - host.bottom; /* хост уже отбит на столько */
+      var need = Math.max(0, chrome - cleared);
+
+      /* Ставим ПЕРЕМЕННУЮ, а не bottom.
+       *
+       * Инлайновый bottom бил бы любые правила приложений — а они там не от
+       * невежества: кит не знает про НИЖНИЕ КОНТРОЛЫ САМОЙ СЦЕНЫ (плеер со
+       * шкалой лет у 39, ряд чипов у 42), и подъём над ними может задать
+       * только сцена. Разделяем ответственность: база (обойти хром ядра) —
+       * наша, добавка (обойти своё) — их, через --kiosk-hint-lift.
+       * Заодно старые правила с bottom продолжают работать как раньше:
+       * миграция становится добровольной, а не обязательной в день merge. */
+      el.style.setProperty("--kiosk-hint-base", Math.round(need + 12 * ui) + "px");
+    }
+
+    function show() { if (dead) return; place(); shown = true; el.classList.add("is-on"); }
 
     /* hide() ПЕРЕВЗВОДИТ цикл. Раньше он только снимал класс, а таймер
      * оставался отстрелянным: сцена, гасившая подсказку руками (например,
@@ -209,8 +249,46 @@
       target.addEventListener(ev, poke, { passive: true });
     });
 
+    /* Пересчёт позиции: хост меняет размер (a11y, поворот, чужая
+     * раскладка) — подсказка едет следом. */
+    var ro = null;
+    if (typeof ResizeObserver === "function") {
+      ro = new ResizeObserver(place);
+      ro.observe(target);
+    }
+    window.addEventListener("resize", place, { passive: true });
+
+    /* Одного RO мало. База зависит не только от размера хоста, но и от
+     * ТОКЕНОВ ЯДРА (--chrome-bottom, --ui-scale), а они меняются без его
+     * участия: оператор включил слабовидящих, кнопки языков перенеслись
+     * в две строки, сцена спрятала навигацию. Хост, сверстанный не от зон
+     * хрома, при этом не дрогнет — RO промолчит, и база останется от
+     * прежней раскладки.
+     *
+     * Ядро выставляет эти переменные инлайном (--ui-scale на <html>,
+     * --chrome-* на .kiosk-app), поэтому ловим мутацию style. Петли нет:
+     * place() пишет в el, а он тут не наблюдается. MutationObserver, в
+     * отличие от ResizeObserver и rAF, работает и в фоновой вкладке. */
+    var mo = null;
+    if (typeof MutationObserver === "function") {
+      mo = new MutationObserver(place);
+      var watch = { attributes: true, attributeFilter: ["style"] };
+      mo.observe(document.documentElement, watch);
+      var appRoot = el.closest(".kiosk-app");
+      if (appRoot && appRoot !== document.documentElement) mo.observe(appRoot, watch);
+    }
+
+    /* В фоновой вкладке RO не доставляется вовсе, а resize не приходит:
+     * если хост сменил размер, пока вкладку не показывали, база устареет
+     * молча. Досчитываем на возврате. (Остаётся один непокрытый случай:
+     * хост ПЕРЕЕХАЛ, не изменив размера, — его не видит ни RO, ни MO;
+     * он лечится сам при следующем show(), который зовёт place().) */
+    function onVis() { if (!document.hidden) place(); }
+    document.addEventListener("visibilitychange", onVis);
+
     firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
+    place();
 
     var handle = {
       show: show,
@@ -262,6 +340,10 @@
         if (idleTimer) clearTimeout(idleTimer);
         if (firstTimer) clearTimeout(firstTimer);
         idleTimer = firstTimer = null;
+        if (ro) { ro.disconnect(); ro = null; }
+        if (mo) { mo.disconnect(); mo = null; }
+        window.removeEventListener("resize", place);
+        document.removeEventListener("visibilitychange", onVis);
         EVENTS.forEach(function (ev) { target.removeEventListener(ev, poke); });
         el.remove();
         if (attached) attached["delete"](target);
@@ -281,20 +363,37 @@
       /* От --chrome-bottom, а не от кромки: под навигацией уже занято, и
          подсказка ложилась прямо на неё (замер 42: хинт 1974..2076 при
          навигации 1882..2080). Кромка — фолбэк, если ядра рядом нет. */
+      /* ВСЕ РАЗМЕРЫ — ОТ --ui-scale. Подсказка это контрол, а не контент;
+         зашитые пиксели означали, что в режиме слабовидящих растёт весь
+         интерфейс, кроме единственного призыва к жесту (находка 40).
+         Фолбэк 1 — если кит подключён без ядра. */
+      /* База считается в JS от реального низа контейнера (--kiosk-hint-base);
+         до первого place() работает фолбэк от зоны хрома. Добавка сцены —
+         --kiosk-hint-lift: подъём над СВОИМИ нижними контролами, о которых
+         кит знать не может. */
       ".kiosk-hint{position:absolute;left:50%;" +
-      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px);" +
-      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
+      "bottom:calc(var(--kiosk-hint-base," +
+      "calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1)))" +
+      " + var(--kiosk-hint-lift,0px));" +
+      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;" +
+      "gap:calc(18px * var(--ui-scale,1));" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
          разъезжаются с палитрой при её смене. */
-      "padding:18px 28px;border-radius:999px;" +
+      "padding:calc(18px * var(--ui-scale,1)) calc(28px * var(--ui-scale,1));border-radius:999px;" +
       "background:rgba(var(--kiosk-ink-rgb,12,16,18),.72);" +
       "border:1px solid rgba(var(--brass-rgb,210,183,115),.45);color:var(--brass,#D2B773);" +
+      /* Длинная подпись (ZH/EN) при ×1.25 не должна уезжать за кромку:
+         ограничиваем ширину рабочей областью и разрешаем перенос. */
+      "max-width:calc(100% - 2 * var(--edge-safe,64px));" +
       "opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;z-index:40;}" +
       ".kiosk-hint.is-on{opacity:1;transform:translateX(-50%) translateY(0);}" +
-      ".kiosk-hint__icon{width:64px;height:64px;}" +
+      ".kiosk-hint__icon{flex:none;width:calc(64px * var(--ui-scale,1));" +
+      "height:calc(64px * var(--ui-scale,1));}" +
       ".kiosk-hint__icon svg{width:100%;height:100%;animation:kioskHintPulse 2.4s ease-in-out infinite;}" +
-      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;font-size:26px;" +
-      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);white-space:nowrap;}" +
+      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;" +
+      "font-size:calc(26px * var(--ui-scale,1));line-height:1.25;" +
+      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);" +
+      "white-space:normal;overflow-wrap:anywhere;text-align:center;}" +
       "@keyframes kioskHintPulse{0%,100%{transform:scale(1)}50%{transform:scale(.88)}}";
     document.head.appendChild(s);
   }
