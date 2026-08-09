@@ -63,8 +63,13 @@
   button.bad.on{background:var(--red);border-color:var(--red);color:#fff}
   button.man.on{background:var(--brass);border-color:var(--brass);color:#1c2226}
 
-  .cut label{display:flex;justify-content:space-between;color:var(--dim);font-size:13px}
-  .cut input{width:100%;margin:6px 0 2px}
+  .cut label,.rot label{display:flex;justify-content:space-between;color:var(--dim);font-size:13px}
+  .rot{margin:14px 0}
+  .rotbtns{display:flex;gap:8px;margin-top:6px}
+  .rotbtns button{flex:1;text-align:center}
+  .crop{display:grid;grid-template-columns:auto 1fr;gap:5px 10px;align-items:center;margin-top:8px}
+  .crop span{color:var(--dim);font-size:12px;white-space:nowrap}
+  .crop input{width:100%;margin:0}
   .side .hint{color:var(--dim);font-size:12px;line-height:1.5;margin-top:18px;
     border-top:1px solid var(--line);padding-top:12px}
   .side .hint kbd{background:#232a2e;border:1px solid var(--line);border-radius:4px;
@@ -121,10 +126,23 @@
       <button class="man" data-v="man">Рисовать руками <span class="k">3</span></button>
     </div>
 
+    <div class="rot">
+      <label><span>Поворот снимка</span><span id="rotval">0°</span></label>
+      <div class="rotbtns">
+        <button id="rotl">↺ 90°</button>
+        <button id="rotr">↻ 90°</button>
+      </div>
+    </div>
+
     <div class="cut">
-      <label><span>Линия земли</span><span id="cutval">—</span></label>
-      <input type="range" id="cut" min="0.50" max="1" step="0.005" value="1" />
-      <button id="cutreset" style="width:100%;margin-top:6px">Вернуть целиком <span class="k">0</span></button>
+      <label><span>Обрезка</span><span id="cutval">целиком</span></label>
+      <div class="crop">
+        <span>сверху</span><input type="range" id="cT" min="0" max="0.85" step="0.005" value="0" />
+        <span>снизу</span><input type="range" id="cB" min="0.15" max="1" step="0.005" value="1" />
+        <span>слева</span><input type="range" id="cL" min="0" max="0.85" step="0.005" value="0" />
+        <span>справа</span><input type="range" id="cR" min="0.15" max="1" step="0.005" value="1" />
+      </div>
+      <button id="cutreset" style="width:100%;margin-top:8px">Вернуть целиком <span class="k">0</span></button>
     </div>
 
     <div class="nav">
@@ -135,7 +153,8 @@
     <div class="hint">
       <kbd>1</kbd> годен · <kbd>2</kbd> брак · <kbd>3</kbd> руками<br />
       <kbd>←</kbd> <kbd>→</kbd> листать · <kbd>0</kbd> снять обрезку<br />
-      <kbd>[</kbd> <kbd>]</kbd> двигать линию земли<br /><br />
+      <kbd>[</kbd> <kbd>]</kbd> линия земли · <kbd>r</kbd> повернуть<br />
+      Обрезка со всех сторон — ползунками.<br /><br />
       Решения сохраняются сами, вкладку можно закрыть.
     </div>
   </div>
@@ -153,6 +172,26 @@ S.seenBefore = localStorage.getItem(KEY + "-seen") === "1";
 localStorage.setItem(KEY + "-seen", "1");
 
 const $ = (id) => document.getElementById(id);
+
+/* Обрезка хранится как рамка в долях: t/b по высоте, l/r по ширине силуэта.
+ * Старые решения писали одну нижнюю линию полем `cut` — читаем и её, чтобы
+ * уже сделанная разметка не пропала. */
+function cropOf(rec) {
+  const c = rec.crop || {};
+  return {
+    t: c.t == null ? 0 : c.t,
+    b: c.b == null ? (rec.cut == null ? 1 : rec.cut) : c.b,
+    l: c.l == null ? 0 : c.l,
+    r: c.r == null ? 1 : c.r,
+  };
+}
+const isWhole = (c) => c.t === 0 && c.b === 1 && c.l === 0 && c.r === 1;
+
+/* Пунктирная линия реза — чтобы было видно, где именно режется. */
+function edge(on, x1, y1, x2, y2) {
+  return on ? '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 +
+    '" stroke="var(--red)" stroke-width="0.004" stroke-dasharray="0.02 0.02"/>' : "";
+}
 const V = "?v=33";
 
 Promise.all([
@@ -219,27 +258,38 @@ function render() {
   const o = S.list[S.i];
   if (!o) { $("city").textContent = "Пусто в этом фильтре"; $("sil").innerHTML = ""; $("photo").innerHTML = ""; return; }
   const rec = S.d[o.id] || {};
-  const cut = rec.cut == null ? 1 : rec.cut;
+  const c = cropOf(rec);
+  const rot = rec.rot || 0;
 
+  /* Поворот показываем сразу на обоих: судить о снимке, лежащем на боку,
+   * невозможно. Сам файл поворачивается потом, в пайплайне, и силуэт для
+   * него пересчитывается заново — здесь это только предпросмотр. */
   $("photo").innerHTML = o.thumb
-    ? '<img src="' + o.thumb + '" alt="" />'
+    ? '<img src="' + o.thumb + '" alt="" style="transform:rotate(' + rot + 'deg)" />'
     : '<span style="color:var(--dim)">снимка нет</span>';
 
   /* Обрезка — clipPath по вектору: путь уже нормирован по высоте, поэтому
    * линия земли это просто y от 0 до 1, никакой возни с растром. */
+  /* Обрезка — прямоугольник clipPath по ЧЕТЫРЁМ сторонам. Одной нижней
+   * линии не хватало: у Котки постамент уходит влево далеко за бюст, и
+   * горизонтальный рез его не трогает вовсе. */
   const cid = "clip" + S.i;
+  const x0 = c.l * o.ar, x1 = c.r * o.ar;
   $("sil").innerHTML =
     '<svg viewBox="0 0 ' + o.ar + ' 1" preserveAspectRatio="xMidYMid meet" ' +
-      'style="width:100%;height:56vh">' +
+      'style="width:100%;height:56vh;transform:rotate(' + rot + 'deg)">' +
     '<defs><clipPath id="' + cid + '">' +
-      '<rect x="-1" y="-1" width="' + (o.ar + 2) + '" height="' + (cut + 1) + '"/>' +
+      '<rect x="' + x0 + '" y="' + c.t + '" width="' + (x1 - x0) +
+      '" height="' + (c.b - c.t) + '"/>' +
     '</clipPath></defs>' +
-    '<path d="' + o.d + '" clip-rule="evenodd" clip-path="url(#' + cid + ')" ' +
+    '<path d="' + o.d + '" clip-path="url(#' + cid + ')" ' +
       (S.mode === "fill"
         ? 'fill="var(--paper)" fill-rule="evenodd"'
         : 'fill="none" stroke="var(--brass)" stroke-width="0.006"') + '/>' +
-    (cut < 1 ? '<line x1="0" x2="' + o.ar + '" y1="' + cut + '" y2="' + cut +
-       '" stroke="var(--red)" stroke-width="0.004" stroke-dasharray="0.02 0.02"/>' : "") +
+    edge(c.t > 0, 0, c.t, o.ar, c.t) +
+    edge(c.b < 1, 0, c.b, o.ar, c.b) +
+    edge(c.l > 0, x0, 0, x0, 1) +
+    edge(c.r < 1, x1, 0, x1, 1) +
     "</svg>";
 
   $("city").textContent = o.m.city || o.id;
@@ -259,8 +309,14 @@ function render() {
   for (const b of document.querySelectorAll(".verdicts button")) {
     b.classList.toggle("on", b.dataset.v === rec.v);
   }
-  $("cut").value = cut;
-  $("cutval").textContent = cut >= 1 ? "целиком" : Math.round(cut * 100) + "% высоты";
+  $("cT").value = c.t; $("cB").value = c.b; $("cL").value = c.l; $("cR").value = c.r;
+  $("rotval").textContent = rot + "°";
+  const parts = [];
+  if (c.t > 0) parts.push("сверху " + Math.round(c.t * 100) + "%");
+  if (c.b < 1) parts.push("снизу " + Math.round((1 - c.b) * 100) + "%");
+  if (c.l > 0) parts.push("слева " + Math.round(c.l * 100) + "%");
+  if (c.r < 1) parts.push("справа " + Math.round((1 - c.r) * 100) + "%");
+  $("cutval").textContent = parts.length ? parts.join(", ") : "целиком";
 
   const n = S.all.length;
   const done = Object.values(S.d).filter((x) => x.v).length;
@@ -294,11 +350,37 @@ function setVerdict(v) {
   if (v !== "man") step(1);                 // «руками» оставляет на месте — вдруг ещё и подрезать
 }
 
-function setCut(val) {
+function setCrop(side, val) {
   const o = S.list[S.i];
   if (!o) return;
   const rec = S.d[o.id] || (S.d[o.id] = {});
-  if (val >= 1) delete rec.cut; else rec.cut = Math.round(val * 1000) / 1000;
+  const c = cropOf(rec);
+  c[side] = Math.round(val * 1000) / 1000;
+  /* Стороны не должны пересекаться: иначе рамка вывернется и силуэт пропадёт
+   * без внятной причины. */
+  if (c.t > c.b - 0.05) { if (side === "t") c.t = c.b - 0.05; else c.b = c.t + 0.05; }
+  if (c.l > c.r - 0.05) { if (side === "l") c.l = c.r - 0.05; else c.r = c.l + 0.05; }
+  delete rec.cut;                       // старое поле больше не ведём
+  if (isWhole(c)) delete rec.crop; else rec.crop = c;
+  save();
+  render();
+}
+
+function resetCrop() {
+  const o = S.list[S.i];
+  if (!o) return;
+  const rec = S.d[o.id] || (S.d[o.id] = {});
+  delete rec.crop; delete rec.cut;
+  save();
+  render();
+}
+
+function rotate(step) {
+  const o = S.list[S.i];
+  if (!o) return;
+  const rec = S.d[o.id] || (S.d[o.id] = {});
+  const next = (((rec.rot || 0) + step) % 360 + 360) % 360;
+  if (next) rec.rot = next; else delete rec.rot;
   save();
   render();
 }
@@ -312,8 +394,12 @@ function step(k) {
 for (const b of document.querySelectorAll(".verdicts button")) {
   b.onclick = () => setVerdict(b.dataset.v);
 }
-$("cut").oninput = (e) => setCut(parseFloat(e.target.value));
-$("cutreset").onclick = () => setCut(1);
+for (const [id, side] of [["cT", "t"], ["cB", "b"], ["cL", "l"], ["cR", "r"]]) {
+  $(id).oninput = (e) => setCrop(side, parseFloat(e.target.value));
+}
+$("cutreset").onclick = resetCrop;
+$("rotl").onclick = () => rotate(-90);
+$("rotr").onclick = () => rotate(90);
 $("prev").onclick = () => step(-1);
 $("next").onclick = () => step(1);
 $("filter").onchange = () => { S.i = 0; build(); render(); };
@@ -324,7 +410,7 @@ $("mode").onclick = () => {
 };
 
 $("save").onclick = () => {
-  const out = { _comment: "Решения отбраковки силуэтов МТК 41. cut — линия земли в долях высоты силуэта (y от 0 до 1), режется всё ниже.", _date: new Date().toISOString().slice(0, 10), items: S.d };
+  const out = { _comment: "Решения отбраковки силуэтов МТК 41. crop — рамка обрезки в долях силуэта: t/b по высоте, l/r по ширине, режется всё вне рамки. rot — поворот снимка в градусах по часовой; снимок поворачивается физически, силуэт после этого пересчитывается заново.", _date: new Date().toISOString().slice(0, 10), items: S.d };
   const blob = new Blob([JSON.stringify(out, null, 1)], { type: "application/json" });
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
@@ -338,12 +424,13 @@ addEventListener("keydown", (e) => {
   if (e.key === "1") setVerdict("ok");
   else if (e.key === "2") setVerdict("bad");
   else if (e.key === "3") setVerdict("man");
-  else if (e.key === "0") setCut(1);
+  else if (e.key === "0") resetCrop();
+  else if (e.key === "r") rotate(e.shiftKey ? -90 : 90);
   else if (e.key === "ArrowRight") step(1);
   else if (e.key === "ArrowLeft") step(-1);
   else if ((e.key === "[" || e.key === "]") && o) {
-    const cur = (S.d[o.id] || {}).cut;
-    setCut(Math.min(1, Math.max(0.5, (cur == null ? 1 : cur) + (e.key === "[" ? -0.01 : 0.01))));
+    const c = cropOf(S.d[o.id] || {});
+    setCrop("b", Math.min(1, Math.max(0.15, c.b + (e.key === "[" ? -0.01 : 0.01))));
   } else return;
   e.preventDefault();
 });
