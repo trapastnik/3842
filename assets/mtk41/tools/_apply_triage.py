@@ -46,13 +46,19 @@ def main():
     stats = {"ok": 0, "bad": 0, "man": 0, "cut": 0}
     for mid, rec in sorted(incoming.items()):
         v = rec.get("v")
-        cut = rec.get("cut")
-        if not v and cut is None:
+        crop = rec.get("crop")
+        rot = rec.get("rot")
+        # `cut` — прежняя одиночная линия земли; принимаем как рамку снизу.
+        if crop is None and rec.get("cut") is not None:
+            crop = {"b": rec["cut"]}
+        if not v and crop is None and not rot:
             continue
         if v in stats:
             stats[v] += 1
-        if cut is not None:
+        if crop is not None:
             stats["cut"] += 1
+        if rot:
+            stats["rot"] = stats.get("rot", 0) + 1
 
         entry = cur.get(mid)
         if entry is None:
@@ -61,15 +67,20 @@ def main():
         else:
             changed += 1
 
-        if cut is not None:
-            entry["cut_norm"] = cut
+        if crop is not None:
+            entry["crop"] = crop
             # Старая линия в пикселях снимается: в чистке cut_y проверяется
             # первым, и оставь мы оба — новое решение человека молча
             # проиграло бы старому числу. Свежее решение старше.
             if entry.pop("cut_y", None) is not None:
                 dropped_px.append(mid)
         else:
-            entry.pop("cut_norm", None)
+            entry.pop("crop", None)
+        entry.pop("cut_norm", None)
+        if rot:
+            entry["rot"] = rot
+        else:
+            entry.pop("rot", None)
 
         entry.pop("drop", None)
         entry.pop("manual_todo", None)
@@ -90,7 +101,8 @@ def main():
                          encoding="utf-8")
 
     print(f"=== принято решений: годен {stats['ok']}, брак {stats['bad']}, "
-          f"руками {stats['man']}, с линией земли {stats['cut']}")
+          f"руками {stats['man']}, с обрезкой {stats['cut']}, "
+          f"с поворотом {stats.get('rot', 0)}")
     print(f"=== записей в поправках: новых {added}, обновлено {changed}, "
           f"всего {len([k for k in cur if not k.startswith('_')])}")
     if dropped_px:
