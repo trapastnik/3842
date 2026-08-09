@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=21";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -153,10 +153,7 @@ export const globeScene = {
      * fallback-контент, браузер его не рисует. Подпись берём из словаря и
      * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
      * к жесту остаётся русским (умолчание кита). */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "drag", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "drag", label: this._hintLabel() });
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -191,6 +188,7 @@ export const globeScene = {
   },
 
   resume() {
+    hushHint(this._hint);
     if (this._raf || !this._scene) return;
     // забираем общий канвас обратно: пока сцена ждала, он был у соседки
     if (attachCanvas(this._gpu, this._root)) this._fit();
@@ -219,7 +217,8 @@ export const globeScene = {
     this.pause();                       // 60-FPS петля и слушатели ввода — прочь
     if (this._card) this._card.close();
     this._standby = true;               // в кадре: вращение вдвое живее
-    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; },
+      () => this._hint);
   },
 
   setLang(lang) {

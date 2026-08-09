@@ -17,9 +17,8 @@
  */
 import {
   loadData, famBig, famWord, PAL, beginStandby, pollSize,
-  bufferComplaint, offScreen, capDpr,
-} from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
+  bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
 import {
   prepareWithSegments, layoutNextLineRange, materializeLineRange,
 } from "../vendor/pretext/layout.js?v=0.0.8";
@@ -142,10 +141,7 @@ export const posterScene = {
 
     /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
      * fallback-контент, браузер его не рисует. */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "tap", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "tap", label: this._hintLabel() });
 
     this.setLang(ctx && ctx.lang);
     this._size();
@@ -172,6 +168,7 @@ export const posterScene = {
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
 
   resume() {
+    hushHint(this._hint);
     if (this._raf || !this._root) return;
     const step = () => { this._raf = requestAnimationFrame(step); this._frame(); };
     this._raf = requestAnimationFrame(step);
@@ -191,7 +188,8 @@ export const posterScene = {
     if (this._card) this._card.close();
     this._push.on = false;
     this._standby = true;
-    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; },
+      () => this._hint);
   },
 
   setLang(lang) {
