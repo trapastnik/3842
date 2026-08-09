@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -127,10 +127,7 @@ export const mapScene = {
      * fallback-контент, браузер его не рисует. Подпись берём из словаря и
      * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
      * к жесту остаётся русским (умолчание кита). */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "pinch", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "pinch", label: this._hintLabel() });
 
     this.setLang(ctx.lang || "ru");
     this._size();
@@ -153,7 +150,7 @@ export const mapScene = {
   },
 
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
-  resume() { if (!this._raf) this._loop(); },
+  resume() { hushHint(this._hint); if (!this._raf) this._loop(); },
 
   /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
    * Карта статична, поэтому в заставке она сама показывает то, чего посетитель
@@ -171,7 +168,7 @@ export const mapScene = {
     return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
-    });
+    }, () => this._hint);
   },
 
   reset() {

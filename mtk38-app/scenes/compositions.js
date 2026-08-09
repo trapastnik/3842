@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=21";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -153,10 +153,7 @@ export const compositionsScene = {
      * fallback-контент, браузер его не рисует. Подпись берём из словаря и
      * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
      * к жесту остаётся русским (умолчание кита). */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "drag", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "drag", label: this._hintLabel() });
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -194,6 +191,7 @@ export const compositionsScene = {
   },
 
   resume() {
+    hushHint(this._hint);
     if (this._raf || !this._scene) return;
     // забираем общий канвас обратно: пока сцена ждала, он был у соседки
     if (attachCanvas(this._gpu, this._root)) this._fit();
@@ -226,7 +224,7 @@ export const compositionsScene = {
     return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
-    });
+    }, () => this._hint);
   },
 
   setLang(lang) {

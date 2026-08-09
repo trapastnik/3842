@@ -5,11 +5,11 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 38 · Ленин на языках мира</title>
     <!-- ?v=N обязателен: Chrome кеширует агрессивно, без версии правка не доедет до киоска. -->
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.9.2" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.9.2" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.12.0" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.12.0" />
     <!-- Шрифты бренда + 32 письменности Noto: без них не-латиница уходит в тофу. -->
     <link rel="stylesheet" href="../mtk38-v3/fonts/faces.css?v=2" />
-    <link rel="stylesheet" href="./styles.css?v=7" />
+    <link rel="stylesheet" href="./styles.css?v=8" />
     <!-- Three r184 вендорен локально (офлайн-киоск, без рантайм-CDN).
          Карта импортов нужна и статическим, и динамическим import('three'):
          сцены грузят движок лениво, только когда до них доходит очередь. -->
@@ -29,7 +29,7 @@
          подключается ДО модуля, чтобы window.MtkProjection был готов. -->
     <script src="../assets/shared/lib/projection.js?v=1"></script>
     <!-- Единый призыв к жесту (тач-стандарт, п. 4): window.KioskHint. -->
-    <script src="../assets/shared/kiosk/hint.js?v=1.9.2"></script>
+    <script src="../assets/shared/kiosk/hint.js?v=1.12.0"></script>
     <!-- Слой цитат Ленина (window.Quotes) — переиспользуемый модуль из V2.
          Классический скрипт: свой CSS он подключает сам, по собственному src. -->
     <script src="../mtk38-v2/shared/quotes.js?v=1"></script>
@@ -38,10 +38,10 @@
          Подключается только по ?service=1 — на стенде посетителя его нет. -->
     <script>
       if (new URLSearchParams(location.search).has("service")) {
-        document.write('<script src="../assets/shared/kiosk/tools/selftest.js?v=1.9.2"><\/script>');
-        document.write('<script src="../assets/shared/kiosk/tools/sweep.js?v=1.9.2"><\/script>');
+        document.write('<script src="../assets/shared/kiosk/tools/selftest.js?v=1.12.0"><\/script>');
+        document.write('<script src="../assets/shared/kiosk/tools/sweep.js?v=1.12.0"><\/script>');
       }
     </script>
-    <script type="module" src="./app.js?v=25"></script>
+    <script type="module" src="./app.js?v=30"></script>
   </body>
 </html>

@@ -45,9 +45,5 @@
     "sceneTimeoutSec": 20,
     "restart": true,
     "journalLimit": 200
-  },
-  "photos": {
-    "color": false,
-    "a11yColor": false
   }
 }

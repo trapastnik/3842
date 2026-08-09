@@ -130,6 +130,21 @@
    * живёт до перезагрузки). */
   var attached = typeof WeakMap === "function" ? new WeakMap() : null;
 
+  /* ГРУППОВОЕ ПОДАВЛЕНИЕ. Ядро гасит все подсказки на время заставки:
+   * призыв к жесту, горящий поверх аттрактора, спорит с собственным
+   * призывом заставки, а вуаль заставки полупрозрачна и не прячет его.
+   * Через ядро, а не через каждую сцену: сцена, забывшая погасить, даёт
+   * дефект, который проступает только через полминуты простоя и живёт
+   * до утра. LIVE — «применить текущее подавление» у каждой живой
+   * подсказки; destroy() убирает свою запись. */
+  var LIVE = [];
+  var allOff = false;
+
+  function suppressAll(on) {
+    allOff = !!on;
+    for (var i = LIVE.length - 1; i >= 0; i--) LIVE[i]();
+  }
+
   function attach(target, opts) {
     if (!target) return null;
     opts = opts || {};
@@ -184,37 +199,185 @@
     target.appendChild(el);
 
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
+    var off = false;   /* подавление этой подсказки; см. suppress() ниже */
+    var warnedInset = false;   /* про расхождение зон говорим один раз на сцену */
 
-    function show() { if (dead) return; shown = true; el.classList.add("is-on"); }
+    /* ПОЗИЦИЯ СЧИТАЕТСЯ ОТ РЕАЛЬНОГО НИЗА КОНТЕЙНЕРА, а не от зоны хрома.
+     *
+     * Голое bottom: var(--chrome-bottom) годится только когда хост — во
+     * весь экран. У МТК 40 хост это поле канвы, УЖЕ отбитое от хрома, и
+     * отступ считался дважды: подсказка висела на ~92 px выше нужного,
+     * им пришлось заводить локальное правило-компенсацию. Считаем, сколько
+     * хост уже отбил сам, и добираем только недостающее.
+     *
+     * Это же снимает вертикальный дефицит из замеров 40: пилюля растёт от
+     * ×1.25 на 26 px при зазоре до навигации 12 px, и без пересчёта наехала
+     * бы на неё именно в режиме слабовидящих. */
+    function place() {
+      if (dead || !el.isConnected) return;
+      var root = el.closest(".kiosk-app") || document.documentElement;
+      var cs = getComputedStyle(root);
+      var ui = parseFloat(getComputedStyle(document.documentElement)
+        .getPropertyValue("--ui-scale")) || 1;
+      /* Ноль — это ЗНАЧЕНИЕ, а не отсутствие. Через `||` нулевая зона
+       * хрома (сцена спрятала навигацию) проваливалась бы до кромки и
+       * дальше до 80 px, и подсказка висела бы на пустом месте. */
+      var chrome = parseFloat(cs.getPropertyValue("--chrome-bottom"));
+      if (!isFinite(chrome)) chrome = parseFloat(cs.getPropertyValue("--edge-safe-bottom"));
+      if (!isFinite(chrome)) chrome = 80;
+      var host = target.getBoundingClientRect();
+      if (!host.height) return;                       /* раскладки ещё нет */
+      var cleared = window.innerHeight - host.bottom; /* хост уже отбит на столько */
+      var need = Math.max(0, chrome - cleared);
 
-    /* hide() ПЕРЕВЗВОДИТ цикл. Раньше он только снимал класс, а таймер
-     * оставался отстрелянным: сцена, гасившая подсказку руками (например,
-     * при уходе в заставку), больше не показывала её никогда — у МТК 40
-     * будящее касание уходит в оверлей и до poke() не доходит. */
+      /* ТИХОЕ РАСХОЖДЕНИЕ ЗОН — единственное, что кит тут видит, а сцена нет.
+       *
+       * Кит добирает недостающее правильно, но считает его от ТЕКУЩЕЙ зоны
+       * хоста. Хост, который свою зону не пересчитал, уводит подсказку вверх
+       * ровно на свою ошибку — и не ломается заметно: сцена не падает, стенд
+       * зелёный, аудиты чистые. У МТК 40 такие 20 px под баром нашлись только
+       * потому, что заранее было названо ожидаемое число.
+       *
+       * Условие узкое НАМЕРЕННО. Полноэкранный слой заходит под хром законно,
+       * и предупреждать на нём нельзя — заглушат вместе с настоящими. Порог
+       * «отбит хотя бы с одной стороны» тоже широк: хост, отбитый только
+       * сверху, законно достаёт до низа экрана. Ловим ровно противоречие —
+       * от низа отбит НАМЕРЕННО, но не дотянул. */
+      if (!warnedInset && need > 4) {
+        var rootRect = root.getBoundingClientRect();
+        if (host.bottom < rootRect.bottom - 1) {
+          warnedInset = true;
+          console.warn("[KioskHint] хост подсказки отбит от низа на " +
+            Math.round(rootRect.bottom - host.bottom) + " px, а хром ядра занимает " +
+            Math.round(chrome) + " px — не хватает " + Math.round(need) + " px. " +
+            "Подсказку я подниму, но САМА СЦЕНА этими " + Math.round(need) +
+            " px заходит под бар. Похоже, ваша зона не пересчиталась на смене " +
+            "токенов; частая причина — пересчёт через setTimeout: в скрытой " +
+            "вкладке макрозадача душится до раза в минуту. Считайте синхронно " +
+            "либо через ResizeObserver на самом элементе.");
+        }
+      }
+
+      /* Ставим ПЕРЕМЕННУЮ, а не bottom.
+       *
+       * Инлайновый bottom бил бы любые правила приложений — а они там не от
+       * невежества: кит не знает про НИЖНИЕ КОНТРОЛЫ САМОЙ СЦЕНЫ (плеер со
+       * шкалой лет у 39, ряд чипов у 42), и подъём над ними может задать
+       * только сцена. Разделяем ответственность: база (обойти хром ядра) —
+       * наша, добавка (обойти своё) — их, через --kiosk-hint-lift.
+       * Заодно старые правила с bottom продолжают работать как раньше:
+       * миграция становится добровольной, а не обязательной в день merge. */
+      el.style.setProperty("--kiosk-hint-base", Math.round(need + 12 * ui) + "px");
+    }
+
+    /* ПОДАВЛЕНИЕ И ЦИКЛ ПРОСТОЯ — РАЗНЫЕ СОСТОЯНИЯ, И ЭТО ГЛАВНОЕ ЗДЕСЬ.
+     *
+     * Раньше состояние было одно — таймер, — и служило обеим целям сразу.
+     * Каждая правка чинила один его конец и ломала другой:
+     *   «погасили руками — не вернулась никогда» (МТК 40)
+     *      → перевзвод в hide()
+     *      → «загорелась через 30 с посреди заставки и горит до утра» (41).
+     * Третьей серии не будет: гашение на время — отдельный флаг, который
+     * переживает любые poke/hide и снимается только resume(). */
+    function muted() { return off || allOff; }
+
+    /* Взвести показ по простою — но никогда, пока подавлено. */
+    function arm() {
+      if (dead) return;
+      if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+      if (!muted()) idleTimer = setTimeout(show, idleMs);
+    }
+
+    function show() {
+      if (dead || muted()) return;
+      place();
+      shown = true;
+      el.classList.add("is-on");
+    }
+
+    /* hide() перевзводит цикл — это по-прежнему верно для ОБЫЧНОГО
+     * гашения: сцена гасит подсказку на время взаимодействия, и она
+     * должна вернуться. Для «убрать надолго» есть suppress(). */
     function hide() {
       shown = false;
       el.classList.remove("is-on");
-      if (dead) return;
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(show, idleMs);
+      arm();
     }
     function poke() {
       if (dead) return;
-      if (shown) hide();
-      if (idleTimer) clearTimeout(idleTimer);
-      idleTimer = setTimeout(show, idleMs);
+      if (shown) hide();   /* hide() уже перевзводит */
+      else arm();
+    }
+
+    /* Привести подсказку в соответствие с текущим подавлением. */
+    function applyMute() {
+      if (dead) return;
+      if (!muted()) { arm(); return; }
+      shown = false;
+      el.classList.remove("is-on");
+      if (idleTimer) { clearTimeout(idleTimer); idleTimer = null; }
+      if (firstTimer) { clearTimeout(firstTimer); firstTimer = null; }
     }
 
     EVENTS.forEach(function (ev) {
       target.addEventListener(ev, poke, { passive: true });
     });
 
+    /* Пересчёт позиции: хост меняет размер (a11y, поворот, чужая
+     * раскладка) — подсказка едет следом. */
+    var ro = null;
+    if (typeof ResizeObserver === "function") {
+      ro = new ResizeObserver(place);
+      ro.observe(target);
+    }
+    window.addEventListener("resize", place, { passive: true });
+
+    /* Одного RO мало. База зависит не только от размера хоста, но и от
+     * ТОКЕНОВ ЯДРА (--chrome-bottom, --ui-scale), а они меняются без его
+     * участия: оператор включил слабовидящих, кнопки языков перенеслись
+     * в две строки, сцена спрятала навигацию. Хост, сверстанный не от зон
+     * хрома, при этом не дрогнет — RO промолчит, и база останется от
+     * прежней раскладки.
+     *
+     * Ядро выставляет эти переменные инлайном (--ui-scale на <html>,
+     * --chrome-* на .kiosk-app), поэтому ловим мутацию style. Петли нет:
+     * place() пишет в el, а он тут не наблюдается. MutationObserver, в
+     * отличие от ResizeObserver и rAF, работает и в фоновой вкладке. */
+    var mo = null;
+    if (typeof MutationObserver === "function") {
+      mo = new MutationObserver(place);
+      var watch = { attributes: true, attributeFilter: ["style"] };
+      mo.observe(document.documentElement, watch);
+      var appRoot = el.closest(".kiosk-app");
+      if (appRoot && appRoot !== document.documentElement) mo.observe(appRoot, watch);
+    }
+
+    /* В фоновой вкладке RO не доставляется вовсе, а resize не приходит:
+     * если хост сменил размер, пока вкладку не показывали, база устареет
+     * молча. Досчитываем на возврате. (Остаётся один непокрытый случай:
+     * хост ПЕРЕЕХАЛ, не изменив размера, — его не видит ни RO, ни MO;
+     * он лечится сам при следующем show(), который зовёт place().) */
+    function onVis() { if (!document.hidden) place(); }
+    document.addEventListener("visibilitychange", onVis);
+
     firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
+    place();
+    LIVE.push(applyMute);
+    /* Родилась во время заставки — не должна вспыхнуть на ней. */
+    if (allOff) applyMute();
 
     var handle = {
       show: show,
       hide: hide,
+
+      /* Погасить И ДЕРЖАТЬ погашенной: переживает любые poke/hide,
+       * снимается только resume(). Для ухода в заставку сцене звать не
+       * нужно — ядро гасит подсказки само; это для своих причин сцены. */
+      suppress: function () { off = true; applyMute(); return handle; },
+      resume: function () { off = false; applyMute(); return handle; },
+      get suppressed() { return muted(); },
+
       get gesture() { return gesture; },
 
       /* Публичный перевзвод: сцена отмечает взаимодействие, которое до
@@ -262,6 +425,12 @@
         if (idleTimer) clearTimeout(idleTimer);
         if (firstTimer) clearTimeout(firstTimer);
         idleTimer = firstTimer = null;
+        var li = LIVE.indexOf(applyMute);
+        if (li >= 0) LIVE.splice(li, 1);
+        if (ro) { ro.disconnect(); ro = null; }
+        if (mo) { mo.disconnect(); mo = null; }
+        window.removeEventListener("resize", place);
+        document.removeEventListener("visibilitychange", onVis);
         EVENTS.forEach(function (ev) { target.removeEventListener(ev, poke); });
         el.remove();
         if (attached) attached["delete"](target);
@@ -281,23 +450,45 @@
       /* От --chrome-bottom, а не от кромки: под навигацией уже занято, и
          подсказка ложилась прямо на неё (замер 42: хинт 1974..2076 при
          навигации 1882..2080). Кромка — фолбэк, если ядра рядом нет. */
+      /* ВСЕ РАЗМЕРЫ — ОТ --ui-scale. Подсказка это контрол, а не контент;
+         зашитые пиксели означали, что в режиме слабовидящих растёт весь
+         интерфейс, кроме единственного призыва к жесту (находка 40).
+         Фолбэк 1 — если кит подключён без ядра. */
+      /* База считается в JS от реального низа контейнера (--kiosk-hint-base);
+         до первого place() работает фолбэк от зоны хрома. Добавка сцены —
+         --kiosk-hint-lift: подъём над СВОИМИ нижними контролами, о которых
+         кит знать не может. */
       ".kiosk-hint{position:absolute;left:50%;" +
-      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px);" +
-      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
+      "bottom:calc(var(--kiosk-hint-base," +
+      "calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1)))" +
+      " + var(--kiosk-hint-lift,0px));" +
+      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;" +
+      "gap:calc(18px * var(--ui-scale,1));" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
          разъезжаются с палитрой при её смене. */
-      "padding:18px 28px;border-radius:999px;" +
+      "padding:calc(18px * var(--ui-scale,1)) calc(28px * var(--ui-scale,1));border-radius:999px;" +
       "background:rgba(var(--kiosk-ink-rgb,12,16,18),.72);" +
       "border:1px solid rgba(var(--brass-rgb,210,183,115),.45);color:var(--brass,#D2B773);" +
+      /* Длинная подпись (ZH/EN) при ×1.25 не должна уезжать за кромку:
+         ограничиваем ширину рабочей областью и разрешаем перенос. */
+      "max-width:calc(100% - 2 * var(--edge-safe,64px));" +
       "opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;z-index:40;}" +
       ".kiosk-hint.is-on{opacity:1;transform:translateX(-50%) translateY(0);}" +
-      ".kiosk-hint__icon{width:64px;height:64px;}" +
+      ".kiosk-hint__icon{flex:none;width:calc(64px * var(--ui-scale,1));" +
+      "height:calc(64px * var(--ui-scale,1));}" +
       ".kiosk-hint__icon svg{width:100%;height:100%;animation:kioskHintPulse 2.4s ease-in-out infinite;}" +
-      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;font-size:26px;" +
-      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);white-space:nowrap;}" +
+      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;" +
+      "font-size:calc(26px * var(--ui-scale,1));line-height:1.25;" +
+      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);" +
+      "white-space:normal;overflow-wrap:anywhere;text-align:center;}" +
       "@keyframes kioskHintPulse{0%,100%{transform:scale(1)}50%{transform:scale(.88)}}";
     document.head.appendChild(s);
   }
 
-  window.KioskHint = { attach: attach };
+  window.KioskHint = {
+    attach: attach,
+    /* Зовёт ядро на входе в заставку и выходе из неё. */
+    suppressAll: suppressAll,
+    isSuppressed: function () { return allOff; }
+  };
 })();

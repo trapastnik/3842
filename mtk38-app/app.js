@@ -6,14 +6,14 @@
  * и передаёт дальше в kiosk-core.js. Поднимать при каждом merge main, иначе
  * Chrome отдаёт старое ядро: у меня так работало 1.5.0 при 1.7.0 в репозитории
  * и 1.7.0 при 1.8.1. С 1.9.0 ядро само сверит VERSION с меткой и заругается. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.12.0";
 
-import { globeScene } from "./scenes/globe.js?v=17";
-import { rainScene } from "./scenes/rain.js?v=17";
-import { mapScene } from "./scenes/map.js?v=17";
-import { catalogScene } from "./scenes/catalog.js?v=17";
-import { compositionsScene } from "./scenes/compositions.js?v=17";
-import { posterScene } from "./scenes/poster.js?v=2";
+import { globeScene } from "./scenes/globe.js?v=21";
+import { rainScene } from "./scenes/rain.js?v=21";
+import { mapScene } from "./scenes/map.js?v=21";
+import { catalogScene } from "./scenes/catalog.js?v=21";
+import { compositionsScene } from "./scenes/compositions.js?v=21";
+import { posterScene } from "./scenes/poster.js?v=6";
 
 const app = createApp({
   appId: "mtk38",
@@ -48,7 +48,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=17";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=21";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики

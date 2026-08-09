@@ -5,7 +5,8 @@
  * нечего, rAF и таймеров здесь нет вовсе. */
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
-} from "./shared.js?v=24";
+  applyPhotoMode,
+} from "./shared.js?v=25";
 
 const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
 const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
@@ -107,6 +108,10 @@ export const archiveScene = {
 
   /* Схема v1.2: значения приходят готовыми. Расстояния — CSS-переменные,
    * чтобы не пересобирать сетку из 140 плиток на каждый чих ползунка. */
+  /* Общая настройка МТК: ядро зовёт это у всех смонтированных сцен.
+   * Реализация одна на всех — см. shared.js. */
+  applyAppSettings(values) { applyPhotoMode(values); },
+
   applySettings(values) {
     this._cfg = Object.assign(this._defaults(), values || {});
     if (!this._root) return;
