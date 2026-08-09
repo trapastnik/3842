@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=23";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=24";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -130,6 +130,9 @@ export const mapScene = {
       if (Math.abs(w - this._lastW) < 2 && Math.abs(h - this._lastH) < 2) return;
       this._lastW = w; this._lastH = h;
       this._size(); this._fit(); this._draw();
+      /* Теснота считается не только от высоты бара: экран может стать ниже при
+       * той же раскладке чипов, и подсказка упрётся в шапку без участия бара. */
+      this._liftHint();
     });
     this._ro.observe(this._canvas);
 
@@ -598,5 +601,20 @@ export const mapScene = {
     const bar = this._root.querySelector(".m42-filters--bottom");
     const h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 0;
     this._root.style.setProperty("--m42-hint-lift", h + "px");
+
+    /* На узко-высоком экране в a11y бар разрастается до трёх рядов, подсказка
+     * уезжает вверх и упирается в заголовок сцены (замер координатора:
+     * 1280×1080, бар 400 → хинт на y=196). Зазор до чипов при этом честные 24,
+     * но выше места уже нет — держать оба инварианта физически невозможно.
+     * Выбор: гасим подсказку, а не заголовок. Она вспомогательная и всё равно
+     * исчезает по первому касанию, а перечёркнутый заголовок выглядит поломкой.
+     * Гасим через visibility, а не display: бокс остаётся измеримым, иначе
+     * следующий замер увидел бы нули и класс залип бы навсегда. */
+    const hint = this._root.querySelector(".kiosk-hint");
+    const head = this._root.querySelector(".m42-head");
+    if (!hint || !head) return;
+    const hr = hint.getBoundingClientRect(), fr = head.getBoundingClientRect();
+    if (!hr.height) return;                       // ещё не отрисована — не судим
+    this._root.classList.toggle("is-hint-cramped", hr.top < fr.bottom + 12);
   },
 };

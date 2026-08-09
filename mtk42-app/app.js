@@ -7,10 +7,10 @@
  * на каждый новый релиз ядра. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=23";
-import { archiveScene } from "./scenes/archive.js?v=23";
-import { timelineScene } from "./scenes/timeline.js?v=23";
-import { mapScene } from "./scenes/map.js?v=23";
+import { pendulumScene } from "./scenes/pendulum.js?v=24";
+import { archiveScene } from "./scenes/archive.js?v=24";
+import { timelineScene } from "./scenes/timeline.js?v=24";
+import { mapScene } from "./scenes/map.js?v=24";
 
 const app = createApp({
   appId: "mtk42",
@@ -20,7 +20,7 @@ const app = createApp({
   /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
    * и правки подписей не доезжали — ловил это руками не раз. Поднимать
    * вместе с ?v= остальных ассетов. */
-  i18nVersion: "23",
+  i18nVersion: "24",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
