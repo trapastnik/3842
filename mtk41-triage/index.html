@@ -78,6 +78,9 @@
   .strip div.bad{background:var(--red)}
   .strip div.man{background:var(--brass)}
   .strip div.cur{border-color:var(--paper)}
+  .origin{color:var(--dim);font-size:12px;font-variant-numeric:tabular-nums;
+    border:1px solid var(--line);border-radius:5px;padding:4px 8px;white-space:nowrap}
+  .origin.warn{color:#1c2226;background:var(--brass);border-color:var(--brass);font-weight:600}
   #err{padding:20px;color:var(--brass)}
 </style>
 </head>
@@ -94,6 +97,7 @@
   <button id="mode">Заливка</button>
   <span class="grow"></span>
   <span class="counts" id="counts"></span>
+  <span class="origin" id="origin" title="Разметка привязана к этому адресу"></span>
   <button id="save">Скачать решения</button>
 </header>
 
@@ -145,6 +149,8 @@ const KEY = "mtk41-triage-v1";
 const S = { list: [], i: 0, mode: "fill", d: {} };
 
 try { S.d = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { S.d = {}; }
+S.seenBefore = localStorage.getItem(KEY + "-seen") === "1";
+localStorage.setItem(KEY + "-seen", "1");
 
 const $ = (id) => document.getElementById(id);
 const V = "?v=33";
@@ -258,6 +264,14 @@ function render() {
 
   const n = S.all.length;
   const done = Object.values(S.d).filter((x) => x.v).length;
+
+  /* Адрес на виду — не украшение. localStorage привязан к origin: разметка,
+   * начатая на 127.0.0.1:8097, НЕ видна на localhost:8092, это для браузера
+   * разные хранилища. Человек, открывший вторую вкладку и увидевший нули,
+   * иначе решит, что работа пропала. Здесь он сразу видит, где находится. */
+  const org = $("origin");
+  org.textContent = location.host;
+  org.classList.toggle("warn", done === 0 && S.seenBefore);
   const cnt = (v) => Object.values(S.d).filter((x) => x.v === v).length;
   $("counts").innerHTML = "объект <b>" + (S.i + 1) + "</b> из <b>" + S.list.length +
     "</b> · размечено <b>" + done + "</b> из " + n +
