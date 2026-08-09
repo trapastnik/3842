@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.13.0" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.13.0" />
-    <link rel="stylesheet" href="./styles.css?v=1.13.0" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.13.1" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.13.1" />
+    <link rel="stylesheet" href="./styles.css?v=1.13.1" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.13.0"></script>
+    <script type="module" src="./app.js?v=1.13.1"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.13.0";
-import { mapScene } from "./scenes/map.js?v=1.13.0";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.13.0";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.13.1";
+import { mapScene } from "./scenes/map.js?v=1.13.1";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.13.1";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.13.0",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.13.1",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.13.0"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.13.1"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -187,6 +187,25 @@ export const mapScene = {
    }
    ```
 
+   **Мерить после смены сцены — только с погашенными переходами.**
+   `showScene()` возвращает промис, который резолвится ПОСЛЕ кроссфейда, так что
+   `await` обязателен и его достаточно для самого кита. Но ваши собственные
+   анимации кит не ждёт, а переход слоя гасится ровно к концу `fade` — замер в
+   тот же тик может застать последний кадр. Для замеров глушите переходы и
+   анимации целиком, а не у одного меряемого элемента (у МТК 40 из-за этого
+   вышло −182 px вместо +40):
+
+   ```js
+   const kill = document.createElement("style");
+   kill.textContent = "*,*::before,*::after{transition:none!important;animation:none!important}";
+   document.head.appendChild(kill);
+   // …замеры…
+   kill.remove();
+   ```
+
+   `transition-duration: 1ms` вместо `none` не годится: в безкадровой вкладке
+   переход не доигрывает вовсе и застывает на первом значении.
+
 4. **Скроллы видимые.** Каждому скроллируемому контейнеру — `class="kiosk-scroll"`.
 
    **Подсказку жеста вешайте на контейнер сцены, а не на `<canvas>`.** Браузер не
@@ -250,7 +269,7 @@ export const mapScene = {
    ядром, тем же числом:
 
    ```html
-   <script src="../assets/shared/kiosk/hint.js?v=1.13.0"></script>
+   <script src="../assets/shared/kiosk/hint.js?v=1.13.1"></script>
    ```
 
    Иначе браузер отдаст подсказку прошлого релиза, а вы будете смотреть на
@@ -407,13 +426,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.13.0">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.13.1">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.13.0"` загрузит и
-`kiosk-core.js?v=1.13.0`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.13.1"` загрузит и
+`kiosk-core.js?v=1.13.1`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -422,14 +441,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.13.0" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.13.0" />
-<script type="module" src="./app.js?v=1.13.0"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.13.1" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.13.1" />
+<script type="module" src="./app.js?v=1.13.1"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.13.0";
-import { mapScene }  from "./scenes/map.js?v=1.13.0";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.13.1";
+import { mapScene }  from "./scenes/map.js?v=1.13.1";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя
@@ -781,13 +800,26 @@ python3 assets/shared/kiosk/tools/audit-links.py --path mtk42-app
 у соседей по МТК 29 опечатка в пути к шрифту увела весь текст в Georgia, и на
 глаз это почти неотличимо от задуманного.
 
-Дальше — стенд приёмки прямо в приложении. Подключите временно:
+Дальше — **два** прогона в приложении, оба обязательны, и они проверяют разное:
+стенд приёмки — как приложение живёт в ОДНОМ состоянии настроек, перебор
+сочетаний — что оно не разваливается в остальных.
 
 ```html
 <script src="../assets/shared/kiosk/tools/selftest.js"></script>
+<script src="../assets/shared/kiosk/tools/audit-settings.js"></script>
+```
+```js
+KioskSettingsAudit.run(app)      // должно быть «сломано: 0»
 ```
 
-и в консоли **видимой** вкладки:
+Второй прогон обязателен с 1.13.0 и введён не для порядка: раскладка «стрелки по
+бокам» отдавала полю сцены ОТРИЦАТЕЛЬНУЮ ширину и схлопывала вёрстку любой
+сцены — а дожила до прода, потому что и стенд, и оба скептика смотрели только
+дефолтные настройки. Оператору достаточно переключить одну строку в панели.
+В схлопнутом окне прогон отказывается работать вслух: зелёный результат там
+получился бы на любом коде.
+
+Стенд приёмки — подключается тем же способом, в консоли **видимой** вкладки:
 
 ```bash
 await KioskSelfTest.run(app)

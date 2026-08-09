@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.13.0";
+  var VERSION = "1.13.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2423,6 +2423,7 @@
 
   KioskApp.prototype.openService = function (on) {
     if (!this._els.service) return this;
+    var self = this;
     on = on !== false;
     if (on === !!this._serviceOpen) return this;
     this._serviceOpen = on;
@@ -2434,14 +2435,24 @@
       panel.hidden = false;
       /* nextFrames, а не голый rAF: в скрытой вкладке кадров не бывает и
        * панель осталась бы за краем экрана (страховка по таймеру внутри). */
-      nextFrames(1).then(function () { panel.classList.add("is-open"); });
+      /* Открытие отложено, закрытие синхронно — значит между ними успевает
+       * вклиниться закрытие, и отложенный колбэк открывал бы УЖЕ ЗАКРЫТУЮ
+       * панель: класс возвращался поверх hidden, а openService(false) с
+       * этого момента уходил в ранний возврат (состояние-то уже false).
+       * Панель оставалась висеть до перезагрузки. Сверяемся с текущим
+       * состоянием, а не с тем, каким оно было при планировании. */
+      nextFrames(1).then(function () {
+        if (self._serviceOpen) panel.classList.add("is-open");
+      });
       /* Под руками оператора киоск не засыпает и не перезапускается:
        * оператор может держать поток (правка полей, долгий разбор журнала). */
       this.suspendIdle(true);
       this.suspendWatchdog();
     } else {
       panel.classList.remove("is-open");
-      setTimeout(function () { if (!panel.classList.contains("is-open")) panel.hidden = true; }, 350);
+      /* Сверяемся с состоянием, а не с классом: класс — след отрисовки, а
+       * решает намерение оператора. */
+      setTimeout(function () { if (!self._serviceOpen) panel.hidden = true; }, 350);
       this.suspendIdle(false);
       this.resumeWatchdog();
     }
