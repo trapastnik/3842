@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -61,6 +61,11 @@ export const compositionsScene = {
   },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
@@ -160,6 +165,7 @@ export const compositionsScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
@@ -253,6 +259,29 @@ export const compositionsScene = {
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
+
+  healthcheck() {
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    if (!this._scene) return { ok: false, detail: "монтирование не завершилось — сцены нет" };
+    const bad = offScreen(this._root) ? null
+      : bufferComplaint(this._gpu && this._gpu.canvas, this._dpr, this._root);
+    if (bad) return { ok: false, detail: bad };
+    const n = this._sprites.length;
+    if (!n) return { ok: false, detail: "в сцене ни одного написания" };
+    /* Спрайты долетают до целей лерпом — на проверке они законно в пути. */
+    return { ok: true, detail: `написаний ${n}, раскладка «${this._layout}»`
+      + (this._quotes && this._cfg && this._cfg.quotesOn ? ", цитаты включены" : "") };
+  },
+
+  states() {
+    return LAYOUTS.map((k) => ({ name: "раскладка: " + k, apply: () => this._setLayout(k) }));
+  },
 
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
@@ -385,7 +414,9 @@ export const compositionsScene = {
 
   _fit() {
     if (!this._gpu || !this._root) return;
-    fitTo(this._gpu.renderer, this._camera, this._root);
+    // dpr держим у себя: healthcheck сверяет буфер с ожиданием по ФАКТИЧЕСКОМУ
+    // масштабу, а он ниже единицы, когда кап 8.3 Мп режет крупный бокс
+    this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
     if (this._post) this._post.needsUpdate = true;
   },
 

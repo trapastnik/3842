@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -52,10 +52,16 @@ export const mapScene = {
   preload: { data: { geo: GEO_URL }, custom: async () => { await loadData(); } },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx.app;
     const data = await loadData();
     this._langs = data.langs.filter((w) => w.lat != null && w.lng != null);
     this._pubs = data.pubs;
+    this._pubsOk = data.pubsOk;
 
     /* точки изданий — по городу печати */
     this._places = [];
@@ -132,6 +138,7 @@ export const mapScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._hint = null;
@@ -209,6 +216,50 @@ export const mapScene = {
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
+  /* Считаем «что готов показать», а не последний кадр: _hits наполняются в
+   * отрисовке, и в скрытом слое они законно пусты. Судим по данным и по тому,
+   * что подложка собрана. */
+  healthcheck() {
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    if (!this._canvas) return { ok: false, detail: "монтирование не завершилось — канваса нет" };
+    if (!this._geo) return { ok: false, detail: "контуры стран не загрузились" };
+    if (this._layer !== "lang" && this._pubsOk === false) {
+      return { ok: false, detail: "издания не загрузились — слой пуст не по данным" };
+    }
+    const want = this._layer === "lang" ? this._langs.length
+      : this._layer === "pub" ? this._places.length
+      : this._langs.length + this._places.length;
+    /* Ноль изданий при УСПЕШНО прочитанном источнике — честная пустота
+     * (в каноне может не оказаться ни одного города печати), и она зелёная,
+     * ровно как пустой фильтр каталога. Красное — только несостоявшаяся
+     * загрузка, её проверили выше. */
+    if (!want) {
+      return { ok: true, detail: `слой «${this._layer}»: в данных пусто (источник прочитан)` };
+    }
+    if (offScreen(this._root)) {
+      return { ok: true, detail: `слой «${this._layer}»: ${want} объектов готовы, слой не на экране` };
+    }
+    const bad = bufferComplaint(this._canvas, this._dpr, this._root);
+    if (bad) return { ok: false, detail: bad };
+    if (!this._cache) return { ok: false, detail: "подложка карты не собрана" };
+    return { ok: true, detail: `слой «${this._layer}»: ${want} объектов, `
+      + `в кадре ${this._hits.length}, зум ${this._map.zoom.toFixed(2)}` };
+  },
+
+  /* Слой — выбор посетителя, в схеме его нет (класс Б). */
+  states() {
+    return ["lang", "pub", "both"].map((k) => ({
+      name: "слой: " + k,
+      apply: () => { this._layer = k; this._syncPills(); this._draw(); },
+    }));
+  },
+
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
 
   applySettings(values) {
@@ -250,8 +301,13 @@ export const mapScene = {
     if (!this._canvas) return;
     const r = this._canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     this._W = Math.floor(r.width); this._H = Math.floor(r.height);
+    /* Тот же бюджет 8.3 Мп, что у GPU-сцен: на 4K-боксе dpr 2 давал буфер под
+     * 40 Мп — память и просадка на каждой заливке подложки.
+     * И dpr тут ЗАПОМИНАЕТСЯ: без этого healthcheck сверял буфер с единицей
+     * и не увидел бы даже вдвое недосчитанный канвас. */
+    const dpr = capDpr(this._W, this._H);
+    this._dpr = dpr;
     this._canvas.width = Math.floor(this._W * dpr);
     this._canvas.height = Math.floor(this._H * dpr);
     this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);

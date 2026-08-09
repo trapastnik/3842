@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize } from "./shared.js?v=13";
-import { createCard } from "./card.js?v=13";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=13";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -46,6 +46,11 @@ export const rainScene = {
   },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
@@ -88,6 +93,7 @@ export const rainScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
@@ -167,6 +173,25 @@ export const rainScene = {
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
+
+  healthcheck() {
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    const bad = offScreen(this._root) ? null
+      : bufferComplaint(this._canvas, this._dpr, this._root);
+    if (bad) return { ok: false, detail: bad };
+    /* Фоллбэк — не авария, а штатный путь без WebGPU: проверяем то, что
+     * есть в этом режиме, и говорим, в каком именно сцена работает. */
+    const n = this._gpuMode ? ((this._rain && this._rain.count) || 0)
+                            : ((this._particles && this._particles.length) || 0);
+    if (!n) return { ok: false, detail: "частиц ноль" };
+    return { ok: true, detail: `частиц ${n}, режим ${this._gpuMode ? "WebGPU-compute" : "Canvas 2D (фоллбэк)"}` };
+  },
 
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
@@ -429,10 +454,11 @@ export const rainScene = {
     this._W = Math.max(1, Math.round(r.width));
     this._H = Math.max(1, Math.round(r.height));
     if (this._gpuMode) {
-      fitTo(this._gpu.renderer, this._camera, this._root);
+      this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
       if (this._post) this._post.needsUpdate = true;
     } else {
-      const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
+      const dpr = capDpr(this._W, this._H);   // тот же бюджет 8.3 Мп, что у GPU-пути
+      this._dpr = dpr;
       this._canvas.width = Math.round(this._W * dpr);
       this._canvas.height = Math.round(this._H * dpr);
       this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
