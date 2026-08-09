@@ -11,7 +11,7 @@
  * экрана — иначе при разных отступах последние десятилетия вываливались. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
-} from "./shared.js?v=22";
+} from "./shared.js?v=25";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;

@@ -15,6 +15,7 @@ export const DATA = {
   photos: "../assets/mtk41/manifest.json",
   thumbs: "../assets/mtk41/thumbs.json",
   cards: "../assets/mtk41/cards.json",
+  silhouettes: "../assets/mtk41/silhouettes.json",
   countries: "../data/ne_110m_countries.geojson",
 };
 

@@ -22,7 +22,7 @@
 import {
   DATA, FALLBACK_HEIGHT, HUMAN_HEIGHT_M, PALETTE, byYear, cardUrl, createCanvasHost,
   createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=22";
+} from "./shared.js?v=25";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
@@ -584,6 +584,13 @@ export const scaleScene = {
       ctx.restore();
     }
 
+    /* Подписи вынесены в отдельный метод: их переиспользует сцена «Силуэты»,
+     * где своя отрисовка фигур, но ровно те же пороги читаемости и повороты. */
+    this._drawLabels(g);
+  },
+
+  _drawLabels(g) {
+    const h = this._host, ctx = h.ctx;
     /* Подписи гаснут, когда слот уже порога читаемости: название города в
      * 13 px — каша, которая мешает увидеть форму корпуса. */
     if (g.slot < YEAR_MIN_SLOT) return;

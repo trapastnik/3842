@@ -3,15 +3,16 @@
  * страницы. Открывать только по http — ES-модули из file:// не идут.
  *
  * Версия у импортов сцен обязательна и поднимается вместе с ?v= у app.js:
- * `<script src="./app.js?v=22">` обновит только сам app.js, а его
+ * `<script src="./app.js?v=25">` обновит только сам app.js, а его
  * `import "./scenes/canon.js"` без версии браузер отдаст из кеша (README ядра). */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=22";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=25";
 
-import { canonScene } from "./scenes/canon.js?v=22";
-import { authorsScene } from "./scenes/authors.js?v=22";
-import { scaleScene } from "./scenes/scale.js?v=22";
-import { mapScene } from "./scenes/map.js?v=22";
-import { timelineScene } from "./scenes/timeline.js?v=22";
+import { canonScene } from "./scenes/canon.js?v=25";
+import { authorsScene } from "./scenes/authors.js?v=25";
+import { scaleScene } from "./scenes/scale.js?v=25";
+import { mapScene } from "./scenes/map.js?v=25";
+import { timelineScene } from "./scenes/timeline.js?v=25";
+import { silhouettesScene } from "./scenes/silhouettes.js?v=25";
 
 const app = createApp({
   appId: "mtk41",
@@ -20,7 +21,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7): без неё правка ru.json могла не доехать
    * до киоска — Chrome отдавал старый файл. Поднимается вместе с ?v= выше. */
-  i18nVersion: "22",
+  i18nVersion: "25",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */
@@ -31,6 +32,7 @@ app.registerScene(canonScene);
 app.registerScene(timelineScene);
 app.registerScene(authorsScene);
 app.registerScene(scaleScene);
+app.registerScene(silhouettesScene);
 
 app.start();
 
