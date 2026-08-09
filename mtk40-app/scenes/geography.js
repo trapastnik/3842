@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=39";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=41";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
