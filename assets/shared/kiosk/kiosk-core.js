@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.14.2";
+  var VERSION = "1.15.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -148,7 +148,13 @@
       "nav.next": "Следующий экран",
       "a11y.button": "Режим для слабовидящих",
       "lang.button": "Язык интерфейса",
-      "loading": "Загрузка"
+      "loading": "Загрузка",
+      "finder.button": "Поиск и отбор",
+      "finder.reset": "Сбросить отбор",
+      "finder.filters": "Отбор",
+      "finder.sorts": "Сортировка",
+      "finder.search": "Поиск",
+      "finder.of": "из"
     },
     en: {
       "standby.call": "Touch the screen",
@@ -156,7 +162,13 @@
       "nav.next": "Next screen",
       "a11y.button": "Low vision mode",
       "lang.button": "Interface language",
-      "loading": "Loading"
+      "loading": "Loading",
+      "finder.button": "Search and filter",
+      "finder.reset": "Clear filters",
+      "finder.filters": "Filter",
+      "finder.sorts": "Sort",
+      "finder.search": "Search",
+      "finder.of": "of"
     },
     zh: {
       "standby.call": "请触摸屏幕",
@@ -164,7 +176,13 @@
       "nav.next": "下一屏",
       "a11y.button": "低视力模式",
       "lang.button": "界面语言",
-      "loading": "加载中"
+      "loading": "加载中",
+      "finder.button": "Поиск и отбор",
+      "finder.reset": "Сбросить отбор",
+      "finder.filters": "Отбор",
+      "finder.sorts": "Сортировка",
+      "finder.search": "Поиск",
+      "finder.of": "из"
     }
   };
 
@@ -585,6 +603,17 @@
       return { group: g.group, rows: g.rows.slice() };
     });
     this._openSceneGroups = {};   /* какие группы настроек сцен развёрнуты */
+
+    /* ФИНДЕР: отбор держит ЯДРО, и держит ПО СЦЕНАМ.
+     *
+     * По канону отбор живёт до idle-сброса и НЕ гаснет при уходе со сцены —
+     * значит одного состояния на приложение мало: вернувшись, посетитель
+     * должен увидеть свой отбор, а точка на иконке — отбор ТЕКУЩЕЙ сцены.
+     * Отсюда же обязанность ядра заново звать applyFinder после mount():
+     * сцена с keepAlive:false пересобирается с нуля и про отбор не помнит,
+     * а точка на иконке горит — вышел бы полный список при горящей точке. */
+    this._finder = {};            /* sceneId → {query, filters, sort} */
+    this._finderOpen = false;
 
     /* idle-машина */
     this.idleState = IDLE.ACTIVE;
@@ -1805,6 +1834,7 @@
         safeCall(rec, "resume");
         self._active = rec;
         self._syncNav();
+        self._syncFinder();
 
         rec.el.style.transitionDuration = fade + "ms";
         rec.el.classList.add("is-active");
@@ -1841,6 +1871,9 @@
         self._pushSceneSettings(rec);
         /* Общие настройки тоже: сцена смонтировалась позже их правки. */
         if (self._appSettings.length) safeCall(rec, "applyAppSettings", self.appSettings());
+        /* И отбор: сцена собралась с нуля и про него не знает, а точка на
+         * иконке горит — иначе полный список при заявленном отборе. */
+        self._pushFinder(rec);
       })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
@@ -1996,6 +2029,11 @@
 
   /* RESET: посетитель ушёл — снять его следы, но экран пока живой. */
   KioskApp.prototype._doIdleReset = function () {
+    /* Отбор гасим ДО reset() сцен: иначе сцена уже сбросилась, а панель и
+     * точка на иконке кадр показывают прежний отбор. */
+    this._finder = {};
+    this.openFinder(false);
+    this._syncFinder();
     this.resetScenes();
     var lang = (this.config.defaultLang) || "ru";
     if (this.lang !== lang) this.setLang(lang);
@@ -2472,6 +2510,110 @@
       if (e.clientX >= r.right - edge - size && e.clientX <= r.right - edge &&
           e.clientY >= r.top + edge && e.clientY <= r.top + edge + size) hit();
     }, { passive: true });
+  };
+
+  /* --------------------------------------------------------- финдер: UI */
+  KioskApp.prototype.openFinder = function (on) {
+    on = on !== false;
+    if (on && !this.finderSpec()) return this;      /* сцена не объявляла */
+    if (on === !!this._finderOpen) return this;
+    this._finderOpen = on;
+    if (!this._els.finderPanel) this._buildFinderPanel();
+    var panel = this._els.finderPanel;
+    this._els.root.classList.toggle("is-finder", on);
+    if (on) {
+      this._renderFinder();
+      panel.hidden = false;
+      /* Как и у сервис-панели: сверяемся с ТЕКУЩИМ состоянием, а не с тем,
+       * каким оно было при планировании — быстрое открыл/закрыл иначе
+       * оставляет панель висеть. */
+      var self = this;
+      nextFrames(1).then(function () { if (self._finderOpen) panel.classList.add("is-open"); });
+    } else {
+      panel.classList.remove("is-open");
+      var self2 = this;
+      setTimeout(function () { if (!self2._finderOpen) panel.hidden = true; }, 300);
+    }
+    this.emit("finder", { open: on });
+    return this;
+  };
+
+  KioskApp.prototype._buildFinderPanel = function () {
+    var self = this, doc = document;
+    var el = doc.createElement("aside");
+    el.className = "kiosk-finder";
+    el.hidden = true;
+    el.innerHTML =
+      '<div class="kiosk-finder__body kiosk-scroll"></div>' +
+      '<footer class="kiosk-finder__foot">' +
+      '<button type="button" class="kiosk-finder__reset kiosk-touch">' +
+      this.t("finder.reset") + "</button>" +
+      '<span class="kiosk-finder__count"></span></footer>';
+    el.querySelector(".kiosk-finder__reset")
+      .addEventListener("click", function () { self.resetFinder(); self._renderFinder(); });
+    /* Тап мимо — закрыть (канон). Слушаем на корне, а не кладём подложку:
+     * подложка перехватывала бы жесты сцены под собой. */
+    this._els.root.addEventListener("pointerdown", function (e) {
+      if (!self._finderOpen) return;
+      if (el.contains(e.target) || (self._els.finder && self._els.finder.contains(e.target))) return;
+      self.openFinder(false);
+    }, { passive: true });
+    this._els.root.appendChild(el);
+    this._els.finderPanel = el;
+  };
+
+  KioskApp.prototype._renderFinder = function () {
+    var body = this._els.finderPanel && this._els.finderPanel.querySelector(".kiosk-finder__body");
+    var spec = this.finderSpec();
+    if (!body || !spec) return;
+    var self = this, st = this.finderState(), html = "";
+
+    function chips(rows, active, path) {
+      return rows.map(function (r) {
+        var on = String(active) === String(r.v);
+        return '<button type="button" class="kiosk-finder__chip kiosk-touch' +
+          (on ? " is-on" : "") + '" data-path="' + path + '" data-v="' +
+          esc(String(r.v)) + '">' + esc(r.label) + "</button>";
+      }).join("");
+    }
+
+    (spec.filters || []).forEach(function (f) {
+      /* options — массив ИЛИ функция: фасеты выводятся из загруженных
+       * данных, а декларация статична в объекте сцены. */
+      var opts = typeof f.options === "function" ? f.options(self.context()) : f.options;
+      if (!Array.isArray(opts) || !opts.length) return;
+      var rows = opts.map(function (o) {
+        return Array.isArray(o) ? { v: o[0], label: o[1] } : { v: o, label: String(o) };
+      });
+      rows.unshift({ v: "", label: "—" });
+      html += '<div class="kiosk-finder__group"><h4>' + esc(pickLabel(normLabel(f.label), self.lang)) + "</h4>" +
+        chips(rows, st.filters[f.key] == null ? "" : st.filters[f.key], "f:" + f.key) + "</div>";
+    });
+
+    if ((spec.sorts || []).length) {
+      var rows = spec.sorts.map(function (o) { return { v: o.key, label: pickLabel(normLabel(o.label), self.lang) }; });
+      rows.unshift({ v: "", label: "—" });
+      html += '<div class="kiosk-finder__group"><h4>' + esc(this.t("finder.sorts")) + "</h4>" +
+        chips(rows, st.sort == null ? "" : st.sort, "s:") + "</div>";
+    }
+
+    body.innerHTML = html || "<p>" + esc(this.t("finder.search")) + "</p>";
+    body.onclick = function (e) {
+      var b = e.target.closest("[data-path]");
+      if (!b) return;
+      var path = b.getAttribute("data-path"), v = b.getAttribute("data-v");
+      if (path === "s:") self.setFinder({ sort: v || null });
+      else {
+        var patch = {}; patch[path.slice(2)] = v === "" ? null : v;
+        self.setFinder({ filters: patch });
+      }
+      self._renderFinder();
+    };
+
+    var count = this._els.finderPanel.querySelector(".kiosk-finder__count");
+    var r = this._finderResult;
+    count.textContent = (r && isFinite(r.shown) && isFinite(r.total))
+      ? r.shown + " " + this.t("finder.of") + " " + r.total : "";
   };
 
   KioskApp.prototype.openService = function (on) {
@@ -3012,15 +3154,112 @@
     eye.innerHTML = eyeSvg();
     eye.addEventListener("click", function () { self.setA11y(!self.a11y); });
 
+    /* Лупа — рядом с языками, по канону «хорошо видимая иконка, а не
+     * панель, висящая на экране». Скрыта у сцен без finder. */
+    var find = doc.createElement("button");
+    find.type = "button";
+    find.className = "kiosk-find kiosk-touch kiosk-touch--primary";
+    find.hidden = true;
+    find.innerHTML = findSvg() + '<span class="kiosk-find__dot" aria-hidden="true"></span>';
+    find.addEventListener("click", function () { self.openFinder(!self._finderOpen); });
+
     box.appendChild(langs);
     box.appendChild(eye);
+    box.appendChild(find);
     this._els.root.appendChild(box);
     this._els.tools = box;
     this._els.langBox = langs;
     this._els.eye = eye;
+    this._els.finder = find;
 
     this._applyToolsStyle();
     this._syncTools();
+    this._syncFinder();
+  };
+
+  /* ----------------------------------------------------- финдер: состояние
+   * Сцена ОБЪЯВЛЯЕТ, чем можно искать (finder:{search,filters,sorts}), а
+   * применяет одним методом applyFinder({query,filters,sort}) — целиком,
+   * при любом изменении. Пер-пунктовые apply() остаются сахаром: если бы
+   * канон звал их по отдельности, сцена держала бы копию состояния ядра, а
+   * порядок применения у пяти МТК вышел бы свой у каждого. */
+  KioskApp.prototype.finderSpec = function (id) {
+    var rec = this._byId[id || this.activeSceneId];
+    var f = rec && rec.scene && rec.scene.finder;
+    return f && typeof f === "object" ? f : null;
+  };
+
+  KioskApp.prototype.finderState = function (id) {
+    id = id || this.activeSceneId;
+    if (!this._finder[id]) this._finder[id] = { query: "", filters: {}, sort: null };
+    return this._finder[id];
+  };
+
+  /* Сколько критериев включено — это и есть число на точке. Ядро знает его
+   * само, обязанностей у сцен ноль; «сколько осталось объектов» — дело
+   * панели и необязательного возврата applyFinder. */
+  KioskApp.prototype.finderCount = function (id) {
+    var st = this._finder[id || this.activeSceneId];
+    if (!st) return 0;
+    var n = st.query ? 1 : 0;
+    Object.keys(st.filters || {}).forEach(function (k) {
+      var v = st.filters[k];
+      if (v === null || v === undefined || v === "" ) return;
+      if (Array.isArray(v) && !v.length) return;
+      n++;
+    });
+    if (st.sort) n++;
+    return n;
+  };
+
+  KioskApp.prototype._pushFinder = function (rec) {
+    if (!rec || !rec.mounted) return;
+    if (!(rec.scene && rec.scene.finder)) return;
+    var st = this.finderState(rec.id);
+    var res = safeCall(rec, "applyFinder", {
+      query: st.query, filters: cloneValue(st.filters), sort: st.sort
+    });
+    /* Возврат {shown,total} необязателен: не вернула — строки «N из M»
+     * в панели просто не будет. */
+    this._finderResult = res && typeof res === "object" ? res : null;
+    return res;
+  };
+
+  KioskApp.prototype.setFinder = function (patch, id) {
+    id = id || this.activeSceneId;
+    var st = this.finderState(id);
+    if (patch && "query" in patch) st.query = String(patch.query || "");
+    if (patch && "sort" in patch) st.sort = patch.sort || null;
+    if (patch && patch.filters) {
+      Object.keys(patch.filters).forEach(function (k) { st.filters[k] = patch.filters[k]; });
+    }
+    this._pushFinder(this._byId[id]);
+    this._syncFinder();
+    return this;
+  };
+
+  KioskApp.prototype.resetFinder = function (id) {
+    id = id || this.activeSceneId;
+    this._finder[id] = { query: "", filters: {}, sort: null };
+    this._pushFinder(this._byId[id]);
+    this._syncFinder();
+    return this;
+  };
+
+  /* Иконку показываем ТОЛЬКО сценам, объявившим finder; точка — число
+   * активных критериев. Зона хрома пересчитывается: иконка её занимает. */
+  KioskApp.prototype._syncFinder = function () {
+    var btn = this._els.finder;
+    if (!btn) return;
+    var has = !!this.finderSpec();
+    btn.hidden = !has;
+    var n = has ? this.finderCount() : 0;
+    var dot = btn.querySelector(".kiosk-find__dot");
+    if (dot) dot.setAttribute("data-n", n || "");
+    btn.classList.toggle("is-active", n > 0);
+    btn.setAttribute("aria-label", this.t("finder.button") +
+      (n ? " (" + n + ")" : ""));
+    this._applyInsets();
   };
 
   KioskApp.prototype._applyToolsStyle = function () {
@@ -3044,6 +3283,13 @@
     this._els.eye.setAttribute("aria-pressed", this.a11y ? "true" : "false");
     this._els.eye.setAttribute("aria-label", this.t("a11y.button"));
   };
+
+  /* Лупа. Штрихи те же, что у остальных иконок хрома, — 4 при 96. */
+  function findSvg() {
+    return '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
+      'stroke="currentColor" stroke-width="6" stroke-linecap="round">' +
+      '<circle cx="42" cy="42" r="24"/><path d="M60 60 L78 78"/></svg>';
+  }
 
   function eyeSvg() {
     return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
