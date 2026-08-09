@@ -11,7 +11,12 @@
   "standby": {
     "mode": "rotate",
     "rotateSec": 25,
-    "scenes": ["globe", "rain", "map"]
+    "scenes": [
+      "poster",
+      "globe",
+      "rain",
+      "map"
+    ]
   },
   "nav": {
     "show": true,
@@ -28,7 +33,11 @@
     "angle": 105
   },
   "i18n": {
-    "langs": ["ru", "en", "zh"],
+    "langs": [
+      "ru",
+      "en",
+      "zh"
+    ],
     "show": true
   },
   "a11y": {
