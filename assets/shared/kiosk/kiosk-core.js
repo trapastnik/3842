@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.9.3";
+  var VERSION = "1.10.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -908,6 +908,21 @@
 
   KioskApp.prototype.setSceneSetting = function (id, key, value) {
     return this.setSetting("scenes." + id + "." + key, value);
+  };
+
+  /* То же, но БЕЗ записи в патч оператора: значение уходит в живой конфиг
+   * и в сцену, localStorage не трогается.
+   *
+   * Для диагностики (перебор состояний). Инструмент, гоняющий сотни
+   * значений, не должен оставлять их в операторских настройках — и дело
+   * не только в мусоре: записанный дефолт затенит будущую правку схемы,
+   * ровно то, от чего защищает resetSceneSettings. Убирать за собой
+   * недостаточно, правильнее не писать вовсе. */
+  KioskApp.prototype.setSceneSettingLive = function (id, key, value) {
+    if (!this._byId[id]) return this;
+    setByPath(this.config, "scenes." + id + "." + key, value);
+    this._pushSceneSettings(this._byId[id]);
+    return this;
   };
 
   /* Вернуть сцену к дефолтам её схемы. */

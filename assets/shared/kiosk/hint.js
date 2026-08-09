@@ -281,20 +281,31 @@
       /* От --chrome-bottom, а не от кромки: под навигацией уже занято, и
          подсказка ложилась прямо на неё (замер 42: хинт 1974..2076 при
          навигации 1882..2080). Кромка — фолбэк, если ядра рядом нет. */
+      /* ВСЕ РАЗМЕРЫ — ОТ --ui-scale. Подсказка это контрол, а не контент;
+         зашитые пиксели означали, что в режиме слабовидящих растёт весь
+         интерфейс, кроме единственного призыва к жесту (находка 40).
+         Фолбэк 1 — если кит подключён без ядра. */
       ".kiosk-hint{position:absolute;left:50%;" +
-      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px);" +
-      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;gap:18px;" +
+      "bottom:calc(var(--chrome-bottom,var(--edge-safe-bottom,80px)) + 12px * var(--ui-scale,1));" +
+      "transform:translateX(-50%) translateY(8px);display:flex;align-items:center;" +
+      "gap:calc(18px * var(--ui-scale,1));" +
       /* Цвета — через токены кита, как везде: зашитые каналы молча
          разъезжаются с палитрой при её смене. */
-      "padding:18px 28px;border-radius:999px;" +
+      "padding:calc(18px * var(--ui-scale,1)) calc(28px * var(--ui-scale,1));border-radius:999px;" +
       "background:rgba(var(--kiosk-ink-rgb,12,16,18),.72);" +
       "border:1px solid rgba(var(--brass-rgb,210,183,115),.45);color:var(--brass,#D2B773);" +
+      /* Длинная подпись (ZH/EN) при ×1.25 не должна уезжать за кромку:
+         ограничиваем ширину рабочей областью и разрешаем перенос. */
+      "max-width:calc(100% - 2 * var(--edge-safe,64px));" +
       "opacity:0;pointer-events:none;transition:opacity .5s ease,transform .5s ease;z-index:40;}" +
       ".kiosk-hint.is-on{opacity:1;transform:translateX(-50%) translateY(0);}" +
-      ".kiosk-hint__icon{width:64px;height:64px;}" +
+      ".kiosk-hint__icon{flex:none;width:calc(64px * var(--ui-scale,1));" +
+      "height:calc(64px * var(--ui-scale,1));}" +
       ".kiosk-hint__icon svg{width:100%;height:100%;animation:kioskHintPulse 2.4s ease-in-out infinite;}" +
-      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;font-size:26px;" +
-      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);white-space:nowrap;}" +
+      ".kiosk-hint__label{font-family:'20 Kopeek','Courier New',monospace;" +
+      "font-size:calc(26px * var(--ui-scale,1));line-height:1.25;" +
+      "letter-spacing:.08em;text-transform:uppercase;color:var(--paper,#F7F9EF);" +
+      "white-space:normal;overflow-wrap:anywhere;text-align:center;}" +
       "@keyframes kioskHintPulse{0%,100%{transform:scale(1)}50%{transform:scale(.88)}}";
     document.head.appendChild(s);
   }
