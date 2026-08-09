@@ -7,7 +7,7 @@
 
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch, isOffMap,
-} from "./shared.js?v=2";
+} from "./shared.js?v=3";
 
 const FROM = 1900;
 const TO = 2025;
@@ -77,8 +77,7 @@ export const waveScene = {
           '" step="1" value="' + FROM + '" />' +
         '<div class="m39-ticks"></div>' +
       "</div>" +
-      '<p class="m39-note"></p>' +
-      '<div class="m39-hint"></div>';
+      '<p class="m39-note"></p>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -91,7 +90,6 @@ export const waveScene = {
     const playBtn = el.querySelector(".m39-play");
     const ticks = el.querySelector(".m39-ticks");
     const note = el.querySelector(".m39-note");
-    const hint = el.querySelector(".m39-hint");
 
     let width = 0;
     let height = 0;
@@ -292,7 +290,6 @@ export const waveScene = {
       panY = cy - (height - baseH * zoom) / 2 - wy * baseH * zoom;
       applyView();
       render();
-      hint.classList.add("is-off");
     }
 
     let dragging = false;
@@ -365,7 +362,7 @@ export const waveScene = {
         dated: nf.format(dated.length), undated: nf.format(undated.length),
       });
       scrub.setAttribute("aria-label", app.t("wave.year"));
-      hint.textContent = app.t("wave.hint");
+      if (hint) hint.setLabel(app.t("wave.hint"));
       legend.replaceChildren();
       for (const [color, key] of [
         [C.live, "wave.legend.live"], [C.gone, "wave.legend.gone"], [C.bg, "wave.legend.bg"],
@@ -399,7 +396,7 @@ export const waveScene = {
         panX = 0;
         panY = 0;
         applyView();
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         lastFrame = 0;
         if (width) render();
       },
@@ -437,8 +434,15 @@ export const waveScene = {
         canvas.removeEventListener("touchmove", onTouchMove);
         canvas.removeEventListener("touchend", onTouchEnd);
         watch.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* На контейнер сцены, а не на канву (грабли кита). Место подсказки
+       поднято стилями: внизу по центру у этой сцены таймлайн. */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "pinch", label: app.t("wave.hint") })
+      : null;
 
     retext();
     watch.measure(true);

@@ -4,24 +4,25 @@
  *
  * Настройки сцен объявлены схемой в самих сценах (settings[] + applySettings):
  * ядро исполняет её само, моста больше не нужно. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { worldScene } from "./scenes/world.js?v=2";
-import { unionScene } from "./scenes/union.js?v=2";
-import { waveScene } from "./scenes/wave.js?v=2";
-import { streetsScene } from "./scenes/streets.js?v=2";
-import { catalogScene } from "./scenes/catalog.js?v=2";
-import { statsScene } from "./scenes/stats.js?v=2";
-import { globeScene } from "./scenes/globe.js?v=2";
+import { worldScene } from "./scenes/world.js?v=3";
+import { unionScene } from "./scenes/union.js?v=3";
+import { waveScene } from "./scenes/wave.js?v=3";
+import { streetsScene } from "./scenes/streets.js?v=3";
+import { catalogScene } from "./scenes/catalog.js?v=3";
+import { statsScene } from "./scenes/stats.js?v=3";
+import { globeScene } from "./scenes/globe.js?v=3";
 
 const app = createApp({
   appId: "mtk39",
   title: { ru: "МТК · 39", en: "MTK · 39", zh: "МТК · 39" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  // метка кеша словарей: поднимается вместе с ?v= остальных файлов, иначе
-  // Chrome держит старый словарь и новые ключи не доезжают до киоска
-  i18nVersion: "2",
+  // Метка кеша словарей — своя нумерация приложения. У файлов кита метка
+  // другая и канонная: ровно версия ядра (COORDINATION → «Версионирование
+  // кита»), ядро само сверяет её со своей и ругается на залипший кеш.
+  i18nVersion: "3",
 });
 
 /* Порядок регистрации = порядок стрелок навигации: от общего к частному —
