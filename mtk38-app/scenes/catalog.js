@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
 
 export const catalogScene = {
   id: "catalog",
@@ -126,10 +126,7 @@ export const catalogScene = {
      * fallback-контент, браузер его не рисует. Подпись берём из словаря и
      * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
      * к жесту остаётся русским (умолчание кита). */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "swipe", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "swipe", label: this._hintLabel() });
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
     this.setLang(ctx && ctx.lang);
@@ -153,6 +150,7 @@ export const catalogScene = {
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
 
   resume() {
+    hushHint(this._hint);
     if (this._raf || !this._root) return;
     this._t0 = performance.now();
     const step = () => { this._raf = requestAnimationFrame(step); this._draw(); };
@@ -179,7 +177,7 @@ export const catalogScene = {
     return beginStandby(this._app, tick, () => {
       clearInterval(this._auto); this._auto = 0;
       this._standby = false;
-    });
+    }, () => this._hint);
   },
 
   setLang(lang) {

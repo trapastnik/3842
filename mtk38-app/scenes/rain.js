@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
-import { createCard } from "./card.js?v=17";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
+import { createCard } from "./card.js?v=21";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=21";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -81,10 +81,7 @@ export const rainScene = {
      * fallback-контент, браузер его не рисует. Подпись берём из словаря и
      * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
      * к жесту остаётся русским (умолчание кита). */
-    if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(root,
-        { gesture: "tap", label: this._hintLabel() });
-    }
+    this._hint = attachHint(this._app, root, { gesture: "tap", label: this._hintLabel() });
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -120,6 +117,7 @@ export const rainScene = {
   },
 
   resume() {
+    hushHint(this._hint);
     if (this._raf || !this._root) return;
     // GPU-путь делит канвас с глобусом и композициями — забираем его назад
     if (this._gpuMode && attachCanvas(this._gpu, this._root)) { this._canvas = this._gpu.canvas; this._fit(); }
@@ -147,7 +145,8 @@ export const rainScene = {
     if (this._rain) this._rain.setPointer(new this._gpu.THREE.Vector3(0, 0, 0), 0);
     this._pr = 0;
     this._standby = true;
-    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; },
+      () => this._hint);
   },
 
   setLang(lang) {
