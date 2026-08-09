@@ -22,7 +22,7 @@
 import {
   DATA, FALLBACK_HEIGHT, HUMAN_HEIGHT_M, PALETTE, byYear, cardUrl, createCanvasHost,
   createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=25";
+} from "./shared.js?v=28";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
@@ -160,6 +160,11 @@ export const scaleScene = {
 
   healthcheck() {
     if (!this._host) return { ok: true, detail: "не смонтирована" };
+    /* Канвовая сцена без размера — это «ещё не показывалась», а не поломка:
+     * ядро держит слой скрытым (0×0), пока сцену не откроют, и меряться там
+     * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
+     * по заявке МТК 41. */
+    if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
     if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
     const measured = this._placed.filter((p) => !p.estimated).length;
     return { ok: true, detail: `фигур ${this._placed.length}, с габаритами ${measured}` };

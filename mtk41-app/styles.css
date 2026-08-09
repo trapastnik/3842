@@ -504,3 +504,7 @@
 /* ─── Хронология ──────────────────────────────────────────────────────── */
 .m41-timeline__stage { flex: 1 1 auto; min-height: 0; position: relative; }
 .m41-timeline__canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+
+/* ─── Три шкалы ───────────────────────────────────────────────────────── */
+.m41-stacked__stage { flex: 1 1 auto; min-height: 0; position: relative; }
+.m41-stacked__canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }

@@ -11,7 +11,7 @@
  * экрана — иначе при разных отступах последние десятилетия вываливались. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
-} from "./shared.js?v=25";
+} from "./shared.js?v=28";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
@@ -132,6 +132,11 @@ export const timelineScene = {
 
   healthcheck() {
     if (!this._host) return { ok: true, detail: "не смонтирована" };
+    /* Канвовая сцена без размера — это «ещё не показывалась», а не поломка:
+     * ядро держит слой скрытым (0×0), пока сцену не откроют, и меряться там
+     * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
+     * по заявке МТК 41. */
+    if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
     if (!this._items.length) return { ok: false, detail: "ни одного датированного памятника" };
     if (!this._clusters.length) return { ok: false, detail: "на оси не построено ни одного кружка" };
     return { ok: true, detail: `датированных ${this._items.length}, кружков ${this._clusters.length}` };
@@ -171,6 +176,12 @@ export const timelineScene = {
 
   /* ─── геометрия ─────────────────────────────────────────────────────── */
 
+  /* Кружки пересобираются и вне кадра — по той же причине, что и на карте:
+   * healthcheck не должен зависеть от того, была ли отрисовка. */
+  _refreshClusters() {
+    if (this._host && this._host.width) this._clusters = this._buildClusters(this._level());
+  },
+
   _measurePads() {
     const h = this._host;
     if (!h || !h.width) return;
@@ -185,6 +196,7 @@ export const timelineScene = {
     ctx.restore();
     this._pads.left = Math.min(h.width * 0.22, maxLane + 28);
     this._pads.right = Math.min(h.width * 0.14, Math.max(48, fontPx * 3.2));
+    this._refreshClusters();
   },
 
   _fontPx() {

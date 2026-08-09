@@ -14,8 +14,8 @@
  * Здесь — жизненный цикл сцены, камера, ввод и отрисовка. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=25";
-import { createMapCore } from "./map-core.js?v=25";
+} from "./shared.js?v=28";
+import { createMapCore } from "./map-core.js?v=28";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -192,6 +192,11 @@ export const mapScene = {
 
   healthcheck() {
     if (!this._host) return { ok: true, detail: "не смонтирована" };
+    /* Канвовая сцена без размера — это «ещё не показывалась», а не поломка:
+     * ядро держит слой скрытым (0×0), пока сцену не откроют, и меряться там
+     * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
+     * по заявке МТК 41. */
+    if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
     if (!this._items.length) return { ok: false, detail: "ни одной точки с координатами" };
     if (!this._clusters.length) return { ok: false, detail: "на карте не построено ни одного кружка" };
     const shown = this._clusters.reduce((a, c) => a + c.count, 0);
@@ -241,6 +246,19 @@ export const mapScene = {
   _rebuild() {
     if (!this._core || !this._map.worldW) return;
     this._core.buildTree();
+    this._rebuildClusters();
+  },
+
+  /* Кружки считаются и вне кадра. Иначе healthcheck зависел бы от того,
+   * успела ли пройти отрисовка: в скрытой вкладке rAF не вызывается, и стенд
+   * приёмки видел бы пустую сцену там, где на киоске всё нарисовано. */
+  _rebuildClusters() {
+    if (!this._core || !this._map.worldW || !this._host || !this._host.width) return "MACRO";
+    const level = this._levelFor(this._map.zoom);
+    const world = this._core.buildLevelClusters(level);
+    this._clusters = this._core.materializeToScreen(world, this._cfg.sizeMode);
+    this._core.relaxNonOverlap(this._clusters, this._cfg.gap, 60);
+    return level;
   },
 
   _pointToScreen(wx, wy) {
@@ -457,11 +475,7 @@ export const mapScene = {
     this._drawBase();
     ctx.restore();
 
-    const level = this._core.levelFor
-      ? this._core.levelFor(this._map.zoom) : this._levelFor(this._map.zoom);
-    const world = this._core.buildLevelClusters(level);
-    this._clusters = this._core.materializeToScreen(world, this._cfg.sizeMode);
-    this._core.relaxNonOverlap(this._clusters, this._cfg.gap, 60);
+    const level = this._rebuildClusters();
     this._drawClusters(level);
   },
 

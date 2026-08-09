@@ -55,5 +55,8 @@
   "canon.subtitle": "同一个人的{n}，{years}。",
   "authors.anon": "作者不详",
   "map.out": "缩小",
-  "map.home": "全景"
+  "map.home": "全景",
+  "band.small": "0–8 米 · 半身像与标准纪念碑",
+  "band.medium": "8–20 米 · 大型纪念碑",
+  "band.large": "20–60 米 · 巨型"
 }

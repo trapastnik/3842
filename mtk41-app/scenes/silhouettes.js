@@ -13,8 +13,8 @@
  * первый набор из 18 ID, и 7 записей в нём указывают на папки, которых в
  * data/mtk41.json больше нет. Остальные памятники рисуются процедурным
  * пунктиром — это видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=25";
-import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=25";
+import { scaleScene } from "./scale.js?v=28";
+import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=28";
 
 const SIL_DIR = "../assets/mtk41/";
 
@@ -76,6 +76,11 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
 
   healthcheck() {
     if (!this._host) return { ok: true, detail: "не смонтирована" };
+    /* Канвовая сцена без размера — это «ещё не показывалась», а не поломка:
+     * ядро держит слой скрытым (0×0), пока сцену не откроют, и меряться там
+     * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
+     * по заявке МТК 41. */
+    if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
     if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
     const sil = Object.keys(SIL).length;
     /* Не ошибка, но цифру видно на приёмке: сцена обещает «реальные фигуры»,
