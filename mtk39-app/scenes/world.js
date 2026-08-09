@@ -13,7 +13,7 @@
 import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=4";
+} from "./shared.js?v=5";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -494,7 +494,6 @@ export const worldScene = {
         setMode("globe", true);
         const from = rotation[0];
         const stop = app_.standbyTicker((t) => {
-          if (hint) hint.poke();   // иначе призыв загорится поверх заставки через 30 с
           rotation[0] = (from + t * 3.5) % 360;
           applyProjection();
           render();

@@ -638,11 +638,21 @@
   color: rgba(247, 249, 239, 0.78);
 }
 
+/* Плеер «Прилива» и всё, что от него отсчитывается, — в ИНТЕРФЕЙСНЫХ единицах:
+   плеер это контрол, а не контент. Пока отступ плеера тянулся контентной шкалой
+   (--m39-u, ×1.5), а сам плеер — интерфейсной (×1.25), в режиме слабовидящих они
+   расходились, и подсказка уезжала на 223 px над плеером вместо 61.
+   --m39-player-band — высота всей нижней полосы: отступ + плеер + зазор. */
+.m39-wave {
+  --m39-player-band: calc(var(--touch-gap) * 6.5 + var(--touch-primary)
+    + var(--touch-gap) * 3.5);
+}
+
 .m39-timeline {
   position: absolute;
   left: var(--kiosk-safe-left);
   right: var(--kiosk-safe-right);
-  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 2.6);
+  bottom: calc(var(--kiosk-safe-bottom) + var(--touch-gap) * 6.5);
   z-index: 3;
   display: grid;
   grid-template-columns: var(--touch-primary) 1fr;
@@ -697,13 +707,13 @@
    Обход хрома ядра сюда больше не входит — с 1.11 его считает --kiosk-hint-base
    от реального низа контейнера; наше дело только своя добавка. */
 .m39-wave .kiosk-hint {
-  --kiosk-hint-lift: calc(var(--touch-primary) + var(--m39-u) * 4.4);
+  --kiosk-hint-lift: var(--m39-player-band);
 }
 
 .m39-wave .m39-legend {
   left: auto;
   right: var(--kiosk-safe-right);
-  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 5.4);
+  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-player-band));
   align-items: flex-end;
 }
 
@@ -1148,7 +1158,12 @@
 
 /* ─── сцена «Глобус избранного» ──────────────────────────────────────── */
 
-.m39-chips--wrap { justify-content: flex-end; max-width: 36vw; }
+/* Чипы категорий «Глобуса» жмутся к правому краю и растут вверх. Потолок
+   ширины держим с запасом от центральной пилюли подсказки: в режиме
+   слабовидящих при боковых стрелках рабочая ширина уже, пилюля шире, и на
+   36vw блок доставал до неё. 30vw оставляет зазор во всех четырёх сочетаниях
+   «режим × раскладка». */
+.m39-chips--wrap { justify-content: flex-end; max-width: 30vw; }
 
 .m39-offlist {
   position: absolute;
@@ -1198,7 +1213,6 @@
 .kiosk-app.is-standby .m39-filters,
 .kiosk-app.is-standby .m39-legend,
 .kiosk-app.is-standby .m39-zoom,
-.kiosk-app.is-standby .m39-scene .kiosk-hint,
 .kiosk-app.is-standby .m39-chip--off,
 .kiosk-app.is-standby .m39-offlist,
 .kiosk-app.is-standby .m39-year,

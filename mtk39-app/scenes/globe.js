@@ -10,7 +10,7 @@
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel, isOffMap,
-} from "./shared.js?v=4";
+} from "./shared.js?v=5";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -706,7 +706,6 @@ export const globeScene = {
 
         const from = rotation[0];
         const stop = app_.standbyTicker((t) => {
-          if (hint) hint.poke();   // иначе призыв загорится поверх заставки через 30 с
           rotation[0] = (from + t * 4) % 360;
           applyProjection();
           render(performance.now());
