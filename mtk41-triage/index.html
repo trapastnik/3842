@@ -147,7 +147,7 @@ const S = { list: [], i: 0, mode: "fill", d: {} };
 try { S.d = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { S.d = {}; }
 
 const $ = (id) => document.getElementById(id);
-const V = "?v=32";
+const V = "?v=33";
 
 Promise.all([
   fetch("../data/mtk41.json" + V).then((r) => r.json()),
