@@ -19,16 +19,25 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.9.2";
+  var VERSION = "1.12.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
    * в кеше, о новых проверках не знает по определению. */
-  var REQUESTED_VERSION = (function () {
+  /* Загрузили классическим тегом? (В модуле currentScript пуст — там
+   * сверяет обёртка.) Нужно различать «метки нет» и «мы не classic». */
+  var CLASSIC_SRC = (function () {
     try {
-      var src = document.currentScript && document.currentScript.src;
-      if (!src) return null;
-      return new URL(src, location.href).searchParams.get("v");
+      return (document.currentScript && document.currentScript.src) || null;
+    } catch (err) {
+      return null;
+    }
+  })();
+
+  var REQUESTED_VERSION = (function () {
+    if (!CLASSIC_SRC) return null;
+    try {
+      return new URL(CLASSIC_SRC, location.href).searchParams.get("v");
     } catch (err) {
       return null;
     }
@@ -116,7 +125,7 @@
     tools: {
       position: "top-left"       // top-left | top-right | bottom-left | bottom-right
     },
-    service: { gear: "always" }, // always | tripleTap | hidden (решится позже)
+    service: { gear: "always" }, // always | tripleTap | hidden — см. gearMode()
     watchdog: {
       stallSec: 30,              // главный поток завис дольше → это авария
       sceneTimeoutSec: 20,       // сцена с watchdog:true молчит дольше → авария
@@ -229,8 +238,38 @@
         { type: "choice", path: "defaultLang", label: "Язык",
           options: [["ru", "РУС"], ["en", "ENG"], ["zh", "中文"]] }
       ]
+    },
+    {
+      group: "Сервис-панель",
+      rows: [
+        { type: "choice", path: "service.gear", label: "Кнопка сервиса",
+          options: [["always", "Видна всегда"], ["tripleTap", "По тройному тапу"],
+                    ["hidden", "Скрыта совсем"]] }
+      ]
     }
   ];
+
+  /* Граница настройки живёт В ОДНОМ МЕСТЕ — в схеме.
+   *
+   * Иначе она расходится: у standbyFps в схеме стоял максимум 15, а в коде
+   * кламп до 30 (и в комментарии рядом — «канон не выше 10»). Три числа на
+   * одну величину, и какое из них настоящее, зависело от того, пришло
+   * значение из панели или из файла конфига. Кламп берём из схемы. */
+  function specRow(path) {
+    for (var i = 0; i < SETTINGS_SPEC.length; i++) {
+      var rows = SETTINGS_SPEC[i].rows || [];
+      for (var j = 0; j < rows.length; j++) if (rows[j].path === path) return rows[j];
+    }
+    return null;
+  }
+  function clampBySpec(path, value, def) {
+    var row = specRow(path);
+    var v = Number(value);
+    if (!isFinite(v)) v = def;
+    if (row && isFinite(row.min)) v = Math.max(row.min, v);
+    if (row && isFinite(row.max)) v = Math.min(row.max, v);
+    return v;
+  }
 
   /* --------------------------------------------- настройки сцены (v1.2)
    * Сцена ОБЪЯВЛЯЕТ свои параметры, ядро само рисует их в сервис-панели,
@@ -512,6 +551,14 @@
      * словарь после обновления сборки и новые ключи не доезжали (нашли 38):
      * приложение поднимает ?v= у своих файлов, а адрес словаря строит ядро,
      * и версию туда передать было нечем. */
+    /* Настройки УРОВНЯ ПРИЛОЖЕНИЯ — та же декларативная схема, что у
+     * сцены, но значение общее. Нужны там, где эффект принадлежит не
+     * сцене: у МТК 42 цвет портретов делят картотека и маятник. Объявить
+     * такое в одной сцене — семантическая ложь («меняю цвет в Картотеке,
+     * меняется и Маятник»), в обеих — два независимых значения на один
+     * эффект. Пока их не было, addSettings() нельзя было и задепрекать. */
+    this._appSettings = normSceneSettings(opts.appSettings);
+
     this.i18nUrl = opts.i18nUrl || null;
     this.i18nVersion = opts.i18nVersion == null ? null : String(opts.i18nVersion);
     this._strings = {};
@@ -718,7 +765,7 @@
     return Promise.resolve()
       .then(function () { return self._loadConfig(); })
       .then(function () { return self._loadStrings(); })
-      .then(function () { self._seedSceneDefaults(); })
+      .then(function () { self._seedSceneDefaults(); self._seedAppDefaults(); })
       .then(function () { return domReady(); })
       .then(function () {
         self._buildChrome();
@@ -891,6 +938,65 @@
     });
   };
 
+  /* ---------------------------------- настройки уровня приложения (v1.11) */
+
+  KioskApp.prototype.appSchema = function () {
+    return this._appSettings.map(function (s) {
+      var copy = deepMerge(s, null);
+      if (s.options) copy.options = s.options.map(function (o) { return [o[0], o[1]]; });
+      return copy;
+    });
+  };
+
+  KioskApp.prototype.appSettings = function () {
+    var v = this.config.app;
+    return isObj(v) ? deepMerge(v, null) : {};
+  };
+
+  KioskApp.prototype.setAppSetting = function (key, value) {
+    return this.setSetting("app." + key, value);
+  };
+
+  /* Без записи в патч — для диагностики, как и у сцен. */
+  KioskApp.prototype.setAppSettingLive = function (key, value) {
+    setByPath(this.config, "app." + key, value);
+    this._pushAppSettings();
+    return this;
+  };
+
+  KioskApp.prototype.resetAppSettings = function () {
+    var self = this;
+    this._appSettings.forEach(function (s) {
+      setByPath(self.config, "app." + s.key, s["default"]);
+    });
+    if (isObj(this._override.app)) delete this._override.app;
+    this._saveOverride();
+    this._pushAppSettings();
+    this.log("info", "общие настройки сброшены к дефолтам");
+    return this;
+  };
+
+  /* Значение общее, поэтому получают ВСЕ смонтированные сцены: именно
+   * из-за этого настройка и живёт на уровне приложения. */
+  KioskApp.prototype._pushAppSettings = function () {
+    if (!this._appSettings.length) return;
+    var values = this.appSettings();
+    this._records.forEach(function (rec) {
+      if (rec.mounted) safeCall(rec, "applyAppSettings", values);
+    });
+    this.emit("app-settings", values);
+  };
+
+  KioskApp.prototype._seedAppDefaults = function () {
+    if (!this._appSettings.length) return;
+    var stored = isObj(this.config.app) ? this.config.app : {};
+    var merged = {};
+    this._appSettings.forEach(function (s) {
+      merged[s.key] = stored[s.key] === undefined ? s["default"] : stored[s.key];
+    });
+    this.config.app = merged;
+  };
+
   /* Текущие значения настроек сцены — то, что уходит в applySettings. */
   KioskApp.prototype.sceneSettings = function (id) {
     var v = (this.config.scenes || {})[id];
@@ -899,6 +1005,21 @@
 
   KioskApp.prototype.setSceneSetting = function (id, key, value) {
     return this.setSetting("scenes." + id + "." + key, value);
+  };
+
+  /* То же, но БЕЗ записи в патч оператора: значение уходит в живой конфиг
+   * и в сцену, localStorage не трогается.
+   *
+   * Для диагностики (перебор состояний). Инструмент, гоняющий сотни
+   * значений, не должен оставлять их в операторских настройках — и дело
+   * не только в мусоре: записанный дефолт затенит будущую правку схемы,
+   * ровно то, от чего защищает resetSceneSettings. Убирать за собой
+   * недостаточно, правильнее не писать вовсе. */
+  KioskApp.prototype.setSceneSettingLive = function (id, key, value) {
+    if (!this._byId[id]) return this;
+    setByPath(this.config, "scenes." + id + "." + key, value);
+    this._pushSceneSettings(this._byId[id]);
+    return this;
   };
 
   /* Вернуть сцену к дефолтам её схемы. */
@@ -1170,6 +1291,7 @@
     if (path && path.indexOf("scenes.") === 0) {
       this._pushSceneSettings(this._byId[path.split(".")[1]]);
     }
+    if (path && path.indexOf("app.") === 0) this._pushAppSettings();
     this._applyInsets();
     /* Тайминги читаются тикером на лету, отдельного применения не нужно. */
   };
@@ -1656,7 +1778,11 @@
       .then(function () { return rec.scene.mount ? rec.scene.mount(el, self.context()) : null; })
       /* Настройки отдаём сразу после монтирования: сцена строится в
        * дефолтном виде, а затем получает то, что накрутил оператор. */
-      .then(function () { self._pushSceneSettings(rec); })
+      .then(function () {
+        self._pushSceneSettings(rec);
+        /* Общие настройки тоже: сцена смонтировалась позже их правки. */
+        if (self._appSettings.length) safeCall(rec, "applyAppSettings", self.appSettings());
+      })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
 
@@ -1884,7 +2010,7 @@
    * каждый vsync, хотя канон standby разрешает не выше standbyFps.
    * Колбэк получает секунды с начала простоя. */
   KioskApp.prototype.standbyTicker = function (draw) {
-    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var fps = clampBySpec("timings.standbyFps", (this.config.timings || {}).standbyFps, 10);
     /* performance.now(), а не Date.now(): системные часы ночью подводит
      * NTP, и скачок дёрнул бы картинку заставки. */
     var t0 = performance.now();
@@ -1916,13 +2042,14 @@
     }
     el.classList.remove("is-bare");
 
-    var fps = Math.max(1, Math.min(30, (this.config.timings || {}).standbyFps || 10));
+    var fps = clampBySpec("timings.standbyFps", (this.config.timings || {}).standbyFps, 10);
     var canvas = this._els.standbyCanvas;
     var ctx = canvas.getContext("2d");
     var t0 = Date.now();
 
-    /* setInterval, а не rAF: rAF будил бы композитор 60 раз в секунду,
-     * а канон standby — не выше 10 fps (GPU и выгорание панели). */
+    /* setInterval, а не rAF: rAF будил бы композитор 60 раз в секунду, а
+     * заставка висит часами — это GPU и выгорание панели. Потолок задаёт
+     * схема (timings.standbyFps), дефолт 10. */
     this._standbyTimer = setInterval(function () {
       var w = canvas.clientWidth, h = canvas.clientHeight;
       if (canvas.width !== w || canvas.height !== h) {
@@ -2041,6 +2168,15 @@
    * метка, старое тело»), ядро переносит его в журнал.
    * Classic-путь сверяет сам себя — для старых ядер это не работает. */
   KioskApp.prototype._logVersionMismatch = function () {
+    /* Classic-подключение без метки: сверять не с чем, и залипание
+     * пройдёт молча — а канон объявляет метку обязательной. При
+     * ESM-загрузке молчим: там сверяет обёртка. */
+    if (CLASSIC_SRC && !REQUESTED_VERSION) {
+      console.info("[kiosk] у kiosk-core.js нет метки ?v= — сверка версий " +
+        "отключена, залипший кеш ловиться не будет. Канон: версионировать кит " +
+        "точной версией ядра (" + VERSION + ").");
+      return;
+    }
     if (!REQUESTED_VERSION || REQUESTED_VERSION === VERSION) return;
 
     /* Метка не в формате версии ядра либо отстала — это нарушение канона
@@ -2211,27 +2347,60 @@
     this._bindTripleTap();
   };
 
-  KioskApp.prototype._applyGearMode = function () {
-    var mode = (this.config.service || {}).gear || "always";
-    if (this._els.gear) this._els.gear.hidden = mode !== "always";
+  /* always — шестерёнка на экране; tripleTap — спрятана, вход тройным тапом;
+   * hidden — экранного входа нет вовсе, только openService(true) из кода
+   * (заявка МТК-19: видеопанель без тача, вход по кнопочному комбо). */
+  KioskApp.prototype.gearMode = function () {
+    var m = (this.config.service || {}).gear;
+    return m === "tripleTap" || m === "hidden" ? m : "always";
   };
 
-  /* Тройной тап по заголовку — запасной вход, когда шестерёнку спрячут. */
+  KioskApp.prototype._applyGearMode = function () {
+    if (this._els.gear) this._els.gear.hidden = this.gearMode() !== "always";
+  };
+
+  /* Тройной тап — запасной вход, когда шестерёнку спрятали. */
   KioskApp.prototype._bindTripleTap = function () {
     var self = this;
-    var titleBox = this._els.nav && this._els.nav.querySelector(".kiosk-nav__title");
-    if (!titleBox) return;
     var taps = 0, timer = null;
-    titleBox.addEventListener("pointerdown", function () {
+
+    function hit() {
+      /* В режиме hidden экранного входа не должно быть совсем — иначе
+       * заявка «постоянная экранная иконка недопустима» выполнена только
+       * на вид, а вход остался, просто невидимый. */
+      if (self.gearMode() === "hidden") return;
       taps++;
       if (timer) clearTimeout(timer);
-      timer = setTimeout(function () { taps = 0; }, 1200);
+      timer = setTimeout(function () { taps = 0; timer = null; }, 1200);
       if (taps >= 3) {
         taps = 0;
         clearTimeout(timer);
+        timer = null;
         self.openService(true);
       }
-    });
+    }
+
+    var titleBox = this._els.nav && this._els.nav.querySelector(".kiosk-nav__title");
+    if (titleBox) titleBox.addEventListener("pointerdown", hit);
+
+    /* Заголовка может не быть вовсе: навигация скрыта или showTitle:false.
+     * Тогда единственный запасной вход исчезал бы вместе с ним, и режим
+     * «по тройному тапу» запирал бы сервис намертво — а выбирают его как
+     * раз из панели, то есть оператор запер бы себя сам.
+     *
+     * Второй вход — УГОЛ САМОЙ ШЕСТЕРЁНКИ: когда она скрыта, это место
+     * свободно по определению, и промахнуться мимо чужого контрола нельзя.
+     * Слушаем координаты на корне, а не кладём туда элемент: невидимая
+     * накладка перехватывала бы касания сцены под собой. */
+    this._els.root.addEventListener("pointerdown", function (e) {
+      if (self.gearMode() !== "tripleTap") return;
+      var cs = getComputedStyle(document.documentElement);
+      var edge = parseFloat(cs.getPropertyValue("--edge-safe")) || 64;
+      var size = parseFloat(cs.getPropertyValue("--touch-primary")) || 96;
+      var r = self._els.root.getBoundingClientRect();
+      if (e.clientX >= r.right - edge - size && e.clientX <= r.right - edge &&
+          e.clientY >= r.top + edge && e.clientY <= r.top + edge + size) hit();
+    }, { passive: true });
   };
 
   KioskApp.prototype.openService = function (on) {
@@ -2274,6 +2443,7 @@
     }).join("");
 
     html = this._screensHtml() + html;
+    html += this._appGroupHtml();
     html += this._sceneGroupsHtml();
 
     html += '<section class="kiosk-set__group">' +
@@ -2340,6 +2510,45 @@
       '<div class="kiosk-set__note">Порядок листания и состав. Выключенный экран не ' +
       "грузится на старте, его точка скрыта, ссылка на него ведёт на стартовый.</div>" +
       rows + "</section>";
+  };
+
+  /* Общие настройки приложения — отдельной группой, рядом со сценами и
+   * по тем же правилам: сворачивается, считает параметры, сбрасывается. */
+  KioskApp.prototype._appGroupHtml = function () {
+    var self = this;
+    if (!this._appSettings.length) return "";
+    var open = !!this._openSceneGroups["__app"];
+    var rows = this._appSettings.map(function (s) {
+      return self._rowHtml(self._appRowSpec(s));
+    }).join("");
+
+    return '<section class="kiosk-set__group kiosk-set__group--scene' +
+      (open ? " is-open" : "") + '" data-scene-group="__app">' +
+      '<button type="button" class="kiosk-set__fold" data-fold="__app">' +
+      '<span class="kiosk-set__fold-mark" aria-hidden="true"></span>' +
+      '<span class="kiosk-set__fold-title">Настройки МТК · общие</span>' +
+      '<span class="kiosk-set__fold-count">' + this._appSettings.length + "</span>" +
+      "</button>" +
+      '<div class="kiosk-set__fold-body">' +
+      '<div class="kiosk-set__note">Действуют на все сцены сразу — здесь то, ' +
+      'что принадлежит приложению, а не отдельному экрану.</div>' + rows +
+      '<button type="button" class="kiosk-set__mini" data-app-reset>Сбросить общие</button>' +
+      "</div></section>";
+  };
+
+  KioskApp.prototype._appRowSpec = function (s) {
+    var spec = {
+      path: "app." + s.key,
+      label: pickLabel(s.label, this.lang),
+      type: s.type === "select" ? "choice" : s.type
+    };
+    if (s.type === "range") {
+      spec.min = s.min; spec.max = s.max; spec.step = s.step; spec.unit = s.unit;
+    } else if (s.type === "select") {
+      var lang = this.lang;
+      spec.options = s.options.map(function (o) { return [o[0], pickLabel(o[1], lang)]; });
+    }
+    return spec;
   };
 
   /* Настройки сцен: своя группа на сцену, свёрнутая по умолчанию.
@@ -2484,6 +2693,15 @@
       if (ch) {
         var p = ch.getAttribute("data-path");
         var v = ch.getAttribute("data-choice");
+        /* Единственная настройка, которой оператор может запереть себя:
+         * hidden убирает и шестерёнку, и тройной тап, а сам выбор хранится
+         * в localStorage и переживает перезагрузку. Обратно — только
+         * openService(true) из кода приложения. Спрашиваем прямо. */
+        if (p === "service.gear" && v === "hidden" &&
+            !confirm("Сервис-панель больше нельзя будет открыть с экрана: " +
+              "ни кнопкой, ни тройным тапом. Вход останется только из кода " +
+              "приложения — openService(true). Настройка сохранится и после " +
+              "перезагрузки. Продолжить?")) return;
         self.setSetting(p, v);
         Array.prototype.forEach.call(
           body.querySelectorAll('[data-path="' + p + '"][data-choice]'),
@@ -2523,6 +2741,11 @@
         fold.parentNode.classList.toggle("is-open", self._openSceneGroups[fid]);
         return;
       }
+      if (e.target.closest("[data-app-reset]")) {
+        self.resetAppSettings();
+        self._rebuildService();
+        return;
+      }
       var sreset = e.target.closest("[data-scene-reset]");
       if (sreset) {
         self.resetSceneSettings(sreset.getAttribute("data-scene-reset"));
@@ -2541,6 +2764,13 @@
     /* Настройки сцен в _settingsSpec не лежат — собираем спеку на лету,
      * иначе подпись значения у слайдера сцены не обновлялась бы. */
     var parts = path.split(".");
+    if (parts[0] === "app" && parts.length === 2) {
+      var self2 = this;
+      this._appSettings.forEach(function (s2) {
+        if (s2.key === parts[1]) found = self2._appRowSpec(s2);
+      });
+      return found;
+    }
     if (parts[0] !== "scenes" || parts.length < 3) return null;
     var rec = this._byId[parts[1]];
     if (!rec) return null;

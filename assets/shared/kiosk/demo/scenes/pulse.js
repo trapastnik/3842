@@ -1,5 +1,5 @@
 /* Демо-сцена 1 «Пульс» — концентрические круги, тянут кадр анимацией. */
-import { createCanvasScene } from "./canvas-scene.js?v=1.9.2";
+import { createCanvasScene } from "./canvas-scene.js?v=1.12.0";
 
 export const pulseScene = createCanvasScene({
   id: "pulse",
@@ -22,6 +22,9 @@ export const pulseScene = createCanvasScene({
     const rings = s.rings == null ? 13 : s.rings;
     const speed = s.speed == null ? 0.35 : s.speed;
     const accent = s.accent !== false;
+    /* Цвет акцента — из ОБЩЕЙ настройки приложения, одной на обе сцены. */
+    const tone = { red: "160, 33, 40", brass: "210, 183, 115", green: "93, 137, 112"
+                 }[(state.app || {}).accentTone || "red"];
 
     ctx.clearRect(0, 0, w, h);
     const cx = w / 2, cy = h / 2;
@@ -33,7 +36,7 @@ export const pulseScene = createCanvasScene({
       ctx.beginPath();
       ctx.arc(cx, cy, r, 0, Math.PI * 2);
       ctx.strokeStyle = isAccent
-        ? `rgba(160, 33, 40, ${0.55 * (1 - phase)})`
+        ? `rgba(${tone}, ${0.55 * (1 - phase)})`
         : `rgba(210, 183, 115, ${0.42 * (1 - phase)})`;
       ctx.lineWidth = isAccent ? 8 : 3;
       ctx.stroke();
