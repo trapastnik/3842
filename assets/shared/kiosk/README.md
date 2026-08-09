@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.1" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.1" />
-    <link rel="stylesheet" href="./styles.css?v=1.11.1" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.2" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.2" />
+    <link rel="stylesheet" href="./styles.css?v=1.11.2" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.11.1"></script>
+    <script type="module" src="./app.js?v=1.11.2"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.1";
-import { mapScene } from "./scenes/map.js?v=1.11.1";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.11.1";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.2";
+import { mapScene } from "./scenes/map.js?v=1.11.2";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.11.2";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.11.1",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.11.2",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.11.1"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.11.2"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -215,6 +215,17 @@ export const mapScene = {
    Переопределять `bottom` целиком не нужно: так вы заново считаете зону хрома,
    которая меняется от настроек и режима. Переход с прежних правил — см.
    [MIGRATION-1.11.md](MIGRATION-1.11.md).
+
+   **`hint.js` — отдельный скрипт со своей меткой кеша**, и проверка версий его
+   не покрывает: она сверяет `kiosk-core.js`. Поднимайте `?v=` на нём вместе с
+   ядром, тем же числом:
+
+   ```html
+   <script src="../assets/shared/kiosk/hint.js?v=1.11.2"></script>
+   ```
+
+   Иначе браузер отдаст подсказку прошлого релиза, а вы будете смотреть на
+   поведение, которого в ките уже нет.
 
    **И не на прокручиваемый контейнер.** Внутри скроллера `absolute`
    отсчитывается от высоты содержимого, а не от видимой области: у маятника
@@ -366,13 +377,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.11.1">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.11.2">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.11.1"` загрузит и
-`kiosk-core.js?v=1.11.1`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.11.2"` загрузит и
+`kiosk-core.js?v=1.11.2`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -381,14 +392,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.1" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.1" />
-<script type="module" src="./app.js?v=1.11.1"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.11.2" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.11.2" />
+<script type="module" src="./app.js?v=1.11.2"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.1";
-import { mapScene }  from "./scenes/map.js?v=1.11.1";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.11.2";
+import { mapScene }  from "./scenes/map.js?v=1.11.2";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя

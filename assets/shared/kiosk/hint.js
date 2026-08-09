@@ -202,8 +202,12 @@
       var cs = getComputedStyle(root);
       var ui = parseFloat(getComputedStyle(document.documentElement)
         .getPropertyValue("--ui-scale")) || 1;
-      var chrome = parseFloat(cs.getPropertyValue("--chrome-bottom")) ||
-        parseFloat(cs.getPropertyValue("--edge-safe-bottom")) || 80;
+      /* Ноль — это ЗНАЧЕНИЕ, а не отсутствие. Через `||` нулевая зона
+       * хрома (сцена спрятала навигацию) проваливалась бы до кромки и
+       * дальше до 80 px, и подсказка висела бы на пустом месте. */
+      var chrome = parseFloat(cs.getPropertyValue("--chrome-bottom"));
+      if (!isFinite(chrome)) chrome = parseFloat(cs.getPropertyValue("--edge-safe-bottom"));
+      if (!isFinite(chrome)) chrome = 80;
       var host = target.getBoundingClientRect();
       if (!host.height) return;                       /* раскладки ещё нет */
       var cleared = window.innerHeight - host.bottom; /* хост уже отбит на столько */
@@ -253,6 +257,34 @@
       ro.observe(target);
     }
     window.addEventListener("resize", place, { passive: true });
+
+    /* Одного RO мало. База зависит не только от размера хоста, но и от
+     * ТОКЕНОВ ЯДРА (--chrome-bottom, --ui-scale), а они меняются без его
+     * участия: оператор включил слабовидящих, кнопки языков перенеслись
+     * в две строки, сцена спрятала навигацию. Хост, сверстанный не от зон
+     * хрома, при этом не дрогнет — RO промолчит, и база останется от
+     * прежней раскладки.
+     *
+     * Ядро выставляет эти переменные инлайном (--ui-scale на <html>,
+     * --chrome-* на .kiosk-app), поэтому ловим мутацию style. Петли нет:
+     * place() пишет в el, а он тут не наблюдается. MutationObserver, в
+     * отличие от ResizeObserver и rAF, работает и в фоновой вкладке. */
+    var mo = null;
+    if (typeof MutationObserver === "function") {
+      mo = new MutationObserver(place);
+      var watch = { attributes: true, attributeFilter: ["style"] };
+      mo.observe(document.documentElement, watch);
+      var appRoot = el.closest(".kiosk-app");
+      if (appRoot && appRoot !== document.documentElement) mo.observe(appRoot, watch);
+    }
+
+    /* В фоновой вкладке RO не доставляется вовсе, а resize не приходит:
+     * если хост сменил размер, пока вкладку не показывали, база устареет
+     * молча. Досчитываем на возврате. (Остаётся один непокрытый случай:
+     * хост ПЕРЕЕХАЛ, не изменив размера, — его не видит ни RO, ни MO;
+     * он лечится сам при следующем show(), который зовёт place().) */
+    function onVis() { if (!document.hidden) place(); }
+    document.addEventListener("visibilitychange", onVis);
 
     firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
@@ -309,7 +341,9 @@
         if (firstTimer) clearTimeout(firstTimer);
         idleTimer = firstTimer = null;
         if (ro) { ro.disconnect(); ro = null; }
+        if (mo) { mo.disconnect(); mo = null; }
         window.removeEventListener("resize", place);
+        document.removeEventListener("visibilitychange", onVis);
         EVENTS.forEach(function (ev) { target.removeEventListener(ev, poke); });
         el.remove();
         if (attached) attached["delete"](target);
