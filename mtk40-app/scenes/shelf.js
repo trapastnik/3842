@@ -5,9 +5,20 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=28";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=38";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
+
+/* Поля корешка в дизайн-px: вдоль (сверху и снизу вместе) и с боков.
+ * Ниже MIN_LABEL_PX кегль не опускаем — это китовый порог читаемости
+ * (--type-min-label на 3840). Лучше честное многоточие, чем нечитаемое. */
+const SPINE_PAD_END = 22;
+const SPINE_PAD_SIDE = 4;
+const MIN_LABEL_PX = 24;
+/* Больше трёх строк корешок не держит: название расползается на крошечные
+ * обрывки и читается хуже, чем сокращённое. Что не влезло в три — берёт
+ * короткую форму title_spine из данных, как на настоящем корешке. */
+const SPINE_MAX_LINES = 3;
 
 function spineWidth(item) {
   const p = Math.max(8, item.pages_approx || 80);
@@ -20,7 +31,7 @@ export const shelfScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное
@@ -248,14 +259,27 @@ export const shelfScene = {
   // ---------- раскладка ----------
   get s() { return unit(this.app, this.cv ? this.cv.w : DESIGN_W); },
 
-  titleArea() { return 148 * this.s; },
+  /* Резерв сверху. В прототипе здесь стоял заголовок сцены и на него уходило
+   * 148 дизайн-px — в киоске заголовок пишет бар навигации, и этот резерв
+   * съедал 429 px из 1660 впустую, то есть треть высоты корешков. */
+  titleArea() { return 24 * this.s; },
   shelfHeight() { return (this.cv.h - this.titleArea()) / 3; },
+
+  /* Полоса, в которой живут корешки: от подписи оси до линии полки. Ровно
+   * она же идёт в клип при отрисовке — поэтому корешок физически не может
+   * оказаться выше своей полосы и быть срезанным. Раньше высота корешка
+   * считалась от всей высоты ряда (0.78 × ряд, ещё и ×1.18 за формат), клип
+   * был вдвое ниже, и у высоких корешков верх с названием просто срезало. */
+  labelArea() { return 56 * this.s; },
+  bandTop(top) { return top + this.labelArea(); },
+  bandBottom(top) { return top + this.shelfHeight() - 36 * this.s; },
 
   layout() {
     if (!this.cv || !this.cv.w) return;
     const s = this.s;
-    const baseH = this.shelfHeight();
-    const maxSpineH = baseH * 0.78;
+    /* Максимум = вся полоса под корешки, а формат книги меняет высоту только
+     * ВНИЗ от него: иначе высокие форматы вылезали за полосу. */
+    const maxSpineH = this.bandBottom(0) - this.bandTop(0);
     const gap = (this.values.spineGap ?? 2) * s;
     for (const shelf of this.shelves) {
       let x = 0;
@@ -263,7 +287,19 @@ export const shelfScene = {
       for (const item of shelf.items) {
         const w = spineWidth(item) * s;
         const hRatio = (item.height_cm || 22) / 22;
-        shelf.spineRects.push({ item, x, w, h: maxSpineH * Math.max(0.66, Math.min(1.18, hRatio)) });
+        const h = maxSpineH * Math.max(0.62, Math.min(1, hRatio * 0.85));
+        /* Подбор кегля и числа строк — здесь, а не в кадре: он перебирает
+         * кегли и меряет текст, а зависит только от размеров корешка. В кадре
+         * осталось только нарисовать готовые строки. */
+        const fit = M.fitSpineText(this.cv.ctx, item.title, {
+          length: h - SPINE_PAD_END * s,
+          thickness: w - SPINE_PAD_SIDE * 2 * s,
+          minPx: MIN_LABEL_PX,
+          maxPx: 13 * s,
+          capLines: SPINE_MAX_LINES,
+          fallback: item.title_spine,
+        });
+        shelf.spineRects.push({ item, x, w, h, fit });
         x += w + gap;
       }
       shelf.totalWidth = x;
@@ -385,7 +421,9 @@ export const shelfScene = {
 
     ctx.save();
     ctx.beginPath();
-    ctx.rect(offsetX - 4 * s, top + 60 * s, W - offsetX, baseline - top - 56 * s);
+    /* Клип совпадает с полосой корешков — там, где они и стоят. */
+    ctx.rect(offsetX - 4 * s, this.bandTop(top), W - offsetX,
+             this.bandBottom(top) - this.bandTop(top) + 8 * s);
     ctx.clip();
     for (const rect of shelf.spineRects) {
       const x = rect.x - shelf.scrollX + offsetX;
@@ -435,7 +473,7 @@ export const shelfScene = {
     ctx.restore();
   },
 
-  renderSpine({ item, w, h }, x, baselineY) {
+  renderSpine({ item, w, h, fit }, x, baselineY) {
     const ctx = this.cv.ctx;
     const s = this.s;
     const y = baselineY - h;
@@ -454,21 +492,23 @@ export const shelfScene = {
     ctx.fillRect(x + 4 * s, y + 16 * s, w - 8 * s, 1 * s);
     ctx.fillRect(x + 4 * s, y + h - 22 * s, w - 8 * s, 1 * s);
 
-    // Название меряем, а не считаем символы: кегль зависит от ширины корешка,
-    // и посимвольный лимит выпускал текст за корешок.
-    if (this.values.titles !== false && w >= 22 * s) {
+    /* Строки подобраны в раскладке под РЕАЛЬНЫЕ габариты корешка: длина
+     * ограничена его высотой, число строк — шириной. Здесь только рисуем. */
+    /* Обрезанное название не рисуем вовсе: обрывок вроде «ЧТО ТА…» на
+     * корешке — мусор, а не подпись. Такой корешок остаётся цветным блоком,
+     * название посетитель получает тапом. */
+    if (this.values.titles !== false && fit && fit.lines.length && !fit.truncated) {
       ctx.save();
-      ctx.translate(x + w / 2, y + h - 26 * s);
+      ctx.translate(x + w / 2, y + h - (SPINE_PAD_END / 2 + 4) * s);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = M.adjustHex(item.cover_color, 95);
-      const fs = Math.max(8 * s, Math.min(13 * s, w * 0.32));
-      ctx.font = `400 ${fs}px Nolde, Georgia, serif`;
+      ctx.font = `400 ${fit.fontSize}px Nolde, Georgia, serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      const lines = M.wrapLines(ctx, item.title, h - 52 * s, w >= fs * 2.6 ? 2 : 1);
-      const step = fs * 1.05;
-      const off = -((lines.length - 1) * step) / 2;
-      for (let i = 0; i < lines.length; i++) ctx.fillText(lines[i], 0, off + i * step);
+      const off = -((fit.lines.length - 1) * fit.lineHeight) / 2;
+      for (let i = 0; i < fit.lines.length; i++) {
+        ctx.fillText(fit.lines[i], 0, off + i * fit.lineHeight);
+      }
       ctx.restore();
     }
 

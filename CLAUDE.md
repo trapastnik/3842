@@ -26,6 +26,6 @@ Vanilla JS, без бандлеров. **WebGL разрешён** (решени�
 
 Шрифты: бренд — `assets/shared/fonts/brand/` (Nolde, 21 Cent, 20 Kopeek, покрывают латиницу+кириллицу); не-латиница (29 письменностей Noto: CJK/Arabic/Indic/…) — `assets/shared/fonts/noto/` (bundled, SIL OFL; список — `mtk38-handoff/FONTS-NEEDED.md`). Брендовая палитра — см. `COORDINATION.md` → «Шрифтово-цветовые правила» (актуальная редакция от 2026-05-12).
 
-Внешние зависимости — **только вендоренные** (см. `COORDINATION.md` → «Внешние зависимости»). На миграцию остаётся `pretext` через esm.sh в `mtk38-poster` — задача владельца МТК 38.
+Внешние зависимости — **только вендоренные** (см. `COORDINATION.md` → «Внешние зависимости»). Живых CDN-импортов в репозитории нет — последний (`pretext` в `mtk38-poster`) вендорен 2026-08-06.
 
 См. также: [SETUP.md](SETUP.md), [COORDINATION.md](COORDINATION.md), [PLAN.md](PLAN.md), [README.md](README.md).

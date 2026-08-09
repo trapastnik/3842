@@ -11,7 +11,7 @@
  *  - двенадцать тюнингов прототипа объявлены схемой settings[] — панель их
  *    рисует и хранит сама, sessionStorage больше не нужен.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=28";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=38";
 
 const COLORS = M.COLORS;
 const BUCKET_META = M.BUCKET_META;
@@ -80,7 +80,7 @@ export const timelineScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное
@@ -591,7 +591,9 @@ export const timelineScene = {
       if (x1 - x0 < 60 * s) continue;
       const label = this.app.t("timeline.period." + p.key).toUpperCase();
       const text = M.wrapLines(ctx, label, x1 - x0 - 12 * s, 1)[0];
-      if (text) ctx.fillText(text, (x0 + x1) / 2, cy);
+      /* «ПОДПОЛЬЕ И…» не говорит ничего — зона и без подписи различима
+       * заливкой и штрихами своих дат (канон подписей: обрубок не рисуем). */
+      if (text && !text.includes("…")) ctx.fillText(text, (x0 + x1) / 2, cy);
     }
     ctx.restore();
   },

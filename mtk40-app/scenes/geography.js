@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=28";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=38";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -28,7 +28,7 @@ export const geographyScene = {
 
   preload: {
     data: {
-      corpus: "../data/mtk40.json",
+      corpus: CORPUS_URL,
       world: "../data/ne_110m_countries.geojson",
     },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
@@ -182,8 +182,19 @@ export const geographyScene = {
     if (!this.cv.w) return { ok: true, detail: "слой скрыт; городов " + this.cities.length };
     if (!this.lastClusters.length) {
       const probe = this.materialize(this.buildClusters(this.levelFor(this.zf())));
-      if (!probe.length) return { ok: false, detail: "в кадре нет кружков" };
-      return { ok: true, detail: "кадра ещё не было; кружков " + probe.length };
+      if (probe.length) return { ok: true, detail: "кадра ещё не было; кружков " + probe.length };
+      /* Пустой кадр бывает ЗАКОННЫМ: фильтр осей мог обнулить все города в
+       * поле зрения, а камеру — увести на океан (кламп держит четверть
+       * габарита, но не гарантирует кружок в кадре). Авария — только если
+       * фильтры сняты и камера в позе «вся карта»: тогда пусто по-настоящему
+       * (GRABLI, «легально пустые состояния — не авария»). */
+      if (this.buckets.size) {
+        return { ok: true, detail: "в кадре пусто из-за фильтра осей — это законно" };
+      }
+      if (this.movedFromFit()) {
+        return { ok: true, detail: "в кадре пусто: камера уведена от позы «вся карта»" };
+      }
+      return { ok: false, detail: "в кадре нет кружков при снятых фильтрах" };
     }
     return {
       ok: true,
