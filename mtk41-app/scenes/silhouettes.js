@@ -9,21 +9,31 @@
  * Object.assign даёт НОВЫЙ объект с теми же методами: состояние сцены живёт
  * в this._*, выставляется в mount(), и у двух сцен оно не пересекается.
  *
- * Силуэты — ВЕКТОРНЫЕ (silhouettes_paths.json, ~250 путей на 190 КБ), а не
- * растровые: один контур даёт и заливку, и обводку, красится брендовым
- * токеном в рантайме и не мылится на 4K. Растровые маски живут вне
- * репозитория как исходник.
+ * Два режима, и они про РАЗНОЕ:
  *
- * У кого пути нет — процедурный пунктир, как в «Масштабе». Это видно в
- * healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=35";
-import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=35";
+ *  · ФОТО — цветная вырезка памятника (cutouts.json): бронза, гранит, снег на
+ *    плечах. Экспозиции нужна не абстрактная форма, а сам объект, и увидеть
+ *    его можно только так. 199 вырезок, 6.1 МБ на диске, ~19 МБ в памяти —
+ *    рядом с 193 МБ миниатюр это ничто, потому что вырезки узкие.
+ *
+ *  · КОНТУР — векторный путь (silhouettes_paths.json, 149 КБ): плоская форма,
+ *    красится брендовым токеном, не мылится на 4K. Он же запасной вариант там,
+ *    где вырезки нет.
+ *
+ * Форма у обоих ОДНА: вырезка режется той же очищенной маской, что даёт
+ * вектор. Иначе переключение режимов подменяло бы объект.
+ *
+ * У кого нет ни того ни другого — процедурный пунктир, как в «Масштабе». Это
+ * видно в healthcheck и не выдаётся за реальный обвод. */
+import { scaleScene } from "./scale.js?v=36";
+import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=36";
 
 /* Хранилище силуэтов — на уровне МОДУЛЯ, а не в ctx.
  * ctx у ядра одноразовый: context() отдаёт новый объект и прероллу, и mount().
  * Первая версия писала в ctx.__sil из custom(), а сцена читала свой ctx —
  * другой — и всегда видела пусто. Сцена одна, глобального состояния тут нет. */
-const SIL = Object.create(null);
+const SIL = Object.create(null);   // векторные пути
+const CUT = Object.create(null);   // цветные вырезки с фото
 
 /* Пути разбираются в Path2D ОДИН РАЗ на преролле: разбор строки в каждом
  * кадре для 283 фигур — это работа впустую 60 раз в секунду. */
@@ -41,6 +51,19 @@ function preloadSilhouettes(ctx) {
         }
       })
       .catch(() => {}),
+    /* Вырезки — в преролл, а не по ходу: сцена рисует каждый кадр, и
+     * догрузка на лету дала бы и мигание, и запрос после старта, который
+     * приёмка считает провалом. */
+    fetch(DATA.cutouts, { cache: "no-cache" })
+      .then((r) => r.json())
+      .then((idx) => Promise.all(
+        Object.entries(idx.items || {}).map(([id, rel]) => new Promise((res) => {
+          const img = new Image();
+          img.onload = () => { CUT[id] = img; res(); };
+          img.onerror = () => res();
+          img.src = "../assets/mtk41/" + id + "/" + rel;
+        }))))
+      .catch(() => {}),
   ]);
 }
 
@@ -56,8 +79,12 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
   /* Схема та же, плюс тумблер подложки: на реальном силуэте статусная заливка
    * читается хуже, чем на прямоугольнике, и оператор может её убрать. */
   settings: scaleScene.settings.concat([
-    { key: "tintSil", label: { ru: "Подкрашивать силуэты по статусу",
-      en: "Tint silhouettes by status" }, type: "toggle", default: true },
+    { key: "silMode", label: { ru: "Вид фигуры", en: "Figure mode" },
+      type: "select", default: "photo",
+      options: [{ value: "photo", label: { ru: "Фото", en: "Photo" } },
+                { value: "outline", label: { ru: "Контур", en: "Outline" } }] },
+    { key: "tintSil", label: { ru: "Подкрашивать контур по статусу",
+      en: "Tint outline by status" }, type: "toggle", default: true },
   ]),
 
   healthcheck() {
@@ -75,9 +102,10 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
     if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
     const sil = Object.keys(SIL).length;
+    const cut = Object.keys(CUT).length;
     /* Не ошибка, но цифру видно на приёмке: сцена обещает «реальные фигуры»,
      * а их пока восемь. */
-    return { ok: true, detail: `фигур ${this._placed.length}, реальных силуэтов ${sil}, буфер ${buf.detail}` };
+    return { ok: true, detail: `фигур ${this._placed.length}, вырезок ${cut}, контуров ${sil}, буфер ${buf.detail}` };
   },
 
   _renderHead() {
@@ -96,6 +124,17 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
       if (x < -80 || x > h.width + 80) continue;
       const sel = pm.i === this._selected;
       const rec = sil[pm.m.id];
+
+      const photo = this._cfg.silMode !== "outline" ? CUT[pm.m.id] : null;
+
+      if (photo && photo.complete && photo.naturalWidth) {
+        const H = pm.totalH, W = H * (photo.naturalWidth / photo.naturalHeight);
+        ctx.save();
+        if (sel) { ctx.shadowColor = PALETTE.brass; ctx.shadowBlur = 18; }
+        ctx.drawImage(photo, x - W / 2, pm.baseY - H, W, H);
+        ctx.restore();
+        continue;
+      }
 
       if (rec) {
         /* Путь нормирован по ВЫСОТЕ: y от 0 до 1, x от 0 до ar. Значит масштаб

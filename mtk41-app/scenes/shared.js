@@ -13,7 +13,7 @@
  * доезжает до страницы — Chrome отдаёт файл из кеша, и на экране остаётся
  * старый корпус при свежем репо (грабля 40-го). Одна константа на все сцены,
  * поднимать вместе с меткой модулей. */
-const DATA_V = "?v=35";
+const DATA_V = "?v=36";
 
 export const DATA = {
   monuments: "../data/mtk41.json" + DATA_V,
@@ -22,6 +22,7 @@ export const DATA = {
   thumbs: "../assets/mtk41/thumbs.json" + DATA_V,
   cards: "../assets/mtk41/cards.json" + DATA_V,
   silhouettes: "../assets/mtk41/silhouettes_paths.json" + DATA_V,
+  cutouts: "../assets/mtk41/cutouts.json" + DATA_V,
   countries: "../data/ne_110m_countries.geojson" + DATA_V,
 };
 

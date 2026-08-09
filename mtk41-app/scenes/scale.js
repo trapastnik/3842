@@ -24,7 +24,7 @@ import {
   createCard, cssColor, preloadThumbs, statusColor,
   createHint,
   fillTextIfFits,
-} from "./shared.js?v=35";
+} from "./shared.js?v=36";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
