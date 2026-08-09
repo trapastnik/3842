@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=16";
-import { createCard } from "./card.js?v=16";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
 
 export const catalogScene = {
   id: "catalog",
@@ -28,10 +28,16 @@ export const catalogScene = {
   preload: { custom: async () => { await loadData(); } },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx && ctx.app;
     const data = await loadData();
     this._all = [...data.langs].sort((a, b) => (b.un - a.un) || (b.wt - a.wt) || a.n.localeCompare(b.n, "ru"));
     this._pubs = data.pubs;
+    this._pubsOk = data.pubsOk;
 
     const root = document.createElement("div");
     root.className = "m38-scene m38-catalog";
@@ -133,6 +139,7 @@ export const catalogScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
@@ -206,9 +213,22 @@ export const catalogScene = {
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   healthcheck() {
-    if (!this._root || !this._canvas) return { ok: true, detail: "не смонтирована" };
-    const bad = offScreen(this._canvas) ? null : bufferComplaint(this._canvas, this._dpr);
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    if (!this._canvas) return { ok: false, detail: "монтирование не завершилось — канваса нет" };
+    const bad = offScreen(this._root) ? null : bufferComplaint(this._canvas, this._dpr, this._root);
     if (bad) return { ok: false, detail: bad };
+    /* Пусто по фильтру и пусто из-за непрочитанных данных — разные вещи.
+     * Фильтр «с изданием» на несостоявшейся загрузке изданий обязан краснеть
+     * ровно так же, как слой изданий на карте: корень один. */
+    if (this._filter === "pub" && this._pubsOk === false) {
+      return { ok: false, detail: "издания не загрузились — фильтр «с изданием» пуст не по данным" };
+    }
     const total = this._list().length;
     /* Легально пустое состояние: фильтр «с изданием» на урезанном каноне может
      * дать ноль — это честный ответ данных, а не поломка сцены. Красным здесь
@@ -216,7 +236,7 @@ export const catalogScene = {
     if (!total) return { ok: true, detail: `фильтр «${this._filter}» — языков нет (пусто по данным)` };
     /* Сетка раскладывается от размера контейнера, а размер приходит из кадра.
      * В скрытом слое ячеек законно ноль — это не «загружено, но пусто». */
-    if (offScreen(this._canvas)) {
+    if (offScreen(this._root)) {
       return { ok: true, detail: `фильтр «${this._filter}»: ${total} языков готовы, слой не на экране` };
     }
     if (!this._cells.length) {
@@ -261,9 +281,12 @@ export const catalogScene = {
     if (!this._canvas) return;
     const r = this._canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
-    this._dpr = dpr;
     this._W = Math.round(r.width); this._H = Math.round(r.height);
+    /* Тот же бюджет 8.3 Мп, что у GPU-сцен: Canvas 2D дешевле в отрисовке, но
+     * 4K-бокс при dpr 2 давал буфер под 40 Мп — это память и просадка на
+     * каждой заливке, а на киоске экран как раз 4K. */
+    const dpr = capDpr(this._W, this._H);
+    this._dpr = dpr;
     this._canvas.width = Math.round(this._W * dpr);
     this._canvas.height = Math.round(this._H * dpr);
     this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);

@@ -42,7 +42,13 @@ export async function loadData() {
   if (_cache) return _cache;
   const [canon, pubsDoc] = await Promise.all([
     fetch(CANON_URL).then((r) => r.json()),
-    fetch(PUBS_URL).then((r) => r.json()).catch(() => ({ publications: [] })),
+    /* Изданий может не быть — приложение это переживает и показывает языки.
+     * Но «файл не прочитался» и «в файле честно пусто» — разные вещи, и
+     * healthcheck должен их различать: первое авария, второе нет. */
+    fetch(PUBS_URL).then((r) => r.json()).catch((e) => {
+      console.warn("[data] издания не прочитаны", e);
+      return { publications: [], __failed: true };
+    }),
   ]);
 
   const langs = canon.languages.map((l) => {
@@ -72,7 +78,7 @@ export async function loadData() {
     });
   }
 
-  _cache = { langs, forms: groupByWriting(langs), pubs };
+  _cache = { langs, forms: groupByWriting(langs), pubs, pubsOk: !pubsDoc.__failed };
   return _cache;
 }
 
@@ -192,11 +198,15 @@ export function pollSize(scene, el) {
   return true;
 }
 
-/* Сцена смонтирована, но её слой не на экране (кроссфейд, фоновая вкладка,
- * скрытый слой). Кадров нет — значит и судить по кадру нельзя: всё, что
- * заполняется в отрисовке, законно пусто. */
+/* Сцена смонтирована, но её слой не активен.
+ *
+ * По clientWidth это НЕ определяется: ядро прячет слои через visibility и
+ * content-visibility, и у потомков скрытого слоя ширина сохраняется прежней.
+ * Спрашиваем у самого слоя — так же, как стенд ядра. */
 export function offScreen(el) {
-  return !el || !el.clientWidth || !el.clientHeight;
+  if (!el) return true;
+  if (!el.clientWidth || !el.clientHeight) return true;
+  return !!(el.closest && el.closest(".kiosk-layer:not(.is-active)"));
 }
 
 /* Сверка буфера для healthcheck.
@@ -205,14 +215,19 @@ export function offScreen(el) {
  * dpr. Кап 8.3 Мп законно опускает масштаб ниже единицы на боксе крупнее 4K,
  * и сравнение с боксом краснело бы на совершенно правильном буфере.
  * Возвращает строку с претензией или null, если всё в порядке. */
-export function bufferComplaint(canvas, dpr) {
+export function bufferComplaint(canvas, dpr, box) {
   if (!canvas) return "канваса нет";
-  const r = canvas.getBoundingClientRect();
+  /* Мерим ПО СЛОЮ СЦЕНЫ, а не по самому канвасу. У WebGPU-сцен renderer.setSize
+   * с updateStyle=true ставит канвасу CSS-размер тем же вызовом, что и буфер:
+   * они согласованы по построению, и сравнение канваса с собой не покраснеет
+   * никогда — буфер 2×2 на боксе 1600×1000 проходил как здоровый. */
+  const ref = box || canvas;
+  const r = ref.getBoundingClientRect();
   if (!r.width || !r.height) return null;        // слой скрыт — не наша беда
   const want = Math.floor(r.width * (dpr || 1));
   if (canvas.width < want * 0.9) {
     return `буфер ${canvas.width}×${canvas.height} при ожидании ${want} по ширине `
-      + `(бокс ${Math.round(r.width)}×${Math.round(r.height)}, dpr ${(dpr || 1).toFixed(2)})`;
+      + `(слой ${Math.round(r.width)}×${Math.round(r.height)}, dpr ${(dpr || 1).toFixed(2)})`;
   }
   return null;
 }
@@ -224,5 +239,8 @@ export const GPU_MAX_PIXELS = 8300000;
 export function capDpr(w, h, maxPixels = GPU_MAX_PIXELS) {
   const raw = Math.min(globalThis.devicePixelRatio || 1, 2);
   const px = w * h * raw * raw;
-  return px <= maxPixels ? raw : Math.max(1, Math.sqrt(maxPixels / (w * h)));
+  /* Пола в единицу нет: он превращал кап в фикцию — на 4K-боксе dpr оставался
+   * 1 и буфер выходил за бюджет. Canvas 2D дешевле GPU, но 40 Мп на каталоге
+   * — это те же мегапиксели памяти и та же просадка на заливке. */
+  return px <= maxPixels ? raw : Math.sqrt(maxPixels / (w * h));
 }
