@@ -12,7 +12,7 @@
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=4";
+} from "./shared.js?v=5";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",

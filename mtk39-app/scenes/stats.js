@@ -8,7 +8,7 @@
  *    продублирован подписью, соседние сегменты разделены зазором;
  *  · ни одной диаграммы с двумя шкалами. */
 
-import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=4";
+import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=5";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 1000;   // ширина системы координат svg; высота у каждого графика своя
