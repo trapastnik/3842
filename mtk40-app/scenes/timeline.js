@@ -11,7 +11,7 @@
  *  - двенадцать тюнингов прототипа объявлены схемой settings[] — панель их
  *    рисует и хранит сама, sessionStorage больше не нужен.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=31";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=37";
 
 const COLORS = M.COLORS;
 const BUCKET_META = M.BUCKET_META;
@@ -80,7 +80,7 @@ export const timelineScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное

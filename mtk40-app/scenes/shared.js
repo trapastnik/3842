@@ -17,6 +17,12 @@ export const M = window.MTK40;
 export const PLACES = window.MTK40_PLACES;
 
 export const DESIGN_W = 1280;
+
+/* Адрес корпуса с меткой версии — ОДИН на все сцены. Без метки Chrome отдаёт
+ * старый json из кеша, и правка данных до киоска не доезжает: короткие формы
+ * названий (title_spine) я так и не увидел на экране, пока не поднял метку.
+ * Поднимать при каждой правке data/mtk40.json. */
+export const CORPUS_URL = "../data/mtk40.json?v=20260806";
 const MAX_BUFFER_PX = 8.3e6;   // канон перф-бюджета
 
 /**

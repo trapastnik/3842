@@ -11,7 +11,7 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=31";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=37";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -28,7 +28,7 @@ export const geographyScene = {
 
   preload: {
     data: {
-      corpus: "../data/mtk40.json",
+      corpus: CORPUS_URL,
       world: "../data/ne_110m_countries.geojson",
     },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве

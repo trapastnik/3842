@@ -7,7 +7,7 @@
  * Связи покрывают 25 книг из 99. Остальные 74 не спрятаны, а лежат полосой
  * внизу — иначе сцена врала бы о размере корпуса; полоса кликабельна.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=31";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=37";
 
 const COL_L = 0.235;   // доли ширины кадра
 const COL_R = 0.765;
@@ -19,7 +19,7 @@ export const constellationScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное

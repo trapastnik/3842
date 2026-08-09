@@ -168,8 +168,68 @@
     return { show, hide, set onClose(fn) { onClose = fn; } };
   }
 
+
+  /**
+   * Название НА КОРЕШКЕ: подобрать кегль и число строк так, чтобы влезло
+   * целиком. Возвращает { lines, fontSize, lineHeight, truncated, usedShort }.
+   *
+   * Корешок — прямоугольник, вдоль которого текст повёрнут на 90°: длина
+   * строки ограничена ВЫСОТОЙ корешка, число строк — его ШИРИНОЙ. Раньше
+   * строк было максимум две независимо от ширины, и на 4K треть названий
+   * (29 из 99) обрывалась многоточием, хотя поперёк места хватало.
+   *
+   * Порядок ровно как у настоящего корешка:
+   *  1. пробуем полное название, опуская кегль по пикселю до minPx;
+   *  2. не влезло — берём короткую форму (title_spine из данных) и повторяем;
+   *  3. и только если нет ни того, ни другого — честное многоточие.
+   * Ниже minPx не идём никогда: это китовый порог читаемости
+   * (--type-min-label = 24 px на 3840).
+   *
+   * Строк не больше capLines: без предела длинное название расползается на
+   * пять крошечных строк, и корешок читается хуже, чем с сокращением.
+   *
+   * Вызывать в РАСКЛАДКЕ и кешировать: подбор перебирает кегли и меряет
+   * текст, в кадре это лишняя работа — результат зависит только от габаритов
+   * корешка.
+   */
+  function fitSpineText(ctx, text, opts) {
+    const length = Math.max(0, opts.length);        // вдоль корешка
+    const thickness = Math.max(0, opts.thickness);  // поперёк
+    const minPx = opts.minPx || 24;
+    const maxPx = Math.max(minPx, opts.maxPx || 40);
+    const cap = Math.max(1, opts.capLines || 3);
+    const gap = opts.lineGap || 1.05;
+    const font = opts.font || ((px) => `400 ${px}px Nolde, Georgia, serif`);
+    const start = Math.max(minPx, Math.min(maxPx, thickness * 0.32));
+
+    const attempt = (str) => {
+      let last = null;
+      for (let fs = Math.round(start); fs >= minPx; fs -= 1) {
+        const lineHeight = fs * gap;
+        const maxLines = Math.max(1, Math.min(cap, Math.floor(thickness / lineHeight)));
+        ctx.font = font(fs);
+        const lines = wrapLines(ctx, str, length, maxLines);
+        if (!lines.length) break;
+        last = { lines, fontSize: fs, lineHeight, truncated: true };
+        if (!lines.join(" ").includes("…")) return { lines, fontSize: fs, lineHeight, truncated: false };
+      }
+      return last;
+    };
+
+    const full = attempt(String(text || ""));
+    if (full && !full.truncated) return Object.assign(full, { usedShort: false });
+
+    const short = opts.fallback ? attempt(String(opts.fallback)) : null;
+    if (short && !short.truncated) return Object.assign(short, { usedShort: true });
+
+    const best = short || full;
+    return best
+      ? Object.assign(best, { usedShort: !!short })
+      : { lines: [], fontSize: minPx, lineHeight: minPx * gap, truncated: true, usedShort: false };
+  }
+
   root.MTK40 = {
     DESIGN_W, COLORS, BUCKET_META, BUCKETS, CONN_STYLE, TYPE_LABEL, LANG_LABEL,
-    rgba, adjustHex, wrapLines, fitCanvas, pickDpr, loadCorpus, Card,
+    rgba, adjustHex, wrapLines, fitSpineText, fitCanvas, pickDpr, loadCorpus, Card,
   };
 })(window);

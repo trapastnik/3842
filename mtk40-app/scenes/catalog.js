@@ -8,7 +8,7 @@
  * Канвы здесь нет вовсе — всё DOM, поэтому размеры идут прямо от переменных
  * кита, без дизайн-единицы s.
  */
-import { M, corpusOf, createCard, chip } from "./shared.js?v=31";
+import { CORPUS_URL, M, corpusOf, createCard, chip } from "./shared.js?v=37";
 
 /* Типов в данных 19, половина встречается 1–2 раза. В фильтр идут только
  * заметные, остальное сворачивается в «прочее» — иначе строка чипов длиннее,
@@ -29,7 +29,7 @@ export const catalogScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное

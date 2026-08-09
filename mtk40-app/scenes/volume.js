@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=31";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=37";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -67,7 +67,7 @@ export const volumeScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное

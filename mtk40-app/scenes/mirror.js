@@ -5,9 +5,16 @@
  * карточку и вытягивает ленты связей через середину кадра — отсюда
  * «зеркало»: верх и низ отражаются друг в друге через то, что он читал.
  */
-import { M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=31";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit } from "./shared.js?v=37";
 
 const ORDER = ["by-lenin", "in-library", "about-lenin"];
+
+/* Поля корешка в дизайн-px и китовый порог читаемости — те же, что у
+ * «Полки»: корешок здесь такой же прямоугольник с повёрнутым текстом. */
+const SPINE_PAD_END = 28;
+const SPINE_PAD_SIDE = 3;
+const MIN_LABEL_PX = 24;
+const SPINE_MAX_LINES = 3;
 
 function spineWidthBase(item) {
   const p = Math.max(8, item.pages_approx || 80);
@@ -20,7 +27,7 @@ export const mirrorScene = {
   keepAlive: true,
 
   preload: {
-    data: { corpus: "../data/mtk40.json" },
+    data: { corpus: CORPUS_URL },
     /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
      * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
      * (ctx.font молча берёт то, что уже загружено), поэтому жирное
@@ -29,9 +36,15 @@ export const mirrorScene = {
   },
 
   settings: [
-    { key: "libraryPerRow", type: "range", min: 10, max: 30, step: 1, default: 18,
+    /* Тридцать — это «все в один ряд»: два ряда делят и без того узкий ярус
+     * пополам, и подписи с него исчезают полностью. */
+    { key: "libraryPerRow", type: "range", min: 10, max: 30, step: 1, default: 30,
       label: { ru: "Книг в ряду средней полки", en: "Books per middle-shelf row", zh: "中层每行书数" } },
-    { key: "sideRows", type: "range", min: 1, max: 4, step: 1, default: 2,
+    /* Один ряд по умолчанию, а не два: два ряда делят ярус пополам, корешок
+     * становится вдвое ниже, и на нём перестаёт помещаться название — при
+     * двух рядах читаемо помещались 38 названий из 99, при одном 69.
+     * Оператору ручка оставлена: плотность против читаемости. */
+    { key: "sideRows", type: "range", min: 1, max: 4, step: 1, default: 1,
       label: { ru: "Рядов в верхнем и нижнем ярусе", en: "Rows in top and bottom tiers", zh: "上下层行数" } },
     { key: "titles", type: "toggle", default: true,
       label: { ru: "Названия на корешках", en: "Titles on spines", zh: "书脊上的书名" } },
@@ -40,7 +53,7 @@ export const mirrorScene = {
   mount(el, ctx) {
     this.app = ctx.app;
     this.corpus = corpusOf(ctx.data.corpus);
-    this.values = { libraryPerRow: 18, sideRows: 2, titles: true };
+    this.values = { libraryPerRow: 30, sideRows: 1, titles: true };
     this.activeId = null;
     this.layoutData = null;
 
@@ -109,9 +122,12 @@ export const mirrorScene = {
     const margin = 24 * s;
     const usableH = H - margin * 2;
 
-    /* Пропорции ярусов: 38 / 20 / 38 и зазоры. Середина уже краёв намеренно —
-     * прочитанного меньше, и узкая полка держит метафору «зеркала». */
-    const share = { "by-lenin": 0.38, "in-library": 0.20, "about-lenin": 0.38 };
+    /* Пропорции ярусов: 34 / 28 / 34. Середина по-прежнему уже краёв —
+     * прочитанного меньше, и узкая полка держит метафору «зеркала», — но не
+     * настолько, чтобы на её корешках перестало помещаться название: при
+     * 38/20/38 средний ярус нёс 11 подписей из 30, при 34/28/34 — 27, а всего
+     * по сцене 95 из 99 против 80. */
+    const share = { "by-lenin": 0.34, "in-library": 0.28, "about-lenin": 0.34 };
     const sections = {};
     const gap = usableH * 0.02;
     let y = margin;
@@ -145,7 +161,16 @@ export const mirrorScene = {
         const w = Math.min(cellW * 0.78, spineWidthBase(item) * s);
         const h = Math.min(cellH * 0.82,
           cellH * 0.65 * Math.max(0.7, Math.min(1.18, (item.height_cm || 22) / 22)));
-        sec.items.push({ item, cx, baselineY, w, h });
+        /* Подбор кегля и строк — в раскладке, в кадре только отрисовка. */
+        const fit = M.fitSpineText(this.cv.ctx, item.title, {
+          length: h - SPINE_PAD_END * s,
+          thickness: w - SPINE_PAD_SIDE * 2 * s,
+          minPx: MIN_LABEL_PX,
+          maxPx: 12 * s,
+          capLines: SPINE_MAX_LINES,
+          fallback: item.title_spine,
+        });
+        sec.items.push({ item, cx, baselineY, w, h, fit });
       }
     }
     this.layoutData = { sections, order: ORDER };
@@ -256,18 +281,23 @@ export const mirrorScene = {
     ctx.fillStyle = M.adjustHex(item.cover_color, 18);
     ctx.fillRect(x, y, w, 3 * s);
 
-    if (this.values.titles !== false && w >= 22 * s) {
+    /* Строки подобраны в раскладке под габариты корешка: длина ограничена
+     * его высотой, число строк — шириной. Одна строка на весь корешок
+     * обрывала треть названий, хотя поперёк места хватало. */
+    /* Не влезло целиком — не рисуем: обрывок хуже пустого корешка. */
+    if (this.values.titles !== false && slot.fit && slot.fit.lines.length && !slot.fit.truncated) {
+      const fit = slot.fit;
       ctx.save();
-      ctx.translate(cx, baselineY - 12 * s);
+      ctx.translate(cx, baselineY - (SPINE_PAD_END / 2) * s);
       ctx.rotate(-Math.PI / 2);
       ctx.fillStyle = M.adjustHex(item.cover_color, 95);
-      const fs = Math.min(12 * s, w * 0.34);
-      ctx.font = `400 ${fs}px Nolde, Georgia, serif`;
+      ctx.font = `400 ${fit.fontSize}px Nolde, Georgia, serif`;
       ctx.textAlign = "left";
       ctx.textBaseline = "middle";
-      /* Режем по реальной ширине глифов: посимвольный лимит врёт на смеси
-       * кириллицы с латиницей и выпускал название за корешок. */
-      ctx.fillText(M.wrapLines(ctx, item.title, h - 28 * s, 1)[0] || "", 0, 0);
+      const off = -((fit.lines.length - 1) * fit.lineHeight) / 2;
+      for (let i = 0; i < fit.lines.length; i++) {
+        ctx.fillText(fit.lines[i], 0, off + i * fit.lineHeight);
+      }
       ctx.restore();
     }
     if (item.significance === 5) {
