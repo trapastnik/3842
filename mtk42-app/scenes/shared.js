@@ -231,3 +231,15 @@ export function museumCardHtml(app, item, regions) {
     (photos ? '<div class="m42-card__photos">' + photos + "</div>" : "")
   );
 }
+
+/* Цвет портретов — общая настройка МТК (appSettings, ядро 1.12.0). Ядро зовёт
+ * applyAppSettings() у КАЖДОЙ смонтированной сцены, поэтому реализация одна на
+ * всех: классы вешаются на documentElement, вызов идемпотентен, кто позвал
+ * первым — неважно. Монохром базовый; флаги лишь возвращают исходный цвет,
+ * отдельно для обычного режима и для режима слабовидящих. */
+export function applyPhotoMode(values) {
+  const v = values || {};
+  const root = document.documentElement;
+  root.classList.toggle("m42-photo-color", v.photoColor === true);
+  root.classList.toggle("m42-a11y-color", v.photoColorA11y === true);
+}
