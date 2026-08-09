@@ -13,7 +13,7 @@
  * доезжает до страницы — Chrome отдаёт файл из кеша, и на экране остаётся
  * старый корпус при свежем репо (грабля 40-го). Одна константа на все сцены,
  * поднимать вместе с меткой модулей. */
-const DATA_V = "?v=30";
+const DATA_V = "?v=31";
 
 export const DATA = {
   monuments: "../data/mtk41.json" + DATA_V,
@@ -295,6 +295,47 @@ export function cardHtml(app, ctx, m) {
 
 function fmtM(v) {
   return (v < 10 ? v.toFixed(1) : Math.round(v)) + " м";
+}
+
+/* ─── Подпись на объекте: не влезла — не рисуем ────────────────────────
+ * Канон подписей (GRABLI): обрубок — это мусор. Правило относится к подписи
+ * НА ОБЪЕКТЕ (фигура на шкале, кружок на карте): объект различим и без
+ * подписи, имя даёт тап. На горизонтальной строке списка усечение законно —
+ * там оно читается как строка, а не как огрызок.
+ *
+ * Считаем рамку в УСТРОЙСТВЕННЫХ координатах через getTransform(), а не по
+ * x + measureText().width: подписи на шкале повёрнуты на 60°, и наивная
+ * проверка по ширине для них не значит ничего. Первая версия этой проверки
+ * так и ошиблась — насчитала 420 «выходов за кромку» там, где их не было.
+ *
+ * Возвращает true, если нарисовали.
+ */
+export function fillTextIfFits(ctx, text, x, y, pad) {
+  const s = String(text == null ? "" : text);
+  if (!s) return false;
+  const c = ctx.canvas;
+  const m = ctx.measureText(s);
+  const w = m.width;
+  const asc = m.actualBoundingBoxAscent || 0;
+  const desc = m.actualBoundingBoxDescent || 0;
+  const dx = ctx.textAlign === "center" ? -w / 2
+    : (ctx.textAlign === "right" || ctx.textAlign === "end" ? -w : 0);
+  const corners = [[x + dx, y - asc], [x + dx + w, y - asc],
+                   [x + dx + w, y + desc], [x + dx, y + desc]];
+  const t = ctx.getTransform();
+  let lo = Infinity, hi = -Infinity, top = Infinity, bot = -Infinity;
+  for (const [px, py] of corners) {
+    const ux = t.a * px + t.c * py + t.e;
+    const uy = t.b * px + t.d * py + t.f;
+    if (ux < lo) lo = ux;
+    if (ux > hi) hi = ux;
+    if (uy < top) top = uy;
+    if (uy > bot) bot = uy;
+  }
+  const p = pad == null ? 0 : pad;
+  if (lo < p || hi > c.width - p || top < p || bot > c.height - p) return false;
+  ctx.fillText(s, x, y);
+  return true;
 }
 
 /* ─── Призыв к жесту ───────────────────────────────────────────────────

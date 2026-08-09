@@ -23,7 +23,8 @@ import {
   DATA, FALLBACK_HEIGHT, HUMAN_HEIGHT_M, PALETTE, byYear, cardUrl, createCanvasHost,
   createCard, cssColor, preloadThumbs, statusColor,
   createHint,
-} from "./shared.js?v=30";
+  fillTextIfFits,
+} from "./shared.js?v=31";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
@@ -624,7 +625,10 @@ export const scaleScene = {
       ctx.save();
       ctx.font = `${sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
       const cityRaw = pm.m.city || pm.m.country || "";
-      const city = cityRaw.length > 18 ? cityRaw.slice(0, 16) + "…" : cityRaw;
+      /* Никаких «Благовещенск-Аму…»: канон подписей запрещает огрызок на
+       * объекте. Длинное имя либо помещается целиком, либо не рисуется —
+       * фигура различима и без него, имя даёт тап. */
+      const city = cityRaw;
       const year = pm.year ? String(pm.year) : "—";
       const height = pm.estimated ? this._app.t("card.nodata")
         : (pm.hs + pm.hp).toFixed(pm.hs + pm.hp < 10 ? 1 : 0) + " м";
@@ -636,14 +640,13 @@ export const scaleScene = {
         let row = 0;
         if (showCity) {
           ctx.fillStyle = sel ? PALETTE.brass : cssColor(PALETTE.paper, 0.85);
-          ctx.fillText(city, 0, 0);
-          row = 1;
+          if (fillTextIfFits(ctx, city, 0, 0)) row = 1;
         }
         ctx.fillStyle = cssColor(PALETTE.brass, sel ? 0.95 : 0.6);
-        ctx.fillText(year, 0, fs * 1.25 * row);
+        fillTextIfFits(ctx, year, 0, fs * 1.25 * row);
         if (showCity) {
           ctx.fillStyle = cssColor(PALETTE.paper, 0.55);
-          ctx.fillText(height, 0, fs * 2.5);
+          fillTextIfFits(ctx, height, 0, fs * 2.5);
         }
       } else {
         ctx.textAlign = "center";
@@ -651,14 +654,13 @@ export const scaleScene = {
         let row = 0;
         if (showCity) {
           ctx.fillStyle = sel ? PALETTE.brass : cssColor(PALETTE.paper, 0.78);
-          ctx.fillText(city, x, y);
-          row = 1;
+          if (fillTextIfFits(ctx, city, x, y)) row = 1;
         }
         ctx.fillStyle = cssColor(PALETTE.brass, sel ? 0.9 : 0.55);
-        ctx.fillText(year, x, y + fs * 1.4 * row);
+        fillTextIfFits(ctx, year, x, y + fs * 1.4 * row);
         if (showCity) {
           ctx.fillStyle = cssColor(PALETTE.paper, 0.55);
-          ctx.fillText(height, x, y + fs * 2.8);
+          fillTextIfFits(ctx, height, x, y + fs * 2.8);
         }
       }
       ctx.restore();
