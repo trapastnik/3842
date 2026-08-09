@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.12.0";
+  var VERSION = "1.13.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1264,9 +1264,16 @@
       if (el.hidden) return;
       var r = el.getBoundingClientRect();
       if (!r.width) return;
+      /* К КАКОЙ КРОМКЕ ПРИЖАТА СТРЕЛКА — ТУ ПОЛОСУ ОНА И ЗАНИМАЕТ, как в
+       * цикле выше. Прежде обе формулы считались для КАЖДОЙ стрелки и
+       * бралась большая: у левой стрелки «расстояние до правой кромки»
+       * давало почти всю ширину экрана, и --chrome-left/right выходили по
+       * 1872 px при окне 1920 — сцене оставалась ОТРИЦАТЕЛЬНАЯ ширина.
+       * Любая сцена, свёрстанная от зон (а это жёсткое правило кита),
+       * схлопывалась и разъезжалась. Ломалась вся раскладка «стрелки по
+       * бокам» целиком, на любом экране. */
       out.side = Math.max(out.side,
-        r.left - host.left + r.width + gap,
-        host.right - r.right + r.width + gap);
+        Math.min(r.right - host.left, host.right - r.left) + gap);
     });
     return out;
   };
@@ -2029,6 +2036,13 @@
 
   KioskApp.prototype._showStandby = function (drawAttractor) {
     var self = this;
+    /* Подсказки жеста гасим на всё время заставки. Своим одиночным
+     * hide() сцена этого не добьётся: он перевзводит цикл, и призыв
+     * возвращается через полминуты ПОВЕРХ аттрактора (вуаль заставки
+     * полупрозрачна и не прячет), где спорит с её собственным призывом.
+     * Делает ядро, а не сцены: забывшая сцена дала бы дефект, который
+     * проступает только через полминуты простоя и горит до утра. */
+    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(true);
     if (!this._els.standby) this._buildStandby();
     var el = this._els.standby;
     el.classList.add("is-on");
@@ -2060,6 +2074,10 @@
   };
 
   KioskApp.prototype._hideStandby = function () {
+    /* Снимаем ДО того, как сцена получит управление: у МТК 40 паттерн
+     * «на выходе из заставки показать призыв руками», и подавление,
+     * снятое после, съело бы этот show() молча. */
+    if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(false);
     if (this._standbyTimer) { clearInterval(this._standbyTimer); this._standbyTimer = null; }
     if (this._els.root) this._els.root.classList.remove("is-standby");
     var el = this._els.standby;
