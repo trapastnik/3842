@@ -8,11 +8,11 @@
  * и 1.7.0 при 1.8.1. С 1.9.0 ядро само сверит VERSION с меткой и заругается. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { globeScene } from "./scenes/globe.js?v=15";
-import { rainScene } from "./scenes/rain.js?v=15";
-import { mapScene } from "./scenes/map.js?v=15";
-import { catalogScene } from "./scenes/catalog.js?v=15";
-import { compositionsScene } from "./scenes/compositions.js?v=15";
+import { globeScene } from "./scenes/globe.js?v=16";
+import { rainScene } from "./scenes/rain.js?v=16";
+import { mapScene } from "./scenes/map.js?v=16";
+import { catalogScene } from "./scenes/catalog.js?v=16";
+import { compositionsScene } from "./scenes/compositions.js?v=16";
 
 const app = createApp({
   appId: "mtk38",
@@ -21,7 +21,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7.0). Поднимать вместе с правкой i18n/*.json,
    * иначе Chrome на киоске покажет прежние подписи. */
-  i18nVersion: 10,
+  i18nVersion: 11,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
@@ -45,7 +45,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=15";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=16";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики

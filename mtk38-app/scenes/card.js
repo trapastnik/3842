@@ -61,8 +61,11 @@ const CSS = `
   font-family:'20 Kopeek',ui-monospace,monospace;font-size:11px;letter-spacing:.16em;text-transform:uppercase;
   color:rgba(247,249,239,.42)}
 .v3card .ver i{width:7px;height:7px;border-radius:50%;background:var(--brass);font-style:normal;flex:0 0 auto}
-.v3card .ver-warn{color:#E2777C}
-.v3card .ver-warn i{background:var(--red)}
+/* Не красный: статус «уточняется» — рабочая пометка, а не тревога, и стоит он
+ * у 79 из 128 языков. Красным он превращал нормальное состояние каталога в
+ * сплошное предупреждение (дизайн-код: красный — точечный акцент). */
+.v3card .ver-warn{color:rgba(247,249,239,.42)}
+.v3card .ver-warn i{background:var(--window)}
 
 /* языки одной формы */
 .v3card .many{margin-bottom:22px}
@@ -131,7 +134,7 @@ export function createCard(opts = {}) {
   const FALLBACK = {
     'card.area': 'регион', 'card.speakers': 'носители', 'card.script': 'письменность',
     'card.family': 'семья', 'card.edition': 'издание',
-    'card.verified': 'написание выверено', 'card.unverified': 'написание ждёт проверки носителем',
+    'card.verified': 'написание выверено', 'card.unverified': 'написание уточняется',
     'card.hint': 'коснитесь снаружи, чтобы закрыть',
     'card.also': 'также', 'card.no-edition': 'описания издания в источнике нет',
     'card.prev': 'предыдущее издание', 'card.next': 'следующее издание',
