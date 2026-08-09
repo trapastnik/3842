@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=37";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=38";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;
@@ -350,9 +350,12 @@ export const volumeScene = {
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
       const lines = M.wrapLines(ctx, c.book.title, w - padX * 2, 3);
+      /* Обрубок «Публикац…» на плитке — мусор: плитка и так читается цветом
+       * и площадью, а название посетитель получает тапом. */
+      const годится = lines.length && !lines.join(" ").includes("…");
       let ty = c.y + 6 * s;
-      for (const ln of lines) { ctx.fillText(ln, c.x + padX, ty); ty += fs * 1.14; }
-      if (h > 52 * s) {
+      if (годится) for (const ln of lines) { ctx.fillText(ln, c.x + padX, ty); ty += fs * 1.14; }
+      if (годится && h > 52 * s) {
         ctx.font = `400 ${Math.max(9 * s, fs * 0.72)}px "20 Kopeek", monospace`;
         ctx.fillStyle = M.rgba(M.COLORS.ink, 0.6);
         ctx.fillText(this.app.t("card.pages", { n: this.num(c.book.pages_approx) }), c.x + padX, ty + 2 * s);
