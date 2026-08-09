@@ -13,6 +13,7 @@ import { rainScene } from "./scenes/rain.js?v=17";
 import { mapScene } from "./scenes/map.js?v=17";
 import { catalogScene } from "./scenes/catalog.js?v=17";
 import { compositionsScene } from "./scenes/compositions.js?v=17";
+import { posterScene } from "./scenes/poster.js?v=2";
 
 const app = createApp({
   appId: "mtk38",
@@ -21,12 +22,14 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7.0). Поднимать вместе с правкой i18n/*.json,
    * иначе Chrome на киоске покажет прежние подписи. */
-  i18nVersion: 11,
+  i18nVersion: 12,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
  * Глобус первый — он же сцена по умолчанию (kiosk.config.json). */
-const SCENES = [globeScene, rainScene, mapScene, catalogScene, compositionsScene];
+/* Плакат стоит последним: он самодостаточен и работает как фон зала, а
+ * первые пять ведут посетителя от общего к частному. */
+const SCENES = [globeScene, rainScene, mapScene, catalogScene, compositionsScene, posterScene];
 SCENES.forEach((s) => app.registerScene(s));
 
 /* Настройки объявлены схемой в самих сценах (settings:[] + applySettings) —
