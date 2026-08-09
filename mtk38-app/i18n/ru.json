@@ -8,7 +8,7 @@
   "card.family": "семья",
   "card.area": "регион",
   "card.verified": "написание выверено",
-  "card.unverified": "написание ждёт проверки носителем",
+  "card.unverified": "написание уточняется",
   "card.speakers": "носители",
   "card.hint": "коснитесь снаружи, чтобы закрыть",
   "card.also": "также",
@@ -20,5 +20,10 @@
   "card.lang-one": "язык",
   "card.lang-few": "языка",
   "card.lang-many": "языков",
-  "card.lang-other": "языка"
+  "card.lang-other": "языка",
+  "hint.globe": "Тяните — поворот",
+  "hint.rain": "Ведите пальцем · коснитесь слова",
+  "hint.map": "Сведите или разведите пальцы",
+  "hint.catalog": "Листайте · коснитесь ячейки",
+  "hint.compositions": "Тяните — поворот"
 }

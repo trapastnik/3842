@@ -671,7 +671,7 @@
    "id": "yid",
    "name_ru": "Идиш",
    "endonym": "ייִדיש",
-   "writing": "לענין",
+   "writing": "לינין",
    "script": {
     "iso15924": "Hebr",
     "name_ru": "Еврейская"
@@ -683,11 +683,11 @@
     "primary": null,
     "also": []
    },
-   "writing_source": "wiki-interwiki",
+   "writing_source": "doc-2026-08",
    "verifier": "machine-triangulated",
    "speakers_mln": 1.5,
    "weight": 1,
-   "note": "диаспоральный язык без своей территории (Р4)"
+   "note": "диаспоральный язык без своей территории (Р4); написание по музейному документу (решение куратора 2026-08-04; прежний вариант לענין — традиционная идишская орфография)"
   },
   {
    "id": "spa",

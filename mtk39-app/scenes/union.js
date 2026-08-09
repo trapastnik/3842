@@ -12,7 +12,7 @@
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=2";
+} from "./shared.js?v=3";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -85,8 +85,7 @@ export const unionScene = {
         '<div class="m39-offhost"></div>' +
       "</aside>" +
       '<aside class="m39-legend"></aside>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -96,7 +95,6 @@ export const unionScene = {
     const republics = el.querySelector(".m39-republics");
     const legend = el.querySelector(".m39-legend");
     const chips = el.querySelector(".m39-chips");
-    const hint = el.querySelector(".m39-hint");
     const offhost = el.querySelector(".m39-offhost");
 
     /* ---- состояние ---- */
@@ -459,7 +457,7 @@ export const unionScene = {
 
     function retext() {
       railTitle.textContent = app.t("union.title");
-      hint.textContent = app.t("union.hint");
+      if (hint) hint.setLabel(app.t("union.hint"));
       buildFilters();
       buildRepublics();
       offmap.setLang();
@@ -489,7 +487,7 @@ export const unionScene = {
       const r = canvas.getBoundingClientRect();
       return [e.clientX - r.left, e.clientY - r.top];
     };
-    const touched = () => hint.classList.add("is-off");
+    // подсказку гасит и возвращает сам кит — сцене отмечать нечего
 
     const onDown = (e) => {
       dragging = true;
@@ -498,7 +496,6 @@ export const unionScene = {
       lastY = e.clientY;
       fly = null;
       canvas.setPointerCapture(e.pointerId);
-      touched();
     };
     const onMove = (e) => {
       if (!dragging) return;
@@ -535,7 +532,6 @@ export const unionScene = {
       fly = null;
       const [x, y] = local(e);
       zoomAt(e.deltaY < 0 ? 1.08 : 1 / 1.08, x, y);
-      touched();
     };
 
     let pinch = null;
@@ -584,7 +580,7 @@ export const unionScene = {
         offmap.close();
         buildFilters();
         setRepublic(null, allBtn, true);
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         invalidate();
       },
       /* Комбинация «республика × судьба имени» законно бывает пустой
@@ -612,11 +608,16 @@ export const unionScene = {
         watch.destroy();
         offmap.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
 
+    /* На контейнер сцены, а не на канву: детей холста браузер не рисует. */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("union.hint") })
+      : null;
+
     railTitle.textContent = app.t("union.title");
-    hint.textContent = app.t("union.hint");
     buildFilters();
     buildRepublics();
     watch.measure(true);

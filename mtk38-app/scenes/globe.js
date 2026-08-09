@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=11";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=17";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -41,11 +41,23 @@ export const globeScene = {
   /* Всё тяжёлое — до сплэша. Посетитель не должен ждать загрузку у экрана,
    * а стенд приёмки требует тишины в сети после старта. */
   preload: {
-    fonts: ["1em '20 Kopeek'", "1em 'Nolde'", "1em '21 Cent'"],
+    /* Каждый ВЕС отдельно: канва не запускает загрузку шрифта сама, а
+     * «20 Kopeek 600» — отдельный файл. Без этой строки первые кадры каталога,
+     * карты и дождя рисуют жирные подписи фолбэком (GRABLI.md · Шрифты). */
+    fonts: [
+      "400 1em '20 Kopeek'", "600 1em '20 Kopeek'",
+      "400 1em 'Nolde'",
+      "400 1em '21 Cent'", "700 1em '21 Cent'",
+    ],
     custom: async () => { await Promise.all([ensureGPU(), loadData()]); },
   },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx && ctx.app;
     const data = await loadData();
     this._forms = data.forms;
@@ -137,7 +149,14 @@ export const globeScene = {
     this._ro = new ResizeObserver(() => this._fit());
     this._ro.observe(root);
     this._fit();
-    if (window.KioskHint) this._hint = window.KioskHint.attach(gpu.canvas, { gesture: "drag" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "drag", label: this._hintLabel() });
+    }
 
     this.setLang(ctx && ctx.lang);
     this.applySettings(this._cfg || {});
@@ -146,9 +165,11 @@ export const globeScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     this._unbind();
     if (this._card) { this._card.destroy(); this._card = null; }
     detachCanvas(this._gpu);
@@ -223,11 +244,50 @@ export const globeScene = {
       b.textContent = T[b.getAttribute("data-earth")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
   },
+
+  _hintLabel() { return this._app ? this._app.t("hint.globe") : null; },
 
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
 
   setA11y(on) { if (this._root) this._root.classList.toggle("is-a11y", !!on); },
+
+  /* Готов ли ПОКАЗАТЬ, а не «что было в последнем кадре»: сцена законно
+   * встречает проверку на любом повороте и в любой фазе вращения. */
+  healthcheck() {
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    if (!this._scene) return { ok: false, detail: "монтирование не завершилось — сцены нет" };
+    const n = (this._globe && this._globe.count) || 0;
+    if (!n) return { ok: false, detail: "кольца пусты: ни одного написания в сцене" };
+    if (offScreen(this._root)) {
+      return { ok: true, detail: `надписей в кольцах ${n}, слой не на экране` };
+    }
+    const bad = bufferComplaint(this._gpu && this._gpu.canvas, this._dpr, this._root);
+    if (bad) return { ok: false, detail: bad };
+    /* count — это ЭКЗЕМПЛЯРЫ на кольцах: 60 форм повторяются по параллелям,
+     * поэтому число законно больше числа написаний. */
+    return { ok: true, detail: `надписей в кольцах ${n} (${this._forms.length} форм), `
+      + `земля «${this._earthMode}»` + (this._earth ? "" : " (текстуры не поднялись)") };
+  },
+
+  /* Перебор для sweep: подложка Земли — выбор посетителя, в схеме её нет. */
+  states() {
+    return ["countries", "relief", "physical"].map((m) => ({
+      name: "земля: " + m,
+      apply: () => {
+        this._earthMode = m;
+        if (this._earth) this._earth.setMode(m, this._earthBorders);
+        this._syncPills();
+      },
+    }));
+  },
 
   applySettings(values) {
     this._cfg = Object.assign({}, this._cfg, values || {});
@@ -324,7 +384,9 @@ export const globeScene = {
 
   _fit() {
     if (!this._gpu || !this._root) return;
-    fitTo(this._gpu.renderer, this._camera, this._root);
+    // dpr держим у себя: healthcheck сверяет буфер с ожиданием по ФАКТИЧЕСКОМУ
+    // масштабу, а он ниже единицы, когда кап 8.3 Мп режет крупный бокс
+    this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
     if (this._post) this._post.needsUpdate = true;
   },
 
@@ -404,6 +466,8 @@ export const globeScene = {
 
   async _frame() {
     if (!this._scene) return;
+    // ResizeObserver в фоне молчит — держим размер из штатного пути кадра
+    if (pollSize(this, this._root)) this._fit();
     const now = performance.now();
     const dt = Math.min(0.05, (now - this._prev) / 1000);
     this._prev = now;

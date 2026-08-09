@@ -8,8 +8,8 @@
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby } from "./shared.js?v=11";
-import { createCard } from "./card.js?v=11";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr } from "./shared.js?v=17";
+import { createCard } from "./card.js?v=17";
 
 export const catalogScene = {
   id: "catalog",
@@ -28,10 +28,16 @@ export const catalogScene = {
   preload: { custom: async () => { await loadData(); } },
 
   async mount(el, ctx) {
+    /* Ядро глотает исключение mount и всё равно считает сцену смонтированной.
+     * Флаг отличает «ещё не начинали» от «начали и не доехали»: во втором
+     * случае посетитель смотрит в пустой слой, и зелёный healthcheck был бы
+     * прямым враньём (пропал data/mtk38.json → чёрный экран при зелёном стенде). */
+    this._mountStarted = true;
     this._app = ctx && ctx.app;
     const data = await loadData();
     this._all = [...data.langs].sort((a, b) => (b.un - a.un) || (b.wt - a.wt) || a.n.localeCompare(b.n, "ru"));
     this._pubs = data.pubs;
+    this._pubsOk = data.pubsOk;
 
     const root = document.createElement("div");
     root.className = "m38-scene m38-catalog";
@@ -116,7 +122,14 @@ export const catalogScene = {
 
     this._ro = new ResizeObserver(() => { this._size(); this._build(); });
     this._ro.observe(this._canvas);
-    if (window.KioskHint) this._hint = window.KioskHint.attach(this._canvas, { gesture: "tap" });
+    /* Подсказку вешаем на СЛОЙ СЦЕНЫ, а не на канвас: div внутри <canvas> —
+     * fallback-контент, браузер его не рисует. Подпись берём из словаря и
+     * обновляем в setLang: иначе на EN/ZH вся сцена переведена, а призыв
+     * к жесту остаётся русским (умолчание кита). */
+    if (window.KioskHint) {
+      this._hint = window.KioskHint.attach(root,
+        { gesture: "swipe", label: this._hintLabel() });
+    }
 
     if (document.fonts && document.fonts.ready) { try { await document.fonts.ready; } catch (_) {} }
     this.setLang(ctx && ctx.lang);
@@ -126,9 +139,11 @@ export const catalogScene = {
   },
 
   unmount() {
+    this._mountStarted = false;
     this.pause();
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
+    this._hint = null;
     if (this._card) { this._card.destroy(); this._card = null; }
     if (this._root) this._root.remove();
     this._root = this._canvas = this._ctx2d = null;
@@ -189,10 +204,55 @@ export const catalogScene = {
       b.textContent = T[b.getAttribute("data-filter")];
     }
     this._syncCardLang();
+    if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
     this._build();
   },
 
+  _hintLabel() { return this._app ? this._app.t("hint.catalog") : null; },
+
   _syncCardLang() { if (this._card && this._card.setLang) this._card.setLang(); },
+
+  healthcheck() {
+    /* «Не смонтирована» — зелёное только если монтирования и не начинали.
+     * Начали и не доехали (ядро проглотило исключение) — красное. */
+    if (!this._root) {
+      return this._mountStarted
+        ? { ok: false, detail: "монтирование не завершилось — слой пуст" }
+        : { ok: true, detail: "не смонтирована" };
+    }
+    if (!this._canvas) return { ok: false, detail: "монтирование не завершилось — канваса нет" };
+    const bad = offScreen(this._root) ? null : bufferComplaint(this._canvas, this._dpr, this._root);
+    if (bad) return { ok: false, detail: bad };
+    /* Пусто по фильтру и пусто из-за непрочитанных данных — разные вещи.
+     * Фильтр «с изданием» на несостоявшейся загрузке изданий обязан краснеть
+     * ровно так же, как слой изданий на карте: корень один. */
+    if (this._filter === "pub" && this._pubsOk === false) {
+      return { ok: false, detail: "издания не загрузились — фильтр «с изданием» пуст не по данным" };
+    }
+    const total = this._list().length;
+    /* Легально пустое состояние: фильтр «с изданием» на урезанном каноне может
+     * дать ноль — это честный ответ данных, а не поломка сцены. Красным здесь
+     * горело бы то, что посетителю показывают правильно. */
+    if (!total) return { ok: true, detail: `фильтр «${this._filter}» — языков нет (пусто по данным)` };
+    /* Сетка раскладывается от размера контейнера, а размер приходит из кадра.
+     * В скрытом слое ячеек законно ноль — это не «загружено, но пусто». */
+    if (offScreen(this._root)) {
+      return { ok: true, detail: `фильтр «${this._filter}»: ${total} языков готовы, слой не на экране` };
+    }
+    if (!this._cells.length) {
+      return { ok: false, detail: `в фильтре «${this._filter}» ${total} языков, а на странице ноль ячеек` };
+    }
+    return { ok: true, detail: `ячеек на странице ${this._cells.length}, `
+      + `страница ${this._page + 1} из ${this._pages}, фильтр «${this._filter}» (${total} языков)` };
+  },
+
+  /* Фильтр — выбор посетителя, в схеме настроек его нет: даём sweep явно. */
+  states() {
+    return ["all", "un", "pub"].map((k) => ({
+      name: "фильтр: " + k,
+      apply: () => { this._filter = k; this._page = 0; this._build(); },
+    }));
+  },
 
   setA11y(on) {
     this._a11y = !!on;
@@ -221,8 +281,12 @@ export const catalogScene = {
     if (!this._canvas) return;
     const r = this._canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    const dpr = Math.min(globalThis.devicePixelRatio || 1, 2);
     this._W = Math.round(r.width); this._H = Math.round(r.height);
+    /* Тот же бюджет 8.3 Мп, что у GPU-сцен: Canvas 2D дешевле в отрисовке, но
+     * 4K-бокс при dpr 2 давал буфер под 40 Мп — это память и просадка на
+     * каждой заливке, а на киоске экран как раз 4K. */
+    const dpr = capDpr(this._W, this._H);
+    this._dpr = dpr;
     this._canvas.width = Math.round(this._W * dpr);
     this._canvas.height = Math.round(this._H * dpr);
     this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
@@ -282,6 +346,9 @@ export const catalogScene = {
 
   _draw() {
     const ctx = this._ctx2d;
+    // ResizeObserver в фоне молчит, в том числе на первой доставке: без этого
+    // сетка, собранная в скрытом слое, осталась бы пустой навсегда
+    if (pollSize(this, this._canvas)) { this._size(); this._build(); }
     if (!ctx || !this._W) return;
     const cfg = this._cfg || {};
     const time = (performance.now() - this._t0) / 1000;

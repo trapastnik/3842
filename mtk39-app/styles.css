@@ -103,24 +103,6 @@
   color: rgba(247, 249, 239, 0.72);
 }
 
-/* Подсказка о жесте — гаснет после первого касания. */
-.m39-hint {
-  position: absolute;
-  left: 50%;
-  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 0.4);
-  z-index: 2;
-  font-family: var(--font-mono);
-  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.82));
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: rgba(157, 163, 168, 0.55);
-  transform: translateX(-50%);
-  transition: opacity 0.5s;
-  pointer-events: none;
-}
-
-.m39-hint.is-off { opacity: 0; }
-
 /* ─── контролы ───────────────────────────────────────────────────────── */
 
 .m39-chip {
@@ -710,14 +692,13 @@
   pointer-events: none;
 }
 
-/* Подсказка о жесте в «Приливе» — под счётчиком года: внизу по центру стоит
-   таймлайн, там ей места нет. */
-.m39-wave .m39-hint {
-  left: auto;
-  right: var(--kiosk-safe-right);
-  top: calc(var(--kiosk-safe-top) + var(--m39-u) * 7.4);
-  bottom: auto;
-  transform: none;
+/* Подсказку кита в «Приливе» поднимаем над таймлайном: кит ставит её от
+   --chrome-bottom (то есть над навигацией ядра), но у этой сцены внизу свой
+   контрол во всю ширину — плеер со шкалой лет. Проверять перекрытия со своими
+   контролами кит за нас не может. */
+.m39-wave .kiosk-hint {
+  bottom: calc(var(--chrome-bottom, var(--edge-safe-bottom, 80px))
+    + var(--touch-primary) + var(--m39-u) * 4.4);
 }
 
 .m39-wave .m39-legend {
@@ -1218,7 +1199,7 @@
 .kiosk-app.is-standby .m39-filters,
 .kiosk-app.is-standby .m39-legend,
 .kiosk-app.is-standby .m39-zoom,
-.kiosk-app.is-standby .m39-hint,
+.kiosk-app.is-standby .m39-scene .kiosk-hint,
 .kiosk-app.is-standby .m39-chip--off,
 .kiosk-app.is-standby .m39-offlist,
 .kiosk-app.is-standby .m39-year,

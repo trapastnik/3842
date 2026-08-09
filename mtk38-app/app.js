@@ -2,16 +2,17 @@
  * Пять прежних прототипов стали сценами одной страницы (PLAN-KIOSK.md).
  * Открывать только по http — ES-модули из file:// не идут.
  */
-/* ?v= обязателен и здесь: обёртка тянет версию из своего адреса и передаёт её
- * дальше в kiosk-core.js. Без неё Chrome отдаёт ядро из кеша — у меня так
- * приложение работало на 1.5.0, когда в репозитории уже лежало 1.7.0. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=170";
+/* ?v= — ТОЧНАЯ версия ядра (канон GRABLI.md): обёртка тянет её из своего адреса
+ * и передаёт дальше в kiosk-core.js. Поднимать при каждом merge main, иначе
+ * Chrome отдаёт старое ядро: у меня так работало 1.5.0 при 1.7.0 в репозитории
+ * и 1.7.0 при 1.8.1. С 1.9.0 ядро само сверит VERSION с меткой и заругается. */
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { globeScene } from "./scenes/globe.js?v=11";
-import { rainScene } from "./scenes/rain.js?v=11";
-import { mapScene } from "./scenes/map.js?v=11";
-import { catalogScene } from "./scenes/catalog.js?v=11";
-import { compositionsScene } from "./scenes/compositions.js?v=11";
+import { globeScene } from "./scenes/globe.js?v=17";
+import { rainScene } from "./scenes/rain.js?v=17";
+import { mapScene } from "./scenes/map.js?v=17";
+import { catalogScene } from "./scenes/catalog.js?v=17";
+import { compositionsScene } from "./scenes/compositions.js?v=17";
 
 const app = createApp({
   appId: "mtk38",
@@ -20,7 +21,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7.0). Поднимать вместе с правкой i18n/*.json,
    * иначе Chrome на киоске покажет прежние подписи. */
-  i18nVersion: 9,
+  i18nVersion: 11,
 });
 
 /* Порядок регистрации = порядок стрелок навигации.
@@ -44,7 +45,7 @@ SCENES.forEach((s) => app.registerScene(s));
  * заставочный режим. Иначе после первой же смены киоск ночью рисовал бы на
  * полных 60 кадрах. Стоп-функция у всех сцен одна и та же ссылка (shared.js),
  * поэтому ядру неважно, какая сцена окажется активной к приходу посетителя. */
-import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=11";
+import { onStandbyStop, stopSceneStandby } from "./scenes/shared.js?v=17";
 
 let rotTimer = 0;
 let rotEpoch = 0;   // растёт на каждом входе в standby — метит «свои» тики
@@ -52,10 +53,11 @@ function stopRotation() { clearInterval(rotTimer); rotTimer = 0; rotEpoch++; }
 onStandbyStop(stopRotation);
 
 /* Список ротации считаем на КАЖДОМ такте, а не один раз при входе: оператор
- * гасит сцены в сервис-панели, и погашенную ядро показать не даст — оно уведёт
- * на дефолтную, причём без resume, если та уже активна. Тик тогда переводил бы
- * в заставку несмонтированную сцену: её _frame дёргал бы фантомный тикер, пока
- * видимый глобус стоит замёрзший весь слот. */
+ * гасит сцены в сервис-панели в любой момент, в том числе посреди ночного
+ * простоя, и погашенную ядро показать не даст — оно уведёт на дефолтную.
+ * Тик тогда переводил бы в заставку сцену, которой на экране нет, и её кадр
+ * дёргал бы фантомный тикер весь слот. (До ядра 1.8.1 увод на уже активную
+ * сцену шёл ещё и без resume — с 1.8.1 ядро её резюмирует.) */
 const rotationIds = () => {
   const cfg = (app.config && app.config.standby) || {};
   return (cfg.scenes || []).filter(

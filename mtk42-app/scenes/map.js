@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=17";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=24";
 
 const STATUSES = ["all", "active", "transformed", "private", "closed"];
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
@@ -130,12 +130,33 @@ export const mapScene = {
       if (Math.abs(w - this._lastW) < 2 && Math.abs(h - this._lastH) < 2) return;
       this._lastW = w; this._lastH = h;
       this._size(); this._fit(); this._draw();
+      /* Теснота считается не только от высоты бара: экран может стать ниже при
+       * той же раскладке чипов, и подсказка упрётся в шапку без участия бара. */
+      this._liftHint();
     });
     this._ro.observe(this._canvas);
 
-    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан. */
+    /* Лифт подсказки над собственными чипами — ОДИН механизм: наблюдатель на
+     * самом баре фильтров. Он закрывает разом язык (длина слов переносит
+     * строку), a11y (таргеты ×1.25), размер кнопок из настроек И ресайз окна
+     * (сужение переносит чипы во второй ряд). Точечные вызовы после каждого из
+     * этих событий не годятся: перелайаут чипов внутри .kiosk-layer
+     * (content-visibility) материализуется только на СЛЕДУЮЩЕМ кадре, а
+     * setTimeout(0) штатно бежит раньше — замер отдавал старую высоту.
+     * «А если RO молчит в фоне?» — там и раскладка не меняется, а на выходе
+     * из фона придёт первичная доставка. */
+    this._barRo = new ResizeObserver(() => this._liftHint());
+    this._barRo.observe(root.querySelector(".m42-filters--bottom"));
+
+    /* Призыв к жесту по тач-стандарту (п. 4): на карте есть зум и пан.
+     * Вешаем на КОРЕНЬ сцены, а не на канвас: div внутри <canvas> — это
+     * fallback-контент, браузер его не рисует, и подсказка была невидима
+     * (находка ревью ядра 1.8.1). События гасителя всё равно долетают —
+     * pointerdown с канваса всплывает до корня. */
     if (window.KioskHint) {
-      this._hint = window.KioskHint.attach(this._canvas, { gesture: "pinch" });
+      this._hint = window.KioskHint.attach(root, {
+        gesture: "pinch", label: this._app.t("hint.pinch"),
+      });
     }
 
     this._renderAll();
@@ -144,6 +165,7 @@ export const mapScene = {
 
   unmount() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
+    if (this._barRo) { this._barRo.disconnect(); this._barRo = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._unbindGestures();
     if (this._statusRow) this._statusRow.removeEventListener("click", this._onFilter);
@@ -173,7 +195,7 @@ export const mapScene = {
       prev.viewPreset !== c.viewPreset || prev.lonMin !== c.lonMin ||
       prev.lonMax !== c.lonMax || prev.latMin !== c.latMin || prev.latMax !== c.latMax;
     if (reframe) { this._size(); this._fit(); }
-    this._draw();
+    this._draw();   // высоту бара пересчитает наблюдатель на нём же
   },
 
   _defaults() {
@@ -229,8 +251,17 @@ export const mapScene = {
     this._draw();
   },
 
-  setLang() { this._renderAll(); this._draw(); },
+  /* Подпись подсказки — тоже контент: без setLabel китайский посетитель
+   * читал бы русский дефолт KioskHint. */
+  setLang() {
+    this._renderAll();
+    if (this._hint) this._hint.setLabel(this._app.t("hint.pinch"));
+    this._draw();
+  },
 
+  /* Лифт подсказки не трогаем: бар подрастёт от токенов a11y, и наблюдатель
+   * на баре пересчитает сам — на том кадре, когда перелайаут действительно
+   * случится. */
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
     this._draw();   // точки крупнее, подписи городов гаснут — см. _draw()
@@ -557,5 +588,33 @@ export const mapScene = {
       '<button type="button" class="m42-filter kiosk-target' +
       (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
       esc(t("status." + v)) + "</button>").join("");
+  },
+
+  /* Сколько своя нижняя панель фильтров занимает над линией --chrome-bottom.
+   * В CSS высоту соседнего элемента не узнать, поэтому меряем и публикуем
+   * переменной. Единственный вызов — из наблюдателя на самом баре (см. mount):
+   * он приходит тогда, когда перелайаут уже случился. Инвариант, по которому
+   * это проверяется на приёмке: зазор между низом подсказки и верхом чипов
+   * РОВНО 24 px, а не «перекрытий нет». */
+  _liftHint() {
+    if (!this._root) return;
+    const bar = this._root.querySelector(".m42-filters--bottom");
+    const h = bar ? Math.ceil(bar.getBoundingClientRect().height) : 0;
+    this._root.style.setProperty("--m42-hint-lift", h + "px");
+
+    /* На узко-высоком экране в a11y бар разрастается до трёх рядов, подсказка
+     * уезжает вверх и упирается в заголовок сцены (замер координатора:
+     * 1280×1080, бар 400 → хинт на y=196). Зазор до чипов при этом честные 24,
+     * но выше места уже нет — держать оба инварианта физически невозможно.
+     * Выбор: гасим подсказку, а не заголовок. Она вспомогательная и всё равно
+     * исчезает по первому касанию, а перечёркнутый заголовок выглядит поломкой.
+     * Гасим через visibility, а не display: бокс остаётся измеримым, иначе
+     * следующий замер увидел бы нули и класс залип бы навсегда. */
+    const hint = this._root.querySelector(".kiosk-hint");
+    const head = this._root.querySelector(".m42-head");
+    if (!hint || !head) return;
+    const hr = hint.getBoundingClientRect(), fr = head.getBoundingClientRect();
+    if (!hr.height) return;                       // ещё не отрисована — не судим
+    this._root.classList.toggle("is-hint-cramped", hr.top < fr.bottom + 12);
   },
 };

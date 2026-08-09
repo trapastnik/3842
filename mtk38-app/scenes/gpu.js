@@ -10,7 +10,7 @@
  * платить 5 МБ вендора за старт киоска, который открывается на глобусе, но
  * может простоять смену на каталоге, незачем. Импорт-карта — в index.html.
  */
-import { GPU_MAX_PIXELS } from "./shared.js?v=11";
+import { GPU_MAX_PIXELS } from "./shared.js?v=17";
 
 let _boot = null;
 
@@ -55,7 +55,10 @@ export function fitTo(renderer, camera, el, maxPixels = GPU_MAX_PIXELS) {
   const r = el.getBoundingClientRect();
   const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
   const raw = Math.min(globalThis.devicePixelRatio || 1, 2);
-  const dpr = w * h * raw * raw <= maxPixels ? raw : Math.max(1, Math.sqrt(maxPixels / (w * h)));
+  /* БЕЗ пола в единицу. Он тут и стоял, и из-за него бюджет не работал: на
+   * боксе 4200×2400 dpr оставался 1 и буфер выходил 10.08 Мп при потолке 8.3.
+   * Ниже единицы масштаб — законный ответ на слишком большой бокс. */
+  const dpr = w * h * raw * raw <= maxPixels ? raw : Math.sqrt(maxPixels / (w * h));
   renderer.setPixelRatio(dpr);
   renderer.setSize(w, h, true);
   if (camera && camera.isPerspectiveCamera) {

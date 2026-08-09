@@ -65,5 +65,7 @@
   "region.russia": "Russia",
   "region.ussr": "Soviet republics",
   "region.east-eu": "Eastern Europe",
-  "region.world": "Rest of the world"
+  "region.world": "Rest of the world",
+  "hint.pinch": "Pinch to zoom the map",
+  "hint.drag": "Drag to scroll"
 }
