@@ -10,7 +10,7 @@
 import {
   DATA, byYear, cardUrl, createCard, esc, plural, thumbUrl, preloadThumbs,
   createHint,
-} from "./shared.js?v=29";
+} from "./shared.js?v=30";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {

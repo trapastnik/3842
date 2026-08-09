@@ -14,7 +14,7 @@ import {
   DATA, FALLBACK_HEIGHT, PALETTE, byYear, createCanvasHost, createCard,
   cssColor, plural, preloadThumbs, statusColor,
   createHint,
-} from "./shared.js?v=29";
+} from "./shared.js?v=30";
 
 const BANDS = [
   { id: "small", maxM: 8 },

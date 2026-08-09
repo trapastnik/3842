@@ -13,8 +13,8 @@
  * первый набор из 18 ID, и 7 записей в нём указывают на папки, которых в
  * data/mtk41.json больше нет. Остальные памятники рисуются процедурным
  * пунктиром — это видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=29";
-import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=29";
+import { scaleScene } from "./scale.js?v=30";
+import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=30";
 
 const SIL_DIR = "../assets/mtk41/";
 
