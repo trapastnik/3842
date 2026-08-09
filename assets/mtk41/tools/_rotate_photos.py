@@ -69,12 +69,20 @@ def main():
         # PIL крутит ПРОТИВ часовой, инструмент считает ПО часовой.
         im.rotate(-deg, expand=True).save(src, quality=95)
 
-        # Маски этого объекта больше не соответствуют кадру — сносим, чтобы
-        # _silhouettes_batch пересчитал, а не взял из кеша.
+        # Всё производное от кадра больше ему не соответствует — сносим, иначе
+        # генераторы пропустят их как уже готовые и на экране останется старая,
+        # лежащая на боку картинка. Маски я в первой редакции сбросил, а
+        # миниатюру с карточкой забыл: _make_thumbs идемпотентен и честно
+        # ответил «создано 0, уже были 282».
         mdir = MASKS / mid
         if mdir.is_dir():
             for p in mdir.iterdir():
                 p.unlink()
+        for sub in ("thumbs", "cards"):
+            sdir = ROOT / mid / sub
+            if sdir.is_dir():
+                for p in sdir.iterdir():
+                    p.unlink()
 
         ov["rot_applied"] = deg + ov.get("rot_applied", 0)
         ov.pop("rot", None)
