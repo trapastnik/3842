@@ -32,3 +32,6 @@ __pycache__/
 
 # Manual snapshots are local only; git history is the versioning layer.
 versions/
+
+# Растровые маски силуэтов МТК 41 — исходник вне репо (~/Desktop/WWWWW/BMK/mtk41-silhouette-masks, см. MTK41_MASKS); в репо только вектор-манифест. Строка после !assets/** побеждает по порядку.
+assets/mtk41/**/silhouettes/*.png
