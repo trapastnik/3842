@@ -14,7 +14,8 @@ import {
   DATA, FALLBACK_HEIGHT, PALETTE, byYear, createCanvasHost, createCard,
   cssColor, plural, preloadThumbs, statusColor,
   createHint,
-} from "./shared.js?v=30";
+  fillTextIfFits,
+} from "./shared.js?v=31";
 
 const BANDS = [
   { id: "small", maxM: 8 },
@@ -375,9 +376,9 @@ export const stackedScene = {
       ctx.textBaseline = "top";
       const city = (pm.m.city || "").slice(0, 14);
       ctx.fillStyle = sel ? PALETTE.brass : cssColor(PALETTE.paper, 0.72);
-      ctx.fillText(city, x, pm.baseY + 4);
+      fillTextIfFits(ctx, city, x, pm.baseY + 4);
       ctx.fillStyle = cssColor(PALETTE.brass, 0.6);
-      ctx.fillText(pm.m.year ? String(pm.m.year) : "—", x, pm.baseY + 4 + fs * 1.25);
+      fillTextIfFits(ctx, pm.m.year ? String(pm.m.year) : "—", x, pm.baseY + 4 + fs * 1.25);
       ctx.restore();
     }
   },
