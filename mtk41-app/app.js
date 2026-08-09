@@ -3,17 +3,17 @@
  * страницы. Открывать только по http — ES-модули из file:// не идут.
  *
  * Версия у импортов сцен обязательна и поднимается вместе с ?v= у app.js:
- * `<script src="./app.js?v=28">` обновит только сам app.js, а его
+ * `<script src="./app.js?v=29">` обновит только сам app.js, а его
  * `import "./scenes/canon.js"` без версии браузер отдаст из кеша (README ядра). */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=28";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.9.2";
 
-import { canonScene } from "./scenes/canon.js?v=28";
-import { authorsScene } from "./scenes/authors.js?v=28";
-import { scaleScene } from "./scenes/scale.js?v=28";
-import { mapScene } from "./scenes/map.js?v=28";
-import { timelineScene } from "./scenes/timeline.js?v=28";
-import { silhouettesScene } from "./scenes/silhouettes.js?v=28";
-import { stackedScene } from "./scenes/stacked.js?v=28";
+import { canonScene } from "./scenes/canon.js?v=29";
+import { authorsScene } from "./scenes/authors.js?v=29";
+import { scaleScene } from "./scenes/scale.js?v=29";
+import { mapScene } from "./scenes/map.js?v=29";
+import { timelineScene } from "./scenes/timeline.js?v=29";
+import { silhouettesScene } from "./scenes/silhouettes.js?v=29";
+import { stackedScene } from "./scenes/stacked.js?v=29";
 
 const app = createApp({
   appId: "mtk41",
@@ -22,7 +22,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей (ядро 1.7): без неё правка ru.json могла не доехать
    * до киоска — Chrome отдавал старый файл. Поднимается вместе с ?v= выше. */
-  i18nVersion: "28",
+  i18nVersion: "29",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */

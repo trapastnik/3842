@@ -14,8 +14,9 @@
  * Здесь — жизненный цикл сцены, камера, ввод и отрисовка. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
-} from "./shared.js?v=28";
-import { createMapCore } from "./map-core.js?v=28";
+  createHint,
+} from "./shared.js?v=29";
+import { createMapCore } from "./map-core.js?v=29";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -100,6 +101,12 @@ export const mapScene = {
     this._card.onClose(() => { this._selected = -1; });
 
     this._host = createCanvasHost(this._stage, "m41-map__canvas");
+
+    /* Подсказка — на СТОЛ, не на канву: детей <canvas> браузер не рисует.
+     * Стол ужимается, когда растут собственные контролы (режим слабовидящих
+     * растит --ui-scale), поэтому подсказка не наезжает на них ни в одном
+     * режиме — защита структурная, а не подобранным числом. */
+    this._hint = createHint(this._stage, "drag", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._resized(); });
 
     this._items = (ctx.data.monuments.items || [])
@@ -139,6 +146,7 @@ export const mapScene = {
 
   unmount() {
     if (this._deferId) { clearTimeout(this._deferId); this._deferId = 0; }
+    if (this._hint) { this._hint.destroy(); this._hint = null; }
     if (this._host) this._host.destroy();
     if (this._card) this._card.destroy();
     if (this._navEl) this._navEl.removeEventListener("click", this._onNav);
@@ -184,7 +192,7 @@ export const mapScene = {
     this._applyPreset((this._cfg && this._cfg.view) || "eurasia", true);
   },
 
-  setLang() { this._renderHead(); this._buildNav(); },
+  setLang() { this._renderHead(); this._buildNav(); if (this._hint) this._hint.relabel(); },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
@@ -197,10 +205,16 @@ export const mapScene = {
      * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
      * по заявке МТК 41. */
     if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
+
+    /* Буфер сверяем ПО ФАКТИЧЕСКОМУ dpr, а не по ширине бокса: счётчик фигур
+     * бывает зелёным, пока сцена рисует всё до одной — но в чужом разрешении
+     * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
+    const buf = this._host.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
     if (!this._items.length) return { ok: false, detail: "ни одной точки с координатами" };
     if (!this._clusters.length) return { ok: false, detail: "на карте не построено ни одного кружка" };
     const shown = this._clusters.reduce((a, c) => a + c.count, 0);
-    return { ok: true, detail: `точек ${this._items.length}, в кружках ${shown}` };
+    return { ok: true, detail: `точек ${this._items.length}, в кружках ${shown}, буфер ${buf.detail}` };
   },
 
   applySettings(values) {

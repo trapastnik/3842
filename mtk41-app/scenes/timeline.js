@@ -11,7 +11,8 @@
  * экрана — иначе при разных отступах последние десятилетия вываливались. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
-} from "./shared.js?v=28";
+  createHint,
+} from "./shared.js?v=29";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
@@ -84,6 +85,12 @@ export const timelineScene = {
     this._card.onClose(() => { this._selected = -1; });
 
     this._host = createCanvasHost(this._stage, "m41-timeline__canvas");
+
+    /* Подсказка — на СТОЛ, не на канву: детей <canvas> браузер не рисует.
+     * Стол ужимается, когда растут собственные контролы (режим слабовидящих
+     * растит --ui-scale), поэтому подсказка не наезжает на них ни в одном
+     * режиме — защита структурная, а не подобранным числом. */
+    this._hint = createHint(this._stage, "drag", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._measurePads(); });
 
     /* Только датированные: у трёх записей года нет вовсе, и на оси времени
@@ -100,6 +107,7 @@ export const timelineScene = {
   },
 
   unmount() {
+    if (this._hint) { this._hint.destroy(); this._hint = null; }
     if (this._host) this._host.destroy();
     if (this._card) this._card.destroy();
     if (this._root) this._root.remove();
@@ -123,7 +131,7 @@ export const timelineScene = {
     this._view.yearCenter = (YEAR_MIN + YEAR_MAX) / 2;
   },
 
-  setLang() { this._renderHead(); },
+  setLang() { this._renderHead(); if (this._hint) this._hint.relabel(); },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
@@ -137,9 +145,15 @@ export const timelineScene = {
      * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
      * по заявке МТК 41. */
     if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
+
+    /* Буфер сверяем ПО ФАКТИЧЕСКОМУ dpr, а не по ширине бокса: счётчик фигур
+     * бывает зелёным, пока сцена рисует всё до одной — но в чужом разрешении
+     * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
+    const buf = this._host.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
     if (!this._items.length) return { ok: false, detail: "ни одного датированного памятника" };
     if (!this._clusters.length) return { ok: false, detail: "на оси не построено ни одного кружка" };
-    return { ok: true, detail: `датированных ${this._items.length}, кружков ${this._clusters.length}` };
+    return { ok: true, detail: `датированных ${this._items.length}, кружков ${this._clusters.length}, буфер ${buf.detail}` };
   },
 
   applySettings(values) {

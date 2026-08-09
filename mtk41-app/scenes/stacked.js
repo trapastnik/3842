@@ -13,7 +13,8 @@
 import {
   DATA, FALLBACK_HEIGHT, PALETTE, byYear, createCanvasHost, createCard,
   cssColor, plural, preloadThumbs, statusColor,
-} from "./shared.js?v=28";
+  createHint,
+} from "./shared.js?v=29";
 
 const BANDS = [
   { id: "small", maxM: 8 },
@@ -69,6 +70,12 @@ export const stackedScene = {
     this._card.onClose(() => { this._selected = -1; });
 
     this._host = createCanvasHost(this._stage, "m41-stacked__canvas");
+
+    /* Подсказка — на СТОЛ, не на канву: детей <canvas> браузер не рисует.
+     * Стол ужимается, когда растут собственные контролы (режим слабовидящих
+     * растит --ui-scale), поэтому подсказка не наезжает на них ни в одном
+     * режиме — защита структурная, а не подобранным числом. */
+    this._hint = createHint(this._stage, "swipe", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._layout(); });
 
     this._items = ctx.data.monuments.items || [];
@@ -85,6 +92,7 @@ export const stackedScene = {
   },
 
   unmount() {
+    if (this._hint) { this._hint.destroy(); this._hint = null; }
     if (this._host) this._host.destroy();
     if (this._card) this._card.destroy();
     if (this._root) this._root.remove();
@@ -106,7 +114,7 @@ export const stackedScene = {
     for (const b of BANDS) { this._pan[b.id] = 0; this._vel[b.id] = 0; }
   },
 
-  setLang() { this._renderHead(); },
+  setLang() { this._renderHead(); if (this._hint) this._hint.relabel(); },
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
@@ -120,10 +128,16 @@ export const stackedScene = {
      * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
      * по заявке МТК 41. */
     if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
+
+    /* Буфер сверяем ПО ФАКТИЧЕСКОМУ dpr, а не по ширине бокса: счётчик фигур
+     * бывает зелёным, пока сцена рисует всё до одной — но в чужом разрешении
+     * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
+    const buf = this._host.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
     if (!this._placed.length) return { ok: false, detail: "ни одной фигуры ни в одной полосе" };
     const per = BANDS.map((b) =>
       b.id + ": " + this._placed.filter((p) => p.band === b.id).length);
-    return { ok: true, detail: `фигур ${this._placed.length} (${per.join(", ")})` };
+    return { ok: true, detail: `фигур ${this._placed.length} (${per.join(", ")}), буфер ${buf.detail}` };
   },
 
   applySettings(values) {

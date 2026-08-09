@@ -9,7 +9,8 @@
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
   DATA, byYear, cardUrl, createCard, esc, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=28";
+  createHint,
+} from "./shared.js?v=29";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -69,6 +70,11 @@ export const canonScene = {
 
     this._card = createCard(el, ctx.app, ctx);
 
+    /* На корень сцены, а не на .kiosk-scroll-грид: в прокручиваемом
+     * контейнере absolute считается от высоты содержимого, и подсказка
+     * уехала бы далеко вниз за пределы экрана. */
+    this._hint = createHint(this._root, "tap", "hint." + this.id, ctx.app);
+
     /* Делегирование вместо слушателя на каждой из 283 плиток: меньше DOM-работы
      * при монтировании и нечего снимать в unmount(). */
     this._onTap = (e) => {
@@ -86,6 +92,7 @@ export const canonScene = {
   },
 
   unmount() {
+    if (this._hint) { this._hint.destroy(); this._hint = null; }
     if (this._grid) this._grid.removeEventListener("click", this._onTap);
     if (this._card) this._card.destroy();
     if (this._root) this._root.remove();
@@ -101,7 +108,7 @@ export const canonScene = {
     if (this._grid) this._grid.scrollTop = 0;
   },
 
-  setLang() { this._renderHead(); },
+  setLang() { this._renderHead(); if (this._hint) this._hint.relabel(); },
 
   /* Ловит «загружено, но пусто»: корпус приехал, DOM построен, а плиток нет
    * (например, разъехались id между mtk41.json и thumbs.json). */
@@ -195,8 +202,19 @@ export const canonScene = {
     };
 
     step(0);
+    /* Гасим призыв к жесту на время заставки. Он на z-index 40, заставка на
+     * 15 — подсказка висела бы поверх фотографии, а это ровно тот «след
+     * посетителя», который заставка обязана прятать. И перевзводим на выходе:
+     * одноразовый таймер простоя к этому моменту уже отработал, без rearm()
+     * подсказка не вернулась бы до самого перезапуска киоска. */
+    if (this._hint) this._hint.poke();
     const stop = this._app.standbyTicker(step);
-    return () => { stop(); token += 1; box.remove(); };
+    return () => {
+      stop();
+      token += 1;
+      box.remove();
+      if (this._hint) this._hint.rearm();
+    };
   },
 
   applySettings(values) {

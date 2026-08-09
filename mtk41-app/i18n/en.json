@@ -58,5 +58,12 @@
   "map.home": "Whole view",
   "band.small": "0–8 m · busts and standard monuments",
   "band.medium": "8–20 m · large monuments",
-  "band.large": "20–60 m · colossi"
+  "band.large": "20–60 m · colossi",
+  "hint.map": "Drag the map, pinch to zoom",
+  "hint.timeline": "Drag the axis, pinch to zoom",
+  "hint.scale": "Swipe the scale sideways",
+  "hint.silhouettes": "Swipe the scale sideways",
+  "hint.stacked": "Swipe each band separately",
+  "hint.canon": "Tap a photograph",
+  "hint.authors": "Tap a work"
 }

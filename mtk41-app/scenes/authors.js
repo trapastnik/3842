@@ -9,7 +9,8 @@
  * Томский. Здесь на это опираемся и повторно не чистим. */
 import {
   DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
-} from "./shared.js?v=28";
+  createHint,
+} from "./shared.js?v=29";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
@@ -72,6 +73,11 @@ export const authorsScene = {
     this._subEl = root.querySelector(".m41-head__sub");
     this._card = createCard(el, ctx.app, ctx);
 
+    /* На корень сцены, а не на .kiosk-scroll-грид: в прокручиваемом
+     * контейнере absolute считается от высоты содержимого, и подсказка
+     * уехала бы далеко вниз за пределы экрана. */
+    this._hint = createHint(this._root, "tap", "hint." + this.id, ctx.app);
+
     this._onTap = (e) => {
       const w = e.target.closest("[data-idx]");
       if (!w) return;
@@ -86,6 +92,7 @@ export const authorsScene = {
   },
 
   unmount() {
+    if (this._hint) { this._hint.destroy(); this._hint = null; }
     if (this._cols) this._cols.removeEventListener("click", this._onTap);
     if (this._card) this._card.destroy();
     if (this._root) this._root.remove();
@@ -100,7 +107,7 @@ export const authorsScene = {
     if (this._cols) { this._cols.scrollLeft = 0; this._cols.scrollTop = 0; }
   },
 
-  setLang() { this._render(); },
+  setLang() { this._render(); if (this._hint) this._hint.relabel(); },
 
   healthcheck() {
     if (!this._cols) return { ok: true, detail: "не смонтирована" };

@@ -9,14 +9,20 @@
  *    в ctx.images[] живым, поэтому в преролл идут только миниатюры (~188 МБ).
  */
 
+/* Метка версии нужна и ДАННЫМ, не только коду: правка json без ?v= не
+ * доезжает до страницы — Chrome отдаёт файл из кеша, и на экране остаётся
+ * старый корпус при свежем репо (грабля 40-го). Одна константа на все сцены,
+ * поднимать вместе с меткой модулей. */
+const DATA_V = "?v=29";
+
 export const DATA = {
-  monuments: "../data/mtk41.json",
-  heights: "../assets/mtk41/heights.json",
-  photos: "../assets/mtk41/manifest.json",
-  thumbs: "../assets/mtk41/thumbs.json",
-  cards: "../assets/mtk41/cards.json",
-  silhouettes: "../assets/mtk41/silhouettes.json",
-  countries: "../data/ne_110m_countries.geojson",
+  monuments: "../data/mtk41.json" + DATA_V,
+  heights: "../assets/mtk41/heights.json" + DATA_V,
+  photos: "../assets/mtk41/manifest.json" + DATA_V,
+  thumbs: "../assets/mtk41/thumbs.json" + DATA_V,
+  cards: "../assets/mtk41/cards.json" + DATA_V,
+  silhouettes: "../assets/mtk41/silhouettes.json" + DATA_V,
+  countries: "../data/ne_110m_countries.geojson" + DATA_V,
 };
 
 const ASSET_DIR = "../assets/mtk41/";
@@ -291,10 +297,62 @@ function fmtM(v) {
   return (v < 10 ? v.toFixed(1) : Math.round(v)) + " м";
 }
 
+/* ─── Призыв к жесту ───────────────────────────────────────────────────
+ * Тач-стандарт, п. 4: у жестовой сцены обязана быть подсказка — на киоске
+ * никто не догадается тянуть карту, если об этом не сказать.
+ *
+ * Куда вешать (обе грабли уже собраны другими сессиями):
+ *  · НЕ на <canvas> — браузер не рисует детей канвы, подсказка невидима с
+ *    рождения; так она и жила у пяти сцен 38 и на карте 42. Кит с 1.8.2 сам
+ *    перевешивается на родителя, но полагаться на спасение чужим кодом нельзя.
+ *  · НЕ на прокручиваемый контейнер — absolute отсчитывается от высоты
+ *    СОДЕРЖИМОГО, и подсказка уезжает в минус (у маятника 42 висела на −188).
+ * Поэтому цель — «стол» сцены (обёртка канвы) или корень сцены, но не грид.
+ *
+ * Подпись — всегда из словаря: хардкод-русский вылезает на EN и ZH. Ключ
+ * запоминаем, чтобы setLang() мог перечитать его тем же путём.
+ */
+export function createHint(target, gesture, key, app) {
+  if (!window.KioskHint || !target) return null;
+  const handle = window.KioskHint.attach(target, { gesture, label: app.t(key) });
+  handle.relabel = () => handle.setLabel(app.t(key));
+  return handle;
+}
+
 /* ─── Канва ────────────────────────────────────────────────────────────
  * Общий помощник: буфер под потолком 8.3 Мп и честный жизненный цикл rAF.
  * Наблюдатель размеров гардится на ноль — скрытый слой имеет 0×0, и сцена,
  * пересобирающаяся по этому событию, иначе делит на ноль. */
+
+/**
+ * Размер буфера канвы под данный бокс — ОДНА формула на отрисовку и на
+ * проверку. Раньше её копия жила и в measure(), и в healthcheck: при первой
+ * же правке копии разошлись бы, и проверка сверяла бы буфер с собственной
+ * устаревшей арифметикой (образец МТК 40).
+ *
+ * Пола в единицу здесь нет намеренно. Он тут был — `Math.max(1, …)` — и
+ * превращал кап в фикцию: на боксе крупнее 4K множитель бюджета уходит ниже
+ * единицы, пол возвращал его обратно к 1, и буфер спокойно перелезал 8.3 Мп.
+ * Комментарий рядом при этом честно утверждал, что кап работает (грабля 38-го,
+ * там же формулировка «комментарий про поведение своего кода — не
+ * доказательство»).
+ *
+ * Округление ТОЛЬКО вниз: при round обе стороны идут вверх и произведение
+ * перелезает кап на полторы тысячи пикселей (грабля 40-го). floor даёт
+ * cw·ch ≤ w·h·scale² = кап.
+ */
+export function bufferFor(w, h) {
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const scale = w * h * dpr * dpr > PIXEL_BUDGET
+    ? Math.sqrt(PIXEL_BUDGET / (w * h))
+    : dpr;
+  return {
+    scale,
+    w: Math.max(1, Math.floor(w * scale)),
+    h: Math.max(1, Math.floor(h * scale)),
+  };
+}
+
 export function createCanvasHost(parent, className) {
   const canvas = document.createElement("canvas");
   canvas.className = className;
@@ -320,13 +378,33 @@ export function createCanvasHost(parent, className) {
       if (w === host.width && h === host.height) return false;
       host.width = w;
       host.height = h;
-      const budget = Math.sqrt(PIXEL_BUDGET / Math.max(1, w * h));
-      const dpr = Math.max(1, Math.min(2, window.devicePixelRatio || 1, budget));
-      host.dpr = dpr;
-      canvas.width = Math.max(1, Math.floor(w * dpr));
-      canvas.height = Math.max(1, Math.floor(h * dpr));
-      ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const buf = bufferFor(w, h);
+      host.dpr = buf.scale;
+      canvas.width = buf.w;
+      canvas.height = buf.h;
+      /* Трансформ — от ФАКТИЧЕСКОГО буфера, не от scale: buf.w прошёл через
+       * floor, и на дробном множителе рисунок иначе уезжал бы на полпикселя
+       * от правой и нижней кромок. */
+      ctx2d.setTransform(buf.w / w, 0, 0, buf.h / h, 0, 0);
       return true;
+    },
+
+    /* Сверка буфера с ожиданием ПО ФАКТИЧЕСКОМУ dpr — для healthcheck.
+     * Счётчик сущностей этого не ловит: сцена честно рисует все объекты, но
+     * может делать это в чужом разрешении (у карты 42 так вышло 4%). */
+    bufferOk() {
+      const r = canvas.getBoundingClientRect();
+      const w = Math.floor(r.width), h = Math.floor(r.height);
+      if (!w || !h) return { ok: true, detail: "слой скрыт" };
+      const exp = bufferFor(w, h);
+      const ok = Math.abs(canvas.width - exp.w) <= 1 &&
+                 Math.abs(canvas.height - exp.h) <= 1;
+      const mpx = (canvas.width * canvas.height / 1e6).toFixed(2);
+      return {
+        ok,
+        detail: canvas.width + "×" + canvas.height + " (" + mpx + " Мп)" +
+          (ok ? "" : " вместо " + exp.w + "×" + exp.h),
+      };
     },
 
     observe(cb) {

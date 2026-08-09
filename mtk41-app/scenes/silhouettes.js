@@ -13,8 +13,8 @@
  * первый набор из 18 ID, и 7 записей в нём указывают на папки, которых в
  * data/mtk41.json больше нет. Остальные памятники рисуются процедурным
  * пунктиром — это видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=28";
-import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=28";
+import { scaleScene } from "./scale.js?v=29";
+import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=29";
 
 const SIL_DIR = "../assets/mtk41/";
 
@@ -81,11 +81,17 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
      * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
      * по заявке МТК 41. */
     if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
+
+    /* Буфер сверяем ПО ФАКТИЧЕСКОМУ dpr, а не по ширине бокса: счётчик фигур
+     * бывает зелёным, пока сцена рисует всё до одной — но в чужом разрешении
+     * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
+    const buf = this._host.bufferOk();
+    if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
     if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
     const sil = Object.keys(SIL).length;
     /* Не ошибка, но цифру видно на приёмке: сцена обещает «реальные фигуры»,
      * а их пока восемь. */
-    return { ok: true, detail: `фигур ${this._placed.length}, реальных силуэтов ${sil}` };
+    return { ok: true, detail: `фигур ${this._placed.length}, реальных силуэтов ${sil}, буфер ${buf.detail}` };
   },
 
   _renderHead() {
