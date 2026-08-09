@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=39";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=41";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
