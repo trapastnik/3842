@@ -8,7 +8,7 @@
  *    продублирован подписью, соседние сегменты разделены зазором;
  *  · ни одной диаграммы с двумя шкалами. */
 
-import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=2";
+import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=3";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 1000;   // ширина системы координат svg; высота у каждого графика своя
@@ -118,12 +118,10 @@ export const statsScene = {
               : '<div class="m39-chart"></div>') +
         "</div></section>").join("") +
       "</div>" +
-      '<nav class="m39-dots" aria-label="Экраны"></nav>' +
-      '<div class="m39-hint"></div>';
+      '<nav class="m39-dots" aria-label="Экраны"></nav>';
 
     const scroll = el_.querySelector(".m39-scroll");
     const dots = el_.querySelector(".m39-dots");
-    const hint = el_.querySelector(".m39-hint");
     const screens = [...el_.querySelectorAll(".m39-screen")];
     const massCanvas = el_.querySelector(".m39-mass");
 
@@ -467,7 +465,6 @@ export const statsScene = {
         if (j <= i) sc.classList.add("is-live");
         if (dots.children[j]) dots.children[j].setAttribute("aria-current", String(i === j));
       });
-      hint.classList.toggle("is-off", i > 0);
     }
 
     const onScroll = () => sync();
@@ -484,7 +481,7 @@ export const statsScene = {
         vis(i, ".m39-screen__head").textContent = app.t("stats.screen." + keys[i]);
         vis(i, ".m39-screen__sub").textContent = app.t("stats.sub." + keys[i]);
       }
-      hint.textContent = app.t("stats.hint");
+      if (hint) hint.setLabel(app.t("stats.hint"));
       buildDots();
       renderHero();
       renderContinents();
@@ -502,6 +499,7 @@ export const statsScene = {
       reset() {
         scroll.scrollTo({ left: 0, behavior: "auto" });
         sync();
+        if (hint) hint.show();   // экран вернулся к первому — зовём жест сразу
       },
       health() {
         const charts = el_.querySelectorAll(".m39-chart svg").length;
@@ -515,8 +513,16 @@ export const statsScene = {
       destroy() {
         scroll.removeEventListener("scroll", onScroll);
         watch.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* Хост — контейнер сцены, а не прокручиваемая лента экранов: внутри
+       скроллера absolute считается от высоты содержимого, и подсказка уехала
+       бы за кромку (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el_, { gesture: "swipe", label: app.t("stats.hint") })
+      : null;
 
     retext();
     watch.measure(true);

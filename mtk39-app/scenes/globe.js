@@ -10,7 +10,7 @@
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel, isOffMap,
-} from "./shared.js?v=2";
+} from "./shared.js?v=3";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -110,8 +110,7 @@ export const globeScene = {
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="in">+</button>' +
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="out">−</button>' +
       "</nav>" +
-      '<aside class="m39-offlist" hidden><h2 class="m39-offlist__h"></h2><ul></ul></aside>' +
-      '<div class="m39-hint"></div>';
+      '<aside class="m39-offlist" hidden><h2 class="m39-offlist__h"></h2><ul></ul></aside>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -122,7 +121,6 @@ export const globeScene = {
     const offlist = el.querySelector(".m39-offlist");
     const offlistH = el.querySelector(".m39-offlist__h");
     const offlistUl = offlist.querySelector("ul");
-    const hint = el.querySelector(".m39-hint");
 
     let width = 0;
     let height = 0;
@@ -593,7 +591,6 @@ export const globeScene = {
           dragStart = { x: e.x, y: e.y, r: rotation.slice() };
           dragMoved = false;
           lastInteraction = performance.now();
-          hint.classList.add("is-off");
         })
         .on("drag", (e) => {
           if (pinch || !dragStart) return;
@@ -649,7 +646,7 @@ export const globeScene = {
     function retext() {
       title.textContent = app.t("globe.title");
       sub.textContent = app.t("globe.sub");
-      hint.textContent = app.t("globe.hint");
+      if (hint) hint.setLabel(app.t("globe.hint"));
       buildFilter();
       buildOfflist();
       syncOfflist();
@@ -682,7 +679,7 @@ export const globeScene = {
         filter = "all";
         showCard(null);
         buildFilter();
-        hint.classList.remove("is-off");
+        if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         startIntro();
       },
       /* Аттрактор: тот же шар, без интерфейса. Петлю даёт ядро, угол считаем
@@ -748,8 +745,14 @@ export const globeScene = {
         zoomNav.removeEventListener("click", onZoom);
         watch.destroy();
         card.destroy();
+        if (hint) hint.destroy();
       },
     };
+
+    /* На контейнер сцены, а не на канву (грабли кита). */
+    const hint = window.KioskHint
+      ? window.KioskHint.attach(el, { gesture: "drag", label: app.t("globe.hint") })
+      : null;
 
     retext();
     watch.measure(true);
