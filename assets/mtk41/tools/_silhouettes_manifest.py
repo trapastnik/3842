@@ -151,6 +151,12 @@ def main():
             manual.append((mid, ov.get("note", "")))
             continue
 
+        # Отбраковано человеком в инструменте — в манифест не идёт, сцена
+        # рисует процедурную фигуру. Решение человека старше любой метрики.
+        if ov.get("drop"):
+            skipped.append((mid, "отбраковано вручную"))
+            continue
+
         kind = m.get("kind")
         if kind in NONFIGURATIVE:
             skipped.append((mid, f"нефигуративный ({kind})"))

@@ -15,7 +15,7 @@ import {
   cssColor, plural, preloadThumbs, statusColor,
   createHint,
   fillTextIfFits,
-} from "./shared.js?v=31";
+} from "./shared.js?v=32";
 
 const BANDS = [
   { id: "small", maxM: 8 },
@@ -374,7 +374,17 @@ export const stackedScene = {
       ctx.font = `${sel ? 600 : 400} ${fs}px "20 Kopeek", monospace`;
       ctx.textAlign = "center";
       ctx.textBaseline = "top";
-      const city = (pm.m.city || "").slice(0, 14);
+      /* Никакого slice: «Санкт-Петербур» и «Иваново-Вознес» — тот же обрубок,
+       * что и с многоточием, только без маркера, и оттого хуже — многоточие
+       * хотя бы честно сообщает, что имя урезано. В корпусе 13 городов длиннее
+       * 14 знаков, и на дефолтном виде они были видны все.
+       *
+       * Срез пережил мой же коммит про канон подписей, потому что проверка
+       * искала «…» и выход за рамку — маркерless-срез невидим обоим критериям.
+       * Это ровно та грабля «перехват проверяет кадр, а не код», которую я сам
+       * и записал: против такого работает только греп по местам, где строится
+       * подпись. */
+      const city = pm.m.city || "";
       ctx.fillStyle = sel ? PALETTE.brass : cssColor(PALETTE.paper, 0.72);
       fillTextIfFits(ctx, city, x, pm.baseY + 4);
       ctx.fillStyle = cssColor(PALETTE.brass, 0.6);
