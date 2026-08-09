@@ -72,10 +72,42 @@ def verdict(mask_img):
     return "ok", m
 
 
+def frame_score(mask_img):
+    """Насколько маска годится в силуэт: чем больше, тем лучше.
+
+    Нужна, когда у памятника несколько кадров: дешёвая попытка спасти объект
+    другим снимком до дорогой (ручной отрисовки). Считаем то же, на чём стоит
+    вердикт: вертикальность, доля кадра по высоте, чистота от посторонних
+    кусков и умеренная заливка (маска на весь кадр — это не отделённый фон).
+    """
+    import cv2
+    a = np.array(mask_img.split()[3], dtype=np.uint8)
+    binary = (a >= 160).astype(np.uint8)
+    H, W = binary.shape
+    area = float(binary.sum())
+    if area < H * W * 0.004:
+        return -1.0
+    fill = area / (H * W)
+    n, _, stats, _ = cv2.connectedComponentsWithStats(binary, 8)
+    if n <= 1:
+        return -1.0
+    order = np.argsort(stats[1:, cv2.CC_STAT_AREA])[::-1] + 1
+    i = int(order[0])
+    _, _, w, h, main = stats[i]
+    rest = float(stats[1:, cv2.CC_STAT_AREA].sum() - main)
+    vert = h / max(1.0, w)
+    clean = 1.0 - min(1.0, rest / max(1.0, float(main)))
+    # Заливка около 0.15–0.45 — здоровая; к 0.72 фон не отделён.
+    fill_ok = 1.0 - min(1.0, abs(fill - 0.28) / 0.44)
+    return min(vert, 5.0) / 5.0 * 3.0 + (h / H) * 2.0 + clean * 2.0 + fill_ok * 1.5
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0)
     ap.add_argument("--report", default=None)
+    ap.add_argument("--all-frames", action="store_true",
+                    help="прогнать ВСЕ кадры объекта и взять лучшую маску")
     args = ap.parse_args()
 
     from rembg import new_session, remove
@@ -102,22 +134,45 @@ def main():
             continue
         sil_dir = ROOT / mid / "silhouettes"
         sil_dir.mkdir(exist_ok=True)
-        out = sil_dir / (Path(photos[0]).stem + ".png")
+
+        def mask_for(rel_photo):
+            """Маска для одного кадра — с диска, если уже считана."""
+            p = ROOT / mid / rel_photo
+            dst = sil_dir / (Path(rel_photo).stem + ".png")
+            if dst.exists() and dst.stat().st_size > 0:
+                return Image.open(dst).convert("RGBA"), dst
+            im = Image.open(io.BytesIO(
+                remove(p.read_bytes(), session=session))).convert("RGBA")
+            bb = im.getbbox()
+            if bb:
+                im = im.crop(bb)
+            if max(im.size) > MAX_SIDE:
+                r = MAX_SIDE / max(im.size)
+                im = im.resize((int(im.size[0] * r), int(im.size[1] * r)), Image.LANCZOS)
+            im.save(dst, "PNG", optimize=True)
+            return im, dst
+
         try:
-            if out.exists() and out.stat().st_size > 0:
-                img = Image.open(out).convert("RGBA")
-            else:
-                img = Image.open(io.BytesIO(
-                    remove(src.read_bytes(), session=session))).convert("RGBA")
-                bbox = img.getbbox()
-                if bbox:
-                    img = img.crop(bbox)
-                if max(img.size) > MAX_SIDE:
-                    r = MAX_SIDE / max(img.size)
-                    img = img.resize((int(img.size[0] * r), int(img.size[1] * r)),
-                                     Image.LANCZOS)
-                img.save(out, "PNG", optimize=True)
+            # Несколько кадров — берём лучший по автометрике. Это бесплатная
+            # попытка спасти объект до дорогой ручной отрисовки. Кадров больше
+            # одного всего у 16 памятников из 283, но среди них Рыбинск и
+            # Алексеев — обе кляксы пилота, так что попытка не теоретическая.
+            frames = photos if (args.all_frames and len(photos) > 1) else photos[:1]
+            best, out, best_s = None, None, -9e9
+            for rel in frames:
+                if not (ROOT / mid / rel).exists():
+                    continue
+                im, dst = mask_for(rel)
+                s = frame_score(im) if len(frames) > 1 else 0.0
+                if s > best_s:
+                    best, out, best_s = im, dst, s
+            if best is None:
+                report.append((mid, "негодно", {"reason": "снимок потерян"}))
+                continue
+            img = best
             v, m = verdict(img)
+            if len(frames) > 1:
+                m = dict(m, frames=len(frames), picked=out.name[:28], score=round(best_s, 2))
             report.append((mid, v, m))
             if v != "негодно":
                 out_index[mid] = "silhouettes/" + out.name
