@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.0" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.0" />
-    <link rel="stylesheet" href="./styles.css?v=1.22.0" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.1" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.1" />
+    <link rel="stylesheet" href="./styles.css?v=1.22.1" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.22.0"></script>
+    <script type="module" src="./app.js?v=1.22.1"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.0";
-import { mapScene } from "./scenes/map.js?v=1.22.0";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.22.0";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.1";
+import { mapScene } from "./scenes/map.js?v=1.22.1";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.22.1";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.22.0",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.22.1",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.22.0"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.22.1"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -217,6 +217,28 @@ export const mapScene = {
    переход не доигрывает вовсе и застывает на первом значении.
 
 4. **Скроллы видимые.** Каждому скроллируемому контейнеру — `class="kiosk-scroll"`.
+   Он же получает `touch-action: pan-y` — палец скроллит контейнер, а не зумит
+   страницу.
+
+   **Зум — контента сцены, а не страницы.** Браузерный зум/скролл всей страницы
+   ядро подавляет (киоск-канон): `visualViewport.scale` всегда 1, двойной тап и
+   Ctrl-колесо нативно не зумят. Но жест у вас **не отнят** — он ваш:
+
+   - канва внутри `.kiosk-stage` по умолчанию получает `touch-action: none`.
+     Это значит, что браузер по ней **ничего не делает сам**, и весь жест —
+     и одно-пальцевый drag, и двухпальцевый пинч — уходит в ваши
+     `touchstart/touchmove/pointermove` слушатели. Считайте пинч по
+     `e.touches[0]` и `e.touches[1]` и зумьте свою камеру;
+   - на десктопе/трекпаде пинч приходит как `wheel` с `e.ctrlKey === true`.
+     Ядро гасит им **нативный** зум страницы, но событие до вашей канвы
+     доходит — слушайте `wheel`, проверяйте `ctrlKey`, зумьте камеру. Обычный
+     `wheel` (без Ctrl) ядро не трогает вовсе;
+   - `gesturestart/*` (Safari) ядро гасит у корня — вам они не нужны, пинч
+     считается по касаниям.
+
+   Ничего подключать не надо: объявили канву в слое сцены — жест уже ваш.
+   Нужен нативный pan по своей канве (редко) — переопределите `touch-action`
+   у себя.
 
    **Подсказку жеста вешайте на контейнер сцены, а не на `<canvas>`.** Браузер не
    рисует детей холста — его содержимое это запасной контент для тех, кто тег не
@@ -290,7 +312,7 @@ export const mapScene = {
    ядром, тем же числом:
 
    ```html
-   <script src="../assets/shared/kiosk/hint.js?v=1.22.0"></script>
+   <script src="../assets/shared/kiosk/hint.js?v=1.22.1"></script>
    ```
 
    Иначе браузер отдаст подсказку прошлого релиза, а вы будете смотреть на
@@ -472,13 +494,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.22.0">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.22.1">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.22.0"` загрузит и
-`kiosk-core.js?v=1.22.0`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.22.1"` загрузит и
+`kiosk-core.js?v=1.22.1`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -487,14 +509,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.0" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.0" />
-<script type="module" src="./app.js?v=1.22.0"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.1" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.1" />
+<script type="module" src="./app.js?v=1.22.1"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.0";
-import { mapScene }  from "./scenes/map.js?v=1.22.0";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.1";
+import { mapScene }  from "./scenes/map.js?v=1.22.1";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя
@@ -944,8 +966,8 @@ python3 assets/shared/kiosk/tools/audit-links.py --path mtk42-app
 сочетаний — что оно не разваливается в остальных.
 
 ```html
-<script src="../assets/shared/kiosk/tools/selftest.js?v=1.22.0"></script>
-<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.22.0"></script>
+<script src="../assets/shared/kiosk/tools/selftest.js?v=1.22.1"></script>
+<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.22.1"></script>
 ```
 
 Оба прогона печатают **предусловия рядом с числами** — окно, сцену,

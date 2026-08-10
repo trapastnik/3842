@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.22.0";
+  var VERSION = "1.22.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1469,45 +1469,49 @@
 
   /* ------------------------------------------------------------------ DOM */
 
-  /* ПОДАВЛЕНИЕ БРАУЗЕРНОГО ЗУМА/СКРОЛЛА СТРАНИЦЫ (киоск-канон).
+  /* ПОДАВЛЕНИЕ НАТИВНОГО ЗУМА СТРАНИЦЫ — НО ЖЕСТ ОСТАЁТСЯ СЦЕНЕ.
    *
-   * meta viewport в Safari частично игнорируется, поэтому главные — JS-
-   * обработчики, а user-scalable=no/maximum-scale=1 и touch-action в CSS
-   * лишь усиление. Гасим МУЛЬТИтач-зум и жесты масштабирования, одиночное
-   * касание не трогаем — drag-to-rotate глобуса и pan-скролл панелей уже
-   * работают и должны жить дальше.
+   * Тонкая, но решающая разница (уточнение пользователя): гасим ЗУМ
+   * БРАУЗЕРА (visualViewport.scale ≡ 1), а сам жест НЕ съедаем — глобус и
+   * карты зумят СВОЙ контент тем же пинчем, слушая сырые touch/pointer/wheel.
+   * Первая редакция (1.22.1) глобально гасила мультитач-touchmove — это
+   * отнимало жест у сцен целиком; убрано.
    *
-   * Слушатели НЕ passive (нужен preventDefault) и на documentElement, чтобы
-   * поймать жест раньше сцен. Ссылки храним для снятия в destroy. */
+   * Как это устроено: нативный зум давит touch-action на поверхностях
+   * (канва сцены = none → двухпальцевый жест уходит в JS сцены, а не в
+   * браузер; .kiosk-scroll = pan-y; корень = none) плюс ТОЧЕЧНЫЕ
+   * preventDefault на том, что touch-action не покрывает — gesture-события
+   * Safari, Ctrl+колесо, двойной тап, клавиатурный зум.
+   * preventDefault отменяет НАТИВНОЕ действие, но НЕ мешает слушателям
+   * сцены получить событие и зумить камеру — поэтому здесь НЕТ ни одного
+   * stopPropagation и НЕТ глобального preventDefault на touch/move. */
   KioskApp.prototype._lockZoom = function () {
     if (this._zoomLocked) return;
     this._zoomLocked = true;
     var doc = document, de = doc.documentElement;
 
-    /* Safari pinch/поворот на трекпаде и тач — отдельные события. */
+    /* Safari pinch/поворот на трекпаде и тач — отдельные события, и сцены их
+     * не слушают (они считают пинч по touches[0..1]). Гасим у корня. */
     var onGesture = function (e) { e.preventDefault(); };
     ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
       doc.addEventListener(ev, onGesture, { passive: false });
     });
 
-    /* Ctrl+колесо = зум и на трекпаде (щипок), и на десктопе. Обычная
-     * прокрутка без Ctrl не трогается — панели скроллятся как прежде. */
+    /* Ctrl+колесо = зум страницы на трекпаде (щипок) и десктопе. Гасим
+     * НАТИВНЫЙ зум, но событие НЕ останавливаем — сцена на канве получит
+     * тот же wheel и сама зумит камеру. Обычный wheel не трогаем вовсе:
+     * панели скроллятся, а сцена решает про зум сама. */
     var onWheel = function (e) { if (e.ctrlKey) e.preventDefault(); };
     doc.addEventListener("wheel", onWheel, { passive: false });
 
-    /* Двойной тап/клик по фону зумит в Safari. По интерактивным целям не
-     * мешаем: там свои обработчики, и там двойного зума и так не будет. */
+    /* Двойной тап зумит в Safari (smart-zoom). preventDefault гасит только
+     * это; слушатели двойного клика, если сцене они нужны, всё равно
+     * сработают — событие доставляется. */
     var onDbl = function (e) { e.preventDefault(); };
     doc.addEventListener("dblclick", onDbl, { passive: false });
 
-    /* МУЛЬТИтач-старт — щипок двумя пальцами. Одиночное касание проходит:
-     * второй палец и дальше глушим, первый оставляем сцене. */
-    var onTouch = function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); };
-    doc.addEventListener("touchstart", onTouch, { passive: false });
-    doc.addEventListener("touchmove", onTouch, { passive: false });
-
-    /* Ctrl +/-/0 и ⌘ +/-/0 — клавиатурный зум, на случай подключённой
-     * клавиатуры у сервис-панели. */
+    /* Ctrl/⌘ +/-/0 — клавиатурный зум, на случай подключённой клавиатуры
+     * у сервис-панели. К сценам отношения не имеет. */
     var onKey = function (e) {
       if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) {
         e.preventDefault();
@@ -1521,8 +1525,6 @@
       });
       doc.removeEventListener("wheel", onWheel);
       doc.removeEventListener("dblclick", onDbl);
-      doc.removeEventListener("touchstart", onTouch);
-      doc.removeEventListener("touchmove", onTouch);
       doc.removeEventListener("keydown", onKey);
       de.removeAttribute("data-zoom-locked");
     };
