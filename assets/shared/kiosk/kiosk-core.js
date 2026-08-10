@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.21.4";
+  var VERSION = "1.21.5";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -3013,10 +3013,19 @@
      * у чего есть человеческая подпись. */
     var fieldsEl = this._els.finderPanel.querySelector(".kiosk-finder__fields");
     if (fieldsEl) {
-      var labels = ((spec.search || {}).fields || []).map(function (f) {
-        if (f && typeof f === "object" && f.label) return pickLabel(normLabel(f.label), self.lang);
-        return null;
-      }).filter(Boolean);
+      /* ДЕДУП ПО ПОДПИСИ. Несколько полей часто прячутся за одной
+       * человеческой подписью (латиница + оригинал под «Название» у 39, у
+       * 42 short+full_name оба «Название»): для поиска это разные поля, для
+       * читателя строки — одно слово, и «Название · Название» дефект.
+       * Дедуп по значению label, порядок — по первому вхождению. */
+      var seen = {}, labels = [];
+      ((spec.search || {}).fields || []).forEach(function (f) {
+        if (!(f && typeof f === "object" && f.label)) return;
+        var text = pickLabel(normLabel(f.label), self.lang);
+        if (!text || seen[text]) return;
+        seen[text] = 1;
+        labels.push(text);
+      });
       /* Блок полей уходит ВМЕСТЕ со строкой ввода. Он перечисляет, по чему
        * ищем, — а когда поиска нет, это обещание без функции: панель звала
        * искать по трём полям и не давала ввести ни одного (находка МТК 39).
