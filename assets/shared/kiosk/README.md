@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.1" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.1" />
-    <link rel="stylesheet" href="./styles.css?v=1.22.1" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.2" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.2" />
+    <link rel="stylesheet" href="./styles.css?v=1.22.2" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.22.1"></script>
+    <script type="module" src="./app.js?v=1.22.2"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.1";
-import { mapScene } from "./scenes/map.js?v=1.22.1";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.22.1";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
+import { mapScene } from "./scenes/map.js?v=1.22.2";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.22.2";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.22.1",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.22.2",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.22.1"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.22.2"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -111,7 +111,7 @@ export const mapScene = {
   unmount() {},         // снять всё: слушатели, ResizeObserver, таймеры
   pause() {},           // сцена не видна: ОСТАНОВИТЬ rAF и таймеры полностью
   resume() {},          // снова видна
-  reset() {},           // idle-сброс: фильтры, зум, открытые карточки, скролл
+  reset() {},           // ГРАНИЦА ВИЗИТА: фильтры, зум, карточки, скролл — см.ниже
   setLang(lang) {},     // "ru" | "en" | "zh"
   setA11y(on) {},       // крупнее точки, меньше плотность подписей
   standby() { return null; },  // см. ниже
@@ -122,6 +122,15 @@ export const mapScene = {
 сцены не роняет приложение: она уходит в журнал.
 
 ### Жёсткие правила
+
+0. **`reset()` — граница визита, и она едина.** Всё, что не должен увидеть
+   СЛЕДУЮЩИЙ посетитель, — зум карты, включённые фильтры, открытые карточки,
+   позиция скролла — сбрасывайте здесь. Ядро зовёт `reset()` в **двух** точках:
+   на idle-сбросе (посетитель отошёл) и **на входе в заставку** (`_enterStandby`,
+   до вашего `standby()`) — иначе аттрактор крутил бы приближённую карту
+   прошлого гостя все 180 секунд. Отдельный «standby-хук» вам не нужен: один
+   `reset()` покрывает обе границы. Пишите его идемпотентным — за визит он
+   может сработать дважды.
 
 1. **`pause()` останавливает всё.** Неактивная сцена — 0 rAF и 0 таймеров. Это
    проверяется на приёмке. Схема из демо:
@@ -231,14 +240,41 @@ export const mapScene = {
      `e.touches[0]` и `e.touches[1]` и зумьте свою камеру;
    - на десктопе/трекпаде пинч приходит как `wheel` с `e.ctrlKey === true`.
      Ядро гасит им **нативный** зум страницы, но событие до вашей канвы
-     доходит — слушайте `wheel`, проверяйте `ctrlKey`, зумьте камеру. Обычный
-     `wheel` (без Ctrl) ядро не трогает вовсе;
+     доходит — слушайте `wheel`, зумьте камеру. **На своей канве вы вправе
+     зумить ЛЮБЫМ `wheel`** — и с Ctrl, и обычным; ядро гасит только зум
+     страницы (Ctrl+wheel нативный), обычный `wheel` не трогает вовсе;
    - `gesturestart/*` (Safari) ядро гасит у корня — вам они не нужны, пинч
      считается по касаниям.
 
    Ничего подключать не надо: объявили канву в слое сцены — жест уже ваш.
-   Нужен нативный pan по своей канве (редко) — переопределите `touch-action`
-   у себя.
+
+   **Нужен нативный pan по своей канве** (редко) — не боритесь с
+   `touch-action` селектором: правило ядра `.kiosk-stage canvas` специфичнее
+   вашего `.my-canvas`, и переопределение молча проиграет. Крутите
+   **переменную значения**:
+
+   ```css
+   .my-canvas { --kiosk-canvas-touch: pan-y; }   /* палец скроллит канву */
+   ```
+
+   **Нижнюю границу зума считайте через `KioskCore.fitZoom`, а не сами.**
+   «Весь контент в кадре» (fit) — это `min(view/content)` по осям, но её края
+   (деление на ноль при пустом контенте, схлопнутый вьюпорт, поля больше
+   кадра) у каждой карты разошлись бы молча. Один helper на все:
+
+   ```js
+   const min = KioskCore.fitZoom(worldW, worldH, viewW, viewH, {
+     mode: "contain",              // деф.: весь контент виден; "cover" — кадр закрыт
+     padding: { bottom: 60 * s },  // число (все стороны) ИЛИ {top,bottom,left,right}
+   });
+   this._map.zoom = Math.max(min, this._map.zoom);   // не пускать ближе нижней границы
+   ```
+
+   Возвращает **масштаб, а не позицию**. Для масштаба важны СУММЫ полей по
+   осям — `{bottom:60}` даёт тот же масштаб, что `{top:30,bottom:30}`. Объект
+   принимается ради читаемости; сдвиг карты из-под HUD (чтобы не залезала) —
+   это уже позиционирование, его делаете вы своим translate. Верхнюю границу
+   зума держите сами — она про ваш контент.
 
    **Подсказку жеста вешайте на контейнер сцены, а не на `<canvas>`.** Браузер не
    рисует детей холста — его содержимое это запасной контент для тех, кто тег не
@@ -312,7 +348,7 @@ export const mapScene = {
    ядром, тем же числом:
 
    ```html
-   <script src="../assets/shared/kiosk/hint.js?v=1.22.1"></script>
+   <script src="../assets/shared/kiosk/hint.js?v=1.22.2"></script>
    ```
 
    Иначе браузер отдаст подсказку прошлого релиза, а вы будете смотреть на
@@ -494,13 +530,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.22.1">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.22.2">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.22.1"` загрузит и
-`kiosk-core.js?v=1.22.1`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.22.2"` загрузит и
+`kiosk-core.js?v=1.22.2`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -509,14 +545,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.1" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.1" />
-<script type="module" src="./app.js?v=1.22.1"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.22.2" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.22.2" />
+<script type="module" src="./app.js?v=1.22.2"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.1";
-import { mapScene }  from "./scenes/map.js?v=1.22.1";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
+import { mapScene }  from "./scenes/map.js?v=1.22.2";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя
@@ -966,8 +1002,8 @@ python3 assets/shared/kiosk/tools/audit-links.py --path mtk42-app
 сочетаний — что оно не разваливается в остальных.
 
 ```html
-<script src="../assets/shared/kiosk/tools/selftest.js?v=1.22.1"></script>
-<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.22.1"></script>
+<script src="../assets/shared/kiosk/tools/selftest.js?v=1.22.2"></script>
+<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.22.2"></script>
 ```
 
 Оба прогона печатают **предусловия рядом с числами** — окно, сцену,
