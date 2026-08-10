@@ -2,14 +2,15 @@
  *
  * Наследник прототипа mtk38-catalog, но там были жёстко вписаны 42 языка на
  * один экран. В финальном МТК канон — 128 языков, поэтому сетка листается
- * страницами, а фильтр (все / ООН / с изданием) — пилюлями на сцене: это выбор
- * посетителя, а не настройка киоска.
+ * страницами, а поиск и отбор живут в финдере ядра (лупа в ряду инструментов):
+ * это выбор посетителя, а не настройка киоска.
  *
  * Canvas 2D, а не DOM: у каждого написания свой шрифт своей письменности, и
  * рисовать их вручную дешевле, чем биться с переносом строк в 128 ячейках.
  */
-import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=25";
-import { createCard } from "./card.js?v=25";
+import { loadData, famBig, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint,
+  scriptLabel, familyTop, matchesQuery, foldQuery } from "./shared.js?v=28";
+import { createCard } from "./card.js?v=28";
 
 export const catalogScene = {
   id: "catalog",
@@ -24,6 +25,47 @@ export const catalogScene = {
     { key: "grain", label: { ru: "Зерно" }, type: "range", min: 0, max: 0.2, step: 0.005, default: 0.05 },
     { key: "vign", label: { ru: "Виньетка" }, type: "range", min: 0, max: 1, step: 0.02, default: 0.8 },
   ],
+
+  /* Финдер. Каталог — его родной случай: 128 языков по 35 ячеек на страницу,
+   * без поиска «найти свой язык» превращается в листание вслепую.
+   *
+   * Пилюли «все / языки ООН / с изданием» уехали сюда целиком — это отбор, а не
+   * вид. Побочная польза переезда: на сцене они были взаимоисключающими, здесь
+   * это два независимых ключа, и «языки ООН, у которых есть издание» наконец
+   * выразимо.
+   *
+   * options функциями: фасеты выводятся из канона, а декларация читается, когда
+   * данных ещё нет. Ядро отдаёт в них свой контекст — берём оттуда язык. */
+  finder: {
+    search: {
+      fields: [
+        { key: "name", label: { ru: "Язык", en: "Language", zh: "语言" } },
+        { key: "endonym", label: { ru: "Самоназвание", en: "Endonym", zh: "本名" } },
+        /* Написание ищется вместе с остальным: «Ленин» одинаков у 36 языков и
+         * сам по себе мало что сужает, но латинские варианты — «Leninas»,
+         * «Lê-nin», «Lenins» — различают. Строка «36 из 128» объясняет
+         * посетителю широкий ответ честнее, чем отсутствие поля. */
+        { key: "writing", label: { ru: "Написание", en: "Written form", zh: "写法" } },
+      ],
+    },
+    filters: [
+      { key: "script", label: { ru: "Письменность", en: "Script", zh: "文字" },
+        options: (ctx) => catalogScene._facetScript(ctx && ctx.lang) },
+      { key: "family", label: { ru: "Семья", en: "Family", zh: "语系" },
+        options: () => catalogScene._facetFamily() },
+      { key: "un", label: { ru: "Языки ООН", en: "UN languages", zh: "联合国语言" },
+        options: (ctx) => [["yes", ctx && ctx.lang === "en" ? "only these" : "только они"]] },
+      { key: "pub", label: { ru: "Издание", en: "Edition", zh: "出版物" },
+        options: (ctx) => (ctx && ctx.lang === "en"
+          ? [["yes", "exists"], ["no", "none"]]
+          : [["yes", "есть"], ["no", "нет"]]) },
+    ],
+    sorts: [
+      { key: "az", label: { ru: "По алфавиту", en: "A→Z", zh: "按字母" } },
+      { key: "speakers", label: { ru: "По числу говорящих", en: "By speakers", zh: "按使用人数" } },
+      { key: "script", label: { ru: "По письменности", en: "By script", zh: "按文字" } },
+    ],
+  },
 
   preload: { custom: async () => { await loadData(); } },
 
@@ -46,10 +88,8 @@ export const catalogScene = {
       '<div class="m38-vign"></div><div class="m38-grain"></div>' +
       '<header class="m38-head"><div class="m38-kicker"></div>' +
       '<h1 class="m38-title"></h1><p class="m38-sub"></p></header>' +
-      '<nav class="m38-pills" role="radiogroup"><span class="m38-pills__lab"></span>' +
-      '<button type="button" class="m38-pill kiosk-target" data-filter="all"></button>' +
-      '<button type="button" class="m38-pill kiosk-target" data-filter="un"></button>' +
-      '<button type="button" class="m38-pill kiosk-target" data-filter="pub"></button></nav>' +
+      /* Пилюль отбора здесь больше нет — «все / языки ООН / с изданием» уехали
+       * в финдер. Пагинатор остался: листание — не отбор. */
       '<div class="m38-pager">' +
       '<button type="button" class="m38-pager__btn kiosk-target" data-page="-1" aria-label="назад">‹</button>' +
       '<span class="m38-pager__num"></span>' +
@@ -61,7 +101,9 @@ export const catalogScene = {
     this._ctx2d = this._canvas.getContext("2d");
     this._card = createCard({ publications: this._pubs, t: (k) => (this._app ? this._app.t(k) : null),
       lang: () => (this._app ? this._app.lang : "ru") });
-    this._filter = "all";
+    /* Отбор держит ядро; здесь только последнее применённое состояние, чтобы
+     * _list() и healthcheck говорили об одном и том же. */
+    this._find = { query: "", filters: {}, sort: null };
     this._page = 0;
     this._hover = -1;
     this._press = -1;
@@ -69,13 +111,6 @@ export const catalogScene = {
     this._cfg = this._cfg || {};
 
     this._h = {
-      pills: (e) => {
-        const b = e.target.closest("[data-filter]");
-        if (!b) return;
-        this._filter = b.getAttribute("data-filter");
-        this._page = 0;
-        this._build();
-      },
       pager: (e) => {
         const b = e.target.closest("[data-page]");
         if (!b) return;
@@ -111,7 +146,6 @@ export const catalogScene = {
         if (Math.abs(dx) > 90) { this._turn(dx < 0 ? 1 : -1); this._downAt = null; }
       },
     };
-    root.querySelector(".m38-pills").addEventListener("click", this._h.pills);
     root.querySelector(".m38-pager").addEventListener("click", this._h.pager);
     this._canvas.addEventListener("pointermove", this._h.move, { passive: true });
     this._canvas.addEventListener("pointermove", this._h.swipe, { passive: true });
@@ -158,8 +192,23 @@ export const catalogScene = {
 
   reset() {
     if (this._card) this._card.close();
-    this._filter = "all"; this._page = 0; this._hover = -1;
+    /* Сам отбор гасит ЯДРО, и делает это до нашего reset(). Обнулять здесь
+     * _find незачем — но и вредно: следом придёт applyFinder с пустым
+     * состоянием, а до него сцена должна показывать то же, что и панель. */
+    this._page = 0; this._hover = -1;
     this._build();
+  },
+
+  /* Канон: применяем ЦЕЛИКОМ при любом изменении, порядок — отбор → поиск →
+   * сортировка. Возврат {shown,total} даёт строку «N из 128» в подвале панели:
+   * при 128 языках и поиске по написанию («Ленин» — 36 попаданий) это
+   * единственное, что объясняет посетителю широкий или пустой ответ. */
+  applyFinder({ query, filters, sort }) {
+    this._find = { query: foldQuery(query), filters: filters || {}, sort: sort || null };
+    this._page = 0;
+    this._hover = -1;
+    this._build();
+    return { shown: this._list().length, total: this._all ? this._all.length : 0 };
   },
 
   /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
@@ -182,24 +231,26 @@ export const catalogScene = {
   setLang(lang) {
     this._lang = lang || this._lang || "ru";
     const T = {
+      /* Подзаголовок говорит два числа, когда отбор их развёл: «35 из 128».
+       * Одно число врало бы — сетка показывает отобранное, а каталог обещает
+       * весь свод. */
       ru: { kicker: "МТК 38 · Ленин на языках мира", title: "Каталог написаний",
-            lab: "показать", all: "все", un: "языки ООН", pub: "с изданием",
-            sub: (n) => `${n} языков в сетке. Тап по ячейке — карточка языка и издания на нём.` },
+            sub: (n, all) => (n === all
+              ? `${all} языков в сетке. Тап по ячейке — карточка языка и издания на нём. Лупа — поиск и отбор.`
+              : `${n} из ${all} языков по отбору. Тап по ячейке — карточка языка и издания на нём.`) },
       en: { kicker: "MTK 38 · Lenin in the world's languages", title: "Catalogue of forms",
-            lab: "show", all: "all", un: "UN languages", pub: "with edition",
-            sub: (n) => `${n} languages in a grid. Tap a cell for the language card and its edition.` },
+            sub: (n, all) => (n === all
+              ? `${all} languages in a grid. Tap a cell for the language card and its edition. The lens searches and filters.`
+              : `${n} of ${all} languages match. Tap a cell for the language card and its edition.`) },
       zh: { kicker: "МТК 38 · 世界语言中的列宁", title: "写法目录",
-            lab: "显示", all: "全部", un: "联合国语言", pub: "有出版物",
-            sub: (n) => `网格中的 ${n} 种语言。点按查看卡片。` },
+            sub: (n, all) => (n === all
+              ? `网格中的 ${all} 种语言。点按查看卡片。`
+              : `${all} 种语言中的 ${n} 种。点按查看卡片。`) },
     }[this._lang];
     if (!T || !this._root) return;
     this._T = T;
     this._root.querySelector(".m38-kicker").textContent = T.kicker;
     this._root.querySelector(".m38-title").textContent = T.title;
-    this._root.querySelector(".m38-pills__lab").textContent = T.lab;
-    for (const b of this._root.querySelectorAll("[data-filter]")) {
-      b.textContent = T[b.getAttribute("data-filter")];
-    }
     this._syncCardLang();
     if (this._hint && this._hint.setLabel) this._hint.setLabel(this._hintLabel());
     this._build();
@@ -223,32 +274,42 @@ export const catalogScene = {
     /* Пусто по фильтру и пусто из-за непрочитанных данных — разные вещи.
      * Фильтр «с изданием» на несостоявшейся загрузке изданий обязан краснеть
      * ровно так же, как слой изданий на карте: корень один. */
-    if (this._filter === "pub" && this._pubsOk === false) {
-      return { ok: false, detail: "издания не загрузились — фильтр «с изданием» пуст не по данным" };
+    const f = (this._find && this._find.filters) || {};
+    if (f.pub === "yes" && this._pubsOk === false) {
+      return { ok: false, detail: "издания не загрузились — отбор «издание: есть» пуст не по данным" };
     }
+    const what = this._findLabel();
     const total = this._list().length;
-    /* Легально пустое состояние: фильтр «с изданием» на урезанном каноне может
-     * дать ноль — это честный ответ данных, а не поломка сцены. Красным здесь
-     * горело бы то, что посетителю показывают правильно. */
-    if (!total) return { ok: true, detail: `фильтр «${this._filter}» — языков нет (пусто по данным)` };
+    /* Легально пустое состояние: отбор может честно не дать ничего — например
+     * «языки ООН» с письменностью «Тхана». Красным здесь горело бы то, что
+     * посетителю показывают правильно, и строка «0 из 128» уже объяснила. */
+    if (!total) return { ok: true, detail: `${what} — языков нет (пусто по отбору)` };
     /* Сетка раскладывается от размера контейнера, а размер приходит из кадра.
      * В скрытом слое ячеек законно ноль — это не «загружено, но пусто». */
     if (offScreen(this._root)) {
-      return { ok: true, detail: `фильтр «${this._filter}»: ${total} языков готовы, слой не на экране` };
+      return { ok: true, detail: `${what}: ${total} языков готовы, слой не на экране` };
     }
     if (!this._cells.length) {
-      return { ok: false, detail: `в фильтре «${this._filter}» ${total} языков, а на странице ноль ячеек` };
+      return { ok: false, detail: `в отборе ${what} ${total} языков, а на странице ноль ячеек` };
     }
     return { ok: true, detail: `ячеек на странице ${this._cells.length}, `
-      + `страница ${this._page + 1} из ${this._pages}, фильтр «${this._filter}» (${total} языков)` };
+      + `страница ${this._page + 1} из ${this._pages}, ${what} (${total} языков)` };
   },
 
-  /* Фильтр — выбор посетителя, в схеме настроек его нет: даём sweep явно. */
-  states() {
-    return ["all", "un", "pub"].map((k) => ({
-      name: "фильтр: " + k,
-      apply: () => { this._filter = k; this._page = 0; this._build(); },
-    }));
+  /* Человекочитаемое описание текущего отбора — для detail healthcheck.
+   * Читать его будут в отчёте прогона, где «фильтр {}» ничего не значит. */
+  _findLabel() {
+    const st = this._find || {};
+    const f = st.filters || {};
+    const parts = [];
+    if (f.script) parts.push("письменность " + scriptLabel(f.script, this._lang));
+    if (f.family) parts.push("семья " + f.family);
+    if (f.un === "yes") parts.push("языки ООН");
+    if (f.pub === "yes") parts.push("с изданием");
+    if (f.pub === "no") parts.push("без издания");
+    if (st.query) parts.push(`поиск «${st.query}»`);
+    if (st.sort) parts.push("порядок " + st.sort);
+    return parts.length ? "отбор: " + parts.join(", ") : "отбора нет";
   },
 
   setA11y(on) {
@@ -268,24 +329,80 @@ export const catalogScene = {
 
   /* ── внутреннее ─────────────────────────────────────────────────── */
 
+  /* Порядок канона: отбор → поиск → сортировка. */
   _list() {
-    if (this._filter === "un") return this._all.filter((l) => l.un);
-    if (this._filter === "pub") return this._all.filter((l) => this._pubs.has(l.id));
-    return this._all;
+    if (!this._all) return [];
+    const f = (this._find && this._find.filters) || {};
+    let list = this._all;
+
+    if (f.script) list = list.filter((l) => l.sc === f.script);
+    if (f.family) list = list.filter((l) => familyTop(l) === f.family);
+    if (f.un === "yes") list = list.filter((l) => l.un);
+    if (f.pub === "yes") list = list.filter((l) => this._pubs.has(l.id));
+    if (f.pub === "no") list = list.filter((l) => !this._pubs.has(l.id));
+
+    const q = this._find ? this._find.query : "";
+    if (q) list = list.filter((l) => matchesQuery(l, q));
+
+    const sort = this._find ? this._find.sort : null;
+    if (sort === "az") {
+      list = [...list].sort((a, b) => a.n.localeCompare(b.n, "ru"));
+    } else if (sort === "speakers") {
+      /* Число говорящих заполнено у 53 из 128. Записи без него — в КОНЕЦ:
+       * посетитель, выбравший «по числу говорящих», ищет числа, а не пустоты. */
+      list = [...list].sort((a, b) => {
+        const av = a.speakers, bv = b.speakers;
+        if (av == null && bv == null) return a.n.localeCompare(b.n, "ru");
+        if (av == null) return 1;
+        if (bv == null) return -1;
+        return bv - av;
+      });
+    } else if (sort === "script") {
+      const lang = this._lang;
+      list = [...list].sort((a, b) =>
+        scriptLabel(a.sc, lang).localeCompare(scriptLabel(b.sc, lang), "ru")
+        || a.n.localeCompare(b.n, "ru"));
+    }
+    return list;
+  },
+
+  /* Фасеты — из загруженного канона, с числами в подписи: «Кириллица · 41»
+   * сразу говорит, велик ли улов, и не даёт ткнуть в пустоту. Порядок — по
+   * убыванию, потому что 33 письменности хвостом из единиц утомляют. */
+  _facetScript(lang) {
+    if (!this._all) return [];
+    const by = new Map();
+    for (const l of this._all) by.set(l.sc, (by.get(l.sc) || 0) + 1);
+    return [...by.entries()]
+      .sort((a, b) => b[1] - a[1] || scriptLabel(a[0], lang).localeCompare(scriptLabel(b[0], lang), "ru"))
+      .map(([iso, n]) => [iso, `${scriptLabel(iso, lang)} · ${n}`]);
+  },
+
+  _facetFamily() {
+    if (!this._all) return [];
+    const by = new Map();
+    for (const l of this._all) {
+      const f = familyTop(l);
+      if (f) by.set(f, (by.get(f) || 0) + 1);
+    }
+    return [...by.entries()]
+      .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ru"))
+      .map(([f, n]) => [f, `${f} · ${n}`]);
   },
 
   _size() {
     if (!this._canvas) return;
     const r = this._canvas.getBoundingClientRect();
     if (!r.width || !r.height) return;
-    this._W = Math.round(r.width); this._H = Math.round(r.height);
+    /* ВНИЗ: дробный бокс киоска при округлении вверх давал буфер сверх бюджета. */
+    this._W = Math.floor(r.width); this._H = Math.floor(r.height);
     /* Тот же бюджет 8.3 Мп, что у GPU-сцен: Canvas 2D дешевле в отрисовке, но
      * 4K-бокс при dpr 2 давал буфер под 40 Мп — это память и просадка на
      * каждой заливке, а на киоске экран как раз 4K. */
     const dpr = capDpr(this._W, this._H);
     this._dpr = dpr;
-    this._canvas.width = Math.round(this._W * dpr);
-    this._canvas.height = Math.round(this._H * dpr);
+    this._canvas.width = Math.floor(this._W * dpr);
+    this._canvas.height = Math.floor(this._H * dpr);
     this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
   },
 
@@ -319,11 +436,8 @@ export const catalogScene = {
     }
 
     const T = this._T;
-    if (T) this._root.querySelector(".m38-sub").textContent = T.sub(list.length);
+    if (T) this._root.querySelector(".m38-sub").textContent = T.sub(list.length, this._all.length);
     this._root.querySelector(".m38-pager__num").textContent = `${this._page + 1} / ${this._pages}`;
-    for (const b of this._root.querySelectorAll("[data-filter]")) {
-      b.setAttribute("aria-checked", b.getAttribute("data-filter") === this._filter ? "true" : "false");
-    }
   },
 
   _turn(d) {

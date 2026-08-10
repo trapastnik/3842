@@ -10,8 +10,9 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=25";
-import { createCard } from "./card.js?v=25";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint,
+  scriptLabel, matchesQuery, foldQuery } from "./shared.js?v=28";
+import { createCard } from "./card.js?v=28";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -49,6 +50,34 @@ export const mapScene = {
       min: 8, max: 40, step: 1, default: 15 },
   ],
 
+  /* Финдер. Карта — вторая (и последняя) сцена 38, где поиск осмыслен: 126
+   * языков точками и 145 изданий по городам печати, «найти свой язык» здесь
+   * такой же живой вопрос, как в каталоге.
+   *
+   * Сортировок НЕТ намеренно: порядок на географии не виден — точка стоит там,
+   * где стоит. Объявлять сортировку, которая ничего не меняет на экране, —
+   * обещать посетителю несуществующее действие.
+   *
+   * Пилюля «показать: языки / издания / оба» остаётся НА СЦЕНЕ: это
+   * переключение слоя данных, а не сужение выборки — «оба» показывает больше, а
+   * не меньше, и точки на лупе не заслуживает (решение согласовано). */
+  finder: {
+    search: {
+      fields: [
+        { key: "name", label: { ru: "Язык", en: "Language", zh: "语言" } },
+        { key: "endonym", label: { ru: "Самоназвание", en: "Endonym", zh: "本名" } },
+        { key: "writing", label: { ru: "Написание", en: "Written form", zh: "写法" } },
+        { key: "city", label: { ru: "Город издания", en: "City of printing", zh: "出版城市" } },
+      ],
+    },
+    filters: [
+      { key: "script", label: { ru: "Письменность", en: "Script", zh: "文字" },
+        options: (ctx) => mapScene._facetScript(ctx && ctx.lang) },
+      { key: "un", label: { ru: "Языки ООН", en: "UN languages", zh: "联合国语言" },
+        options: (ctx) => [["yes", ctx && ctx.lang === "en" ? "only these" : "только они"]] },
+    ],
+  },
+
   preload: { data: { geo: GEO_URL }, custom: async () => { await loadData(); } },
 
   async mount(el, ctx) {
@@ -74,6 +103,9 @@ export const mapScene = {
     }
 
     this._layer = "lang";
+    /* Отбор держит ядро; здесь — последнее применённое, чтобы отрисовка и
+     * healthcheck говорили об одном. */
+    this._find = { query: "", filters: {} };
     this._cfg = this._cfg || {};
     this._geo = null;
     this._tex = { relief: null, physical: null };
@@ -229,24 +261,101 @@ export const mapScene = {
     if (this._layer !== "lang" && this._pubsOk === false) {
       return { ok: false, detail: "издания не загрузились — слой пуст не по данным" };
     }
-    const want = this._layer === "lang" ? this._langs.length
-      : this._layer === "pub" ? this._places.length
-      : this._langs.length + this._places.length;
-    /* Ноль изданий при УСПЕШНО прочитанном источнике — честная пустота
-     * (в каноне может не оказаться ни одного города печати), и она зелёная,
-     * ровно как пустой фильтр каталога. Красное — только несостоявшаяся
-     * загрузка, её проверили выше. */
+    const want = this._shownCount();
+    const all = this._totalCount();
+    const what = `слой «${this._layer}»` + (want === all ? "" : ` (отбор: ${want} из ${all})`);
+    /* Ноль при УСПЕШНО прочитанном источнике — честная пустота: либо в каноне
+     * нет ни одного города печати, либо посетитель отобрал то, чего на карте
+     * нет («письменность: тхана» + слой изданий). Зелёное, ровно как пустой
+     * отбор каталога. Красное — только несостоявшаяся загрузка, она выше. */
     if (!want) {
-      return { ok: true, detail: `слой «${this._layer}»: в данных пусто (источник прочитан)` };
+      return { ok: true, detail: `${what}: показывать нечего (источник прочитан)` };
     }
     if (offScreen(this._root)) {
-      return { ok: true, detail: `слой «${this._layer}»: ${want} объектов готовы, слой не на экране` };
+      return { ok: true, detail: `${what}: ${want} объектов готовы, слой не на экране` };
     }
     const bad = bufferComplaint(this._canvas, this._dpr, this._root);
     if (bad) return { ok: false, detail: bad };
     if (!this._cache) return { ok: false, detail: "подложка карты не собрана" };
-    return { ok: true, detail: `слой «${this._layer}»: ${want} объектов, `
+    return { ok: true, detail: `${what}: ${want} объектов, `
       + `в кадре ${this._hits.length}, зум ${this._map.zoom.toFixed(2)}` };
+  },
+
+  /* Канон: применяем ЦЕЛИКОМ, порядок отбор → поиск. Сортировки у карты нет.
+   *
+   * {shown,total} считаем ПО ТЕКУЩЕМУ СЛОЮ, а не по сумме языков и изданий:
+   * посетитель видит один слой, и «0 из 271» при пустом отборе языков на слое
+   * «языки»сбивало бы с толку — знаменатель должен быть тем сводом, из
+   * которого на экране выбирают. */
+  applyFinder({ query, filters }) {
+    this._find = { query: foldQuery(query), filters: filters || {} };
+    if (this._card) this._card.close();      // карточка могла остаться от отфильтрованной точки
+    this._draw();
+    return { shown: this._shownCount(), total: this._totalCount() };
+  },
+
+  _shownCount() {
+    if (this._layer === "lang") return this._visLangs().length;
+    if (this._layer === "pub") return this._visPlaces().length;
+    return this._visLangs().length + this._visPlaces().length;
+  },
+
+  _totalCount() {
+    if (!this._langs) return 0;
+    if (this._layer === "lang") return this._langs.length;
+    if (this._layer === "pub") return this._places.length;
+    return this._langs.length + this._places.length;
+  },
+
+  /* Отбор и поиск по языкам. Порядок канона: сперва фасеты, потом строка.
+   *
+   * Город ищется и здесь, хотя он свойство ИЗДАНИЯ: поле «Город издания»
+   * объявлено для сцены целиком, и посетитель, набравший «Ташкент» на слое
+   * языков, вправе получить ответ, а не пустую карту. Ответ осмысленный —
+   * языки, чьи издания печатались в этом городе. Замер до правки: «Ташкент» на
+   * слое языков давал 0 из 126, на слое изданий — 1. */
+  _visLangs() {
+    if (!this._langs) return [];
+    const f = (this._find && this._find.filters) || {};
+    let list = this._langs;
+    if (f.script) list = list.filter((l) => l.sc === f.script);
+    if (f.un === "yes") list = list.filter((l) => l.un);
+    const q = this._find ? this._find.query : "";
+    if (q) list = list.filter((l) => matchesQuery(l, q) || this._cityHit(l, q));
+    return list;
+  },
+
+  _cityHit(lang, q) {
+    const arr = this._pubs && this._pubs.get(lang.id);
+    if (!arr) return false;
+    return arr.some((p) => foldQuery(p.cityRu).includes(q) || foldQuery(p.cityNative).includes(q));
+  },
+
+  /* Издания наследуют отбор своего языка — иначе «письменность: тибетская»
+   * оставила бы на карте тибетские точки и все 145 изданий рядом. Город ищется
+   * дополнительно: русское и оригинальное написание под одной подписью. */
+  _visPlaces() {
+    if (!this._places) return [];
+    const f = (this._find && this._find.filters) || {};
+    const q = this._find ? this._find.query : "";
+    return this._places.filter((pl) => {
+      const l = pl.lang;
+      if (f.script && (!l || l.sc !== f.script)) return false;
+      if (f.un === "yes" && !(l && l.un)) return false;
+      if (!q) return true;
+      if (l && matchesQuery(l, q)) return true;
+      const city = foldQuery(pl.pub.cityRu) + " " + foldQuery(pl.pub.cityNative);
+      return city.includes(q);
+    });
+  },
+
+  _facetScript(lang) {
+    if (!this._langs) return [];
+    const by = new Map();
+    for (const l of this._langs) by.set(l.sc, (by.get(l.sc) || 0) + 1);
+    return [...by.entries()]
+      .sort((a, b) => b[1] - a[1] || scriptLabel(a[0], lang).localeCompare(scriptLabel(b[0], lang), "ru"))
+      .map(([iso, n]) => [iso, `${scriptLabel(iso, lang)} · ${n}`]);
   },
 
   /* Слой — выбор посетителя, в схеме его нет (класс Б). */
@@ -418,10 +527,13 @@ export const mapScene = {
     const ctx = this._ctx2d, c = this._cfg;
     const cx = this._W * 0.5, cy = this._H * 0.5, ss = Math.min(this._W, this._H);
     const drawn = [];
-    const order = this._langs.map((p, i) => i)
-      .sort((a, b) => (this._langs[b].un - this._langs[a].un) || (this._langs[b].wt - this._langs[a].wt));
+    /* Рисуем ОТОБРАННОЕ: список пересчитывается на кадр, потому что отбор
+     * приходит из ядра и меняется без нашего ведома. */
+    const vis = this._visLangs();
+    const order = vis.map((p, i) => i)
+      .sort((a, b) => (vis[b].un - vis[a].un) || (vis[b].wt - vis[a].wt));
     for (const i of order) {
-      const p = this._langs[i], s = this._toScreen(p.lat, p.lng);
+      const p = vis[i], s = this._toScreen(p.lat, p.lng);
       if (s.x < -30 || s.x > this._W + 30 || s.y < -30 || s.y > this._H + 30) continue;
       const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));
       ctx.beginPath();
@@ -462,7 +574,9 @@ export const mapScene = {
       const mo = this._toScreen(55.75, 37.62);
       ctx.strokeStyle = rgba(PAL.red, 0.16);
       ctx.lineWidth = 0.9;
-      for (const pl of this._places) {
+      /* Дуги — тоже по отобранному: иначе при отборе на карте остаётся одна
+       * точка, а из Москвы к ней тянется весь исходный пучок из 145 линий. */
+      for (const pl of this._visPlaces()) {
         const s = this._toScreen(pl.lat, pl.lng);
         if ((s.x < -40 && mo.x < -40) || (s.x > this._W + 40 && mo.x > this._W + 40)) continue;
         const mx = (mo.x + s.x) / 2, my = (mo.y + s.y) / 2 - Math.hypot(s.x - mo.x, s.y - mo.y) * 0.16;
@@ -472,7 +586,7 @@ export const mapScene = {
         ctx.stroke();
       }
     }
-    for (const pl of this._places) {
+    for (const pl of this._visPlaces()) {
       const s = this._toScreen(pl.lat, pl.lng);
       if (s.x < -40 || s.x > this._W + 40 || s.y < -40 || s.y > this._H + 40) continue;
       const prox = Math.max(0, 1 - Math.hypot(s.x - cx, s.y - cy) / (ss * 0.7));

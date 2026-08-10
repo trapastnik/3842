@@ -10,7 +10,7 @@
  * платить 5 МБ вендора за старт киоска, который открывается на глобусе, но
  * может простоять смену на каталоге, незачем. Импорт-карта — в index.html.
  */
-import { GPU_MAX_PIXELS } from "./shared.js?v=25";
+import { GPU_MAX_PIXELS } from "./shared.js?v=28";
 
 let _boot = null;
 
@@ -53,7 +53,11 @@ export async function loadPostNodes() {
  * dpr=2 выходило 33 Мп, кадр проваливался. Выше 8.3 Мп режем dpr. */
 export function fitTo(renderer, camera, el, maxPixels = GPU_MAX_PIXELS) {
   const r = el.getBoundingClientRect();
-  const w = Math.max(1, Math.round(r.width)), h = Math.max(1, Math.round(r.height));
+  /* ВНИЗ, а не к ближайшему: бокс приходит дробным (3840.4 × 2160.2 на киоске),
+   * и округление вверх давало буфер 3841×2161 — 8.30 Мп при потолке 8.3, то
+   * есть провал бюджета на ровном месте. Поймано selftest'ом только на окне
+   * 3840×2160: на стенде 1280×720 запас прятал грань. */
+  const w = Math.max(1, Math.floor(r.width)), h = Math.max(1, Math.floor(r.height));
   const raw = Math.min(globalThis.devicePixelRatio || 1, 2);
   /* БЕЗ пола в единицу. Он тут и стоял, и из-за него бюджет не работал: на
    * боксе 4200×2400 dpr оставался 1 и буфер выходил 10.08 Мп при потолке 8.3.
