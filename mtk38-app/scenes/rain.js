@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=23";
-import { createCard } from "./card.js?v=23";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=23";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=24";
+import { createCard } from "./card.js?v=24";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=24";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -117,7 +117,6 @@ export const rainScene = {
   },
 
   resume() {
-    hushHint(this._hint);
     if (this._raf || !this._root) return;
     // GPU-путь делит канвас с глобусом и композициями — забираем его назад
     if (this._gpuMode && attachCanvas(this._gpu, this._root)) { this._canvas = this._gpu.canvas; this._fit(); }

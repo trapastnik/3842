@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=23";
-import { createCard } from "./card.js?v=23";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=24";
+import { createCard } from "./card.js?v=24";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {
@@ -150,7 +150,7 @@ export const mapScene = {
   },
 
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
-  resume() { hushHint(this._hint); if (!this._raf) this._loop(); },
+  resume() { if (!this._raf) this._loop(); },
 
   /* Контракт ядра: standby() без аргумента, возврат — стоп-функция аттрактора.
    * Карта статична, поэтому в заставке она сама показывает то, чего посетитель
