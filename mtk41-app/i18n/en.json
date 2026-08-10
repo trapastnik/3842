@@ -16,12 +16,12 @@
   "status.relocated": "Relocated",
   "status.unknown": "Fate unknown",
   "kind.bust": "bust",
-  "kind.relief": "bas-relief",
+  "kind.relief": "relief",
   "kind.rock-image": "rock painting",
   "kind.rock-carving": "rock carving",
   "kind.geoglyph": "geoglyph",
   "kind.steel-silhouette": "steel silhouette",
-  "kind.plaque": "memorial slab",
+  "kind.plaque": "memorial plaque",
   "kind.sculpture": "sculpture",
   "wave.first": "first wave",
   "nav.mode": "Scrolling",
@@ -65,5 +65,12 @@
   "hint.silhouettes": "Swipe the scale sideways",
   "hint.stacked": "Swipe each band separately",
   "hint.canon": "Tap a photograph",
-  "hint.authors": "Tap a work"
+  "hint.authors": "Tap a work",
+  "kind.relief.short": "rel",
+  "kind.rock": "rock image",
+  "kind.rock.short": "rock",
+  "kind.plaque.short": "plq",
+  "kind.steel": "steel silhouette",
+  "kind.steel.short": "steel",
+  "silhouettes.ruler": "Ground trace — a different axis: length, not height"
 }

@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.20.6";
+  var VERSION = "1.20.11";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2593,8 +2593,12 @@
     this._els.root.classList.toggle("is-finder", on);
     if (on) {
       panel.classList.remove("is-typing");   /* открываемся с чипов, не с клавиатуры */
-      this._renderFinder();
+      /* СНАЧАЛА показать, потом рисовать: решение о строке поиска берётся из
+       * замера вмещаемости, а измерима только видимая панель. При прежнем
+       * порядке первый рендер шёл по скрытой — замер отказывался, и поле
+       * строилось там, где места нет. */
       panel.hidden = false;
+      this._renderFinder();
       var body = panel.querySelector(".kiosk-finder__body");
       if (body) body.scrollTop = 0;   /* не наследуем прокрутку прошлого сеанса */
       /* Как и у сервис-панели: сверяемся с ТЕКУЩИМ состоянием, а не с тем,
@@ -2644,17 +2648,45 @@
     var panel = this._els.finderPanel, kb = panel.querySelector(".kiosk-kbd");
     if (!kb) return { fits: false, why: "нет клавиатуры" };
 
+    /* ПАНЕЛЬ ДОЛЖНА БЫТЬ ЗАПОЛНЕНА, ИНАЧЕ МЕРИМ ПУСТОТУ.
+     *
+     * Высота, остающаяся клавиатуре, зависит от того, сколько занято чипами.
+     * Свежепостроенная панель их ещё не содержит, и замер по ней завышал
+     * запас на постоянную величину: у пилота МТК 39 журнал говорил «62 из
+     * 96» там, где API отдавал 36 — ровно разница высоты неотрисованного
+     * тела. Два числа на одно состояние, и оператор не знал, каким считать.
+     * Поэтому замер сам доводит панель до измеримого вида. */
+    var body = panel.querySelector(".kiosk-finder__body");
+    if (body && !body.childElementCount) this._renderFinderBody();
+
+    /* ИЗМЕРИМА ТОЛЬКО ОТКРЫТАЯ ПАНЕЛЬ. Закрытая — другая раскладка, и
+     * подогнать её под открытую замером нельзя: пробовал через временный
+     * показ и класс открытости, разрыв остаётся постоянным (у пилота МТК 39
+     * это дало «62 из 96» в журнале против 36 у API — два числа на одно
+     * состояние, и оператор не знал, каким считать запас).
+     * Поэтому не второе число, а ОТКАЗ: `fits: null` значит «не мерил», и
+     * решение о строке поиска остаётся прежним до ближайшего открытия. */
+    if (panel.hidden || !this._finderOpen) {
+      return { fits: null, why: "панель закрыта — вмещаемость не измеряется" };
+    }
+
     /* Меряем в том состоянии, в каком клавиатура и живёт — в режиме ввода.
      * Скрытая панель размеров не имеет, поэтому на время замера показываем
      * её вне потока: видимой она при этом не становится. */
     var qBox = panel.querySelector(".kiosk-finder__q");
     var wasHidden = panel.hidden, wasTyping = panel.classList.contains("is-typing");
     var wasKb = kb.hidden, wasQ = qBox ? qBox.hidden : false;
+    var wasOpen = panel.classList.contains("is-open");
     var prev = panel.style.cssText;
     if (wasHidden) {
       panel.hidden = false;
       panel.style.cssText += ";visibility:hidden;pointer-events:none;";
     }
+    /* И КЛАСС ОТКРЫТОСТИ — тоже часть раскладки, а не только вида: без него
+     * закрытая панель мерилась в другой геометрии, и прямой вызов API давал
+     * не то число, что вызов при открытой панели. Мерим всегда ту раскладку,
+     * про которую спрашиваем. */
+    panel.classList.add("is-open");
     /* Меряем ИМЕННО ту раскладку, про которую спрашиваем: строка поиска на
      * месте, режим ввода включён. Иначе замер зависел бы от того, построена
      * ли строка сейчас, — а именно это мы и решаем, и ответ получался бы
@@ -2672,6 +2704,7 @@
 
     /* Возвращаем ВСЁ, что трогали: замер не должен менять картинку. */
     if (!wasTyping) panel.classList.remove("is-typing");
+    if (!wasOpen) panel.classList.remove("is-open");
     kb.hidden = wasKb;
     if (qBox) qBox.hidden = wasQ;
     if (wasHidden) { panel.hidden = true; panel.style.cssText = prev; }
@@ -2681,14 +2714,28 @@
   };
 
   KioskApp.prototype._warnNoSearch = function (fit) {
-    var sig = this.activeSceneId + ":" + fit.have + "/" + fit.need;
-    if (this._noSearchSig === sig) return;
-    this._noSearchSig = sig;
-    var msg = "поиск недоступен: клавиатуре не хватает высоты, " +
-      fit.have + " px из " + fit.need + " — строка поиска не построена; " +
-      "отбор и сортировка работают. Уменьшите nav.size или scale.ui.";
-    console.warn("[kiosk] " + msg);
-    this.log("warn", msg);
+    /* ЧИСЛО В ЖУРНАЛЕ — УСТОЯВШЕЕСЯ, а не то, что было в момент решения.
+     * Панель успевает перерисоваться несколько раз за один заход, и запись,
+     * сделанная на первом проходе, расходилась с тем, что отдаёт API потом:
+     * пилот МТК 39 получил «62 из 96» в журнале против 36 у finderSearchFits.
+     * Откладываем на микрозадачу и берём текущий замер — тот же приём, что
+     * и у предупреждения о клампе зон. */
+    var self = this;
+    if (this._warnPending) return;
+    this._warnPending = true;
+    Promise.resolve().then(function () {
+      self._warnPending = false;
+      var now = self.finderSearchFits();
+      if (!now || now.fits !== false) return;   /* пока думали — стало влезать */
+      var sig = self.activeSceneId + ":" + now.have + "/" + now.need;
+      if (self._noSearchSig === sig) return;
+      self._noSearchSig = sig;
+      var msg = "поиск недоступен: клавиатуре не хватает высоты, " +
+        now.have + " px из " + now.need + " — строка поиска не построена; " +
+        "отбор и сортировка работают. Уменьшите nav.size или scale.ui.";
+      console.warn("[kiosk] " + msg);
+      self.log("warn", msg);
+    });
   };
 
   KioskApp.prototype._buildKeyboard = function (host) {
@@ -2803,7 +2850,9 @@
     this._els.finderPanel = el;
   };
 
-  KioskApp.prototype._renderFinder = function () {
+  /* Тело панели (чипы отбора и сортировки) — отдельно от решения про поиск:
+   * чипы от вмещаемости не зависят, а вмещаемость от чипов — да. */
+  KioskApp.prototype._renderFinderBody = function () {
     var body = this._els.finderPanel && this._els.finderPanel.querySelector(".kiosk-finder__body");
     var spec = this.finderSpec();
     if (!body || !spec) return;
@@ -2851,15 +2900,29 @@
       }
       self._renderFinder();
     };
+  };
+
+  KioskApp.prototype._renderFinder = function () {
+    var spec = this.finderSpec();
+    if (!this._els.finderPanel || !spec) return;
+    var st = this.finderState(), self = this;
+
+    /* Сначала тело — от него зависит, сколько высоты останется клавиатуре. */
+    this._renderFinderBody();
 
     /* Поле ввода и клавиатура — только если сцена объявила поиск И если
      * клавиатуре физически хватает места хотя бы на один ряд букв. */
     var hasSearch = !!(spec.search && (spec.search.fields || []).length);
     var fit = hasSearch ? this.finderSearchFits() : null;
-    if (fit && !fit.fits) {
+    /* fits === null — «не мерил»: держим прежнее решение, а не выключаем
+     * поиск из-за неизмеримости. Выключает только честное «не влезает». */
+    if (fit && fit.fits === false) {
       hasSearch = false;
       this._warnNoSearch(fit);
+    } else if (fit && fit.fits === null) {
+      hasSearch = this._searchBuilt !== false;
     }
+    if (fit && fit.fits !== null) this._searchBuilt = hasSearch;
     var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
     var qBox = this._els.finderPanel.querySelector(".kiosk-finder__q");
     if (kb) kb.hidden = !hasSearch || !this._els.finderPanel.classList.contains("is-typing");

@@ -20,7 +20,7 @@
   "kind.rock-carving": "высеченный рельеф",
   "kind.geoglyph": "геоглиф",
   "kind.steel-silhouette": "стальной силуэт",
-  "kind.plaque": "мемориальная плита",
+  "kind.plaque": "мемориальная доска",
   "kind.sculpture": "скульптура",
   "wave.first": "первая волна",
   "nav.mode": "Промотка",
@@ -64,5 +64,12 @@
   "hint.silhouettes": "Листайте шкалу вбок",
   "hint.stacked": "Листайте каждую полосу отдельно",
   "hint.canon": "Коснитесь снимка",
-  "hint.authors": "Коснитесь работы"
+  "hint.authors": "Коснитесь работы",
+  "kind.relief.short": "бар",
+  "kind.rock": "наскальное",
+  "kind.rock.short": "скала",
+  "kind.plaque.short": "доска",
+  "kind.steel": "стальной силуэт",
+  "kind.steel.short": "сталь",
+  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота"
 }
