@@ -25,9 +25,9 @@
  *
  * У кого нет ни того ни другого — процедурный пунктир, как в «Масштабе». Это
  * видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=59";
+import { scaleScene } from "./scale.js?v=60";
 import { DATA, HUMAN_HEIGHT_M, PALETTE, cssColor, emptyVerdict, fillTextIfFits,
-  preloadThumbs, statusColor } from "./shared.js?v=59";
+  preloadThumbs, statusColor } from "./shared.js?v=60";
 
 /* Хранилище силуэтов — на уровне МОДУЛЯ, а не в ctx.
  * ctx у ядра одноразовый: context() отдаёт новый объект и прероллу, и mount().

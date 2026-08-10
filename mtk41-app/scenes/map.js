@@ -32,17 +32,20 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=59";
-import { createMapCore } from "./map-core.js?v=59";
+} from "./shared.js?v=60";
+import { createMapCore } from "./map-core.js?v=60";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
 
-/* Границы зума — в одном месте, а не литералами по путям. Нижнюю скоро
- * сменит fitZoom ядра («дальше некуда» = «Весь вид», канон PLAN-KIOSK), и
- * менять её надо там, где её читают ВСЕ пути сразу. */
-const MIN_ZOOM = 0.2;
+/* Верхняя граница зума — число: она про контент (дальше кружки крупнее
+ * города, разглядывать нечего). Нижняя — НЕ число, см. _fitZoom.
+ *
+ * FLOOR_FALLBACK нужен только до первого замера мира: пока worldW = 0,
+ * вписывать нечего, и заклампить зум к выдуманному значению хуже, чем
+ * пропустить один кадр. */
 const MAX_ZOOM = 40;
+const FLOOR_FALLBACK = 0.2;
 
 /* Пресеты стартового вида из описи настроек. */
 const VIEW_PRESETS = {
@@ -235,6 +238,16 @@ export const mapScene = {
 
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
+    /* Режим слабовидящих растит нав и ужимает стол — значит поднимает пол
+     * зума. Ждать наблюдателя размеров нельзя: в скрытой вкладке он не
+     * приходит НИКОГДА, а стенды приёмки работают именно в скрытой, и
+     * посетитель остался бы под новым полом молча. Меряем сами —
+     * getBoundingClientRect форсирует раскладку, бокс уже новый; отложенный
+     * замер добирает случай, когда хром ядра доезжает следующим кадром. */
+    if (!this._host) return;
+    this._host.measure();
+    this._resized();
+    this._deferMeasure();
   },
 
   healthcheck() {
@@ -320,6 +333,11 @@ export const mapScene = {
     /* Аспект берём ТОЛЬКО из канона: хардкодить его запрещено конвенцией. */
     this._map.worldW = (h.width / 180) * 360;
     this._map.worldH = this._map.worldW / WT.ASPECT;
+    /* Мир пересчитан — значит пересчитан и пол. Докламп идёт здесь, а не у
+     * вызывающих: сюда сходятся ВСЕ пути смены размера (наблюдатель,
+     * отложенный замер, resume, переключение a11y), и гард у каждого из них
+     * лечил бы по одному, а условие тут лечит все. */
+    this._reclampZoom();
     this._rebuild();
   },
 
@@ -356,8 +374,43 @@ export const mapScene = {
     };
   },
 
+  /* НИЖНЯЯ ГРАНИЦА — «весь вид вписан», а не число (канон PLAN-KIOSK:
+   * «дальше некуда» обязано совпадать с кнопкой «Весь вид», иначе посетитель
+   * отъезжает в пустоту и мир болтается лужицей посреди чёрного экрана).
+   *
+   * Считает ЯДРО, а не мы: формула min(vw/cw, vh/ch) тривиальна, но её края
+   * (нулевой контент, схлопнутый вьюпорт, поля больше кадра) тривиальны не
+   * настолько, и пять карт разошлись бы на них молча.
+   *
+   * И главное: это НЕ КОНСТАНТА. Мир привязан к ширине стола (worldW =
+   * 2·width), поэтому вяжет обычно высота, а она меняется — от ресайза и от
+   * режима слабовидящих, который растит нав и ужимает стол. При ужатии пол
+   * ПОДНИМАЕТСЯ, и отъехавший до упора посетитель оказывается под ним. См.
+   * _reclampZoom: пересчёт без доклампа — половина работы. */
+  _fitZoom() {
+    const h = this._host, m = this._map;
+    const fit = window.KioskCore && window.KioskCore.fitZoom;
+    if (!fit || !h || !h.width || !m || !m.worldW) return FLOOR_FALLBACK;
+    return fit(m.worldW, m.worldH, h.width, h.height);
+  },
+
   _clampZoom(z) {
-    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+    return Math.max(this._fitZoom(), Math.min(MAX_ZOOM, z));
+  },
+
+  /* Подтянуть текущий зум под изменившийся пол, СОХРАНИВ место.
+   *
+   * Через _placeAt от центра кадра, а не присваиванием zoom: посетитель
+   * смотрел на место, а не на число, и подъём пола не должен уносить его в
+   * другую точку мира. */
+  _reclampZoom() {
+    const h = this._host, m = this._map;
+    if (!h || !h.width || !m || !m.worldW) return false;
+    const z = this._clampZoom(m.zoom);
+    if (z === m.zoom) return false;
+    const cx = h.width * 0.5, cy = h.height * 0.5;
+    this._placeAt(z, this._clientToWorld(cx, cy), cx, cy);
+    return true;
   },
 
   /* Поставить мировую точку p под экранную (cx, cy) при зуме next.

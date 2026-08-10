@@ -51,7 +51,7 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=59";
+} from "./shared.js?v=60";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
