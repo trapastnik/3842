@@ -9,7 +9,7 @@
  * Проверено на себе: обёртка канвы жила в shared.js?v=1 и бралась из кеша,
  * хотя сцена и app уже были свежими.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.21.3";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
 
 import { installChromeZones } from "./scenes/chrome-zones.js?v=44";
 import { shelfScene } from "./scenes/shelf.js?v=44";
@@ -18,7 +18,7 @@ import { timelineScene } from "./scenes/timeline.js?v=44";
 import { catalogScene } from "./scenes/catalog.js?v=45";
 import { volumeScene } from "./scenes/volume.js?v=44";
 import { constellationScene } from "./scenes/constellation.js?v=44";
-import { geographyScene } from "./scenes/geography.js?v=44";
+import { geographyScene } from "./scenes/geography.js?v=45";
 
 const app = createApp({
   appId: "mtk40",
