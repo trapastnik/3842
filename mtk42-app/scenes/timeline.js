@@ -4,7 +4,7 @@
  * Полосы позиционируются в px внутри content-box, который начинается после
  * padding-left = --m42-label-col; ширину меряем по вычисленному padding
  * (переменная — clamp(), parseFloat по ней дал бы NaN). */
-import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=33";
+import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=35";
 
 /* Без «all»: строку снятия («—») панель финдера подставляет сама. */
 const STATUSES = ["active", "transformed", "private", "closed"];

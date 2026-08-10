@@ -7,7 +7,7 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=33";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=35";
 
 /* Без «all»: строку снятия («—») панель финдера подставляет сама. */
 const STATUSES = ["active", "transformed", "private", "closed"];
@@ -32,7 +32,9 @@ const VIEW_PRESETS = {
   europe: { lonMin:  -6, lonMax:  56, latMin: 38, latMax: 70 },
 };
 const PIXEL_BUDGET = 3840 * 2160;   /* потолок буфера, ~8.3 Мп */
-const MIN_ZOOM = 0.05, MAX_ZOOM = 40;
+/* Верхний предел зума — константа. НИЖНИЙ — динамический fit-пол (весь кадр
+ * в виде), считается китом и кешируется в _floorZoom; см. _clampZoom. */
+const MAX_ZOOM = 40;
 
 export const mapScene = {
   id: "map",
@@ -122,6 +124,7 @@ export const mapScene = {
     this._geo = ctx.data.countries;
     this._find = this._find || { query: "", filters: {} };
     this._cam = { worldW: 0, worldH: 0, camX: 0, camY: 0, zoom: 1 };
+    this._floorZoom = 1;   // нижний предел зума = fit-пол, пересчитывается в _size/_fit
     this._hitIdx = 0;
     this._lastHitKey = "";
     this._cfg = this._cfg || this._defaults();
@@ -165,7 +168,9 @@ export const mapScene = {
       if (!w || !h) return;
       if (Math.abs(w - this._lastW) < 2 && Math.abs(h - this._lastH) < 2) return;
       this._lastW = w; this._lastH = h;
-      this._size(); this._fit(); this._draw();
+      /* Смена стола: позу/глубину держим (ZF-restore), к пресету НЕ сбрасываем.
+       * Раньше здесь был _size();_fit();_draw() — _fit сбрасывал к пресету. */
+      this._reflow();
       /* Теснота считается не только от высоты бара: экран может стать ниже при
        * той же раскладке чипов, и подсказка упрётся в шапку без участия бара. */
       this._liftHint();
@@ -310,7 +315,12 @@ export const mapScene = {
    * случится. */
   setA11y(on) {
     if (this._root) this._root.classList.toggle("is-a11y", !!on);
-    this._draw();   // точки крупнее, подписи городов гаснут — см. _draw()
+    /* Смена режима — НЕ граница визита: позу/глубину держим, пол пересчитываем
+     * и доклампываем кратностью через _reflow. Для этой карты floor не двигает
+     * (канвас fullscreen inset:0 → k=1, no-op), но зовём ради единообразия карт
+     * и на случай сужения слоя. _reflow сам перерисует — точки крупнее,
+     * подписи городов гаснут (см. _draw). */
+    this._reflow();
   },
 
   /* ─── геометрия ─────────────────────────────────────────────────────── */
@@ -330,6 +340,45 @@ export const mapScene = {
     const proj = this._projection();
     this._cam.worldW = (rect.width / 180) * 360;
     this._cam.worldH = this._cam.worldW / proj.ASPECT;
+    /* Запоминаем размер бокса на момент сайза: в RO-колбэке DOM уже НОВОГО
+     * размера, и _reflow не может прочитать старую ширину из getBoundingClientRect
+     * — берёт её отсюда, чтобы сохранить гео-центр верно. */
+    this._rectW = rect.width; this._rectH = rect.height;
+    /* Пол зума кешируем здесь: кламп зовётся на каждом тике жеста, а счёт
+     * пола — 81 проекция кадра, в цикле зума это было бы дорого. */
+    this._floorZoom = this._computeFloor(rect);
+  },
+
+  /* Мировой bbox операторского кадра (viewPreset) — общий и для центрирования
+   * в _fit, и для счёта пола. Сэмплируем сеткой 9×9: WT-проекция кривая, углы
+   * bbox не гарантируют экстремумы. */
+  _frameBox() {
+    const V = this._view();
+    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
+    for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
+      const lat = V.latMin + (V.latMax - V.latMin) * (i / 8);
+      const lng = V.lonMin + (V.lonMax - V.lonMin) * (j / 8);
+      const p = this._project(lat, lng);
+      if (p.x < xMin) xMin = p.x; if (p.x > xMax) xMax = p.x;
+      if (p.y < yMin) yMin = p.y; if (p.y > yMax) yMax = p.y;
+    }
+    return {
+      w: Math.max(1, xMax - xMin), h: Math.max(1, yMax - yMin),
+      cx: (xMin + xMax) / 2, cy: (yMin + yMax) / 2,
+    };
+  },
+
+  /* Нижняя граница зума = масштаб «весь кадр в виде». Считает КИТ
+   * (KioskCore.fitZoom, волна 1.22.2): обрабатывает края — нулевой контент,
+   * схлопнутый бокс, поля больше кадра — которые пять карт разошлись бы решать
+   * молча. Свой min оставлен фолбэком на случай устаревшего кита из кеша. */
+  _computeFloor(rect) {
+    if (!this._cam.worldW) return this._floorZoom || 1;
+    const b = this._frameBox();
+    const K = window.KioskCore;
+    return (K && K.fitZoom)
+      ? K.fitZoom(b.w, b.h, rect.width, rect.height)
+      : Math.min(rect.width / b.w, rect.height / b.h);
   },
 
   /* Канон — Winkel Tripel; плоская оставлена настройкой для сверки. */
@@ -343,26 +392,65 @@ export const mapScene = {
     return this._projection().project(lat, lng, this._cam.worldW, this._cam.worldH);
   },
 
+  /* ГРАНИЦА ВИЗИТА (первый mount, кнопка «сбросить масштаб», idle reset):
+   * садимся ровно на пол — весь кадр в виде — и центрируем. Смену стола
+   * (resize/a11y) сюда НЕ пускать: она позу теряет — для неё _reflow. */
   _fit() {
     const c = this._canvas;
     if (!c || !this._cam.worldW) return;
     const rect = c.getBoundingClientRect();
-    const V = this._view();
-    let xMin = Infinity, xMax = -Infinity, yMin = Infinity, yMax = -Infinity;
-    for (let i = 0; i <= 8; i++) for (let j = 0; j <= 8; j++) {
-      const lat = V.latMin + (V.latMax - V.latMin) * (i / 8);
-      const lng = V.lonMin + (V.lonMax - V.lonMin) * (j / 8);
-      const p = this._project(lat, lng);
-      if (p.x < xMin) xMin = p.x; if (p.x > xMax) xMax = p.x;
-      if (p.y < yMin) yMin = p.y; if (p.y > yMax) yMax = p.y;
-    }
-    const w = Math.max(1, xMax - xMin), h = Math.max(1, yMax - yMin);
-    this._cam.zoom = this._clampZoom(Math.min(rect.width / w, rect.height / h));
-    this._cam.camX = (xMin + xMax) / 2 - rect.width / 2;
-    this._cam.camY = (yMin + yMax) / 2 - rect.height / 2;
+    const b = this._frameBox();
+    this._floorZoom = this._computeFloor(rect);
+    this._cam.zoom = this._clampZoom(this._floorZoom);
+    this._cam.camX = b.cx - rect.width / 2;
+    this._cam.camY = b.cy - rect.height / 2;
   },
 
-  _clampZoom(z) { return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z)); },
+  /* СМЕНА СТОЛА (resize/a11y) — НЕ граница визита: позу и глубину держим, к
+   * пресету НЕ возвращаемся. Раньше resize звал _fit() и сбрасывал к пресету —
+   * баг, зеркальный найденному у МТК 40 (смена режима ≠ граница визита).
+   *
+   * ZF-RESTORE: держим КРАТНОСТЬ к полу, не абсолютный зум. Посетитель на 3×
+   * после смены стола остаётся на 3× (та же глубина под новый пол), а не
+   * «плывёт» из-за сдвига пола. Нижний кламп не нужен: инвариант zoom≥пол даёт
+   * zf≥1, значит пол_новый·zf≥пол_новый — клампим только против MAX.
+   *
+   * Пан держим в МИРОВЫХ координатах: _size() пересчитывает worldW от новой
+   * ширины бокса, и центр вида надо перемасштабировать на k=worldW_new/old,
+   * иначе та же широта/долгота уехала бы в другой мировой px.
+   *
+   * Для ЭТОЙ карты a11y пол не двигает (канвас inset:0 на весь слой, замер
+   * 2026-08-10): k=1, floor цел, restore тривиален. Зовём и на a11y ради
+   * единообразия карт и на случай, если слой когда-то станет уже. */
+  _reflow() {
+    const c = this._canvas;
+    if (!c || !this._cam.worldW || !this._rectW) { this._ensureSized(); this._draw(); return; }
+    /* СТАРЫЕ размеры — из кеша _size(), НЕ из DOM: в RO-колбэке бокс уже новый,
+     * getBoundingClientRect вернул бы новую ширину и центр посчитался бы по
+     * смешанным координатам (пойман замером: гео-центр уезжал 0.647→0.564). */
+    const floorOld = this._floorZoom || 1;
+    const zf = this._cam.zoom / floorOld;               // кратность к полу ДО
+    /* Центр вида как ДОЛЯ мира (инвариант при смене worldW): world-center-x =
+     * camX + rectW/2 (из _toWorld при cx=rectW/2), делим на worldW. */
+    const fracX = (this._cam.camX + this._rectW / 2) / this._cam.worldW;
+    const fracY = (this._cam.camY + this._rectH / 2) / this._cam.worldH;
+
+    this._size();                                       // новый буфер, worldW/H, floorZoom, rectW/H
+
+    this._cam.camX = fracX * this._cam.worldW - this._rectW / 2;   // тот же гео-центр
+    this._cam.camY = fracY * this._cam.worldH - this._rectH / 2;
+    this._cam.zoom = Math.min(MAX_ZOOM, this._floorZoom * zf);     // та же глубина под новый пол
+
+    this._draw();
+  },
+
+  _clampZoom(z) {
+    /* Нижняя граница — кешированный динамический fit-пол, не константа: на
+     * киоске нет инстинкта «сбросить масштаб», карту нельзя ужать в крапинку
+     * и потерять до idle. Пол считается китом в _size()/_fit(). */
+    const floor = this._floorZoom || 0.01;
+    return Math.max(floor, Math.min(MAX_ZOOM, z));
+  },
 
   _toScreen(wx, wy) {
     const r = this._canvas.getBoundingClientRect();
