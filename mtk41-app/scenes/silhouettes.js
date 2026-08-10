@@ -25,8 +25,8 @@
  *
  * У кого нет ни того ни другого — процедурный пунктир, как в «Масштабе». Это
  * видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=36";
-import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=36";
+import { scaleScene } from "./scale.js?v=37";
+import { DATA, PALETTE, cssColor, preloadThumbs, statusColor } from "./shared.js?v=37";
 
 /* Хранилище силуэтов — на уровне МОДУЛЯ, а не в ctx.
  * ctx у ядра одноразовый: context() отдаёт новый объект и прероллу, и mount().
@@ -89,11 +89,11 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
 
   healthcheck() {
     if (!this._host) return { ok: true, detail: "не смонтирована" };
-    /* Канвовая сцена без размера — это «ещё не показывалась», а не поломка:
-     * ядро держит слой скрытым (0×0), пока сцену не откроют, и меряться там
-     * нечему. Тот же случай, что и «не смонтирована», принятый в канон ядра
-     * по заявке МТК 41. */
-    if (!this._host.width) return { ok: true, detail: "ещё не показывалась" };
+    /* Канвовая сцена без размера — «ещё не показывалась», а не поломка
+     * (канон кита, README п. про healthcheck; конвенция принята по заявке
+     * МТК 41). Спрашиваем ЖИВОЙ бокс: host.width — это память о последнем
+     * измерении, она переживает скрытие слоя и соврёт по неактивной сцене. */
+    if (!this._host.liveBox().w) return { ok: true, detail: "ещё не показывалась" };
 
     /* Буфер сверяем ПО ФАКТИЧЕСКОМУ dpr, а не по ширине бокса: счётчик фигур
      * бывает зелёным, пока сцена рисует всё до одной — но в чужом разрешении
