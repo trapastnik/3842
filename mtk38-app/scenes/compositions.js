@@ -9,9 +9,9 @@
  * общий рендерер приложения (r184, WebGPU/WebGL2) — ради одной копии Three на
  * страницу вместо двух и одного пути пост-обработки на все сцены.
  */
-import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, hushHint, attachHint } from "./shared.js?v=23";
-import { createCard } from "./card.js?v=23";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=23";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, attachHint } from "./shared.js?v=24";
+import { createCard } from "./card.js?v=24";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=24";
 
 const LAYOUTS = ["cloud", "mandala", "ticker", "wall"];
 /* Отлёт камеры под раскладку: «стена» шире всех, «мандала» — компактное кольцо.
@@ -191,7 +191,6 @@ export const compositionsScene = {
   },
 
   resume() {
-    hushHint(this._hint);
     if (this._raf || !this._scene) return;
     // забираем общий канвас обратно: пока сцена ждала, он был у соседки
     if (attachCanvas(this._gpu, this._root)) this._fit();
