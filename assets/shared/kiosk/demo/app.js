@@ -4,14 +4,14 @@
  * делает ядро.
  *
  * Открывать ТОЛЬКО по http (ES-модули не работают из file://). */
-import { createApp } from "../kiosk-core.esm.js?v=1.14.1";
+import { createApp } from "../kiosk-core.esm.js?v=1.20.3";
 
 /* ?v= нужен и на импортах сцен: версия точки входа НЕ пробивает кеш её
  * импортов, и правка сцены иначе не доезжает до киоска. У ядра это
  * решено внутри обёртки, у ваших сцен — нет. */
-import { pulseScene } from "./scenes/pulse.js?v=1.14.1";
-import { gridScene } from "./scenes/grid.js?v=1.14.1";
-import { cardsScene } from "./scenes/cards.js?v=1.14.1";
+import { pulseScene } from "./scenes/pulse.js?v=1.20.3";
+import { gridScene } from "./scenes/grid.js?v=1.20.3";
+import { cardsScene } from "./scenes/cards.js?v=1.20.3";
 
 /* Регрессия миграции: ?legacy=1 поднимает демо на конфиге формата 1.6.0
  * (состав экранов в scenes.order/enabled). Ядро обязано перенести его в
@@ -24,7 +24,7 @@ const app = createApp({
   title: { ru: "Демо ядра", en: "Core demo", zh: "内核演示" },
   configUrl: legacy ? "./legacy-1.6.config.json" : "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.14.1",   /* без метки Chrome держит старый словарь после обновления */
+  i18nVersion: "1.20.3",   /* без метки Chrome держит старый словарь после обновления */
 
   /* Настройка УРОВНЯ ПРИЛОЖЕНИЯ: акцент общий для «Пульса» и «Сетки».
    * Объявить её в одной сцене было бы ложью — меняется-то в обеих. */

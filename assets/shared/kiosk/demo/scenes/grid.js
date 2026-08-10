@@ -1,5 +1,5 @@
 /* Демо-сцена 2 «Сетка» — дрейфующая решётка. */
-import { createCanvasScene } from "./canvas-scene.js?v=1.14.1";
+import { createCanvasScene } from "./canvas-scene.js?v=1.20.3";
 
 export const gridScene = createCanvasScene({
   id: "grid",
@@ -55,3 +55,18 @@ export const gridScene = createCanvasScene({
     }
   },
 });
+
+/* Вторая сцена с финдером — чтобы стенд проверял НЕЗАВИСИМОСТЬ отборов:
+ * панель на каждой строится по ЕЁ декларации, критерии не перетекают. */
+gridScene.finder = {
+  filters: [
+    { key: "half", label: { ru: "Половина", en: "Half" },
+      options: () => [["top", "верхняя"], ["bottom", "нижняя"]] },
+  ],
+  sorts: [{ key: "rev", label: { ru: "В обратном порядке", en: "Reversed" } }],
+};
+
+gridScene.applyFinder = function (state) {
+  this._find = state;
+  return { shown: state.filters.half ? 8 : 16, total: 16 };
+};

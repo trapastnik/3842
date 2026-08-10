@@ -5,7 +5,7 @@
  * пружина на краях. Под полкой — дорожка с бегунком: о том, что полка
  * длиннее экрана, иначе ничего не говорит.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=41";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit } from "./shared.js?v=42";
 
 const BUCKET_ORDER = ["by-lenin", "about-lenin", "in-library"];
 
@@ -142,7 +142,10 @@ export const shelfScene = {
      * и standby пришёл раньше reset. */
     this.activeId = null;
     if (this.card) this.card.hide();
-    if (this.hint) this.hint.hide();
+    /* Подсказку гасить не нужно: с кита 1.13 ядро зовёт suppressAll(true) на
+     * семантической границе простоя, ДО standby() сцены, и снимает подавление
+     * в начале выхода — раньше моей стоп-функции. Прежний обход (hide() на
+     * входе плюс poke() на каждом тике) снят целиком. */
 
     /* Поза может законно покоиться В ОВЕРСКРОЛЛЕ: пружина живёт только в
      * rAF-петле, а она остановлена, и палец, отпущенный за краем без
@@ -156,12 +159,6 @@ export const shelfScene = {
 
     const stopTicker = this.app.standbyTicker((t) => {
       if (!this.cv) return;
-      /* Держим подсказку погашенной ВСЮ заставку: hide() кита перевзводит
-       * таймер показа, а тик приходит минимум раз в секунду (при потолке
-       * standbyFps в 1 к/с) против тридцати секунд ожидания — запас
-       * тридцатикратный, загореться не успевает. Снимется, когда кит отдаст
-       * suppress()/resume(); заявка ушла. */
-      if (this.hint) this.hint.poke();
       /* Страховка размера жила в rAF-петле, а она остановлена — тикеру нужна
        * своя, иначе слой, показанный в фоне, останется с чужим буфером. */
       this.cv.sync();

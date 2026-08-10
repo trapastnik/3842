@@ -12,7 +12,7 @@
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
   createHint,
-} from "./shared.js?v=33";
+} from "./shared.js?v=35";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;

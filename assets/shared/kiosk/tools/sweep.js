@@ -122,7 +122,29 @@
       if (scene && typeof scene.states === "function") {
         try { custom = scene.states() || []; } catch (err) { custom = []; }
       }
-      if (!schema.length && !custom.length) { noSchema.push(id); return Promise.resolve(); }
+      /* ОТБОР ФИНДЕРА — тоже посетительское состояние, и без него из приёмки
+       * выпадал бы целый класс: сцена краснеет не «вообще», а на конкретном
+       * сочетании фильтра и сортировки. Состояние держит ядро, поэтому
+       * разворачиваем его отсюда, а не требуем от сцены дублировать в
+       * states(). */
+      var fspec = typeof app.finderSpec === "function" ? app.finderSpec(id) : null;
+      var finderStates = [];
+      if (fspec) {
+        (fspec.filters || []).forEach(function (f) {
+          var opts = typeof f.options === "function" ? f.options(app.context()) : f.options;
+          (Array.isArray(opts) ? opts : []).forEach(function (o) {
+            var v = Array.isArray(o) ? o[0] : o;
+            var patch = { filters: {} };
+            patch.filters[f.key] = v;
+            finderStates.push({ name: "отбор " + f.key + "=" + v, patch: patch });
+          });
+        });
+        (fspec.sorts || []).forEach(function (o) {
+          finderStates.push({ name: "сортировка " + o.key, patch: { sort: o.key } });
+        });
+      }
+
+      if (!schema.length && !custom.length && !finderStates.length) { noSchema.push(id); return Promise.resolve(); }
 
       return app.showScene(id).then(function () {
         /* Состояния, объявленные сценой (посетительские фильтры). */
@@ -130,6 +152,13 @@
           try { st.apply(); } catch (err) { /* состояние не встало — не наша беда */ }
           checkState(id, ["состояние: " + (st.name || "?")]);
         });
+
+        /* Отбор финдера: каждый критерий по очереди. */
+        finderStates.forEach(function (st) {
+          app.setFinder(st.patch, id);
+          checkState(id, [st.name]);
+        });
+        if (finderStates.length) app.resetFinder(id);
 
         /* Одиночные: каждая настройка по очереди, остальные — как были. */
         schema.forEach(function (s) {
@@ -160,6 +189,7 @@
       }).then(function () {
         /* Возвращаем схемные настройки как были. */
         Object.keys(saved).forEach(function (k) { put(id, k, saved[k]); });
+        if (finderStates.length) app.resetFinder(id);   /* следов не оставляем */
         restoreStates(id, scene, custom);
       });
     }

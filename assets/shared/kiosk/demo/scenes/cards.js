@@ -122,16 +122,28 @@ export const cardsScene = {
       `data-kind="${k}">${t("cards.filter." + k)}</button>`
     ).join("");
 
-    const list = this._filter === "all"
-      ? this._items
-      : this._items.filter((it) => it.kind === this._filter);
+    const q = ((this._find || {}).query || "").trim().toLowerCase();
+    const list = this._items.filter((it) => {
+      if (this._filter !== "all" && it.kind !== this._filter) return false;
+      if (q && String(it.title).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
+
+    const sort = (this._find || {}).sort;
+    const rows = sort === "az"
+      ? list.slice().sort((a, b) => String(a.title).localeCompare(String(b.title)))
+      : sort === "rev"
+        ? list.slice().reverse()
+        : list;
+
+    this._shown = rows.length;   /* сцена сама сообщает, сколько осталось */
 
     this._stateEl.textContent = t("cards.state", {
       filter: t("cards.filter." + this._filter),
-      shown: list.length,
+      shown: rows.length,
       total: this._items.length,
     });
-    this._gridEl.innerHTML = list.map((it) =>
+    this._gridEl.innerHTML = rows.map((it) =>
       '<article class="demo-card">' +
       `<div class="demo-card__kind">${it.kind}</div>` +
       `<h3 class="demo-card__title">${it.title}</h3>` +
@@ -139,4 +151,36 @@ export const cardsScene = {
       "</article>"
     ).join("");
   },
+};
+
+/* Финдер: сцена ОБЪЯВЛЯЕТ, чем можно искать, и применяет ОДНИМ методом.
+ * options функцией — фасеты выводятся из загруженных данных, а декларация
+ * статична в объекте сцены. */
+/* ФИНДЕР. Сцена ОБЪЯВЛЯЕТ, чем можно искать, а применяет ОДНИМ методом:
+ * состояние держит ядро, сцена только пересчитывает выборку. options
+ * функцией — виды берутся из ЗАГРУЖЕННЫХ данных, а декларация статична
+ * в объекте сцены и на момент её чтения данных ещё нет. */
+cardsScene.finder = {
+  search: { fields: [{ key: "title", label: { ru: "Название", en: "Title" } }] },
+  filters: [
+    {
+      key: "kind",
+      label: { ru: "Вид", en: "Kind" },
+      options() {
+        return KINDS.filter((k) => k !== "all").map((k) => [k, k]);
+      },
+    },
+  ],
+  sorts: [
+    { key: "az", label: { ru: "По алфавиту", en: "A→Z" } },
+    { key: "rev", label: { ru: "В обратном порядке", en: "Reversed" } },
+  ],
+};
+
+cardsScene.applyFinder = function (state) {
+  this._find = state;
+  this._filter = state.filters.kind || "all";
+  if (this._gridEl) this._render();
+  const total = (this._items || []).length;
+  return { shown: this._shown == null ? total : this._shown, total };
 };

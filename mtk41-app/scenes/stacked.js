@@ -15,7 +15,7 @@ import {
   cssColor, plural, preloadThumbs, statusColor,
   createHint,
   fillTextIfFits,
-} from "./shared.js?v=33";
+} from "./shared.js?v=35";
 
 const BANDS = [
   { id: "small", maxM: 8 },

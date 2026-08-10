@@ -142,7 +142,30 @@
 
   function suppressAll(on) {
     allOff = !!on;
-    for (var i = LIVE.length - 1; i >= 0; i--) LIVE[i]();
+    for (var i = LIVE.length - 1; i >= 0; i--) LIVE[i].apply();
+  }
+
+  /* ОБЛАСТЬ ВИДИМОСТИ: подсказки живут только у АКТИВНОЙ сцены.
+   *
+   * Неактивная keepAlive-сцена догорала свой 30-секундный цикл в фоне и
+   * выходила на экран с УЖЕ горящей подсказкой (замер МТК 38). Гашение
+   * заставки этот случай не покрывает — переключение стрелками к простою
+   * отношения не имеет, а касание бара слушатель на контейнере сцены не
+   * видит: о нём знает только ядро.
+   *
+   * Канон «видна при простое» тут не нарушается — посетитель, жмущий
+   * стрелку, взаимодействует. Поэтому при активации цикл начинается
+   * ЗАНОВО: подсказка гаснет и взводится штатным idleMs.
+   *
+   * Перевзводится ИМЕННО ЦИКЛ, а не первый показ: firstDelay (1.2 с) —
+   * для посетителя, впервые увидевшего сцену, и если трогать его, листание
+   * стрелками давало бы вспышку призыва на каждом переключении. */
+  function scopeTo(host) {
+    for (var i = LIVE.length - 1; i >= 0; i--) {
+      var e = LIVE[i];
+      var inside = !host || (host.contains && host.contains(e.target));
+      e.scope(!!inside);
+    }
   }
 
   function attach(target, opts) {
@@ -199,7 +222,13 @@
     target.appendChild(el);
 
     var idleTimer = null, firstTimer = null, shown = false, dead = false;
-    var off = false;   /* подавление этой подсказки; см. suppress() ниже */
+    var off = false;        /* подавление СЦЕНОЙ: suppress()/resume() */
+    /* Область видимости — ОТДЕЛЬНЫЙ флаг, а не тот же самый.
+     * Сначала я переиспользовал off, и активация сцены снимала подавление,
+     * поставленное самой сценой: один флаг на два смысла — ровно та ошибка,
+     * которую я до этого чинил у таймера заставки. Поймано собственным
+     * прогоном («свой suppress() + переключение туда-обратно»). */
+    var outOfScope = false; /* подавление ЯДРОМ: сцена сейчас не активна */
     var warnedInset = false;   /* про расхождение зон говорим один раз на сцену */
 
     /* ПОЗИЦИЯ СЧИТАЕТСЯ ОТ РЕАЛЬНОГО НИЗА КОНТЕЙНЕРА, а не от зоны хрома.
@@ -279,7 +308,7 @@
      *      → «загорелась через 30 с посреди заставки и горит до утра» (41).
      * Третьей серии не будет: гашение на время — отдельный флаг, который
      * переживает любые poke/hide и снимается только resume(). */
-    function muted() { return off || allOff; }
+    function muted() { return off || outOfScope || allOff; }
 
     /* Взвести показ по простою — но никогда, пока подавлено. */
     function arm() {
@@ -363,7 +392,20 @@
     firstTimer = setTimeout(show, firstDelay);
     idleTimer = setTimeout(show, idleMs);
     place();
-    LIVE.push(applyMute);
+    LIVE.push({
+      target: target,
+      apply: applyMute,
+      /* внутри активной сцены — гаснем и взводим цикл заново;
+       * снаружи — подавлены целиком, чтобы не догорать в фоне */
+      scope: function (inside) {
+        if (dead) return;
+        outOfScope = !inside;
+        /* Внутри активной сцены цикл начинается заново — но если сцена
+         * подавила подсказку сама, hide() её не зажжёт: arm() сверяется
+         * с muted(), а там ещё стоит off. */
+        if (inside) hide(); else applyMute();
+      }
+    });
     /* Родилась во время заставки — не должна вспыхнуть на ней. */
     if (allOff) applyMute();
 
@@ -425,8 +467,9 @@
         if (idleTimer) clearTimeout(idleTimer);
         if (firstTimer) clearTimeout(firstTimer);
         idleTimer = firstTimer = null;
-        var li = LIVE.indexOf(applyMute);
-        if (li >= 0) LIVE.splice(li, 1);
+        for (var li = LIVE.length - 1; li >= 0; li--) {
+          if (LIVE[li].apply === applyMute) { LIVE.splice(li, 1); break; }
+        }
         if (ro) { ro.disconnect(); ro = null; }
         if (mo) { mo.disconnect(); mo = null; }
         window.removeEventListener("resize", place);
@@ -489,6 +532,8 @@
     attach: attach,
     /* Зовёт ядро на входе в заставку и выходе из неё. */
     suppressAll: suppressAll,
+    /* Зовёт ядро при активации сцены. */
+    scopeTo: scopeTo,
     isSuppressed: function () { return allOff; }
   };
 })();

@@ -27,7 +27,7 @@
   "world.sub": "{total} 项中的 {shown} 项已标注于地图，涵盖 {countries} 个国家。点的颜色表示名称的命运。",
   "world.mode.globe": "地球仪",
   "world.mode.map": "地图",
-  "world.hint": "转动地球仪 · 触摸光点 ·「地图」展开世界",
+  "world.hint": "转动地球仪 · 触摸光点",
   "world.noUssr": "不含前苏联",
 
   "union.title": "苏联地图",
@@ -35,7 +35,7 @@
   "union.subRepublic": "{name}：名录中 {total} 项，地图上 {onMap} 项。",
   "union.all": "整个苏联",
   "union.byRepublic": "按共和国",
-  "union.hint": "选择共和国 · 拖动地图 · 触摸光点",
+  "union.hint": "拖动地图 · 触摸光点",
 
   "wave.title": "潮起与潮落",
   "wave.sub": "世界地图上的百年名称：对象获得列宁之名的那一年亮起，失去这个名字的那一年熄灭。",

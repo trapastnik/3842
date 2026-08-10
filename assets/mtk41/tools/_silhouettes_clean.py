@@ -326,18 +326,31 @@ def clean(mask_path, override=None):
         after_flare = picked.copy()
         after_flare[int(ov["cut_y"]):, :] = 0
         cut = int(ov["cut_y"])
-    elif ov.get("cut_norm"):
-        """Линия земли В ДОЛЯХ ВЫСОТЫ СИЛУЭТА — так её отдаёт инструмент
-        отбраковки: там режется уже вектор, нормированный по высоте, и
-        пикселей исходной маски человек не видит и видеть не должен.
-        Переводим в пиксели по габаритам ВЫБРАННОЙ компоненты, а не всего
-        кадра: доля считалась от фигуры."""
-        ys = np.nonzero(picked)[0]
+    elif ov.get("crop") or ov.get("cut_norm"):
+        """Рамка обрезки В ДОЛЯХ ФИГУРЫ — так её отдаёт инструмент: там
+        режется уже вектор, нормированный по габаритам, и пикселей исходной
+        маски человек не видит и видеть не должен.
+
+        Четыре стороны, а не одна нижняя: у Котки постамент уходит ВЛЕВО
+        далеко за бюст, и горизонтальный рез его не трогает вовсе. Поле
+        cut_norm — прежняя одиночная линия земли, читаем для совместимости с
+        уже сделанной разметкой.
+        """
+        c = dict(ov.get("crop") or {})
+        if ov.get("cut_norm") and "b" not in c:
+            c["b"] = ov["cut_norm"]
+        ys, xs = np.nonzero(picked)
         if len(ys):
             y0, y1 = int(ys.min()), int(ys.max())
-            cut = y0 + int(round((y1 - y0 + 1) * float(ov["cut_norm"])))
-            after_flare = picked.copy()
-            after_flare[cut:, :] = 0
+            x0, x1 = int(xs.min()), int(xs.max())
+            hh, ww = y1 - y0 + 1, x1 - x0 + 1
+            t = y0 + int(round(hh * float(c.get("t", 0))))
+            b = y0 + int(round(hh * float(c.get("b", 1))))
+            l = x0 + int(round(ww * float(c.get("l", 0))))
+            r = x0 + int(round(ww * float(c.get("r", 1))))
+            after_flare = np.zeros_like(picked)
+            after_flare[t:b, l:r] = picked[t:b, l:r]
+            cut = b if c.get("b", 1) < 1 else None
 
     m = trim_shelf(after_flare)
     m = morph(m)

@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
-import { createCard } from "./card.js?v=21";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=21";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=23";
+import { createCard } from "./card.js?v=23";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=23";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -145,8 +145,7 @@ export const rainScene = {
     if (this._rain) this._rain.setPointer(new this._gpu.THREE.Vector3(0, 0, 0), 0);
     this._pr = 0;
     this._standby = true;
-    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; },
-      () => this._hint);
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
   },
 
   setLang(lang) {

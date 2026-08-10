@@ -17,8 +17,8 @@
  */
 import {
   loadData, famBig, famWord, PAL, beginStandby, pollSize,
-  bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=21";
-import { createCard } from "./card.js?v=21";
+  bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=23";
+import { createCard } from "./card.js?v=23";
 import {
   prepareWithSegments, layoutNextLineRange, materializeLineRange,
 } from "../vendor/pretext/layout.js?v=0.0.8";
@@ -188,8 +188,7 @@ export const posterScene = {
     if (this._card) this._card.close();
     this._push.on = false;
     this._standby = true;
-    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; },
-      () => this._hint);
+    return beginStandby(this._app, () => this._frame(), () => { this._standby = false; });
   },
 
   setLang(lang) {
