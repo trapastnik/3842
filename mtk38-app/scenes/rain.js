@@ -8,9 +8,9 @@
  * киоска чёрный экран недопустим, и вместо него идёт честный 2D-дождь по тем же
  * данным и той же логике (плавучесть, ярусы, отталкивание, respawn).
  */
-import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=25";
-import { createCard } from "./card.js?v=25";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=25";
+import { loadData, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=28";
+import { createCard } from "./card.js?v=28";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=28";
 
 const TONES = [PAL.paper, PAL.brass, PAL.red];
 const TIERS = [0.34, 0.58, 0.95, 1.55];
@@ -448,16 +448,17 @@ export const rainScene = {
   _fit() {
     if (!this._root || !this._canvas) return;
     const r = this._root.getBoundingClientRect();
-    this._W = Math.max(1, Math.round(r.width));
-    this._H = Math.max(1, Math.round(r.height));
+    /* ВНИЗ: дробный бокс киоска при округлении вверх давал буфер сверх бюджета. */
+    this._W = Math.max(1, Math.floor(r.width));
+    this._H = Math.max(1, Math.floor(r.height));
     if (this._gpuMode) {
       this._dpr = fitTo(this._gpu.renderer, this._camera, this._root).dpr;
       if (this._post) this._post.needsUpdate = true;
     } else {
       const dpr = capDpr(this._W, this._H);   // тот же бюджет 8.3 Мп, что у GPU-пути
       this._dpr = dpr;
-      this._canvas.width = Math.round(this._W * dpr);
-      this._canvas.height = Math.round(this._H * dpr);
+      this._canvas.width = Math.floor(this._W * dpr);
+      this._canvas.height = Math.floor(this._H * dpr);
       this._ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
     }
   },

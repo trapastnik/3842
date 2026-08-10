@@ -36,6 +36,84 @@ export const rgba = (hex, a) => {
   return `rgba(${parseInt(v.slice(0, 2), 16)},${parseInt(v.slice(2, 4), 16)},${parseInt(v.slice(4, 6), 16)},${a})`;
 };
 
+/* ── ФАСЕТЫ ФИНДЕРА ─────────────────────────────────────────────────
+ *
+ * Фасет письменности строится по iso15924, а НЕ по script.name_ru. В каноне
+ * name_ru — кураторский текст, и как ключ он непригоден: 46 значений на 128
+ * языков, из них дубли по регистру («латиница» 22 + «Латиница» 17, «кириллица»
+ * 29 + «Кириллица» 4) и строки-фразы вроде «До 1940 г. кириллица / В наст. вр.
+ * латиница» или «кириллица (Россия) / латиница / девангари». По iso — 33 чистых
+ * кода. Данные при этом не трогаем: в карточке по-прежнему показывается
+ * кураторский name_ru как есть.
+ *
+ * zh пока русским фолбэком — как и остальные термины до китаиста. */
+const SCRIPT_LABELS = {
+  Latn: { ru: "Латиница", en: "Latin" },
+  Cyrl: { ru: "Кириллица", en: "Cyrillic" },
+  Arab: { ru: "Арабица", en: "Arabic" },
+  Deva: { ru: "Деванагари", en: "Devanagari" },
+  Beng: { ru: "Бенгальская", en: "Bengali" },
+  Hebr: { ru: "Еврейская", en: "Hebrew" },
+  Mymr: { ru: "Мьянманская", en: "Myanmar" },
+  Armn: { ru: "Армянская", en: "Armenian" },
+  Ethi: { ru: "Эфиопская", en: "Ethiopic" },
+  Geor: { ru: "Грузинская", en: "Georgian" },
+  Grek: { ru: "Греческая", en: "Greek" },
+  Gujr: { ru: "Гуджарати", en: "Gujarati" },
+  Guru: { ru: "Гурмукхи", en: "Gurmukhi" },
+  Hans: { ru: "Китайская упрощённая", en: "Chinese (simplified)" },
+  Hant: { ru: "Китайская традиционная", en: "Chinese (traditional)" },
+  Jpan: { ru: "Японская", en: "Japanese" },
+  Khmr: { ru: "Кхмерская", en: "Khmer" },
+  Knda: { ru: "Каннада", en: "Kannada" },
+  Kore: { ru: "Корейская", en: "Korean" },
+  Laoo: { ru: "Лаосская", en: "Lao" },
+  Mlym: { ru: "Малаялам", en: "Malayalam" },
+  Mtei: { ru: "Мейтей-майек", en: "Meitei Mayek" },
+  Nkoo: { ru: "Нко", en: "N’Ko" },
+  Olck: { ru: "Ол-чики", en: "Ol Chiki" },
+  Orya: { ru: "Ория", en: "Odia" },
+  Sinh: { ru: "Сингальская", en: "Sinhala" },
+  Syrc: { ru: "Сирийская", en: "Syriac" },
+  Taml: { ru: "Тамильская", en: "Tamil" },
+  Telu: { ru: "Телугу", en: "Telugu" },
+  Tfng: { ru: "Тифинаг", en: "Tifinagh" },
+  Thaa: { ru: "Тхана", en: "Thaana" },
+  Thai: { ru: "Тайская", en: "Thai" },
+  Tibt: { ru: "Тибетская", en: "Tibetan" },
+};
+
+export function scriptLabel(iso, lang) {
+  const rec = SCRIPT_LABELS[iso];
+  if (!rec) return iso;                       // новый код в каноне — покажем как есть
+  return rec[lang === "en" ? "en" : "ru"];
+}
+
+/* Верхний уровень семьи: «индоевропейская → славянская → южнославянская» даёт
+ * «Индоевропейская». Регистр в каноне гуляет («индоевропейская» 58 и
+ * «Индоевропейская» 6 — одна и та же семья), поэтому нормализуем: без этого
+ * фасет разошёлся бы на два чипа с одинаковой подписью.
+ *
+ * Подпись одна на все языки: семьи в каноне записаны по-русски, и переводить
+ * их силами сцены — выдумывать терминологию за куратора. */
+export function familyTop(l) {
+  const raw = (l && l.f ? String(l.f) : "").split("→")[0].trim();
+  if (!raw) return "";
+  return raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+}
+
+/* Поисковая строка записи: русское имя, самоназвание, написание.
+ * Регистр и ё/е сводим — посетитель набирает на экранной клавиатуре и в «ё»
+ * не целится. */
+const fold = (s) => String(s || "").toLowerCase().replace(/ё/g, "е").trim();
+
+export function matchesQuery(l, q) {
+  if (!q) return true;
+  return fold(l.n).includes(q) || fold(l.e).includes(q) || fold(l.w).includes(q);
+}
+
+export const foldQuery = fold;
+
 let _cache = null;
 
 export async function loadData() {

@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, attachHint } from "./shared.js?v=25";
-import { createCard } from "./card.js?v=25";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=25";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, attachHint } from "./shared.js?v=28";
+import { createCard } from "./card.js?v=28";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=28";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
