@@ -8,7 +8,7 @@
  *    продублирован подписью, соседние сегменты разделены зазором;
  *  · ни одной диаграммы с двумя шкалами. */
 
-import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=13";
+import { DATA, KIND_KEY, nf, esc, plural, capDpr, sizeWatch } from "./shared.js?v=14";
 
 const NS = "http://www.w3.org/2000/svg";
 const W = 1000;   // ширина системы координат svg; высота у каждого графика своя
@@ -407,8 +407,13 @@ export const statsScene = {
       if (rect.width < 10 || rect.height < 10) return;
       const total = data.russia_summary.total_all;
       const dpr = capDpr(rect.width, rect.height);
-      massCanvas.width = Math.round(rect.width * dpr);
-      massCanvas.height = Math.round(rect.height * dpr);
+      /* floor, а не round: бокс на 4K приходит ДРОБНЫМ (3840.4), и округление
+         вверх добавляет по пикселю каждой стороне — бюджет 8.3 Мп проваливается
+         на ровном месте, а грань видна только на честном 3840×2160 (улов 38).
+         В fitCanvas() общего слоя floor стоял с самого начала — здесь размер
+         считался мимо него, поэтому правило и разъехалось. */
+      massCanvas.width = Math.floor(rect.width * dpr);
+      massCanvas.height = Math.floor(rect.height * dpr);
       const g = massCanvas.getContext("2d");
       g.setTransform(dpr, 0, 0, dpr, 0, 0);
       g.clearRect(0, 0, rect.width, rect.height);

@@ -13,7 +13,7 @@ import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=13";
+} from "./shared.js?v=14";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
