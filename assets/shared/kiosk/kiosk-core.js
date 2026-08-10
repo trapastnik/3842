@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.19.4";
+  var VERSION = "1.20.2";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1387,7 +1387,13 @@
         this.showScene(this._pickDefaultSceneId());
       }
     }
-    if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
+    if (!path || /^(scale|a11y)\./.test(path)) {
+      this._applyScale();
+      /* Масштаб меняет вмещаемость клавиатуры, а с ней — строится ли строка
+       * поиска вообще. Без перерисовки открытая панель осталась бы от
+       * прежней конфигурации: поле есть, а места под клавиатуру уже нет. */
+      if (this._finderOpen) this._renderFinder();
+    }
     if (!path || path.indexOf("content.") === 0) this._applyContentBox();
     /* Настройка сцены — отдать её самой сцене, без перезагрузки. */
     if (path && path.indexOf("scenes.") === 0) {
@@ -2611,6 +2617,72 @@
     en: ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
   };
 
+  /* ВМЕЩАЕМОСТЬ, А НЕ КОНСТАНТА МАСШТАБА.
+   *
+   * При крупном масштабе панели не хватает высоты, и клавиатура вырождалась
+   * в один липкий ряд: служебные клавиши есть, букв под пальцем НОЛЬ — то
+   * есть поиска нет, а поле обещает его. Отказываемся вслух: строку поиска
+   * не строим вовсе, панель живёт дальше чипами и сортировкой.
+   *
+   * Порог считается ЗАМЕРОМ, а не порогом «выше 1.25»: константа разойдётся
+   * с действительностью при первом изменении высот — ровно то, за что я сам
+   * запретил флаг «меня уже показывали» в конвенции healthcheck. */
+  KioskApp.prototype.finderSearchFits = function () {
+    var spec = this.finderSpec();
+    if (!spec || !spec.search || !(spec.search.fields || []).length) {
+      return { fits: false, why: "поиск не объявлен" };
+    }
+    if (!this._els.finderPanel) this._buildFinderPanel();
+    var panel = this._els.finderPanel, kb = panel.querySelector(".kiosk-kbd");
+    if (!kb) return { fits: false, why: "нет клавиатуры" };
+
+    /* Меряем в том состоянии, в каком клавиатура и живёт — в режиме ввода.
+     * Скрытая панель размеров не имеет, поэтому на время замера показываем
+     * её вне потока: видимой она при этом не становится. */
+    var qBox = panel.querySelector(".kiosk-finder__q");
+    var wasHidden = panel.hidden, wasTyping = panel.classList.contains("is-typing");
+    var wasKb = kb.hidden, wasQ = qBox ? qBox.hidden : false;
+    var prev = panel.style.cssText;
+    if (wasHidden) {
+      panel.hidden = false;
+      panel.style.cssText += ";visibility:hidden;pointer-events:none;";
+    }
+    /* Меряем ИМЕННО ту раскладку, про которую спрашиваем: строка поиска на
+     * месте, режим ввода включён. Иначе замер зависел бы от того, построена
+     * ли строка сейчас, — а именно это мы и решаем, и ответ получался бы
+     * разный при повторных вызовах. */
+    panel.classList.add("is-typing");
+    if (qBox) qBox.hidden = false;
+    kb.hidden = false;
+
+    var rows = kb.querySelectorAll(".kiosk-kbd__row");
+    var letterRow = rows[0], stickyRow = rows[rows.length - 1];
+    var rowH = letterRow ? letterRow.getBoundingClientRect().height : 0;
+    var stickyH = stickyRow ? stickyRow.getBoundingClientRect().height : 0;
+    var padB = parseFloat(getComputedStyle(kb).paddingBottom) || 0;
+    var have = Math.max(0, kb.clientHeight - stickyH - padB);
+
+    /* Возвращаем ВСЁ, что трогали: замер не должен менять картинку. */
+    if (!wasTyping) panel.classList.remove("is-typing");
+    kb.hidden = wasKb;
+    if (qBox) qBox.hidden = wasQ;
+    if (wasHidden) { panel.hidden = true; panel.style.cssText = prev; }
+
+    return { fits: rowH > 0 && have >= rowH - 1,
+             have: Math.round(have), need: Math.round(rowH) };
+  };
+
+  KioskApp.prototype._warnNoSearch = function (fit) {
+    var sig = this.activeSceneId + ":" + fit.have + "/" + fit.need;
+    if (this._noSearchSig === sig) return;
+    this._noSearchSig = sig;
+    var msg = "поиск недоступен: клавиатуре не хватает высоты, " +
+      fit.have + " px из " + fit.need + " — строка поиска не построена; " +
+      "отбор и сортировка работают. Уменьшите nav.size или scale.ui.";
+    console.warn("[kiosk] " + msg);
+    this.log("warn", msg);
+  };
+
   KioskApp.prototype._buildKeyboard = function (host) {
     var self = this, doc = document;
     var wrap = doc.createElement("div");
@@ -2772,8 +2844,14 @@
       self._renderFinder();
     };
 
-    /* Поле ввода и клавиатура — только если сцена объявила поиск. */
+    /* Поле ввода и клавиатура — только если сцена объявила поиск И если
+     * клавиатуре физически хватает места хотя бы на один ряд букв. */
     var hasSearch = !!(spec.search && (spec.search.fields || []).length);
+    var fit = hasSearch ? this.finderSearchFits() : null;
+    if (fit && !fit.fits) {
+      hasSearch = false;
+      this._warnNoSearch(fit);
+    }
     var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
     var qBox = this._els.finderPanel.querySelector(".kiosk-finder__q");
     if (kb) kb.hidden = !hasSearch || !this._els.finderPanel.classList.contains("is-typing");
@@ -3336,6 +3414,9 @@
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
+    /* Та же причина, что и при смене масштаба: режим меняет вмещаемость
+     * клавиатуры, а значит и то, строится ли строка поиска. */
+    if (this._finderOpen) this._renderFinder();
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;
