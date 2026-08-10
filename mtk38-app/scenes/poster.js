@@ -15,10 +15,8 @@
  * дальше по строкам отдаёт диапазоны под доступную ширину. Своими силами это
  * три экрана кода и заметно хуже на не-латинице.
  */
-import {
-  loadData, famBig, famWord, PAL, beginStandby, pollSize,
-  bufferComplaint, offScreen, capDpr, hushHint, attachHint } from "./shared.js?v=23";
-import { createCard } from "./card.js?v=23";
+import { loadData, famBig, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=24";
+import { createCard } from "./card.js?v=24";
 import {
   prepareWithSegments, layoutNextLineRange, materializeLineRange,
 } from "../vendor/pretext/layout.js?v=0.0.8";
@@ -168,7 +166,6 @@ export const posterScene = {
   pause() { if (this._raf) { cancelAnimationFrame(this._raf); this._raf = 0; } },
 
   resume() {
-    hushHint(this._hint);
     if (this._raf || !this._root) return;
     const step = () => { this._raf = requestAnimationFrame(step); this._frame(); };
     this._raf = requestAnimationFrame(step);

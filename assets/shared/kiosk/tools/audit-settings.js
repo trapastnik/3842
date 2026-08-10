@@ -123,6 +123,15 @@
     var savedLog = null;
     try { savedLog = localStorage.getItem(app.journalKey()); } catch (e) {}
 
+    /* И САМ ПАТЧ НАСТРОЕК — тоже след. Возврат «по ключам» восстанавливает
+     * ЗНАЧЕНИЯ, но не отсутствие ключа: после прогона на чистом киоске в
+     * localStorage появлялся патч, равный дефолтам. Он безвреден по смыслу
+     * и вреден по факту — «настройки не тронуты» перестаёт быть правдой, а
+     * оператор видит патч там, где ничего не менял. Снимаем снимок строкой
+     * и кладём обратно её же. */
+    var savedPatch = null;
+    try { savedPatch = localStorage.getItem(app.storageKey()); } catch (e) {}
+
     var combos = [{}];
     Object.keys(AXES).forEach(function (axis) {
       var next = [];
@@ -150,6 +159,8 @@
     try {
       if (savedLog === null) localStorage.removeItem(app.journalKey());
       else localStorage.setItem(app.journalKey(), savedLog);
+      if (savedPatch === null) localStorage.removeItem(app.storageKey());
+      else localStorage.setItem(app.storageKey(), savedPatch);
     } catch (e) {}
 
     var report = {

@@ -8,9 +8,9 @@
  * Кольца строятся по ФОРМАМ (60), а не по языкам (128), иначе половина сферы —
  * повторяющиеся «Ленин» и «Lenin».
  */
-import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, hushHint, attachHint } from "./shared.js?v=23";
-import { createCard } from "./card.js?v=23";
-import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=23";
+import { loadData, PAL, beginStandby, pollSize, bufferComplaint, offScreen, attachHint } from "./shared.js?v=24";
+import { createCard } from "./card.js?v=24";
+import { ensureGPU, loadPostNodes, fitTo, attachCanvas, detachCanvas } from "./gpu.js?v=24";
 
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
 const RADIUS = 2.5;
@@ -188,7 +188,6 @@ export const globeScene = {
   },
 
   resume() {
-    hushHint(this._hint);
     if (this._raf || !this._scene) return;
     // забираем общий канвас обратно: пока сцена ждала, он был у соседки
     if (attachCanvas(this._gpu, this._root)) this._fit();

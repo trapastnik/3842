@@ -5,12 +5,12 @@
  * ядру (kiosk-core.js?v=…). Без версии Chrome отдаёт обе из кеша и
  * обновление ядра молча не доезжает до киоска. Поднимать при переходе
  * на каждый новый релиз ядра. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.14.1";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.3";
 
-import { pendulumScene } from "./scenes/pendulum.js?v=26";
-import { archiveScene } from "./scenes/archive.js?v=26";
-import { timelineScene } from "./scenes/timeline.js?v=26";
-import { mapScene } from "./scenes/map.js?v=26";
+import { pendulumScene } from "./scenes/pendulum.js?v=29";
+import { archiveScene } from "./scenes/archive.js?v=29";
+import { timelineScene } from "./scenes/timeline.js?v=29";
+import { mapScene } from "./scenes/map.js?v=29";
 
 const app = createApp({
   appId: "mtk42",
@@ -20,7 +20,7 @@ const app = createApp({
   /* Метка кеша словарей (ядро 1.7.0): без неё Chrome держал старый ru.json
    * и правки подписей не доезжали — ловил это руками не раз. Поднимать
    * вместе с ?v= остальных ассетов. */
-  i18nVersion: "26",
+  i18nVersion: "29",
 
   /* Общая настройка МТК: цвет портретов делят картотека и маятник, поэтому
    * она не принадлежит ни одной сцене. С ядра 1.12.0 для такого есть
