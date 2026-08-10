@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.16.1";
+  var VERSION = "1.17.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1844,6 +1844,9 @@
         self._active = rec;
         self._syncNav();
         self._syncFinder();
+        /* Подсказки — только у активной сцены, и её цикл начинается заново.
+         * Касание бара видит ядро, а не слушатель на контейнере сцены. */
+        if (window.KioskHint && window.KioskHint.scopeTo) window.KioskHint.scopeTo(rec.el);
 
         rec.el.style.transitionDuration = fade + "ms";
         rec.el.classList.add("is-active");
