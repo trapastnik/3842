@@ -97,12 +97,18 @@
     var app = window.mtk39App;
     if (!app) throw new Error("нет window.mtk39App — открой mtk39-app");
 
-    /* Конфигурацию ставим ЯВНО и печатаем рядом с числами: замер на том, что
-       осталось в localStorage от прошлых прогонов, верен для своей
-       конфигурации и бесполезен как протокол (канон кита). */
+    /* Протокольный замер начинается с ОЧИСТКИ, а не с записи: «поставил
+       конфиг» и «нет чужого конфига» — разные гарантии (GRABLI 76). Ключ
+       привязан к origin, и остаток прошлого прогона переживает перезагрузку.
+       Порядок: очистить → перезагрузить → поставить явно → печатать рядом. */
+    var leftovers = Object.keys(localStorage)
+      .filter(function (k) { return /kiosk|mtk39/i.test(k) && !/-log$/.test(k); });
     var scales = app.scales();
     var conf = {
       среда: document.hidden ? "ФОНОВАЯ ВКЛАДКА (пиксели недостоверны)" : "живая вкладка",
+      "чужой стейт в localStorage": leftovers.length
+        ? "ЕСТЬ, замер не протокольный: " + leftovers.join(", ")
+        : "нет (чисто)",
       вьюпорт: innerWidth + "×" + innerHeight,
       dpr: devicePixelRatio,
       язык: app.lang,
