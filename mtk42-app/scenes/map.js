@@ -7,9 +7,23 @@
  *
  * Анимации нет: перерисовка только по жесту. Поэтому rAF-петли не существует
  * вовсе — на паузе сцена гарантированно ничего не потребляет. */
-import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=31";
+import { DATA, STATUS_COLOR, museumCardHtml, createOverlay, esc } from "./shared.js?v=33";
 
-const STATUSES = ["all", "active", "transformed", "private", "closed"];
+/* Без «all»: строку снятия («—») панель финдера подставляет сама. */
+const STATUSES = ["active", "transformed", "private", "closed"];
+
+/* Поля поиска. Описание музея не берём: длинного текста на карте не видно —
+ * попадание нечем объяснить (расширение прецедента 39 «desc не в поиск»). */
+const SEARCH_IN = [
+  (it) => it.short,
+  (it) => it.full_name,
+  (it) => it.city,
+  (it) => it.country,
+];
+
+function norm(s) {
+  return String(s || "").toLowerCase().replace(/\u0451/g, "\u0435");
+}
 /* Пресеты кадра из прототипа — «Кадр карты» в описи. */
 const VIEW_PRESETS = {
   full:   { lonMin: -12, lonMax: 120, latMin:  8, latMax: 72 },
@@ -23,6 +37,33 @@ const MIN_ZOOM = 0.05, MAX_ZOOM = 40;
 export const mapScene = {
   id: "map",
   title: { ru: "Институции · Карта", en: "Institutions · Map", zh: "机构 · 地图" },
+
+  /* Финдер. Судьба уехала со сцены в панель, регион и страна — новые фасеты.
+   * Сортировок НЕТ и быть не может: точка стоит по широте и долготе, порядок
+   * в массиве экрана не меняет — объявить сортировку значило бы соврать
+   * посетителю (канон «без видимого эффекта не объявляется»). */
+  finder: {
+    search: {
+      fields: [
+        { key: "short", label: { ru: "Название", en: "Name", zh: "名称" } },
+        { key: "full_name", label: { ru: "Название", en: "Name", zh: "名称" } },
+        { key: "city", label: { ru: "Город", en: "City", zh: "城市" } },
+        { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" } },
+      ],
+    },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate", zh: "命运" },
+        options: (ctx) => STATUSES.map((v) => [v, ctx.app.t("status.one." + v)]) },
+      { key: "region", label: { ru: "Регион", en: "Region", zh: "地区" },
+        options: (ctx) => ((ctx.data.museums && ctx.data.museums.regions) || [])
+          .slice().sort((a, b) => a.sort - b.sort)
+          .map((r) => [r.id, ctx.app.t("region." + r.id)]) },
+      { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" },
+        options: (ctx) => [...new Set(((ctx.data.museums && ctx.data.museums.items) || [])
+          .map((i) => i.country))].sort((a, b) => String(a).localeCompare(String(b), "ru"))
+          .map((c) => [c, c]) },
+    ],
+  },
 
   /* Схема настроек v1.2 — все позиции класса А из описи SETTINGS-INVENTORY.
    * Проекция оставлена настройкой, а не константой: WT — канон, но плоская
@@ -79,7 +120,7 @@ export const mapScene = {
     this._app = ctx.app;
     this._data = ctx.data.museums;
     this._geo = ctx.data.countries;
-    this._status = "all";
+    this._find = this._find || { query: "", filters: {} };
     this._cam = { worldW: 0, worldH: 0, camX: 0, camY: 0, zoom: 1 };
     this._hitIdx = 0;
     this._lastHitKey = "";
@@ -89,12 +130,15 @@ export const mapScene = {
     root.className = "m42-map";
     root.innerHTML =
       '<canvas class="m42-map__canvas"></canvas>' +
+      '<p class="m42-map__empty" hidden></p>' +
       '<header class="m42-head m42-head--over">' +
       '<h1 class="m42-head__title"></h1>' +
       '<p class="m42-head__sub"></p>' +
       "</header>" +
+      /* В нижней панели остаётся только «сбросить масштаб» — это переключение
+         ВИДА, а не отбор, ему в финдере не место (прецедент «глобус/карта»
+         у МТК 39). Чипы судьбы уехали в панель. */
       '<div class="m42-filters m42-filters--bottom">' +
-      '<div class="m42-filters__row" data-row="status"></div>' +
       '<button type="button" class="m42-filter kiosk-target" data-reset="1"></button>' +
       "</div>";
     el.appendChild(root);
@@ -102,18 +146,10 @@ export const mapScene = {
     this._root = root;
     this._canvas = root.querySelector(".m42-map__canvas");
     this._ctx2d = this._canvas.getContext("2d");
-    this._statusRow = root.querySelector('[data-row="status"]');
     this._resetBtn = root.querySelector("[data-reset]");
+    this._emptyEl = root.querySelector(".m42-map__empty");
     this._overlay = createOverlay(el, this._app);
 
-    this._onFilter = (e) => {
-      const btn = e.target.closest("[data-value]");
-      if (!btn) return;
-      this._status = btn.getAttribute("data-value");
-      this._renderFilters();
-      this._draw();
-    };
-    this._statusRow.addEventListener("click", this._onFilter);
     this._onReset = () => { this._fit(); this._draw(); };
     this._resetBtn.addEventListener("click", this._onReset);
 
@@ -168,12 +204,11 @@ export const mapScene = {
     if (this._barRo) { this._barRo.disconnect(); this._barRo = null; }
     if (this._hint && this._hint.destroy) this._hint.destroy();
     this._unbindGestures();
-    if (this._statusRow) this._statusRow.removeEventListener("click", this._onFilter);
     if (this._resetBtn) this._resetBtn.removeEventListener("click", this._onReset);
     if (this._overlay) this._overlay.destroy();
     if (this._root) this._root.remove();
     this._root = this._canvas = this._ctx2d = null;
-    this._statusRow = this._resetBtn = this._overlay = this._app = null;
+    this._resetBtn = this._emptyEl = this._overlay = this._app = null;
     this._data = this._geo = this._hint = null;
   },
 
@@ -232,7 +267,18 @@ export const mapScene = {
         this._canvas.height + " при ожидании " + wantBuf + " по ширине" +
         " (бокс " + Math.round(r.width) + "×" + Math.round(r.height) + ")" };
     }
-    return drawn === want && want > 0
+    /* Пустой отбор ЛЕГАЛЕН — сочетаний судьба×регион×страна много, пустых
+     * среди них хватает. Признак здоровья — видимая заглушка: пустая карта
+     * без единого слова и есть дефект, а не ноль сам по себе. Заглушка
+     * сделана DOM-элементом, а не надписью на канвасе, чтобы её мог
+     * подтвердить и посетитель, и проверка. */
+    if (want === 0) {
+      const stub = this._emptyEl && !this._emptyEl.hidden;
+      return stub
+        ? { ok: true, detail: "отбор пуст легально, показана заглушка" }
+        : { ok: false, detail: "отбор пуст, но заглушки нет" };
+    }
+    return drawn === want
       ? { ok: true, detail: "точек нарисовано " + drawn + ", буфер " +
           this._canvas.width + "×" + this._canvas.height }
       : { ok: false, detail: "точек нарисовано " + drawn + " из " + want };
@@ -242,7 +288,7 @@ export const mapScene = {
   resume() { this._ensureSized(); this._draw(); },
 
   reset() {
-    this._status = "all";
+    this._find = { query: "", filters: {} };
     this._hitIdx = 0;
     this._lastHitKey = "";
     if (this._overlay) this._overlay.close();
@@ -336,9 +382,26 @@ export const mapScene = {
     };
   },
 
+  /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск;
+   * сортировки нет. {shown,total} — по фактически показанному: на карте это
+   * особенно нужно, она после отбора пустеет молча. */
+  applyFinder({ query, filters }) {
+    this._find = { query: query || "", filters: filters || {} };
+    this._draw();
+    return { shown: this._items().length, total: this._data.items.length };
+  },
+
+  /* Отбор → поиск. Сортировки нет: порядок на карте не виден. */
   _items() {
-    return this._data.items.filter((it) =>
-      this._status === "all" || it.status === this._status);
+    if (!this._data) return [];
+    const f = (this._find && this._find.filters) || {};
+    let list = this._data.items.filter((it) =>
+      (!f.status || it.status === f.status) &&
+      (!f.region || it.region === f.region) &&
+      (!f.country || it.country === f.country));
+    const q = norm(this._find && this._find.query);
+    if (q) list = list.filter((it) => SEARCH_IN.some((get) => norm(get(it)).includes(q)));
+    return list;
   },
 
   /* ─── отрисовка ─────────────────────────────────────────────────────── */
@@ -426,7 +489,14 @@ export const mapScene = {
   _drawDots(ctx, a11y) {
     const R = this._dotRadius(a11y);
     this._drawn = 0;
-    for (const it of this._items()) {
+    const list = this._items();
+    /* Ничего не нашлось — говорим словами поверх карты. Пустая карта без
+       объяснения читается как поломка. */
+    if (this._emptyEl) {
+      this._emptyEl.hidden = list.length > 0;
+      if (!list.length) this._emptyEl.textContent = this._app.t("museums.empty");
+    }
+    for (const it of list) {
       if (typeof it.lat !== "number") continue;
       const w = this._project(it.lat, it.lng);
       const p = this._toScreen(w.x, w.y);
@@ -579,16 +649,8 @@ export const mapScene = {
     this._root.querySelector(".m42-head__sub").textContent = t("museums.map.subtitle");
     this._resetBtn.textContent = t("map.reset");
     if (this._overlay) this._overlay.close();
-    this._renderFilters();
   },
 
-  _renderFilters() {
-    const t = (k) => this._app.t(k);
-    this._statusRow.innerHTML = STATUSES.map((v) =>
-      '<button type="button" class="m42-filter kiosk-target' +
-      (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
-      esc(t("status." + v)) + "</button>").join("");
-  },
 
   /* Сколько своя нижняя панель фильтров занимает над линией --chrome-bottom.
    * В CSS высоту соседнего элемента не узнать, поэтому меряем и публикуем

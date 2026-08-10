@@ -6,7 +6,7 @@
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
   applyPhotoMode,
-} from "./shared.js?v=31";
+} from "./shared.js?v=33";
 
 /* Без «all»: строку снятия («—») панель финдера подставляет сама. */
 const EPOCHS = ["1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];

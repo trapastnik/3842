@@ -189,6 +189,19 @@
   text-transform: uppercase;
   color: rgba(247, 249, 239, 0.55);
 }
+.m42-map__empty {
+  position: absolute;
+  left: 50%; top: 46%;
+  transform: translateX(-50%);
+  margin: 0;
+  z-index: 2;
+  font-size: calc(var(--m42-body) * var(--a11y-scale));
+  color: rgba(247, 249, 239, 0.72);
+  text-align: center;
+  pointer-events: none;
+}
+.m42-map__empty[hidden] { display: none; }
+
 .m42-timeline__empty {
   position: absolute;
   left: 0; top: 40%;
