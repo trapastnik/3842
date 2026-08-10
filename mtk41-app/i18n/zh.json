@@ -16,12 +16,12 @@
   "status.relocated": "已迁移",
   "status.unknown": "去向不明",
   "kind.bust": "半身像",
-  "kind.relief": "浮雕",
+  "kind.relief": "барельеф",
   "kind.rock-image": "岩画",
   "kind.rock-carving": "岩刻",
   "kind.geoglyph": "大地图形",
   "kind.steel-silhouette": "钢制剪影",
-  "kind.plaque": "纪念石板",
+  "kind.plaque": "мемориальная доска",
   "kind.sculpture": "雕塑",
   "wave.first": "第一波",
   "nav.mode": "浏览方式",
@@ -65,5 +65,12 @@
   "hint.silhouettes": "Листайте шкалу вбок",
   "hint.stacked": "Листайте каждую полосу отдельно",
   "hint.canon": "Коснитесь снимка",
-  "hint.authors": "Коснитесь работы"
+  "hint.authors": "Коснитесь работы",
+  "kind.relief.short": "бар",
+  "kind.rock": "наскальное",
+  "kind.rock.short": "скала",
+  "kind.plaque.short": "доска",
+  "kind.steel": "стальной силуэт",
+  "kind.steel.short": "сталь",
+  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота"
 }

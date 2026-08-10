@@ -10,7 +10,7 @@
 import {
   DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
   createHint,
-} from "./shared.js?v=35";
+} from "./shared.js?v=40";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
