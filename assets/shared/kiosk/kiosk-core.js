@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.21.5";
+  var VERSION = "1.22.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1469,12 +1469,75 @@
 
   /* ------------------------------------------------------------------ DOM */
 
+  /* ПОДАВЛЕНИЕ НАТИВНОГО ЗУМА СТРАНИЦЫ — НО ЖЕСТ ОСТАЁТСЯ СЦЕНЕ.
+   *
+   * Тонкая, но решающая разница (уточнение пользователя): гасим ЗУМ
+   * БРАУЗЕРА (visualViewport.scale ≡ 1), а сам жест НЕ съедаем — глобус и
+   * карты зумят СВОЙ контент тем же пинчем, слушая сырые touch/pointer/wheel.
+   * Первая редакция (1.22.1) глобально гасила мультитач-touchmove — это
+   * отнимало жест у сцен целиком; убрано.
+   *
+   * Как это устроено: нативный зум давит touch-action на поверхностях
+   * (канва сцены = none → двухпальцевый жест уходит в JS сцены, а не в
+   * браузер; .kiosk-scroll = pan-y; корень = none) плюс ТОЧЕЧНЫЕ
+   * preventDefault на том, что touch-action не покрывает — gesture-события
+   * Safari, Ctrl+колесо, двойной тап, клавиатурный зум.
+   * preventDefault отменяет НАТИВНОЕ действие, но НЕ мешает слушателям
+   * сцены получить событие и зумить камеру — поэтому здесь НЕТ ни одного
+   * stopPropagation и НЕТ глобального preventDefault на touch/move. */
+  KioskApp.prototype._lockZoom = function () {
+    if (this._zoomLocked) return;
+    this._zoomLocked = true;
+    var doc = document, de = doc.documentElement;
+
+    /* Safari pinch/поворот на трекпаде и тач — отдельные события, и сцены их
+     * не слушают (они считают пинч по touches[0..1]). Гасим у корня. */
+    var onGesture = function (e) { e.preventDefault(); };
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+      doc.addEventListener(ev, onGesture, { passive: false });
+    });
+
+    /* Ctrl+колесо = зум страницы на трекпаде (щипок) и десктопе. Гасим
+     * НАТИВНЫЙ зум, но событие НЕ останавливаем — сцена на канве получит
+     * тот же wheel и сама зумит камеру. Обычный wheel не трогаем вовсе:
+     * панели скроллятся, а сцена решает про зум сама. */
+    var onWheel = function (e) { if (e.ctrlKey) e.preventDefault(); };
+    doc.addEventListener("wheel", onWheel, { passive: false });
+
+    /* Двойной тап зумит в Safari (smart-zoom). preventDefault гасит только
+     * это; слушатели двойного клика, если сцене они нужны, всё равно
+     * сработают — событие доставляется. */
+    var onDbl = function (e) { e.preventDefault(); };
+    doc.addEventListener("dblclick", onDbl, { passive: false });
+
+    /* Ctrl/⌘ +/-/0 — клавиатурный зум, на случай подключённой клавиатуры
+     * у сервис-панели. К сценам отношения не имеет. */
+    var onKey = function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) {
+        e.preventDefault();
+      }
+    };
+    doc.addEventListener("keydown", onKey, { passive: false });
+
+    this._unlockZoom = function () {
+      ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+        doc.removeEventListener(ev, onGesture);
+      });
+      doc.removeEventListener("wheel", onWheel);
+      doc.removeEventListener("dblclick", onDbl);
+      doc.removeEventListener("keydown", onKey);
+      de.removeAttribute("data-zoom-locked");
+    };
+    de.setAttribute("data-zoom-locked", "1");
+  };
+
   KioskApp.prototype._buildChrome = function () {
     var host = resolveEl(this._rootHost) || document.body;
     var doc = document;
 
     warnIfCssMissing();
     doc.documentElement.classList.add("kiosk-runtime");
+    this._lockZoom();
 
     var root = doc.createElement("div");
     root.className = "kiosk-app";
