@@ -859,7 +859,31 @@ html.kiosk-runtime body {
    Лупа стоит в ряду инструментов и потому уже учтена в замере зон хрома.
    Точка — число активных критериев: «почему так мало объектов» не должно
    быть загадкой для посетителя, который отбор уже забыл. */
-.kiosk-find { position: relative; }
+/* Полный вид кнопки, как у .kiosk-a11y. Классов kiosk-touch мало: они
+   задают минимумы таргета, а не облик — без этого блока лупа выходила
+   белым прямоугольником UA-кнопки с чёрным svg и раздувала --chrome-top
+   на 62 px, воруя их у сцены (возврат №1, блокер 1). */
+.kiosk-find {
+  position: relative;
+  width: var(--touch-primary, 96px);
+  height: var(--touch-primary, 96px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-find.is-active { color: var(--brass, #D2B773); }
+.kiosk-find:active { background: rgba(var(--brass-rgb, 210, 183, 115), 0.22); }
+:root.a11y .kiosk-find {
+  background: var(--a11y-bg, #000);
+  border-color: var(--a11y-accent, #FFD24A);
+  color: var(--a11y-accent, #FFD24A);
+}
 .kiosk-find svg { width: 54%; height: 54%; }
 .kiosk-find__dot {
   position: absolute;
@@ -878,10 +902,21 @@ html.kiosk-runtime body {
 .kiosk-find.is-active .kiosk-find__dot { display: grid; }
 .kiosk-find.is-active .kiosk-find__dot::after { content: attr(data-n); }
 
+/* [hidden] — атрибут, а display:flex ниже его перебивает: закрытая панель
+   оставалась НЕВИДИМЫМ КЛИКОБЛОКЕРОМ 942×536 и глушила правый верхний
+   квадрант сцены до перезагрузки (возврат №1, блокер 3). Мой стенд этого
+   не видел, потому что проверял классы и hidden, а не попадание пальца. */
+.kiosk-finder[hidden] { display: none; }
+
 .kiosk-finder {
   position: absolute;
   z-index: 46;
-  top: var(--chrome-top, 176px);
+  /* От верхней КРОМКИ, а не от зоны хрома: панель — оверлей поверх сцены,
+     и накрыть ряд языков ей можно, а вот навигацию внизу нельзя. При
+     ui 1.25–1.5 зоны хрома съедали столько, что панель оставалась 384 и
+     284 px высотой — клавиатуре нужно 398 и 477, и она уходила за низ
+     вместе со «стереть» и переключателем раскладки. */
+  top: var(--edge-safe, 64px);
   right: var(--edge-safe, 64px);
   /* ШИРИНА СЧИТАЕТСЯ ОТ КЛАВИАТУРЫ, а не выбрана на глаз: в самом длинном
      ряду 12 клавиш, каждая по тач-стандарту не мельче 64 px, плюс зазоры и
@@ -893,7 +928,7 @@ html.kiosk-runtime body {
      бы. Пол по ширине идёт следом за полом по клавише. */
   width: min(max(940px, calc(940px * var(--ui-scale, 1))),
              calc(100% - 2 * var(--edge-safe, 64px)));
-  max-height: calc(100% - var(--chrome-top, 176px) - var(--chrome-bottom, 272px));
+  max-height: calc(100% - var(--edge-safe, 64px) - var(--chrome-bottom, 272px));
   display: flex;
   flex-direction: column;
   border-radius: calc(28px * var(--ui-scale, 1));
@@ -905,7 +940,31 @@ html.kiosk-runtime body {
   transition: opacity .22s ease, transform .22s ease;
 }
 .kiosk-finder.is-open { opacity: 1; transform: none; }
-.kiosk-finder__body { padding: calc(24px * var(--ui-scale, 1)); overflow: auto; }
+/* Клавиатура и служебные строки НЕ СЖИМАЮТСЯ, скроллится только тело с
+   чипами. Без этого flex ужимал клавиатуру до 155 px при нужных 318 —
+   рисовалось 2 ряда из 4, а «стереть», «⌫» и переключатель раскладки
+   оказывались за низом панели (возврат №1, блокер 2). */
+.kiosk-finder__q,
+.kiosk-finder__fields,
+.kiosk-finder__note,
+.kiosk-finder__foot { flex: none; }
+/* Клавиатура ужимается ПОСЛЕДНЕЙ и, если места всё равно нет, прокручивается
+   сама — но служебный ряд при этом липнет к низу и остаётся под пальцем.
+   Без этого при нехватке высоты недоступными оказывались ровно те клавиши,
+   без которых из поля не выйти: ⌫, «стереть», переключатель раскладки. */
+.kiosk-kbd { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.kiosk-kbd__row:last-child {
+  position: sticky;
+  bottom: calc(-1 * var(--ui-scale, 1) * 2px);
+  margin-bottom: 0;
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.94);
+}
+.kiosk-finder__body {
+  flex: 1 1 0;
+  min-height: 0;
+  padding: calc(24px * var(--ui-scale, 1));
+  overflow: auto;
+}
 .kiosk-finder__group { margin-bottom: calc(20px * var(--ui-scale, 1)); }
 .kiosk-finder__group h4 {
   margin: 0 0 calc(12px * var(--ui-scale, 1));

@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.17.4";
+  var VERSION = "1.18.2";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -622,6 +622,11 @@
      * сцена с keepAlive:false пересобирается с нуля и про отбор не помнит,
      * а точка на иконке горит — вышел бы полный список при горящей точке. */
     this._finder = {};            /* sceneId → {query, filters, sort} */
+    /* Результат тоже ПО СЦЕНАМ. Одна общая переменная показывала в подвале
+     * чужое число: свежий посетитель открывал панель с пустыми чипами и
+     * строкой «2 из 9» — единственное объяснение отбора врало (хвост
+     * блокера №3 из возврата). */
+    this._finderResult = {};
     this._finderOpen = false;
 
     /* idle-машина */
@@ -2060,6 +2065,7 @@
      * и отбор, поставленный на соседнем экране, к следующему посетителю
      * отношения не имеет. */
     this._finder = {};
+    this._finderResult = {};
     this.openFinder(false);
     var self = this;
     this._records.forEach(function (rec) {
@@ -2556,6 +2562,8 @@
     if (on) {
       this._renderFinder();
       panel.hidden = false;
+      var body = panel.querySelector(".kiosk-finder__body");
+      if (body) body.scrollTop = 0;   /* не наследуем прокрутку прошлого сеанса */
       /* Как и у сервис-панели: сверяемся с ТЕКУЩИМ состоянием, а не с тем,
        * каким оно было при планировании — быстрое открыл/закрыл иначе
        * оставляет панель висеть. */
@@ -2591,7 +2599,9 @@
      * overflow полоса обязана быть видимой. Прокрутка тут вырожденный
      * случай (экран уже клавиатуры), но правило одно для всех. */
     wrap.className = "kiosk-kbd kiosk-scroll";
-    wrap.setAttribute("data-layout", /[а-яё]/i.test(this.lang) || this.lang === "ru" ? "ru" : "ru");
+    /* Обе ветки прежнего условия давали "ru" — раскладка стартовала русской
+     * и в английском интерфейсе. Берём из языка приложения. */
+    wrap.setAttribute("data-layout", this.lang === "en" ? "en" : "ru");
 
     function render() {
       var lay = wrap.getAttribute("data-layout");
@@ -2723,6 +2733,11 @@
     if (kb) kb.hidden = !hasSearch;
     if (qBox) qBox.hidden = !hasSearch;
 
+    /* Подпись кнопки сброса — тоже из словаря: запечённая при сборке, она
+     * оставалась русской в английском интерфейсе. */
+    var resetBtn = this._els.finderPanel.querySelector(".kiosk-finder__reset");
+    if (resetBtn) resetBtn.textContent = this.t("finder.reset");
+
     var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
     if (qEl) qEl.textContent = st.query || "";
     /* «Ищем по…»: ключи полей посетителю ничего не скажут, поэтому
@@ -2748,7 +2763,7 @@
     }
 
     var count = this._els.finderPanel.querySelector(".kiosk-finder__count");
-    var r = this._finderResult;
+    var r = this._finderResult[this.activeSceneId];
     count.textContent = (r && isFinite(r.shown) && isFinite(r.total))
       ? r.shown + " " + this.t("finder.of") + " " + r.total : "";
   };
@@ -3242,7 +3257,13 @@
      * увидеть иначе как открыв панель уже на китайском. */
     if (this._els.finderPanel) {
       var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
-      if (kb && kb._redraw) kb._redraw();
+      if (kb) {
+        /* Раскладку ведём за языком интерфейса: она задавалась один раз при
+         * сборке, и в английском стартовала русской. Смена языка — сигнал
+         * сильнее ручного переключения, сделанного до неё. */
+        kb.setAttribute("data-layout", lang === "en" ? "en" : "ru");
+        if (kb._redraw) kb._redraw();
+      }
       if (this._finderOpen) this._renderFinder();
     }
     this.emit("lang", { lang: lang });
@@ -3367,7 +3388,7 @@
     });
     /* Возврат {shown,total} необязателен: не вернула — строки «N из M»
      * в панели просто не будет. */
-    this._finderResult = res && typeof res === "object" ? res : null;
+    this._finderResult[rec.id] = res && typeof res === "object" ? res : null;
     return res;
   };
 
@@ -3387,8 +3408,10 @@
   KioskApp.prototype.resetFinder = function (id) {
     id = id || this.activeSceneId;
     this._finder[id] = { query: "", filters: {}, sort: null };
+    delete this._finderResult[id];
     this._pushFinder(this._byId[id]);
     this._syncFinder();
+    if (this._finderOpen) this._renderFinder();   /* иначе чипы остались бы нажатыми */
     return this;
   };
 
@@ -3414,6 +3437,10 @@
     if (!has) this.openFinder(false);
     else if (this._finderOpen) this._renderFinder();
 
+    /* Видимость лупы поменялась — пересчитать и видимость всего бокса:
+     * иначе у сцены без финдера бокс мог остаться ради одной скрытой
+     * кнопки и продолжал бы занимать зону хрома. */
+    this._applyToolsStyle();
     this._applyInsets();
   };
 
@@ -3423,7 +3450,10 @@
     box.setAttribute("data-position", (this.config.tools || {}).position || "top-left");
     this._els.langBox.hidden = (this.config.i18n || {}).show === false || this.langs().length < 2;
     this._els.eye.hidden = (this.config.a11y || {}).show === false;
-    box.hidden = this._els.langBox.hidden && this._els.eye.hidden;
+    /* Лупа живёт в том же боксе: погасив языки и режим слабовидящих,
+     * оператор гасил и её — вместе с единственным входом в отбор. */
+    var findHidden = !this._els.finder || this._els.finder.hidden;
+    box.hidden = this._els.langBox.hidden && this._els.eye.hidden && findHidden;
   };
 
   KioskApp.prototype._syncTools = function () {
