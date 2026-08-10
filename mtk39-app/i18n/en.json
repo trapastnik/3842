@@ -27,7 +27,7 @@
   "world.sub": "{shown} of {total} objects placed on the map — a corpus across {countries} countries. The colour of a dot is the fate of the name.",
   "world.mode.globe": "globe",
   "world.mode.map": "map",
-  "world.hint": "turn the globe · tap a dot · “map” unrolls the world",
+  "world.hint": "turn the globe · tap a dot",
   "world.noUssr": "without the former USSR",
 
   "union.title": "Map of the Union",
@@ -35,7 +35,7 @@
   "union.subRepublic": "{name}: {total} records in the corpus, {onMap} on the map.",
   "union.all": "The whole Union",
   "union.byRepublic": "by republic",
-  "union.hint": "choose a republic · drag the map · tap a dot",
+  "union.hint": "drag the map · tap a dot",
 
   "wave.title": "Ebb and flow",
   "wave.sub": "A century of the name on the world map: a dot lights up in the year an object received Lenin's name and goes dark in the year it lost it.",

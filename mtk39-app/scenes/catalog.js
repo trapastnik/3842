@@ -10,7 +10,7 @@
 import {
   DATA, STATUS_CLASS, nf, esc, plural, statusLabel,
   objectCardHtml, corpusPicture,
-} from "./shared.js?v=4";
+} from "./shared.js?v=6";
 
 // единственное в своём роде — по названию, а не по категории
 const ONE_OFF = /геоглиф|мавзолей|ленинланд|leninland|послание|сверхтяжёл|пик ленина|ледокол|астероид|владилена|ульянов \(|комсомол|пионер/i;

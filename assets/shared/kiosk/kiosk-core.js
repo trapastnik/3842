@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.14.1";
+  var VERSION = "1.20.3";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -148,7 +148,16 @@
       "nav.next": "Следующий экран",
       "a11y.button": "Режим для слабовидящих",
       "lang.button": "Язык интерфейса",
-      "loading": "Загрузка"
+      "loading": "Загрузка",
+      "finder.button": "Поиск и отбор",
+      "finder.reset": "Сбросить отбор",
+      "finder.filters": "Отбор",
+      "finder.sorts": "Сортировка",
+      "finder.search": "Поиск",
+      "finder.of": "из",
+      "finder.clear": "Стереть",
+      "finder.space": "Пробел",
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
     },
     en: {
       "standby.call": "Touch the screen",
@@ -156,7 +165,16 @@
       "nav.next": "Next screen",
       "a11y.button": "Low vision mode",
       "lang.button": "Interface language",
-      "loading": "Loading"
+      "loading": "Loading",
+      "finder.button": "Search and filter",
+      "finder.reset": "Clear filters",
+      "finder.filters": "Filter",
+      "finder.sorts": "Sort",
+      "finder.search": "Search",
+      "finder.of": "of",
+      "finder.clear": "Clear",
+      "finder.space": "Space",
+      "finder.zh": "Search runs over Russian and Latin names"
     },
     zh: {
       "standby.call": "请触摸屏幕",
@@ -164,7 +182,16 @@
       "nav.next": "下一屏",
       "a11y.button": "低视力模式",
       "lang.button": "界面语言",
-      "loading": "加载中"
+      "loading": "加载中",
+      "finder.button": "Поиск и отбор",
+      "finder.reset": "Сбросить отбор",
+      "finder.filters": "Отбор",
+      "finder.sorts": "Сортировка",
+      "finder.search": "Поиск",
+      "finder.of": "из",
+      "finder.clear": "Стереть",
+      "finder.space": "Пробел",
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
     }
   };
 
@@ -585,6 +612,22 @@
       return { group: g.group, rows: g.rows.slice() };
     });
     this._openSceneGroups = {};   /* какие группы настроек сцен развёрнуты */
+
+    /* ФИНДЕР: отбор держит ЯДРО, и держит ПО СЦЕНАМ.
+     *
+     * По канону отбор живёт до idle-сброса и НЕ гаснет при уходе со сцены —
+     * значит одного состояния на приложение мало: вернувшись, посетитель
+     * должен увидеть свой отбор, а точка на иконке — отбор ТЕКУЩЕЙ сцены.
+     * Отсюда же обязанность ядра заново звать applyFinder после mount():
+     * сцена с keepAlive:false пересобирается с нуля и про отбор не помнит,
+     * а точка на иконке горит — вышел бы полный список при горящей точке. */
+    this._finder = {};            /* sceneId → {query, filters, sort} */
+    /* Результат тоже ПО СЦЕНАМ. Одна общая переменная показывала в подвале
+     * чужое число: свежий посетитель открывал панель с пустыми чипами и
+     * строкой «2 из 9» — единственное объяснение отбора врало (хвост
+     * блокера №3 из возврата). */
+    this._finderResult = {};
+    this._finderOpen = false;
 
     /* idle-машина */
     this.idleState = IDLE.ACTIVE;
@@ -1253,12 +1296,23 @@
     if (sqx) { side = sqx.a; clamped = clamped || { ось: "по ширине", было: sqx.было, стало: sqx.стало }; }
 
     this._chromeClamped = clamped;
+    /* Предупреждаем ОДИН раз, но числами УСТОЯВШЕГОСЯ ужатия. _applyInsets
+     * за один заход бежит дважды — расчёт по конфигу, потом поверх него
+     * замер, — и первый проход ужимает по неполным величинам: подпись
+     * вышла бы «798 → 675» при настоящем «918 → 675». Откладываем на
+     * микрозадачу и читаем итог; микрозадачи, в отличие от кадров и
+     * макрозадач, идут и в фоновой вкладке. */
     if (clamped && !this._warnedClamp) {
       this._warnedClamp = true;
-      console.warn("[kiosk] зоны хрома не помещаются на экран " + Math.round(vw) + "×" +
-        Math.round(vh) + " (" + clamped.ось + ": " + clamped.было + " → " + clamped.стало +
-        ") — ужал, чтобы полю сцены осталось место. Причина в настройках: " +
-        "размер кнопок навигации × масштаб интерфейса. Уменьшите nav.size или scale.ui.");
+      var self2 = this;
+      Promise.resolve().then(function () {
+        var c = self2._chromeClamped;
+        if (!c) return;   /* доследующий проход ужатие снял — молчим */
+        console.warn("[kiosk] зоны хрома не помещаются на экран " + Math.round(vw) + "×" +
+          Math.round(vh) + " (" + c.ось + ": " + c.было + " → " + c.стало +
+          ") — ужал, чтобы полю сцены осталось место. Причина в настройках: " +
+          "размер кнопок навигации × масштаб интерфейса. Уменьшите nav.size или scale.ui.");
+      });
     }
 
     var vals = {
@@ -1333,7 +1387,13 @@
         this.showScene(this._pickDefaultSceneId());
       }
     }
-    if (!path || /^(scale|a11y)\./.test(path)) this._applyScale();
+    if (!path || /^(scale|a11y)\./.test(path)) {
+      this._applyScale();
+      /* Масштаб меняет вмещаемость клавиатуры, а с ней — строится ли строка
+       * поиска вообще. Без перерисовки открытая панель осталась бы от
+       * прежней конфигурации: поле есть, а места под клавиатуру уже нет. */
+      if (this._finderOpen) this._renderFinder();
+    }
     if (!path || path.indexOf("content.") === 0) this._applyContentBox();
     /* Настройка сцены — отдать её самой сцене, без перезагрузки. */
     if (path && path.indexOf("scenes.") === 0) {
@@ -1794,6 +1854,17 @@
         safeCall(rec, "resume");
         self._active = rec;
         self._syncNav();
+        /* Панель принадлежит СЦЕНЕ — значит уходит при любой смене, а не
+         * только когда у новой сцены финдера нет. Посетитель нажал стрелку,
+         * чтобы УВИДЕТЬ новый экран; панель поверх него это отменяет, а
+         * иконка рядом и открывается одним касанием.
+         * Закрываем здесь, а не в _syncFinder: тот зовётся и на каждом
+         * нажатии чипа — панель захлопывалась бы под руками. */
+        self.openFinder(false);
+        self._syncFinder();
+        /* Подсказки — только у активной сцены, и её цикл начинается заново.
+         * Касание бара видит ядро, а не слушатель на контейнере сцены. */
+        if (window.KioskHint && window.KioskHint.scopeTo) window.KioskHint.scopeTo(rec.el);
 
         rec.el.style.transitionDuration = fade + "ms";
         rec.el.classList.add("is-active");
@@ -1830,6 +1901,9 @@
         self._pushSceneSettings(rec);
         /* Общие настройки тоже: сцена смонтировалась позже их правки. */
         if (self._appSettings.length) safeCall(rec, "applyAppSettings", self.appSettings());
+        /* И отбор: сцена собралась с нуля и про него не знает, а точка на
+         * иконке горит — иначе полный список при заявленном отборе. */
+        self._pushFinder(rec);
       })
       .catch(function (err) { reportSceneError(rec, "mount", err); });
   };
@@ -1985,6 +2059,25 @@
 
   /* RESET: посетитель ушёл — снять его следы, но экран пока живой. */
   KioskApp.prototype._doIdleReset = function () {
+    /* Отбор гасим ДО reset() сцен: иначе сцена уже сбросилась, а панель и
+     * точка на иконке кадр показывают прежний отбор.
+     *
+     * И ОБЯЗАТЕЛЬНО СООБЩАЕМ СЦЕНАМ. Очистить только свою карту мало:
+     * состояние держит ядро, но ВЫБОРКУ считает сцена, и она осталась бы
+     * отфильтрованной при погашенной точке — то есть посетитель №2 видит
+     * неполный список, а индикатор говорит «отбора нет». Это хуже, чем
+     * забытый отбор с горящей точкой: там хотя бы видно причину.
+     * Чистим у ВСЕХ сцен, а не только у активной: граница визита — заставка,
+     * и отбор, поставленный на соседнем экране, к следующему посетителю
+     * отношения не имеет. */
+    this._finder = {};
+    this._finderResult = {};
+    this.openFinder(false);
+    var self = this;
+    this._records.forEach(function (rec) {
+      if (rec.mounted && rec.scene && rec.scene.finder) self._pushFinder(rec);
+    });
+    this._syncFinder();
     this.resetScenes();
     var lang = (this.config.defaultLang) || "ru";
     if (this.lang !== lang) this.setLang(lang);
@@ -2006,6 +2099,24 @@
      * съедался подавлением, которое ещё не снято: свежий посетитель
      * оставался без призыва до следующего 30-секундного простоя. */
     if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(true);
+
+    /* Панель и отбор уходят НА ВХОДЕ в заставку, а не только на выходе.
+     * Панель жила под вуалью (z-index 46 против 50, но у заставки
+     * pointer-events:none — пробы проходили сквозь неё прямо в чипы), и
+     * пробуждающий тап успевал доставить click в чип уже закрывающейся
+     * панели: отбор ложился на сцену ПОСЛЕ idle-сброса, и посетитель №2
+     * получал чужие «3 из 9». Заставка — граница визита, значит чистим
+     * здесь, а не полагаемся на сброс, который отработал раньше.
+     * Досягаемо и штатно: timings.reset (15..600 с) и standby (30..1800 с)
+     * не связаны кросс-клампом, reset > standby — легальная настройка. */
+    this.openFinder(false);
+    this._finder = {};
+    this._finderResult = {};
+    var selfF = this;
+    this._records.forEach(function (r) {
+      if (r.mounted && r.scene && r.scene.finder) selfF._pushFinder(r);
+    });
+    this._syncFinder();
 
     var rec = this._active;
     var own = rec ? safeCall(rec, "standby") : null;
@@ -2461,6 +2572,327 @@
       if (e.clientX >= r.right - edge - size && e.clientX <= r.right - edge &&
           e.clientY >= r.top + edge && e.clientY <= r.top + edge + size) hit();
     }, { passive: true });
+  };
+
+  /* --------------------------------------------------------- финдер: UI */
+  KioskApp.prototype.openFinder = function (on) {
+    on = on !== false;
+    if (on && !this.finderSpec()) return this;      /* сцена не объявляла */
+    if (on === !!this._finderOpen) return this;
+    this._finderOpen = on;
+    if (!this._els.finderPanel) this._buildFinderPanel();
+    var panel = this._els.finderPanel;
+    this._els.root.classList.toggle("is-finder", on);
+    if (on) {
+      panel.classList.remove("is-typing");   /* открываемся с чипов, не с клавиатуры */
+      this._renderFinder();
+      panel.hidden = false;
+      var body = panel.querySelector(".kiosk-finder__body");
+      if (body) body.scrollTop = 0;   /* не наследуем прокрутку прошлого сеанса */
+      /* Как и у сервис-панели: сверяемся с ТЕКУЩИМ состоянием, а не с тем,
+       * каким оно было при планировании — быстрое открыл/закрыл иначе
+       * оставляет панель висеть. */
+      var self = this;
+      nextFrames(1).then(function () { if (self._finderOpen) panel.classList.add("is-open"); });
+    } else {
+      panel.classList.remove("is-open");
+      var self2 = this;
+      setTimeout(function () { if (!self2._finderOpen) panel.hidden = true; }, 300);
+    }
+    this.emit("finder", { open: on });
+    return this;
+  };
+
+  /* ------------------------------------------------ экранная клавиатура
+   * Своя, без библиотеки: «вендорена» так выполняется тривиально, а тач-
+   * стандарт и брендовые шрифты пришлось бы навязывать чужому компоненту
+   * всё равно. Раскладки RU/EN; пиньинь-IME по решению координатора не
+   * делаем — в ZH-интерфейсе ищут теми же полями, о чём панель говорит
+   * прямо (канон данных — ru/латиница).
+   *
+   * Поле ввода — НЕ <input>: на тач-панели он поднял бы системную
+   * клавиатуру поверх нашей. Показываем текст сами. */
+  var KB = {
+    ru: ["йцукенгшщзхъ", "фывапролджэ", "ячсмитьбю"],
+    en: ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+  };
+
+  /* ВМЕЩАЕМОСТЬ, А НЕ КОНСТАНТА МАСШТАБА.
+   *
+   * При крупном масштабе панели не хватает высоты, и клавиатура вырождалась
+   * в один липкий ряд: служебные клавиши есть, букв под пальцем НОЛЬ — то
+   * есть поиска нет, а поле обещает его. Отказываемся вслух: строку поиска
+   * не строим вовсе, панель живёт дальше чипами и сортировкой.
+   *
+   * Порог считается ЗАМЕРОМ, а не порогом «выше 1.25»: константа разойдётся
+   * с действительностью при первом изменении высот — ровно то, за что я сам
+   * запретил флаг «меня уже показывали» в конвенции healthcheck. */
+  KioskApp.prototype.finderSearchFits = function () {
+    var spec = this.finderSpec();
+    if (!spec || !spec.search || !(spec.search.fields || []).length) {
+      return { fits: false, why: "поиск не объявлен" };
+    }
+    if (!this._els.finderPanel) this._buildFinderPanel();
+    var panel = this._els.finderPanel, kb = panel.querySelector(".kiosk-kbd");
+    if (!kb) return { fits: false, why: "нет клавиатуры" };
+
+    /* Меряем в том состоянии, в каком клавиатура и живёт — в режиме ввода.
+     * Скрытая панель размеров не имеет, поэтому на время замера показываем
+     * её вне потока: видимой она при этом не становится. */
+    var qBox = panel.querySelector(".kiosk-finder__q");
+    var wasHidden = panel.hidden, wasTyping = panel.classList.contains("is-typing");
+    var wasKb = kb.hidden, wasQ = qBox ? qBox.hidden : false;
+    var prev = panel.style.cssText;
+    if (wasHidden) {
+      panel.hidden = false;
+      panel.style.cssText += ";visibility:hidden;pointer-events:none;";
+    }
+    /* Меряем ИМЕННО ту раскладку, про которую спрашиваем: строка поиска на
+     * месте, режим ввода включён. Иначе замер зависел бы от того, построена
+     * ли строка сейчас, — а именно это мы и решаем, и ответ получался бы
+     * разный при повторных вызовах. */
+    panel.classList.add("is-typing");
+    if (qBox) qBox.hidden = false;
+    kb.hidden = false;
+
+    var rows = kb.querySelectorAll(".kiosk-kbd__row");
+    var letterRow = rows[0], stickyRow = rows[rows.length - 1];
+    var rowH = letterRow ? letterRow.getBoundingClientRect().height : 0;
+    var stickyH = stickyRow ? stickyRow.getBoundingClientRect().height : 0;
+    var padB = parseFloat(getComputedStyle(kb).paddingBottom) || 0;
+    var have = Math.max(0, kb.clientHeight - stickyH - padB);
+
+    /* Возвращаем ВСЁ, что трогали: замер не должен менять картинку. */
+    if (!wasTyping) panel.classList.remove("is-typing");
+    kb.hidden = wasKb;
+    if (qBox) qBox.hidden = wasQ;
+    if (wasHidden) { panel.hidden = true; panel.style.cssText = prev; }
+
+    return { fits: rowH > 0 && have >= rowH - 1,
+             have: Math.round(have), need: Math.round(rowH) };
+  };
+
+  KioskApp.prototype._warnNoSearch = function (fit) {
+    var sig = this.activeSceneId + ":" + fit.have + "/" + fit.need;
+    if (this._noSearchSig === sig) return;
+    this._noSearchSig = sig;
+    var msg = "поиск недоступен: клавиатуре не хватает высоты, " +
+      fit.have + " px из " + fit.need + " — строка поиска не построена; " +
+      "отбор и сортировка работают. Уменьшите nav.size или scale.ui.";
+    console.warn("[kiosk] " + msg);
+    this.log("warn", msg);
+  };
+
+  KioskApp.prototype._buildKeyboard = function (host) {
+    var self = this, doc = document;
+    var wrap = doc.createElement("div");
+    /* kiosk-scroll — по собственному правилу кита: у контейнера с
+     * overflow полоса обязана быть видимой. Прокрутка тут вырожденный
+     * случай (экран уже клавиатуры), но правило одно для всех. */
+    wrap.className = "kiosk-kbd kiosk-scroll";
+    /* Обе ветки прежнего условия давали "ru" — раскладка стартовала русской
+     * и в английском интерфейсе. Берём из языка приложения. */
+    wrap.setAttribute("data-layout", this.lang === "en" ? "en" : "ru");
+
+    function render() {
+      var lay = wrap.getAttribute("data-layout");
+      var rows = KB[lay] || KB.ru;
+      var html = rows.map(function (r) {
+        return '<div class="kiosk-kbd__row">' + r.split("").map(function (ch) {
+          return '<button type="button" class="kiosk-kbd__key kiosk-touch" data-ch="' +
+            esc(ch) + '">' + esc(ch) + "</button>";
+        }).join("") + "</div>";
+      }).join("");
+      html += '<div class="kiosk-kbd__row">' +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="lay">' +
+        (lay === "ru" ? "ENG" : "РУС") + "</button>" +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--space kiosk-touch" data-act="space">' +
+        esc(self.t("finder.space")) + "</button>" +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="back">⌫</button>' +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="clear">' +
+        esc(self.t("finder.clear")) + "</button></div>";
+      wrap.innerHTML = html;
+    }
+    render();
+
+    wrap.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ch],[data-act]");
+      if (!b) return;
+      var q = self.finderState().query || "";
+      var act = b.getAttribute("data-act");
+      if (act === "lay") {
+        wrap.setAttribute("data-layout", wrap.getAttribute("data-layout") === "ru" ? "en" : "ru");
+        render();
+        return;
+      }
+      if (act === "space") q += " ";
+      else if (act === "back") q = q.slice(0, -1);
+      else if (act === "clear") q = "";
+      else q += b.getAttribute("data-ch");
+      self.setFinder({ query: q });
+      self._renderFinder();
+    });
+
+    /* Маску затухания включаем ТОЛЬКО когда прокрутка реально есть: иначе
+     * она гасила бы нижний ряд там, где всё и так помещается. */
+    function markScroll() {
+      wrap.setAttribute("data-scrollable",
+        wrap.scrollHeight > wrap.clientHeight + 1 ? "1" : "0");
+    }
+    wrap._redraw = function () { render(); markScroll(); };
+    if (typeof ResizeObserver === "function") {
+      var kro = new ResizeObserver(markScroll);
+      kro.observe(wrap);
+    }
+    wrap._markScroll = markScroll;
+    host.appendChild(wrap);
+    return wrap;
+  };
+
+  KioskApp.prototype._buildFinderPanel = function () {
+    var self = this, doc = document;
+    var el = doc.createElement("aside");
+    el.className = "kiosk-finder";
+    el.hidden = true;
+    el.innerHTML =
+      '<button type="button" class="kiosk-finder__q kiosk-touch">' +
+      '<span class="kiosk-finder__q-text"></span>' +
+      '<span class="kiosk-finder__caret" aria-hidden="true"></span></button>' +
+      '<div class="kiosk-finder__fields"></div>' +
+      '<div class="kiosk-finder__note"></div>' +
+      '<div class="kiosk-finder__body kiosk-scroll"></div>' +
+      '<footer class="kiosk-finder__foot">' +
+      '<button type="button" class="kiosk-finder__reset kiosk-touch">' +
+      this.t("finder.reset") + "</button>" +
+      '<span class="kiosk-finder__count"></span></footer>';
+    el.querySelector(".kiosk-finder__reset")
+      .addEventListener("click", function () { self.resetFinder(); self._renderFinder(); });
+
+    /* КЛАВИАТУРА ПОЯВЛЯЕТСЯ ПО КАСАНИЮ ПОЛЯ, а не висит всегда.
+     * Панель физически не вмещает разом чипы и клавиатуру: на 1920×1080
+     * содержимому нужно ~814 px при потолке 658, и чипы уезжали в щель —
+     * центр первого по хит-тесту попадал в футер. Это не «компактная
+     * раскладка» (её решили не делать), а момент показа: пока посетитель
+     * выбирает чипами, клавиатура не нужна; как только он трогает поле,
+     * место отдаётся ей, а чипы уходят в прокрутку — там они и не важны. */
+    el.querySelector(".kiosk-finder__q").addEventListener("click", function () {
+      el.classList.toggle("is-typing");
+      /* Видимость клавиатуры выставляет _renderFinder — переключить класс
+       * мало, иначе поле «открылось», а клавиатуры нет. */
+      self._renderFinder();
+    });
+    /* Тап мимо — закрыть (канон). Слушаем на корне, а не кладём подложку:
+     * подложка перехватывала бы жесты сцены под собой. */
+    this._els.root.addEventListener("pointerdown", function (e) {
+      if (!self._finderOpen) return;
+      if (el.contains(e.target) || (self._els.finder && self._els.finder.contains(e.target))) return;
+      self.openFinder(false);
+    }, { passive: true });
+    /* Клавиатура одна на приложение, но показывается по декларации ТЕКУЩЕЙ
+     * сцены: у одной поиск есть, у другой только чипы. */
+    this._buildKeyboard(el);
+    this._els.root.appendChild(el);
+    this._els.finderPanel = el;
+  };
+
+  KioskApp.prototype._renderFinder = function () {
+    var body = this._els.finderPanel && this._els.finderPanel.querySelector(".kiosk-finder__body");
+    var spec = this.finderSpec();
+    if (!body || !spec) return;
+    var self = this, st = this.finderState(), html = "";
+
+    function chips(rows, active, path) {
+      return rows.map(function (r) {
+        var on = String(active) === String(r.v);
+        return '<button type="button" class="kiosk-finder__chip kiosk-touch' +
+          (on ? " is-on" : "") + '" data-path="' + path + '" data-v="' +
+          esc(String(r.v)) + '">' + esc(r.label) + "</button>";
+      }).join("");
+    }
+
+    (spec.filters || []).forEach(function (f) {
+      /* options — массив ИЛИ функция: фасеты выводятся из загруженных
+       * данных, а декларация статична в объекте сцены. */
+      var opts = typeof f.options === "function" ? f.options(self.context()) : f.options;
+      if (!Array.isArray(opts) || !opts.length) return;
+      var rows = opts.map(function (o) {
+        return Array.isArray(o) ? { v: o[0], label: o[1] } : { v: o, label: String(o) };
+      });
+      rows.unshift({ v: "", label: "—" });
+      html += '<div class="kiosk-finder__group"><h4>' + esc(pickLabel(normLabel(f.label), self.lang)) + "</h4>" +
+        chips(rows, st.filters[f.key] == null ? "" : st.filters[f.key], "f:" + f.key) + "</div>";
+    });
+
+    if ((spec.sorts || []).length) {
+      var rows = spec.sorts.map(function (o) { return { v: o.key, label: pickLabel(normLabel(o.label), self.lang) }; });
+      rows.unshift({ v: "", label: "—" });
+      html += '<div class="kiosk-finder__group"><h4>' + esc(this.t("finder.sorts")) + "</h4>" +
+        chips(rows, st.sort == null ? "" : st.sort, "s:") + "</div>";
+    }
+
+    body.innerHTML = html || "<p>" + esc(this.t("finder.search")) + "</p>";
+    body.onclick = function (e) {
+      var b = e.target.closest("[data-path]");
+      if (!b) return;
+      var path = b.getAttribute("data-path"), v = b.getAttribute("data-v");
+      self._els.finderPanel.classList.remove("is-typing");   /* ушёл к чипам */
+      if (path === "s:") self.setFinder({ sort: v || null });
+      else {
+        var patch = {}; patch[path.slice(2)] = v === "" ? null : v;
+        self.setFinder({ filters: patch });
+      }
+      self._renderFinder();
+    };
+
+    /* Поле ввода и клавиатура — только если сцена объявила поиск И если
+     * клавиатуре физически хватает места хотя бы на один ряд букв. */
+    var hasSearch = !!(spec.search && (spec.search.fields || []).length);
+    var fit = hasSearch ? this.finderSearchFits() : null;
+    if (fit && !fit.fits) {
+      hasSearch = false;
+      this._warnNoSearch(fit);
+    }
+    var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
+    var qBox = this._els.finderPanel.querySelector(".kiosk-finder__q");
+    if (kb) kb.hidden = !hasSearch || !this._els.finderPanel.classList.contains("is-typing");
+    if (qBox) qBox.hidden = !hasSearch;
+    if (!hasSearch) this._els.finderPanel.classList.remove("is-typing");
+
+    /* Подпись кнопки сброса — тоже из словаря: запечённая при сборке, она
+     * оставалась русской в английском интерфейсе. */
+    var resetBtn = this._els.finderPanel.querySelector(".kiosk-finder__reset");
+    if (resetBtn) resetBtn.textContent = this.t("finder.reset");
+
+    if (kb && kb._markScroll) kb._markScroll();
+
+    var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
+    if (qEl) qEl.textContent = st.query || "";
+    /* «Ищем по…»: ключи полей посетителю ничего не скажут, поэтому
+     * принимаем и {key,label}, и голую строку — но показываем только то,
+     * у чего есть человеческая подпись. */
+    var fieldsEl = this._els.finderPanel.querySelector(".kiosk-finder__fields");
+    if (fieldsEl) {
+      var labels = ((spec.search || {}).fields || []).map(function (f) {
+        if (f && typeof f === "object" && f.label) return pickLabel(normLabel(f.label), self.lang);
+        return null;
+      }).filter(Boolean);
+      fieldsEl.textContent = labels.length
+        ? self.t("finder.search") + ": " + labels.join(" · ") : "";
+      fieldsEl.hidden = !labels.length;
+    }
+
+    var note = this._els.finderPanel.querySelector(".kiosk-finder__note");
+    if (note) {
+      /* Пояснение показываем ТОЛЬКО в китайском интерфейсе: там оно
+       * отвечает на живой вопрос «почему клавиатура не моя». */
+      note.textContent = this.lang === "zh" ? this.t("finder.zh") : "";
+      note.hidden = this.lang !== "zh";
+    }
+
+    var count = this._els.finderPanel.querySelector(".kiosk-finder__count");
+    var r = this._finderResult[this.activeSceneId];
+    count.textContent = (r && isFinite(r.shown) && isFinite(r.total))
+      ? r.shown + " " + this.t("finder.of") + " " + r.total : "";
   };
 
   KioskApp.prototype.openService = function (on) {
@@ -2946,6 +3378,21 @@
     /* Подписи настроек сцен идут через словари — открытую панель
      * перерисовываем, иначе она осталась бы на прежнем языке. */
     if (this._serviceOpen) this._rebuildService();
+    /* И панель финдера — по той же причине: её подписи, строка «ищем по…»
+     * и пояснение про китайский поиск идут через словари. Пояснение вообще
+     * ПОЯВЛЯЕТСЯ только в zh, то есть без перерисовки его нельзя было
+     * увидеть иначе как открыв панель уже на китайском. */
+    if (this._els.finderPanel) {
+      var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
+      if (kb) {
+        /* Раскладку ведём за языком интерфейса: она задавалась один раз при
+         * сборке, и в английском стартовала русской. Смена языка — сигнал
+         * сильнее ручного переключения, сделанного до неё. */
+        kb.setAttribute("data-layout", lang === "en" ? "en" : "ru");
+        if (kb._redraw) kb._redraw();
+      }
+      if (this._finderOpen) this._renderFinder();
+    }
     this.emit("lang", { lang: lang });
     return this;
   };
@@ -2967,6 +3414,9 @@
       if (rec.mounted) safeCall(rec, "setA11y", on);
     });
     this._syncTools();
+    /* Та же причина, что и при смене масштаба: режим меняет вмещаемость
+     * клавиатуры, а значит и то, строится ли строка поиска. */
+    if (this._finderOpen) this._renderFinder();
     this.emit("a11y", { on: on });
     this.log("info", "режим слабовидящих: " + (on ? "вкл" : "выкл"));
     return this;
@@ -3001,15 +3451,127 @@
     eye.innerHTML = eyeSvg();
     eye.addEventListener("click", function () { self.setA11y(!self.a11y); });
 
+    /* Лупа — рядом с языками, по канону «хорошо видимая иконка, а не
+     * панель, висящая на экране». Скрыта у сцен без finder. */
+    var find = doc.createElement("button");
+    find.type = "button";
+    find.className = "kiosk-find kiosk-touch kiosk-touch--primary";
+    find.hidden = true;
+    find.innerHTML = findSvg() + '<span class="kiosk-find__dot" aria-hidden="true"></span>';
+    find.addEventListener("click", function () { self.openFinder(!self._finderOpen); });
+
     box.appendChild(langs);
     box.appendChild(eye);
+    box.appendChild(find);
     this._els.root.appendChild(box);
     this._els.tools = box;
     this._els.langBox = langs;
     this._els.eye = eye;
+    this._els.finder = find;
 
     this._applyToolsStyle();
     this._syncTools();
+    this._syncFinder();
+  };
+
+  /* ----------------------------------------------------- финдер: состояние
+   * Сцена ОБЪЯВЛЯЕТ, чем можно искать (finder:{search,filters,sorts}), а
+   * применяет одним методом applyFinder({query,filters,sort}) — целиком,
+   * при любом изменении. Пер-пунктовые apply() остаются сахаром: если бы
+   * канон звал их по отдельности, сцена держала бы копию состояния ядра, а
+   * порядок применения у пяти МТК вышел бы свой у каждого. */
+  KioskApp.prototype.finderSpec = function (id) {
+    var rec = this._byId[id || this.activeSceneId];
+    var f = rec && rec.scene && rec.scene.finder;
+    return f && typeof f === "object" ? f : null;
+  };
+
+  KioskApp.prototype.finderState = function (id) {
+    id = id || this.activeSceneId;
+    if (!this._finder[id]) this._finder[id] = { query: "", filters: {}, sort: null };
+    return this._finder[id];
+  };
+
+  /* Сколько критериев включено — это и есть число на точке. Ядро знает его
+   * само, обязанностей у сцен ноль; «сколько осталось объектов» — дело
+   * панели и необязательного возврата applyFinder. */
+  KioskApp.prototype.finderCount = function (id) {
+    var st = this._finder[id || this.activeSceneId];
+    if (!st) return 0;
+    var n = st.query ? 1 : 0;
+    Object.keys(st.filters || {}).forEach(function (k) {
+      var v = st.filters[k];
+      if (v === null || v === undefined || v === "" ) return;
+      if (Array.isArray(v) && !v.length) return;
+      n++;
+    });
+    if (st.sort) n++;
+    return n;
+  };
+
+  KioskApp.prototype._pushFinder = function (rec) {
+    if (!rec || !rec.mounted) return;
+    if (!(rec.scene && rec.scene.finder)) return;
+    var st = this.finderState(rec.id);
+    var res = safeCall(rec, "applyFinder", {
+      query: st.query, filters: cloneValue(st.filters), sort: st.sort
+    });
+    /* Возврат {shown,total} необязателен: не вернула — строки «N из M»
+     * в панели просто не будет. */
+    this._finderResult[rec.id] = res && typeof res === "object" ? res : null;
+    return res;
+  };
+
+  KioskApp.prototype.setFinder = function (patch, id) {
+    id = id || this.activeSceneId;
+    var st = this.finderState(id);
+    if (patch && "query" in patch) st.query = String(patch.query || "");
+    if (patch && "sort" in patch) st.sort = patch.sort || null;
+    if (patch && patch.filters) {
+      Object.keys(patch.filters).forEach(function (k) { st.filters[k] = patch.filters[k]; });
+    }
+    this._pushFinder(this._byId[id]);
+    this._syncFinder();
+    return this;
+  };
+
+  KioskApp.prototype.resetFinder = function (id) {
+    id = id || this.activeSceneId;
+    this._finder[id] = { query: "", filters: {}, sort: null };
+    delete this._finderResult[id];
+    this._pushFinder(this._byId[id]);
+    this._syncFinder();
+    if (this._finderOpen) this._renderFinder();   /* иначе чипы остались бы нажатыми */
+    return this;
+  };
+
+  /* Иконку показываем ТОЛЬКО сценам, объявившим finder; точка — число
+   * активных критериев. Зона хрома пересчитывается: иконка её занимает. */
+  KioskApp.prototype._syncFinder = function () {
+    var btn = this._els.finder;
+    if (!btn) return;
+    var has = !!this.finderSpec();
+    btn.hidden = !has;
+    var n = has ? this.finderCount() : 0;
+    var dot = btn.querySelector(".kiosk-find__dot");
+    if (dot) dot.setAttribute("data-n", n || "");
+    btn.classList.toggle("is-active", n > 0);
+    btn.setAttribute("aria-label", this.t("finder.button") +
+      (n ? " (" + n + ")" : ""));
+
+    /* Панель принадлежит СЦЕНЕ, а не приложению. Ушли на сцену без
+     * финдера — панель обязана уйти с ней: иначе поверх новой сцены
+     * висят чипы старой, а закрыть их нечем, иконка-то спрятана.
+     * Ушли на другую сцену С финдером — перерисовать под её декларацию,
+     * иначе показывались бы чужие фильтры со своим отбором. */
+    if (!has) this.openFinder(false);
+    else if (this._finderOpen) this._renderFinder();
+
+    /* Видимость лупы поменялась — пересчитать и видимость всего бокса:
+     * иначе у сцены без финдера бокс мог остаться ради одной скрытой
+     * кнопки и продолжал бы занимать зону хрома. */
+    this._applyToolsStyle();
+    this._applyInsets();
   };
 
   KioskApp.prototype._applyToolsStyle = function () {
@@ -3018,7 +3580,10 @@
     box.setAttribute("data-position", (this.config.tools || {}).position || "top-left");
     this._els.langBox.hidden = (this.config.i18n || {}).show === false || this.langs().length < 2;
     this._els.eye.hidden = (this.config.a11y || {}).show === false;
-    box.hidden = this._els.langBox.hidden && this._els.eye.hidden;
+    /* Лупа живёт в том же боксе: погасив языки и режим слабовидящих,
+     * оператор гасил и её — вместе с единственным входом в отбор. */
+    var findHidden = !this._els.finder || this._els.finder.hidden;
+    box.hidden = this._els.langBox.hidden && this._els.eye.hidden && findHidden;
   };
 
   KioskApp.prototype._syncTools = function () {
@@ -3033,6 +3598,13 @@
     this._els.eye.setAttribute("aria-pressed", this.a11y ? "true" : "false");
     this._els.eye.setAttribute("aria-label", this.t("a11y.button"));
   };
+
+  /* Лупа. Штрихи те же, что у остальных иконок хрома, — 4 при 96. */
+  function findSvg() {
+    return '<svg viewBox="0 0 96 96" xmlns="http://www.w3.org/2000/svg" fill="none" ' +
+      'stroke="currentColor" stroke-width="6" stroke-linecap="round">' +
+      '<circle cx="42" cy="42" r="24"/><path d="M60 60 L78 78"/></svg>';
+  }
 
   function eyeSvg() {
     return '<svg viewBox="0 0 40 40" xmlns="http://www.w3.org/2000/svg" fill="none" ' +

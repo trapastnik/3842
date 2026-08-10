@@ -15,7 +15,7 @@
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
   applyPhotoMode,
-} from "./shared.js?v=25";
+} from "./shared.js?v=26";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;
@@ -229,15 +229,6 @@ export const pendulumScene = {
     let dir = 1, prev = 0;
     const SPEED = 60;   // px/с — независимо от standbyFps
     this._driftStop = this._app.standbyTicker((t) => {
-      /* Призыв к жесту не должен загораться поверх заставки. Его 30-секундный
-       * таймер живёт своей жизнью и в простое не останавливается: без этого
-       * вызова подсказка вспыхнет через полминуты после ухода в standby и
-       * будет гореть до утра. Одиночного hide() на входе мало — он ПЕРЕВЗВОДИТ
-       * тот же таймер, то есть просто отодвигает вспышку на 30 с (грабля
-       * GRABLI, поймана живьём у МТК 41). Поэтому дёргаем в КАЖДОМ тике.
-       * Убрать, когда в ките появятся suppress()/resume(). */
-      if (this._hint && this._hint.poke) this._hint.poke();
-
       const max = scroll.scrollHeight - scroll.clientHeight;
       const dt = Math.max(0, Math.min(1, t - prev));
       prev = t;
@@ -247,8 +238,13 @@ export const pendulumScene = {
       if (next <= 0) { next = 0; dir = 1; }
       scroll.scrollTop = next;
     });
-    /* На выходе из заставки таймер перевзводим явно: за время простоя он был
-     * многократно сдвинут, и без rearm() подсказка могла бы не прийти вовсе. */
+    /* Гасить призыв к жесту на время заставки самим больше не нужно: с кита
+     * 1.13.0 это делает ядро (KioskHint.suppressAll) на семантической границе
+     * простоя — подавление ставится ДО standby() сцены и снимается ДО
+     * стоп-функции. Прежний обход «poke() в каждом тике» снят.
+     * rearm() остаётся и он штатен: подавление ушло, но 30-секундный таймер
+     * показа за время простоя откручен, и без перевзвода свежий посетитель
+     * остался бы без подсказки. */
     return () => {
       this._stopDrift();
       if (this._hint && this._hint.rearm) this._hint.rearm();
