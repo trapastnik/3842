@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.20.3";
+  var VERSION = "1.20.4";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -157,7 +157,8 @@
       "finder.of": "из",
       "finder.clear": "Стереть",
       "finder.space": "Пробел",
-      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей",
+      "finder.tap": "Коснитесь, чтобы ввести"
     },
     en: {
       "standby.call": "Touch the screen",
@@ -174,7 +175,8 @@
       "finder.of": "of",
       "finder.clear": "Clear",
       "finder.space": "Space",
-      "finder.zh": "Search runs over Russian and Latin names"
+      "finder.zh": "Search runs over Russian and Latin names",
+      "finder.tap": "Tap to type"
     },
     zh: {
       "standby.call": "请触摸屏幕",
@@ -191,7 +193,8 @@
       "finder.of": "из",
       "finder.clear": "Стереть",
       "finder.space": "Пробел",
-      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей",
+      "finder.tap": "Коснитесь, чтобы ввести"
     }
   };
 
@@ -2865,8 +2868,16 @@
 
     if (kb && kb._markScroll) kb._markScroll();
 
+    /* ПУСТОЕ ПОЛЕ САМО СЕБЯ НЕ ОБЪЯСНЯЕТ. Каретка читается как «здесь что-то
+     * будет», но не как «коснись меня»: первый живой пользователь панель
+     * открыл, чипы и сортировку нашёл, а клавиатуру — нет. Если не догадался
+     * он, посетитель музея не догадается тем более. */
     var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
-    if (qEl) qEl.textContent = st.query || "";
+    if (qEl) {
+      var typing = this._els.finderPanel.classList.contains("is-typing");
+      qEl.textContent = st.query || (typing ? "" : this.t("finder.tap"));
+      qEl.classList.toggle("is-hint", !st.query && !typing);
+    }
     /* «Ищем по…»: ключи полей посетителю ничего не скажут, поэтому
      * принимаем и {key,label}, и голую строку — но показываем только то,
      * у чего есть человеческая подпись. */
