@@ -67,5 +67,6 @@
   "region.east-eu": "Eastern Europe",
   "region.world": "Rest of the world",
   "hint.pinch": "Pinch to zoom the map",
-  "hint.drag": "Drag to scroll"
+  "hint.drag": "Drag to scroll",
+  "museums.empty": "Nothing found — clear the filters"
 }
