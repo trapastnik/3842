@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.21.2";
+  var VERSION = "1.21.3";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2994,9 +2994,16 @@
         if (f && typeof f === "object" && f.label) return pickLabel(normLabel(f.label), self.lang);
         return null;
       }).filter(Boolean);
-      fieldsEl.textContent = labels.length
+      /* Блок полей уходит ВМЕСТЕ со строкой ввода. Он перечисляет, по чему
+       * ищем, — а когда поиска нет, это обещание без функции: панель звала
+       * искать по трём полям и не давала ввести ни одного (находка МТК 39).
+       * Зеркало «молчания бывает ложью»: тут не молчание об отказе, а
+       * обещание при отказе. Сцена повлиять не может и не должна — не
+       * объявлять search было бы хуже, поиск обязан вернуться, когда
+       * масштаб позволит. */
+      fieldsEl.textContent = labels.length && hasSearch
         ? self.t("finder.search") + ": " + labels.join(" · ") : "";
-      fieldsEl.hidden = !labels.length;
+      fieldsEl.hidden = !labels.length || !hasSearch;
     }
 
     var note = this._els.finderPanel.querySelector(".kiosk-finder__note");

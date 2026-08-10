@@ -1,4 +1,4 @@
-# Миграция на ядро 1.21.2 — позиция подсказки жеста
+# Миграция на ядро 1.21.3 — позиция подсказки жеста
 
 Сопроводиловка к merge. Касается всех четырёх приложений: у каждого есть своё
 правило на `.kiosk-hint { bottom: … }`, и все они появились не от невежества —
@@ -45,11 +45,11 @@
 совести меток, а меток у вас **четыре**, и у каждой свой файл:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.21.2" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.21.2" />
-<script src="../assets/shared/kiosk/hint.js?v=1.21.2"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.21.3" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.21.3" />
+<script src="../assets/shared/kiosk/hint.js?v=1.21.3"></script>
 <!-- и в app.js: -->
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.21.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.21.3";
 ```
 
 Не поднять метку и в том же коммите снять правило-компенсацию — худший из
@@ -162,7 +162,7 @@ migration не требует — оно про `visibility`, не про поз
 состоянии ниже; у скрытой это 4 и 7). Если увидите ~92 px — значит компенсация
 снялась, а расчёт всё равно сложился дважды, это дефект, пишите.
 
-Снимать **в том же коммите**, что и переход на 1.21.2: на 1.9.2 без этого правила
+Снимать **в том же коммите**, что и переход на 1.21.3: на 1.9.2 без этого правила
 подсказка снова уедет вверх.
 
 ## МТК 42 — правило ПЕРЕПИСАТЬ
