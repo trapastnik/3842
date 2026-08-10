@@ -1015,3 +1015,9 @@ html.kiosk-runtime body {
 .kiosk-kbd__key--wide { flex: 1.6 1 0; font-size: max(var(--type-min-label, 20px), calc(20px * var(--ui-scale, 1))); }
 .kiosk-kbd__key--space { flex: 4 1 0; }
 :root.a11y .kiosk-kbd__key { border-color: var(--a11y-accent, #FFD24A); color: var(--a11y-accent, #FFD24A); }
+.kiosk-finder__fields {
+  margin: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)) 0;
+  font-size: max(var(--type-min-label, 20px), calc(20px * var(--ui-scale, 1)));
+  color: var(--paper, #F7F9EF);
+  opacity: .7;
+}

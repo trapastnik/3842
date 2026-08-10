@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.15.6";
+  var VERSION = "1.16.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2609,6 +2609,7 @@
       self._renderFinder();
     });
 
+    wrap._redraw = render;   /* подписи клавиш «Пробел»/«Стереть» — из словаря */
     host.appendChild(wrap);
     return wrap;
   };
@@ -2621,6 +2622,7 @@
     el.innerHTML =
       '<div class="kiosk-finder__q"><span class="kiosk-finder__q-text"></span>' +
       '<span class="kiosk-finder__caret" aria-hidden="true"></span></div>' +
+      '<div class="kiosk-finder__fields"></div>' +
       '<div class="kiosk-finder__note"></div>' +
       '<div class="kiosk-finder__body kiosk-scroll"></div>' +
       '<footer class="kiosk-finder__foot">' +
@@ -2692,6 +2694,20 @@
 
     var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
     if (qEl) qEl.textContent = st.query || "";
+    /* «Ищем по…»: ключи полей посетителю ничего не скажут, поэтому
+     * принимаем и {key,label}, и голую строку — но показываем только то,
+     * у чего есть человеческая подпись. */
+    var fieldsEl = this._els.finderPanel.querySelector(".kiosk-finder__fields");
+    if (fieldsEl) {
+      var labels = ((spec.search || {}).fields || []).map(function (f) {
+        if (f && typeof f === "object" && f.label) return pickLabel(normLabel(f.label), self.lang);
+        return null;
+      }).filter(Boolean);
+      fieldsEl.textContent = labels.length
+        ? self.t("finder.search") + ": " + labels.join(" · ") : "";
+      fieldsEl.hidden = !labels.length;
+    }
+
     var note = this._els.finderPanel.querySelector(".kiosk-finder__note");
     if (note) {
       /* Пояснение показываем ТОЛЬКО в китайском интерфейсе: там оно
@@ -3189,6 +3205,15 @@
     /* Подписи настроек сцен идут через словари — открытую панель
      * перерисовываем, иначе она осталась бы на прежнем языке. */
     if (this._serviceOpen) this._rebuildService();
+    /* И панель финдера — по той же причине: её подписи, строка «ищем по…»
+     * и пояснение про китайский поиск идут через словари. Пояснение вообще
+     * ПОЯВЛЯЕТСЯ только в zh, то есть без перерисовки его нельзя было
+     * увидеть иначе как открыв панель уже на китайском. */
+    if (this._els.finderPanel) {
+      var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
+      if (kb && kb._redraw) kb._redraw();
+      if (this._finderOpen) this._renderFinder();
+    }
     this.emit("lang", { lang: lang });
     return this;
   };
