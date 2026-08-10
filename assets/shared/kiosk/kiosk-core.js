@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.21.1";
+  var VERSION = "1.21.2";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2757,8 +2757,15 @@
     this._warnPending = true;
     Promise.resolve().then(function () {
       self._warnPending = false;
+      /* Берём текущий замер, но НЕ теряем событие, если мерить стало нечем:
+       * панель могли закрыть раньше, чем сработала микрозадача, и тогда
+       * fits === null. Молчать в этом случае значит скрыть отказ, который
+       * БЫЛ, — оператор открыл-закрыл панель на плохой конфигурации, и в
+       * журнале пусто. Отменяет запись только честное «теперь влезает». */
       var now = self.finderSearchFits();
-      if (!now || now.fits !== false) return;   /* пока думали — стало влезать */
+      if (now && now.fits === true) return;
+      if (!now || now.fits !== false) now = fit;   /* неизмеримо — пишем, что решило */
+      if (!now || !now.need) return;
       var sig = self.activeSceneId + ":" + now.have + "/" + now.need;
       if (self._noSearchSig === sig) return;
       self._noSearchSig = sig;
@@ -3636,6 +3643,37 @@
   KioskApp.prototype.setFinder = function (patch, id) {
     id = id || this.activeSceneId;
     var st = this.finderState(id);
+    var spec = this.finderSpec(id) || {};
+
+    /* ПАТЧ СВЕРЯЕТСЯ С ДЕКЛАРАЦИЕЙ СЦЕНЫ.
+     *
+     * Незадекларированный ключ ядро принимало молча: сцена о нём не знает и
+     * экран не меняет, а точка на лупе зажигает «1» — критерий-призрак,
+     * который снимается только «Сбросить». Посетителю он недостижим (панель
+     * рисует только объявленное), но через API и будущие ярлыки — вполне,
+     * и это ровно та семья, что «индикатор разошёлся с экраном».
+     * Отбрасываем и говорим вслух: тихо принятый ключ хуже отвергнутого. */
+    function known(list, key) {
+      return (list || []).some(function (o) { return o && o.key === key; });
+    }
+    var сор = [];
+    if (patch && "sort" in patch && patch.sort && !known(spec.sorts, patch.sort)) {
+      сор.push("сортировка «" + patch.sort + "»");
+      patch = cloneValue(patch);
+      delete patch.sort;
+    }
+    if (patch && patch.filters) {
+      patch = patch === arguments[0] ? cloneValue(patch) : patch;
+      Object.keys(patch.filters).forEach(function (k) {
+        if (!known(spec.filters, k)) { сор.push("фильтр «" + k + "»"); delete patch.filters[k]; }
+      });
+    }
+    if (сор.length) {
+      console.warn("[kiosk] финдер: сцена «" + id + "» не объявляла " + сор.join(", ") +
+        " — ключи отброшены. Иначе точка на лупе считала бы критерий, которого " +
+        "нет на экране.");
+    }
+
     if (patch && "query" in patch) st.query = String(patch.query || "");
     if (patch && "sort" in patch) st.sort = patch.sort || null;
     if (patch && patch.filters) {
