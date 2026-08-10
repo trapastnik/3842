@@ -171,27 +171,67 @@
   touch-action: manipulation;
 }
 
-/* ─── легенда ────────────────────────────────────────────────────────── */
+/* ─── легенда = ярлык в финдер ───────────────────────────────────────────
+   Раньше это были показания: pointer-events:none, вид чипа, никакой
+   реакции. После переезда отбора в панель такая легенда стала обещать
+   отбор и не давать его — поэтому она полноценный контрол: тач-пол
+   --touch-min (64 px × ui-scale), видимое нажатие, выделение выбранного.
+   Выделение производное: его ставит buildLegend по тому, что вернуло
+   ядро в applyFinder, своего состояния у ярлыка нет. */
 
 .m39-legend {
-  position: absolute;
-  left: var(--kiosk-safe-left);
-  bottom: var(--kiosk-safe-bottom);
-  z-index: 2;
   display: flex;
   flex-direction: column;
-  gap: calc(var(--m39-u) * 0.5);
+  gap: calc(var(--touch-gap) / 2);
   font-family: var(--font-mono);
   font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.9));
   color: rgba(247, 249, 239, 0.84);
-  pointer-events: none;
+}
+
+/* Угол сцены «Мир»: чип «не на карте» и ярлыки — одной колонкой, чтобы
+   высота ярлыков не могла наехать на чип. */
+.m39-corner {
+  position: absolute;
+  left: var(--kiosk-safe-left);
+  bottom: var(--kiosk-safe-bottom);
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--touch-gap);
+  max-height: calc(100% - var(--kiosk-safe-top) - var(--chrome-bottom));
 }
 
 .m39-legend__row {
   display: flex;
   align-items: center;
   gap: calc(var(--m39-u) * 0.6);
+  min-height: var(--touch-min);
+  padding: 0 calc(var(--m39-u) * 0.7);
+  border: 1px solid transparent;
+  border-radius: calc(var(--touch-min) / 2);
+  background: rgba(12, 16, 18, 0.55);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  transition: background 0.15s, border-color 0.15s;
 }
+
+.m39-legend__row[aria-pressed="true"] {
+  border-color: var(--brass);
+  background: rgba(210, 183, 115, 0.18);
+  color: var(--paper);
+}
+
+/* видимая реакция нажатия: ярлык больше не readout — значит и ведёт себя
+   не как readout */
+.m39-legend__row:active {
+  background: rgba(210, 183, 115, 0.3);
+  transform: translateY(1px);
+}
+
+.m39-legend__label { flex: 1 1 auto; }
 
 .m39-legend__dot {
   width: calc(var(--m39-u) * 0.7);
@@ -326,10 +366,8 @@
 .m39-offhost { position: static; }
 
 .m39-chip--off {
-  position: absolute;
-  left: var(--kiosk-safe-left);
-  bottom: calc(var(--kiosk-safe-bottom) + var(--m39-u) * 5.6);
-  z-index: 3;
+  align-self: flex-start;
+  flex: 0 0 auto;
 }
 
 .m39-union .m39-chip--off {
@@ -586,7 +624,7 @@
   pointer-events: none;
 }
 
-.m39-union .m39-legend { left: auto; right: var(--kiosk-safe-right); bottom: auto; top: var(--kiosk-safe-top); align-items: flex-end; }
+.m39-union .m39-legend { position: absolute; right: var(--kiosk-safe-right); top: var(--kiosk-safe-top); z-index: 3; align-items: flex-end; }
 .m39-union .m39-legend__row { flex-direction: row-reverse; }
 
 /* ─── сцена «Прилив и отлив» ─────────────────────────────────────────── */

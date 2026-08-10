@@ -14,7 +14,7 @@ import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=10";
+} from "./shared.js?v=11";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -97,7 +97,14 @@ export const worldScene = {
         '<button class="m39-chip kiosk-target" type="button" data-mode="globe"></button>' +
         '<button class="m39-chip kiosk-target" type="button" data-mode="map"></button>' +
       "</nav>" +
-      '<aside class="m39-legend"></aside>' +
+      /* Нижний левый угол — ОДНА колонка: чип «не на карте» и ярлыки судьбы
+         имени. Раздельные absolute-якоря разъехались бы, как только ярлык
+         стал контролом с тач-полом: три строки по 64 px × ui-scale выше
+         любого подобранного отступа. Порядок задаёт поток. */
+      '<div class="m39-corner">' +
+        '<div class="m39-offtoggle"></div>' +
+        '<aside class="m39-legend"></aside>' +
+      "</div>" +
       '<div class="m39-offhost"></div>';
 
     const canvas = el.querySelector(".m39-canvas");
@@ -320,17 +327,41 @@ export const worldScene = {
       card.open(objectCardHtml(app, ctx, p));
     }
 
-    const offmap = createOffmap(offhost, app, corpus.records, { onPick: showCard });
+    const offmap = createOffmap(offhost, app, corpus.records, {
+      onPick: showCard,
+      // чип — в общую колонку угла, картотека-оверлей — на слой сцены
+      toggleHost: el.querySelector(".m39-offtoggle"),
+    });
+
+    /* Легенда — ЯРЛЫК В ФИНДЕР (канон PLAN-KIOSK). Она выглядит как отбор и
+       поэтому обязана им быть: посетитель, впервые увидевший экран, тычет в
+       «переименовано 462», а не ищет лупу. Своего состояния ярлык не держит —
+       зовёт то же самое, что чип панели, и подсвечивается по тому, что ядро
+       вернуло в applyFinder.
+
+       Счёт у строки — по всем критериям, КРОМЕ самой судьбы имени: иначе при
+       выбранном фильтре у остальных строк стоял бы ноль и ярлык читался бы
+       как недоступный. Без фильтра оба счёта совпадают. */
+    const passesButStatus = (p) => !(hideUssr && p.continent === "Бывший СССР")
+      && matchesQuery(p, query);
 
     function buildLegend() {
       legend.replaceChildren();
       for (const s of STATUS) {
-        const n = points.filter((p) => p.status === s.key && passes(p)).length;
-        const row = document.createElement("div");
-        row.className = "m39-legend__row";
-        row.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
-          esc(app.t(s.t)) + ' <span class="m39-legend__num">' + nf.format(n) + "</span>";
-        legend.appendChild(row);
+        const n = points.filter((p) => p.status === s.key && passesButStatus(p)).length;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "m39-legend__row kiosk-target";
+        b.dataset.status = s.key;
+        b.setAttribute("aria-pressed", String(status === s.key));
+        b.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
+          '<span class="m39-legend__label">' + esc(app.t(s.t)) + "</span>" +
+          '<span class="m39-legend__num">' + nf.format(n) + "</span>";
+        // повторный тап снимает фильтр — ровно как повторный тап по чипу
+        b.addEventListener("click", () => {
+          app.setFinder({ filters: { status: status === s.key ? null : s.key } });
+        });
+        legend.appendChild(b);
       }
     }
 

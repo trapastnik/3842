@@ -338,7 +338,11 @@ export function createOffmap(host, app, records, opts) {
     '<nav class="m39-offmap__groups"></nav>' +
     '<div class="m39-offmap__wall kiosk-scroll"></div></div>';
 
-  host.appendChild(toggle);
+  /* Чип и картотека живут в РАЗНЫХ хостах, если сцена просит: чип — рядовой
+     контрол и хочет стоять в общей колонке с соседями, а картотека — оверлей
+     inset:0 и обязана считаться от слоя сцены. Загони её в позиционированную
+     колонку — и полноэкранная картотека схлопнется до размеров колонки. */
+  ((opts && opts.toggleHost) || host).appendChild(toggle);
   host.appendChild(panel);
 
   const wall = panel.querySelector(".m39-offmap__wall");

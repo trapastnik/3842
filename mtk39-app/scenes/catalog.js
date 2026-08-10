@@ -11,7 +11,7 @@ import {
   DATA, STATUS, STATUS_CLASS, nf, esc, plural, statusLabel,
   objectCardHtml, corpusPicture,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=10";
+} from "./shared.js?v=11";
 
 // единственное в своём роде — по названию, а не по категории
 const ONE_OFF = /геоглиф|мавзолей|ленинланд|leninland|послание|сверхтяжёл|пик ленина|ледокол|астероид|владилена|ульянов \(|комсомол|пионер/i;

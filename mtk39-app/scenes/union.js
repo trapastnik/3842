@@ -13,7 +13,7 @@ import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=10";
+} from "./shared.js?v=11";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -385,15 +385,30 @@ export const unionScene = {
     });
 
     /* ---- панели ---- */
+    /* Легенда — ЯРЛЫК В ФИНДЕР (канон PLAN-KIOSK), как в «Мире»: выглядит
+       отбором — значит им и является. Своего состояния не держит, зовёт то
+       же, что чип панели; счёт — по всем критериям, кроме самой судьбы
+       имени, иначе у невыбранных строк стоял бы ноль. */
+    const shownButStatus = (p) => (!republic || p.country === republic)
+      && matchesQuery(p, query);
+
     function buildLegend() {
       legend.replaceChildren();
       for (const s of STATUS) {
-        const n = points.filter((p) => p.status === s.key && shown(p)).length;
-        const row = document.createElement("div");
-        row.className = "m39-legend__row";
-        row.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
-          esc(app.t(s.t)) + ' <span class="m39-legend__num">' + nf.format(n) + "</span>";
-        legend.appendChild(row);
+        const n = points.filter((p) => p.status === s.key && shownButStatus(p)).length;
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "m39-legend__row kiosk-target";
+        b.dataset.status = s.key;
+        b.setAttribute("aria-pressed", String(statusFilter === s.key));
+        b.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
+          '<span class="m39-legend__label">' + esc(app.t(s.t)) + "</span>" +
+          '<span class="m39-legend__num">' + nf.format(n) + "</span>";
+        // повторный тап снимает фильтр — ровно как повторный тап по чипу
+        b.addEventListener("click", () => {
+          app.setFinder({ filters: { status: statusFilter === s.key ? null : s.key } });
+        });
+        legend.appendChild(b);
       }
     }
 
