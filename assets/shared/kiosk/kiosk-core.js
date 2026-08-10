@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.20.11";
+  var VERSION = "1.21.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2639,6 +2639,38 @@
    * Порог считается ЗАМЕРОМ, а не порогом «выше 1.25»: константа разойдётся
    * с действительностью при первом изменении высот — ровно то, за что я сам
    * запретил флаг «меня уже показывали» в конвенции healthcheck. */
+  /* ПРЕДУСЛОВИЯ ЗАМЕРА — рядом с числами, а не в памяти того, кто мерил.
+   *
+   * Числа без конфигурации верны для своей конфигурации и бесполезны как
+   * протокол; за одну сессию я трижды получил отравленный замер из-за
+   * остатка в localStorage и каждый раз ловил это ПОСТФАКТУМ, разбирая
+   * расхождение.
+   *
+   * Ключи хранилища печатаются СПИСКОМ, а не галочкой «чисто» (просьба МТК
+   * 39 из их же опыта): «чисто» глазами пропускается, а строка с чужим
+   * ключом заставляет остановиться. Пустой список — это тоже строка. */
+  KioskApp.prototype.preconditions = function () {
+    var keys = [];
+    try {
+      for (var i = 0; i < localStorage.length; i++) {
+        var k = localStorage.key(i);
+        if (k === this.storageKey() || k === this.journalKey() || /kiosk/i.test(k)) keys.push(k);
+      }
+    } catch (err) { keys.push("(хранилище недоступно: " + errText(err) + ")"); }
+
+    var nav = this.config.nav || {};
+    return {
+      окно: window.innerWidth + "×" + window.innerHeight + " @dpr " + (window.devicePixelRatio || 1),
+      сцена: this.activeSceneId,
+      конфигурация: "nav " + (nav.layout || "bar") + "/" + (nav.position || "bottom") +
+        "/" + (nav.size || 96) + " · scale.ui " + ((this.config.scale || {}).ui || 1) +
+        " · a11y " + (this.a11y ? "вкл" : "выкл") +
+        " · действующий --ui-scale " + this.scales().ui.toFixed(3),
+      "ключи в хранилище": keys.length ? keys : ["(ни одного)"],
+      версия: VERSION
+    };
+  };
+
   KioskApp.prototype.finderSearchFits = function () {
     var spec = this.finderSpec();
     if (!spec || !spec.search || !(spec.search.fields || []).length) {

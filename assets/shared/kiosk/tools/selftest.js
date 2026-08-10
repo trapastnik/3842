@@ -428,12 +428,12 @@
           checkTouch().forEach(function (r) { results.push(r); });
 
           unhush();
-          return report(results, hidden);
+          return report(results, hidden, app);
         });
       });
   }
 
-  function report(results, hidden) {
+  function report(results, hidden, app) {
     var pass = results.filter(function (r) { return r.ok === true; }).length;
     var fail = results.filter(function (r) { return r.ok === false; }).length;
     var skip = results.filter(function (r) { return r.ok === null; }).length;
@@ -448,7 +448,13 @@
     console.log("Итого: " + pass + " ок, " + fail + " провал, " + skip + " пропущено");
     console.groupEnd();
 
-    return { pass: pass, fail: fail, skip: skip, hidden: hidden, results: results };
+    /* Предусловия печатаем РЯДОМ с результатом: числа без конфигурации и без
+       списка ключей хранилища верны только для своей среды. Печатаем и в
+       консоль — отчёт читают глазами, а не через возврат. */
+    var pre = app && typeof app.preconditions === "function" ? app.preconditions() : null;
+    if (pre) { try { console.log("Предусловия:", JSON.stringify(pre, null, 1)); } catch (e) {} }
+    return { предусловия: pre,
+             pass: pass, fail: fail, skip: skip, hidden: hidden, results: results };
   }
 
   global.KioskSelfTest = { run: run, rafRate: rafRate };

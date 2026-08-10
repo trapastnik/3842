@@ -169,6 +169,7 @@
     } catch (e) {}
 
     var report = {
+      предусловия: typeof app.preconditions === "function" ? app.preconditions() : null,
       версия: (global.KioskCore || {}).version,
       окно: window.innerWidth + "×" + window.innerHeight,
       сочетаний: combos.length,
