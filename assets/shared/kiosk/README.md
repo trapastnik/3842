@@ -39,12 +39,12 @@ mtk42-app/
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>МТК 42</title>
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.20.6" />
-    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.20.6" />
-    <link rel="stylesheet" href="./styles.css?v=1.20.6" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.20.11" />
+    <link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.20.11" />
+    <link rel="stylesheet" href="./styles.css?v=1.20.11" />
   </head>
   <body>
-    <script type="module" src="./app.js?v=1.20.6"></script>
+    <script type="module" src="./app.js?v=1.20.11"></script>
   </body>
 </html>
 ```
@@ -60,16 +60,16 @@ Chrome кеширует статику агрессивно, и без метк�
 
 ```js
 // ?v= на обёртке прокидывается и на само ядро — поднимайте в одном месте
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.6";
-import { mapScene } from "./scenes/map.js?v=1.20.6";        // импорты сцен тоже!
-import { timelineScene } from "./scenes/timeline.js?v=1.20.6";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.11";
+import { mapScene } from "./scenes/map.js?v=1.20.11";        // импорты сцен тоже!
+import { timelineScene } from "./scenes/timeline.js?v=1.20.11";
 
 const app = createApp({
   appId: "mtk42",                       // ключ localStorage: "mtk42-kiosk"
   title: { ru: "МТК · 42", en: "MTK · 42", zh: "МТК · 42" },
   configUrl: "./kiosk.config.json",
   i18nUrl: "./i18n/",
-  i18nVersion: "1.20.6",                 // метка кеша словарей — та же версия ядра
+  i18nVersion: "1.20.11",                 // метка кеша словарей — та же версия ядра
 });
 
 app.registerScene(mapScene);            // порядок регистрации = порядок стрелок
@@ -81,7 +81,7 @@ app.start();
 Без сборщика и без модулей — то же самое классическим скриптом:
 
 ```html
-<script src="../assets/shared/kiosk/kiosk-core.js?v=1.20.6"></script>
+<script src="../assets/shared/kiosk/kiosk-core.js?v=1.20.11"></script>
 <script>
   const app = KioskCore.createApp({ appId: "mtk42", /* … */ });
 </script>
@@ -290,7 +290,7 @@ export const mapScene = {
    ядром, тем же числом:
 
    ```html
-   <script src="../assets/shared/kiosk/hint.js?v=1.20.6"></script>
+   <script src="../assets/shared/kiosk/hint.js?v=1.20.11"></script>
    ```
 
    Иначе браузер отдаст подсказку прошлого релиза, а вы будете смотреть на
@@ -472,13 +472,13 @@ await waitFade(400);     // завершится сразу, если вклад
 
 ### `?v=N` не пробивает кеш импортированных модулей
 
-`<script src="./app.js?v=1.20.6">` обновит только сам `app.js`. Его
+`<script src="./app.js?v=1.20.11">` обновит только сам `app.js`. Его
 `import "./scenes/map.js"` уходит без версии — и браузер отдаст старую копию
 сцены. Правка сцены «не доезжает», хотя версию вы подняли.
 
 **У ядра это уже решено:** `kiosk-core.esm.js` тянет версию из собственного
-адреса, так что `import … from "…/kiosk-core.esm.js?v=1.20.6"` загрузит и
-`kiosk-core.js?v=1.20.6`. Версия ядра поднимается в одном месте. **У ваших сцен —
+адреса, так что `import … from "…/kiosk-core.esm.js?v=1.20.11"` загрузит и
+`kiosk-core.js?v=1.20.11`. Версия ядра поднимается в одном месте. **У ваших сцен —
 нет:** тут думать вам.
 
 ### Канон версий кита
@@ -487,14 +487,14 @@ await waitFade(400);     // завершится сразу, если вклад
 собственной нумерацией приложения, и поднимается при каждом `merge main`:
 
 ```html
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.20.6" />
-<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.20.6" />
-<script type="module" src="./app.js?v=1.20.6"></script>
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk.css?v=1.20.11" />
+<link rel="stylesheet" href="../assets/shared/kiosk/kiosk-core.css?v=1.20.11" />
+<script type="module" src="./app.js?v=1.20.11"></script>
 ```
 
 ```js
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.6";
-import { mapScene }  from "./scenes/map.js?v=1.20.6";   // импорты сцен тоже!
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.11";
+import { mapScene }  from "./scenes/map.js?v=1.20.11";   // импорты сцен тоже!
 ```
 
 За один день на залипший кеш кита независимо наступили МТК 38, 40 и 42 — своя
@@ -871,6 +871,21 @@ export const mapScene = {
 при `scale.ui` = 1. Числа на 1920×1080 при `nav bar/bottom/96`: 1.25 даёт
 159 px под клавиатуру при нужных 80, 1.5 — 12 px при нужных 96.
 
+**Вмещаемость измерима только на ОТКРЫТОЙ панели.** `app.finderSearchFits()`
+на закрытой возвращает `{ fits: null }` — «не мерил», а не «не помещается»:
+закрытая панель это другая раскладка, и подгонять одно под другое замером
+значило бы завести второе число на одно состояние. Хотите проверить сами —
+откройте панель и меряйте:
+
+```js
+app.openFinder(true);
+const fit = app.finderSearchFits();   // {fits, have, need}
+```
+
+Синхронный вызов сразу после `openFinder(true)` уже корректен: ядро показывает
+панель ДО отрисовки, и замер идёт по разложенной. Но `fits: null` в ответе —
+не повод считать, что места нет: это значит «спросили не вовремя».
+
 Сцене делать ничего не нужно: `finder.search` объявляется всегда, кит сам
 решает, строить ли поле. Но если ваша сцена без поиска бессмысленна — скажите
 об этом оператору, а не подстраивайте вёрстку.
@@ -929,8 +944,8 @@ python3 assets/shared/kiosk/tools/audit-links.py --path mtk42-app
 сочетаний — что оно не разваливается в остальных.
 
 ```html
-<script src="../assets/shared/kiosk/tools/selftest.js?v=1.20.6"></script>
-<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.20.6"></script>
+<script src="../assets/shared/kiosk/tools/selftest.js?v=1.20.11"></script>
+<script src="../assets/shared/kiosk/tools/audit-settings.js?v=1.20.11"></script>
 ```
 
 Метка `?v=` нужна и здесь. Инструменты правятся чаще ядра, а грузят их обычно
