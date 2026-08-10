@@ -13,7 +13,7 @@
  * доезжает до страницы — Chrome отдаёт файл из кеша, и на экране остаётся
  * старый корпус при свежем репо (грабля 40-го). Одна константа на все сцены,
  * поднимать вместе с меткой модулей. */
-const DATA_V = "?v=40";
+const DATA_V = "?v=58";
 
 export const DATA = {
   monuments: "../data/mtk41.json" + DATA_V,
@@ -339,6 +339,40 @@ export function fillTextIfFits(ctx, text, x, y, pad) {
   return true;
 }
 
+/* Призыв к жесту при пустой выборке ГАСИМ: «Листайте шкалу вбок» над пустым
+ * полем — это обещание того, чего сцена не делает. Кит с 1.13 даёт suppress()
+ * ровно для «убрать надолго»; при возврате объектов снимаем. */
+export function hintForEmpty(scene, isEmpty) {
+  const hint = scene && scene._hint;
+  if (!hint) return;
+  /* Только НА ПЕРЕХОДЕ. Первая редакция звала это каждый кадр, и rearm()
+   * шестьдесят раз в секунду перезаводил бы таймер показа — подсказка не
+   * появилась бы никогда. Ровно та же ошибка, что была с poke() в заставке,
+   * только с обратным знаком. */
+  if (scene._hintEmpty === isEmpty) return;
+  scene._hintEmpty = isEmpty;
+  if (isEmpty && hint.suppress) hint.suppress();
+  else if (!isEmpty && hint.rearm) hint.rearm();
+}
+
+/* Заглушка «ничего не найдено» на канве. Панель честно пишет «0 из 283», но
+ * сама сцена без подписи — это чистый экран без объяснения: посетитель не
+ * поймёт, что произошло и как вернуться. */
+export function drawEmptyState(ctx, w, h, app) {
+  /* Ставим в ВЕРХНЮЮ треть, а не по центру: по центру заглушка попадала прямо
+   * под призыв к жесту и читалась сквозь него. */
+  ctx.save();
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = cssColor(PALETTE.paper, 0.8);
+  ctx.font = `600 ${Math.max(16, Math.min(h * 0.045, 34))}px "20 Kopeek", monospace`;
+  ctx.fillText(app.t("finder.empty"), w / 2, h * 0.30);
+  ctx.fillStyle = cssColor(PALETTE.window, 0.75);
+  ctx.font = `400 ${Math.max(12, Math.min(h * 0.026, 20))}px "20 Kopeek", monospace`;
+  ctx.fillText(app.t("finder.emptyHint"), w / 2, h * 0.30 + Math.max(26, h * 0.055));
+  ctx.restore();
+}
+
 /* ─── Призыв к жесту ───────────────────────────────────────────────────
  * Тач-стандарт, п. 4: у жестовой сцены обязана быть подсказка — на киоске
  * никто не догадается тянуть карту, если об этом не сказать.
@@ -498,4 +532,142 @@ export function createCanvasHost(parent, className) {
     },
   };
   return host;
+}
+
+/* ─── Финдер: общий отбор на все семь сцен ──────────────────────────────
+ * Ядро держит СОСТОЯНИЕ отбора и рисует панель; сопоставление — наше, и
+ * пишется оно один раз здесь. Семь копий этой функции разъехались бы при
+ * первой же правке, а расхождение отбора между сценами посетитель прочитает
+ * как поломку данных, а не как разную логику.
+ *
+ * Порядок канона: ОТБОР → ПОИСК → СОРТИРОВКА.
+ */
+
+/* Поля поиска одни на все сцены. `place` не берём намеренно: это адрес внутри
+ * города («сквер имени Ленина»), он совпадёт почти со всем и обесценит
+ * выдачу. Свободный текст (short_text, note_full) — тоже нет: там ошибки
+ * источника, и объяснить посетителю ложное попадание нечем (прецедент 39). */
+export const FINDER_FIELDS = [
+  { key: "title", label: { ru: "Название", en: "Title" } },
+  { key: "city", label: { ru: "Город", en: "City" } },
+  { key: "country", label: { ru: "Страна", en: "Country" } },
+  { key: "sculptors", label: { ru: "Скульптор", en: "Sculptor" } },
+];
+
+const STATUS_ORDER = ["extant", "demolished", "relocated", "unknown"];
+
+/* Корпус на уровне МОДУЛЯ, а не на экземпляре сцены.
+ *
+ * Декларация finder читается ядром, когда данных ещё нет, поэтому options
+ * задаются функцией. Соблазн написать `scaleScene._src` — ловушка: «Силуэты»
+ * наследуют декларацию «Масштаба» через Object.assign и смотрели бы в ЧУЖОЙ
+ * экземпляр, а если та сцена ни разу не смонтирована — в undefined, и фасеты
+ * пришли бы пустыми. Корпус у всех семи сцен один, поэтому и держим его один. */
+let CORPUS = [];
+let APP_REF = null;
+export function setCorpus(items, app) { CORPUS = items || []; if (app) APP_REF = app; }
+/* Подписи статусов переводятся, значит опциям нужен app. Он один на всё
+ * приложение, поэтому держим ссылку рядом с корпусом. */
+export function APP() { return APP_REF; }
+
+/* Значения фасетов выводятся из ДАННЫХ, а не из зашитого списка: корпус
+ * дополняется, и зашитый список молча отстанет. */
+export function statusOptions(app, items) {
+  const seen = new Set((items || CORPUS).map((m) => m.status || "unknown"));
+  return STATUS_ORDER.filter((s) => seen.has(s))
+    .map((s) => [s, app.t(STATUS_KEY[s])]);
+}
+
+export function countryOptions(items) {
+  const c = new Map();
+  for (const m of (items || CORPUS)) {
+    const k = m.country || "—";
+    c.set(k, (c.get(k) || 0) + 1);
+  }
+  /* По убыванию числа: 47 стран, и посетителю нужнее СССР со 131 записью,
+   * чем алфавит, где он окажется в середине. */
+  return [...c.entries()].sort((a, b) => b[1] - a[1]).map(([k]) => [k, k]);
+}
+
+export function decadeOptions(items) {
+  const d = new Set();
+  for (const m of (items || CORPUS)) {
+    const y = typeof m.year === "number" ? m.year : null;
+    if (y) d.add(Math.floor(y / 10) * 10);
+  }
+  return [...d].sort((a, b) => a - b).map((x) => [String(x), x + "-е"]);
+}
+
+function hay(m, key) {
+  const v = m[key];
+  if (Array.isArray(v)) return v.join(" ");
+  return v == null ? "" : String(v);
+}
+
+/**
+ * Применяет отбор ядра к списку записей.
+ * @param {Array} items записи корпуса
+ * @param {{query:string, filters:Object, sort:string}} find состояние от ядра
+ */
+/* Активен ли отбор. Нужен, чтобы отличить «пусто, потому что посетитель
+ * отфильтровал всё» от «пусто, потому что сломалось»: первое — штатное
+ * состояние и зелёный healthcheck, второе — авария. Без этого различия
+ * сцена рапортует поломку на каждое сочетание фильтров без совпадений. */
+export function finderActive(find) {
+  const f = find || {};
+  if ((f.query || "").trim()) return true;
+  const fl = f.filters || {};
+  return Object.keys(fl).some((k) => fl[k] != null && fl[k] !== "");
+}
+
+/* Ответ healthcheck на пустую выборку — один на все семь сцен. */
+export function emptyVerdict(find, whenBroken) {
+  return finderActive(find)
+    ? { ok: true, detail: "отбор не дал совпадений" }
+    : { ok: false, detail: whenBroken };
+}
+
+export function finderApply(items, find) {
+  const f = find || {};
+  let out = items;
+
+  const fl = f.filters || {};
+  if (fl.status) out = out.filter((m) => (m.status || "unknown") === fl.status);
+  if (fl.country) out = out.filter((m) => (m.country || "—") === fl.country);
+  if (fl.decade) {
+    const d = Number(fl.decade);
+    out = out.filter((m) => typeof m.year === "number"
+      && Math.floor(m.year / 10) * 10 === d);
+  }
+
+  const q = (f.query || "").trim().toLowerCase();
+  if (q) {
+    out = out.filter((m) => FINDER_FIELDS.some(
+      (fd) => hay(m, fd.key).toLowerCase().includes(q)));
+  }
+  return out;
+}
+
+/* Сортировки объявляются не везде — только где у порядка есть ВИДИМЫЙ эффект.
+ * Записи без ключа уходят в конец: выбравший «по высоте» ищет высоты, а не
+ * пустоты (прецедент 39 про год). */
+export function finderSort(list, sort, heights) {
+  if (!sort) return list;
+  const arr = list.slice();
+  if (sort === "az") {
+    arr.sort((a, b) => String(a.city || "").localeCompare(String(b.city || ""), "ru"));
+  } else if (sort === "height") {
+    const H = (m) => {
+      const h = heights && heights[m.id];
+      return h ? h.statue + h.pedestal : -1;
+    };
+    arr.sort((a, b) => {
+      const ha = H(a), hb = H(b);
+      if (ha < 0 && hb < 0) return 0;
+      if (ha < 0) return 1;
+      if (hb < 0) return -1;
+      return hb - ha;
+    });
+  }
+  return arr;
 }

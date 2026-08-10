@@ -27,8 +27,6 @@
   "nav.mode": "浏览方式",
   "mode.scrubber": "进度条",
   "mode.zoom": "缩放",
-  "mode.decades": "年代",
-  "mode.all": "全部",
   "mode.whole": "整个语料",
   "mode.close": "放大",
   "lane.extant": "现存",
@@ -72,5 +70,7 @@
   "kind.plaque.short": "доска",
   "kind.steel": "стальной силуэт",
   "kind.steel.short": "сталь",
-  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота"
+  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота",
+  "finder.empty": "Ничего не найдено",
+  "finder.emptyHint": "Снимите отбор в поиске — лупа наверху"
 }

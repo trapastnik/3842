@@ -11,11 +11,30 @@
  * переключателя режимов здесь нет намеренно — полосы короткие (самая длинная
  * это малые, 0–8 м), скраббер и зум были бы избыточны. */
 import {
-  DATA, FALLBACK_HEIGHT, PALETTE, byYear, createCanvasHost, createCard,
-  cssColor, plural, preloadThumbs, statusColor,
+  DATA,
+  FALLBACK_HEIGHT,
+  PALETTE,
+  byYear,
+  createCanvasHost,
+  createCard,
+  cssColor,
+  plural,
+  preloadThumbs,
+  statusColor,
   createHint,
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  APP,
+  drawEmptyState,
+  hintForEmpty,
+  emptyVerdict,
+  finderApply,
+  finderSort,
+  setCorpus,
+  statusOptions,
   fillTextIfFits,
-} from "./shared.js?v=40";
+} from "./shared.js?v=58";
 
 const BANDS = [
   { id: "small", maxM: 8 },
@@ -40,6 +59,18 @@ export const stackedScene = {
       heights: DATA.heights,
     },
     custom: preloadThumbs,
+  },
+
+  /* Финдер: отбор и поиск. Сортировка объявляется только там, где у
+   * порядка есть видимый эффект (см. декларацию, утверждённую 2026-08-10). */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
   },
 
   settings: [
@@ -79,7 +110,9 @@ export const stackedScene = {
     this._hint = createHint(this._stage, "swipe", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._layout(); });
 
-    this._items = ctx.data.monuments.items || [];
+    this._src = ctx.data.monuments.items || [];
+    this._items = this._src;
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._heights = ctx.data.heights || {};
     this._selected = -1;
     this._placed = [];
@@ -135,10 +168,36 @@ export const stackedScene = {
      * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
     const buf = this._host.bufferOk();
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
-    if (!this._placed.length) return { ok: false, detail: "ни одной фигуры ни в одной полосе" };
+    /* _placed может ещё не существовать: _applyFind зовётся из mount() до
+     * его инициализации, а healthcheck стенд может позвать в любой момент. */
+    if (!(this._placed || []).length) return emptyVerdict(this._find, "ни одной фигуры ни в одной полосе");
     const per = BANDS.map((b) =>
-      b.id + ": " + this._placed.filter((p) => p.band === b.id).length);
-    return { ok: true, detail: `фигур ${this._placed.length} (${per.join(", ")}), буфер ${buf.detail}` };
+      b.id + ": " + (this._placed || []).filter((p) => p.band === b.id).length);
+    return { ok: true, detail: `фигур ${(this._placed || []).length} (${per.join(", ")}), буфер ${buf.detail}` };
+  },
+
+  /* Отбор целиком, при любом изменении. {shown,total} возвращаем: без него
+   * панель не объяснит, почему на сцене поредело. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
+     * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
+     * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
+     * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
+     * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
+    if (this._host && !this._host.width) this._host.measure();
+    this._layout();
+    /* Второй замер — ПОСЛЕ перестройки DOM вокруг холста (шапка, чипы, режим
+     * слабовидящих). Первый ловит ещё старый бокс, и healthcheck колеблется.
+     * На киоске лечит наблюдатель размера, но в скрытой вкладке он НЕ
+     * ДОСТАВЛЯЕТСЯ ВООБЩЕ — а стенд приёмки работает именно в скрытой.
+     * Правило вешаем на СЕМЬЮ: строку получают все канвовые сцены. */
+    if (this._host) this._host.measure();
   },
 
   applySettings(values) {
@@ -160,7 +219,10 @@ export const stackedScene = {
 
   _layout() {
     const h = this._host;
-    if (!h || !h.width || !h.height) return;
+    /* Предусловия раскладки — в самой раскладке, а не у вызывающих: у
+     * «Масштаба» хрупкий порядок в mount() убил обе ленты на живом экране
+     * (см. scale.js). Правило вешаем на семью. */
+    if (!h || !h.width || !h.height || !this._cfg) return;
 
     const buckets = { small: [], medium: [], large: [] };
     for (const it of byYear(this._items)) {
@@ -311,6 +373,15 @@ export const stackedScene = {
       if (this._pan[b.id] !== before) this._vel[b.id] = 0;
     }
     const ctx = h.ctx;
+    /* Отбор не дал совпадений — заглушка вместо пустого поля: панель пишет
+     * «0 из 283», но сцена без подписи это чистый экран без объяснения. */
+    if (this._items && !this._items.length) {
+      ctx.clearRect(0, 0, h.width, h.height);
+      drawEmptyState(ctx, h.width, h.height, this._app);
+      hintForEmpty(this, true);
+      return;
+    }
+    hintForEmpty(this, false);
     ctx.clearRect(0, 0, h.width, h.height);
     this._drawBands();
     this._drawFigures();

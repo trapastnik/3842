@@ -8,9 +8,26 @@
  * есть ~7.8 ГБ декодированными, и преролл ядра держал бы их живыми. Оригиналы
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
-  DATA, byYear, cardUrl, createCard, esc, plural, thumbUrl, preloadThumbs,
+  DATA,
+  byYear,
+  cardUrl,
+  createCard,
+  esc,
+  plural,
+  thumbUrl,
+  preloadThumbs,
   createHint,
-} from "./shared.js?v=40";
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  finderApply,
+  APP,
+  drawEmptyState,
+  emptyVerdict,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -39,6 +56,23 @@ export const canonScene = {
     /* Миниатюры всех 289 памятников — на сплэше. Список известен только из
      * thumbs.json, поэтому не через preload.images, а своим custom(). */
     custom: preloadThumbs,
+  },
+
+  /* Финдер. 283 плитки — найти свой город глазами трудно, поиском легко.
+   * Сортировка объявлена, потому что у порядка здесь ВИДИМЫЙ эффект: сетка
+   * читается слева направо, и «по городу» перестраивает её целиком. */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
+    sorts: [
+      { key: "year", label: { ru: "По годам", en: "By year" } },
+      { key: "az", label: { ru: "По городам А→Я", en: "By city A→Z" } },
+    ],
   },
 
   settings: [
@@ -80,13 +114,17 @@ export const canonScene = {
     this._onTap = (e) => {
       const tile = e.target.closest("[data-idx]");
       if (!tile) return;
-      const m = this._items[Number(tile.getAttribute("data-idx"))];
+      /* data-idx — индекс в ПОЛНОМ списке, а не в отфильтрованном: при
+       * отборе позиции в выборке съезжают, и плитка открыла бы чужую
+       * карточку. Полный список неподвижен. */
+      const m = this._all[Number(tile.getAttribute("data-idx"))];
       if (m) this._card.open(m);
     };
     this._grid.addEventListener("click", this._onTap);
 
-    this._items = ctx.data.monuments.items || [];
-    this._order = byYear(this._items);
+    this._all = ctx.data.monuments.items || [];
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
+    this._applyFind();
     this._render();
     this.applySettings(this._cfg || {});
   },
@@ -103,12 +141,37 @@ export const canonScene = {
   pause() {},
   resume() {},
 
+  /* Сброс обязан чистить ДАННЫЕ, а не только индикатор: ядро гасит точку на
+   * лупе само, но выборку считает сцена, и посетитель №2 иначе увидел бы
+   * «5 из 283» при погашенной точке (грабля idle-сброса финдера). */
   reset() {
     if (this._card) this._card.close();
     if (this._grid) this._grid.scrollTop = 0;
+    this._find = null;
+    this._applyFind();
+    if (this._grid) this._render();
   },
 
   setLang() { this._renderHead(); if (this._hint) this._hint.relabel(); },
+
+  /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск →
+   * сортировка. Возврат {shown,total} делаем: без него панель не покажет
+   * «N из 283», и посетитель не поймёт, почему иконостас поредел. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    if (this._grid) this._render();
+    return { shown: this._items.length, total: (this._all || []).length };
+  },
+
+  _applyFind() {
+    const all = this._all || [];
+    this._items = finderApply(all, this._find);
+    const sorted = finderSort(this._items, (this._find || {}).sort);
+    this._order = (this._find || {}).sort === "az"
+      ? sorted.map((m, i) => ({ m, i: all.indexOf(m), year: m.year || 0 }))
+      : byYear(this._items).map((it) => ({ ...it, i: all.indexOf(it.m) }));
+  },
 
   /* Ловит «загружено, но пусто»: корпус приехал, DOM построен, а плиток нет
    * (например, разъехались id между mtk41.json и thumbs.json). */
@@ -117,8 +180,13 @@ export const canonScene = {
      * смонтированных (ядро монтирует сцену при первом показе). «Пусто, потому
      * что не смонтирована» — не поломка, и путать эти два случая нельзя. */
     if (!this._grid) return { ok: true, detail: "не смонтирована" };
-    const tiles = this._grid.childElementCount;
-    if (!tiles) return { ok: false, detail: "ни одной плитки в иконостасе" };
+    /* Считаем ПЛИТКИ, а не детей: заглушка «ничего не найдено» — тоже
+     * ребёнок грида, и на childElementCount она выдавала «плиток 1»,
+     * из-за чего пустая сцена БЕЗ отбора переставала быть аварией.
+     * Заглушка, притворяющаяся содержимым, — тот же класс, что индикатор,
+     * притворяющийся данными. */
+    const tiles = this._grid.querySelectorAll(".m41-tile").length;
+    if (!tiles) return emptyVerdict(this._find, "ни одной плитки в иконостасе");
     const withPhoto = this._grid.querySelectorAll(".m41-tile:not(.is-empty)").length;
     return { ok: true, detail: `плиток ${tiles}, с фото ${withPhoto}` };
   },
@@ -269,7 +337,12 @@ export const canonScene = {
         esc(year) + "</span></span></button>"
       );
     }
-    this._grid.innerHTML = parts.join("");
+    /* Та же заглушка, что у «Авторов»: пустая сетка молчит, а посетителю
+     * нужно объяснение и путь назад. */
+    this._grid.innerHTML = parts.length ? parts.join("")
+      : '<div class="m41-empty"><p class="m41-empty__t">' +
+        esc(this._app.t("finder.empty")) + '</p><p class="m41-empty__h">' +
+        esc(this._app.t("finder.emptyHint")) + "</p></div>";
     this._renderHead();
   },
 };

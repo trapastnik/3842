@@ -25,9 +25,9 @@
  *
  * У кого нет ни того ни другого — процедурный пунктир, как в «Масштабе». Это
  * видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=40";
-import { DATA, HUMAN_HEIGHT_M, PALETTE, cssColor, fillTextIfFits,
-  preloadThumbs, statusColor } from "./shared.js?v=40";
+import { scaleScene } from "./scale.js?v=58";
+import { DATA, HUMAN_HEIGHT_M, PALETTE, cssColor, emptyVerdict, fillTextIfFits,
+  preloadThumbs, statusColor } from "./shared.js?v=58";
 
 /* Хранилище силуэтов — на уровне МОДУЛЯ, а не в ctx.
  * ctx у ядра одноразовый: context() отдаёт новый объект и прероллу, и mount().
@@ -140,12 +140,14 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
      * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
     const buf = this._host.bufferOk();
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
-    if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
+    /* _placed может ещё не существовать: _applyFind зовётся из mount() до
+     * его инициализации, а healthcheck стенд может позвать в любой момент. */
+    if (!(this._placed || []).length) return emptyVerdict(this._find, "на шкале нет ни одной фигуры");
     const sil = Object.keys(SIL).length;
     const cut = Object.keys(CUT).length;
     /* Не ошибка, но цифру видно на приёмке: сцена обещает «реальные фигуры»,
      * а их пока восемь. */
-    return { ok: true, detail: `фигур ${this._placed.length}, вырезок ${cut}, контуров ${sil}, буфер ${buf.detail}` };
+    return { ok: true, detail: `фигур ${(this._placed || []).length}, вырезок ${cut}, контуров ${sil}, буфер ${buf.detail}` };
   },
 
 
