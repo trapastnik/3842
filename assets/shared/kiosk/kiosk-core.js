@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.22.1";
+  var VERSION = "1.22.2";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1474,7 +1474,7 @@
    * Тонкая, но решающая разница (уточнение пользователя): гасим ЗУМ
    * БРАУЗЕРА (visualViewport.scale ≡ 1), а сам жест НЕ съедаем — глобус и
    * карты зумят СВОЙ контент тем же пинчем, слушая сырые touch/pointer/wheel.
-   * Первая редакция (1.22.1) глобально гасила мультитач-touchmove — это
+   * Первая редакция (1.22.0) глобально гасила мультитач-touchmove — это
    * отнимало жест у сцен целиком; убрано.
    *
    * Как это устроено: нативный зум давит touch-action на поверхностях
@@ -1519,7 +1519,14 @@
     };
     doc.addEventListener("keydown", onKey, { passive: false });
 
+    /* Снятие: сбрасывает и флаг, чтобы _lockZoom можно было завести заново.
+     * Вызывающего пока нет (приложение живёт до перезагрузки, restart —
+     * это location.reload), но метод рабочий, а не витринный: без сброса
+     * _zoomLocked повторный lock после unlock молча не навесил бы
+     * слушателей. */
+    var self = this;
     this._unlockZoom = function () {
+      if (!self._zoomLocked) return;
       ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
         doc.removeEventListener(ev, onGesture);
       });
@@ -1527,6 +1534,7 @@
       doc.removeEventListener("dblclick", onDbl);
       doc.removeEventListener("keydown", onKey);
       de.removeAttribute("data-zoom-locked");
+      self._zoomLocked = false;
     };
     de.setAttribute("data-zoom-locked", "1");
   };
@@ -2211,6 +2219,16 @@
       if (r.mounted && r.scene && r.scene.finder) selfF._pushFinder(r);
     });
     this._syncFinder();
+
+    /* СБРОС СЦЕН — ГРАНИЦА ВИЗИТА, и она ЕДИНА: тот же reset(), что на
+     * idle-сбросе, ядро зовёт и здесь. Зум карты, открытые карточки, скролл
+     * — всё, что не должен увидеть следующий посетитель, — сцена уже чистит
+     * в reset() ради idle; отдельный standby-хук заставил бы её писать
+     * второй путь для того же самого.
+     * Порядок критичен: reset() ДО scene.standby(), иначе аттрактор сцены
+     * крутил бы 180 секунд ПРИБЛИЖЁННУЮ карту №1 (standby < reset легально,
+     * кросс-клампа нет — заставка может наступить раньше idle-сброса). */
+    this.resetScenes();
 
     var rec = this._active;
     var own = rec ? safeCall(rec, "standby") : null;
@@ -3893,11 +3911,49 @@
 
   /* -------------------------------------------------------------- экспорт */
 
+  /* НИЖНЯЯ ГРАНИЦА ЗУМА: масштаб, при котором контент ЦЕЛИКОМ в кадре (fit).
+   *
+   * Формула тривиальна — min(vw/cw, vh/ch), — но тривиальны и её КРАЯ, на
+   * которых пять сцен разошлись бы молча: деление на ноль при нулевом
+   * контенте (→ Infinity), схлопнутый вьюпорт, padding больше кадра. Один
+   * helper решает их раз, поэтому он в ядре, а не в каждой карте.
+   *
+   * Возвращает ТОЛЬКО МАСШТАБ — не позицию. Для масштаба значимы СУММЫ полей
+   * по осям (left+right, top+bottom): асимметрия {bottom:60} даёт тот же
+   * масштаб, что {top:30,bottom:30}. Объект принимается ради читаемости
+   * вызова, а сдвиг контента из-под HUD — позиционирование, его сцена
+   * делает сама своим translate.
+   *   mode: "contain" (деф., весь контент виден) | "cover" (кадр закрыт).
+   *   padding: число (все стороны) | {top,bottom,left,right} (опущенные = 0). */
+  function fitZoom(contentW, contentH, viewW, viewH, opts) {
+    opts = opts || {};
+    var p = opts.padding || 0;
+    var pt, pb, pl, pr;
+    if (typeof p === "number") { pt = pb = pl = pr = p; }
+    else { pt = +p.top || 0; pb = +p.bottom || 0; pl = +p.left || 0; pr = +p.right || 0; }
+
+    var cw = +contentW, ch = +contentH, vw = +viewW, vh = +viewH;
+    /* Контент нулевой/невалидный — вписывать нечего, дефолт 1, не Infinity. */
+    if (!(cw > 0) || !(ch > 0)) return 1;
+    /* Схлопнутый или невалидный вьюпорт — не считаем (как стенды
+     * отказываются в схлопнутом окне), возвращаем 1. */
+    if (!(vw > 0) || !(vh > 0)) return 1;
+
+    /* Поля зажаты, чтобы не увести доступный кадр в ноль/отрицательное. */
+    var availW = Math.max(1, vw - Math.max(0, pl) - Math.max(0, pr));
+    var availH = Math.max(1, vh - Math.max(0, pt) - Math.max(0, pb));
+
+    var byW = availW / cw, byH = availH / ch;
+    return opts.mode === "cover" ? Math.max(byW, byH) : Math.min(byW, byH);
+  }
+
   global.KioskCore = {
     version: VERSION,
     DEFAULT_CONFIG: DEFAULT_CONFIG,
     createApp: function (opts) { return new KioskApp(opts); },
     KioskApp: KioskApp,
+    /* Нижняя граница зума (fit). Одна формула на все карты — см. коммент. */
+    fitZoom: fitZoom,
     /* Внутреннее, но полезно сценам. waitFade/nextFrames/guardedWait —
      * ожидания, переживающие уход вкладки в фон; для собственных
      * анимаций сцены берите их, а не голый setTimeout. */
