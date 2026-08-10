@@ -289,7 +289,6 @@ html.kiosk-runtime body {
   pointer-events: none;              /* касание идёт сцене, выход ловит window */
 }
 .kiosk-standby.is-on { opacity: 1; }
-.kiosk-standby[hidden] { display: none; }
 
 .kiosk-standby.is-bare { background: rgba(var(--amber-black-rgb, 0, 0, 0), 0.28); }
 .kiosk-standby.is-bare .kiosk-standby__canvas { display: none; }
@@ -533,7 +532,6 @@ html.kiosk-runtime body {
   font-family: "21 Cent", Georgia, serif;
 }
 .kiosk-service.is-open { transform: none; }
-.kiosk-service[hidden] { display: none; }
 
 .kiosk-service__head,
 .kiosk-service__foot {
@@ -902,11 +900,19 @@ html.kiosk-runtime body {
 .kiosk-find.is-active .kiosk-find__dot { display: grid; }
 .kiosk-find.is-active .kiosk-find__dot::after { content: attr(data-n); }
 
-/* [hidden] — атрибут, а display:flex ниже его перебивает: закрытая панель
-   оставалась НЕВИДИМЫМ КЛИКОБЛОКЕРОМ 942×536 и глушила правый верхний
-   квадрант сцены до перезагрузки (возврат №1, блокер 3). Мой стенд этого
-   не видел, потому что проверял классы и hidden, а не попадание пальца. */
-.kiosk-finder[hidden] { display: none; }
+/* ЛЮБОЙ ЭЛЕМЕНТ КИТА С [hidden] ОБЯЗАН ИСЧЕЗАТЬ — правило на КЛАСС, а не
+   на экземпляр.
+   [hidden] — всего лишь атрибут, и собственный display его перебивает. У
+   кита одиннадцать элементов со своим display, и почти всем код переключает
+   hidden. Правило существовало ДВАЖДЫ, точечно — для сервис-панели и
+   заставки, — а я, добавляя финдер, его не перенёс: получилось четыре
+   инстанса подряд (панель-кликоблокер, лупа на сцене без финдера, строка
+   поиска на сцене без поиска) плюс уже жившие в проде глаз, языки,
+   шестерёнка и бар — оператор гасил их настройкой, а они оставались видимы
+   и кликабельны.
+   Префикс класса вместо перечисления: правило накроет и то, что появится
+   завтра. Чужую разметку сцен не трогаем. */
+[class*="kiosk-"][hidden] { display: none !important; }
 
 .kiosk-finder {
   position: absolute;
@@ -940,6 +946,10 @@ html.kiosk-runtime body {
   transition: opacity .22s ease, transform .22s ease;
 }
 .kiosk-finder.is-open { opacity: 1; transform: none; }
+/* Гасит 300-мс окно между снятием is-open и hidden на ВСЕХ путях закрытия:
+   пробуждающий тап успевал доставить click в чип уже закрывающейся панели —
+   и отбор ложился на сцену ПОСЛЕ idle-сброса. */
+.kiosk-finder:not(.is-open) { pointer-events: none; }
 /* Клавиатура и служебные строки НЕ СЖИМАЮТСЯ, скроллится только тело с
    чипами. Без этого flex ужимал клавиатуру до 155 px при нужных 318 —
    рисовалось 2 ряда из 4, а «стереть», «⌫» и переключатель раскладки
@@ -952,7 +962,26 @@ html.kiosk-runtime body {
    сама — но служебный ряд при этом липнет к низу и остаётся под пальцем.
    Без этого при нехватке высоты недоступными оказывались ровно те клавиши,
    без которых из поля не выйти: ⌫, «стереть», переключатель раскладки. */
+/* Клавиатура ужимается ПОСЛЕДНЕЙ: вес сжатия у тела чипов на два порядка
+   больше, поэтому высоту отдаёт сначала оно. */
 .kiosk-kbd { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+/* Аффорданс прокрутки: нижние 40 px гаснут — «ниже есть ещё». Маска
+   учитывает липкий ряд: он рисуется поверх и обрезки под собой не
+   показывает, поэтому затухание кончается ДО него. */
+/* Липкий ряд рисуется ПОВЕРХ прокрутки — значит под ним нужен запас, иначе
+   он накрывает последние видимые буквы (при 1.5 не оставалось ни одной под
+   пальцем). padding даёт содержимому уйти выше, scroll-padding довозит его
+   туда при прокрутке к элементу. */
+.kiosk-kbd {
+  scroll-padding-bottom: calc(84px * var(--ui-scale, 1));
+  padding-bottom: calc(84px * var(--ui-scale, 1));
+}
+.kiosk-kbd[data-scrollable="1"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 96px * var(--ui-scale, 1)),
+                                      rgba(0,0,0,.25) calc(100% - 72px * var(--ui-scale, 1)), #000 calc(100% - 68px * var(--ui-scale, 1)));
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 96px * var(--ui-scale, 1)),
+                                      rgba(0,0,0,.25) calc(100% - 72px * var(--ui-scale, 1)), #000 calc(100% - 68px * var(--ui-scale, 1)));
+}
 .kiosk-kbd__row:last-child {
   position: sticky;
   bottom: calc(-1 * var(--ui-scale, 1) * 2px);
@@ -960,7 +989,15 @@ html.kiosk-runtime body {
   background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.94);
 }
 .kiosk-finder__body {
-  flex: 1 1 0;
+  /* basis AUTO, а не 0: в колонке автоматической высоты нулевой базис не
+     растёт — свободного места, которое можно раздать, там просто нет, и
+     тело оставалось щелью в 48 px (свой паддинг) при 304 px чипов. ВСЕ
+     чипы жили в прокрутке на любом масштабе, а центр первого по хит-тесту
+     попадал в футер. Регресс моего же фикса возврата №1.
+     Вес сжатия 100 — чтобы при нехватке высоты уступало тело, а не
+     клавиатура: без букв поиск невозможен, без видимых чипов — только
+     неудобен. */
+  flex: 1 100 auto;
   min-height: 0;
   padding: calc(24px * var(--ui-scale, 1));
   overflow: auto;
@@ -1025,6 +1062,18 @@ html.kiosk-runtime body {
   font: 400 max(var(--type-min-ui, 22px), calc(26px * var(--ui-scale, 1))) / 1.2
         "20 Kopeek", "Courier New", monospace;
   color: var(--paper, #F7F9EF);
+}
+.kiosk-finder__q { width: auto; text-align: left; cursor: pointer; }
+/* Пока идёт ввод, чипы не претендуют на высоту вовсе: посетитель набирает
+   текст, а не выбирает фильтр. Без этого при масштабе 1.5 клавиатуре
+   доставался один липкий ряд — букв под пальцем не оставалось ни одной. */
+.kiosk-finder.is-typing .kiosk-finder__body { flex: 0 1 0; }
+/* Каретка мигает только когда клавиатура открыта — иначе поле обещает ввод,
+   которого сейчас нет. */
+.kiosk-finder__caret { visibility: hidden; }
+.kiosk-finder.is-typing .kiosk-finder__caret { visibility: visible; }
+.kiosk-finder.is-typing .kiosk-finder__q {
+  border-color: var(--brass, #D2B773);
 }
 .kiosk-finder__caret {
   width: 2px;

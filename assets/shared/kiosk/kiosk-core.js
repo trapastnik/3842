@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.18.2";
+  var VERSION = "1.19.4";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2094,6 +2094,24 @@
      * оставался без призыва до следующего 30-секундного простоя. */
     if (window.KioskHint && window.KioskHint.suppressAll) window.KioskHint.suppressAll(true);
 
+    /* Панель и отбор уходят НА ВХОДЕ в заставку, а не только на выходе.
+     * Панель жила под вуалью (z-index 46 против 50, но у заставки
+     * pointer-events:none — пробы проходили сквозь неё прямо в чипы), и
+     * пробуждающий тап успевал доставить click в чип уже закрывающейся
+     * панели: отбор ложился на сцену ПОСЛЕ idle-сброса, и посетитель №2
+     * получал чужие «3 из 9». Заставка — граница визита, значит чистим
+     * здесь, а не полагаемся на сброс, который отработал раньше.
+     * Досягаемо и штатно: timings.reset (15..600 с) и standby (30..1800 с)
+     * не связаны кросс-клампом, reset > standby — легальная настройка. */
+    this.openFinder(false);
+    this._finder = {};
+    this._finderResult = {};
+    var selfF = this;
+    this._records.forEach(function (r) {
+      if (r.mounted && r.scene && r.scene.finder) selfF._pushFinder(r);
+    });
+    this._syncFinder();
+
     var rec = this._active;
     var own = rec ? safeCall(rec, "standby") : null;
 
@@ -2560,6 +2578,7 @@
     var panel = this._els.finderPanel;
     this._els.root.classList.toggle("is-finder", on);
     if (on) {
+      panel.classList.remove("is-typing");   /* открываемся с чипов, не с клавиатуры */
       this._renderFinder();
       panel.hidden = false;
       var body = panel.querySelector(".kiosk-finder__body");
@@ -2642,7 +2661,18 @@
       self._renderFinder();
     });
 
-    wrap._redraw = render;   /* подписи клавиш «Пробел»/«Стереть» — из словаря */
+    /* Маску затухания включаем ТОЛЬКО когда прокрутка реально есть: иначе
+     * она гасила бы нижний ряд там, где всё и так помещается. */
+    function markScroll() {
+      wrap.setAttribute("data-scrollable",
+        wrap.scrollHeight > wrap.clientHeight + 1 ? "1" : "0");
+    }
+    wrap._redraw = function () { render(); markScroll(); };
+    if (typeof ResizeObserver === "function") {
+      var kro = new ResizeObserver(markScroll);
+      kro.observe(wrap);
+    }
+    wrap._markScroll = markScroll;
     host.appendChild(wrap);
     return wrap;
   };
@@ -2653,8 +2683,9 @@
     el.className = "kiosk-finder";
     el.hidden = true;
     el.innerHTML =
-      '<div class="kiosk-finder__q"><span class="kiosk-finder__q-text"></span>' +
-      '<span class="kiosk-finder__caret" aria-hidden="true"></span></div>' +
+      '<button type="button" class="kiosk-finder__q kiosk-touch">' +
+      '<span class="kiosk-finder__q-text"></span>' +
+      '<span class="kiosk-finder__caret" aria-hidden="true"></span></button>' +
       '<div class="kiosk-finder__fields"></div>' +
       '<div class="kiosk-finder__note"></div>' +
       '<div class="kiosk-finder__body kiosk-scroll"></div>' +
@@ -2664,6 +2695,20 @@
       '<span class="kiosk-finder__count"></span></footer>';
     el.querySelector(".kiosk-finder__reset")
       .addEventListener("click", function () { self.resetFinder(); self._renderFinder(); });
+
+    /* КЛАВИАТУРА ПОЯВЛЯЕТСЯ ПО КАСАНИЮ ПОЛЯ, а не висит всегда.
+     * Панель физически не вмещает разом чипы и клавиатуру: на 1920×1080
+     * содержимому нужно ~814 px при потолке 658, и чипы уезжали в щель —
+     * центр первого по хит-тесту попадал в футер. Это не «компактная
+     * раскладка» (её решили не делать), а момент показа: пока посетитель
+     * выбирает чипами, клавиатура не нужна; как только он трогает поле,
+     * место отдаётся ей, а чипы уходят в прокрутку — там они и не важны. */
+    el.querySelector(".kiosk-finder__q").addEventListener("click", function () {
+      el.classList.toggle("is-typing");
+      /* Видимость клавиатуры выставляет _renderFinder — переключить класс
+       * мало, иначе поле «открылось», а клавиатуры нет. */
+      self._renderFinder();
+    });
     /* Тап мимо — закрыть (канон). Слушаем на корне, а не кладём подложку:
      * подложка перехватывала бы жесты сцены под собой. */
     this._els.root.addEventListener("pointerdown", function (e) {
@@ -2718,6 +2763,7 @@
       var b = e.target.closest("[data-path]");
       if (!b) return;
       var path = b.getAttribute("data-path"), v = b.getAttribute("data-v");
+      self._els.finderPanel.classList.remove("is-typing");   /* ушёл к чипам */
       if (path === "s:") self.setFinder({ sort: v || null });
       else {
         var patch = {}; patch[path.slice(2)] = v === "" ? null : v;
@@ -2730,13 +2776,16 @@
     var hasSearch = !!(spec.search && (spec.search.fields || []).length);
     var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
     var qBox = this._els.finderPanel.querySelector(".kiosk-finder__q");
-    if (kb) kb.hidden = !hasSearch;
+    if (kb) kb.hidden = !hasSearch || !this._els.finderPanel.classList.contains("is-typing");
     if (qBox) qBox.hidden = !hasSearch;
+    if (!hasSearch) this._els.finderPanel.classList.remove("is-typing");
 
     /* Подпись кнопки сброса — тоже из словаря: запечённая при сборке, она
      * оставалась русской в английском интерфейсе. */
     var resetBtn = this._els.finderPanel.querySelector(".kiosk-finder__reset");
     if (resetBtn) resetBtn.textContent = this.t("finder.reset");
+
+    if (kb && kb._markScroll) kb._markScroll();
 
     var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
     if (qEl) qEl.textContent = st.query || "";
