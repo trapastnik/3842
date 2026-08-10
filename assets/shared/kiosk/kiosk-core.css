@@ -1061,6 +1061,8 @@ html.kiosk-runtime body {
 .kiosk-finder.is-typing .kiosk-finder__body { flex: 0 1 0; }
 /* Каретка мигает только когда клавиатура открыта — иначе поле обещает ввод,
    которого сейчас нет. */
+/* Приглашение — приглушённое: это подсказка, а не введённый текст. */
+.kiosk-finder__q-text.is-hint { opacity: .55; }
 .kiosk-finder__caret { visibility: hidden; }
 .kiosk-finder.is-typing .kiosk-finder__caret { visibility: visible; }
 .kiosk-finder.is-typing .kiosk-finder__q {
