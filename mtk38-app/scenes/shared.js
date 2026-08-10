@@ -225,6 +225,12 @@ export function pollSize(scene, el) {
  * По clientWidth это НЕ определяется: ядро прячет слои через visibility и
  * content-visibility, и у потомков скрытого слоя ширина сохраняется прежней.
  * Спрашиваем у самого слоя — так же, как стенд ядра. */
+/* Решающий признак — КЛАСС СЛОЯ, а не нулевой размер: неактивный слой кита
+ * скрыт через visibility+content-visibility+opacity и честно отдаёт полный бокс
+ * (проверено на 1.20.3: неактивные слои 1280×720, clientWidth 1280). Ворота,
+ * построенные на «скрытое схлопывается», молча пропустили бы фоновую сцену
+ * в проверки содержимого. Нулевой размер оставлен первым — он ловит другой
+ * случай: сцену, у которой бокса нет вовсе. */
 export function offScreen(el) {
   if (!el) return true;
   if (!el.clientWidth || !el.clientHeight) return true;
@@ -245,7 +251,13 @@ export function bufferComplaint(canvas, dpr, box) {
    * никогда — буфер 2×2 на боксе 1600×1000 проходил как здоровый. */
   const ref = box || canvas;
   const r = ref.getBoundingClientRect();
-  if (!r.width || !r.height) return null;        // слой скрыт — не наша беда
+  /* Ноль здесь — вырожденный бокс, а НЕ признак скрытой сцены: неактивный слой
+   * кита скрыт через visibility+content-visibility+opacity и отдаёт полный бокс
+   * (замер 1.20.3: слой и канва 1280×720 при буфере 300×150). Отсекать
+   * неактивные обязан offScreen ПО КЛАССУ СЛОЯ и до этой сверки — иначе
+   * неотресайженная фоновая сцена краснеет на ровном месте. Проверка остаётся
+   * на случай, если ядро сменит способ скрытия на схлопывающий. */
+  if (!r.width || !r.height) return null;
   const want = Math.floor(r.width * (dpr || 1));
   if (canvas.width < want * 0.9) {
     return `буфер ${canvas.width}×${canvas.height} при ожидании ${want} по ширине `

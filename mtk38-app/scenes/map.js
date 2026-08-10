@@ -10,8 +10,8 @@
  * сходились в одну точку в Мадриде, а Северная Америка пустовала совсем.
  * «Оба» дотягивает от издания к языку волосяную линию.
  */
-import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=24";
-import { createCard } from "./card.js?v=24";
+import { loadData, famWord, PAL, rgba, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=25";
+import { createCard } from "./card.js?v=25";
 
 const GEO_URL = "../data/ne_110m_countries.geojson";
 const TEX = {

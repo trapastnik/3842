@@ -15,8 +15,8 @@
  * дальше по строкам отдаёт диапазоны под доступную ширину. Своими силами это
  * три экрана кода и заметно хуже на не-латинице.
  */
-import { loadData, famBig, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=24";
-import { createCard } from "./card.js?v=24";
+import { loadData, famBig, famWord, PAL, beginStandby, pollSize, bufferComplaint, offScreen, capDpr, attachHint } from "./shared.js?v=25";
+import { createCard } from "./card.js?v=25";
 import {
   prepareWithSegments, layoutNextLineRange, materializeLineRange,
 } from "../vendor/pretext/layout.js?v=0.0.8";
