@@ -32,11 +32,17 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=58";
-import { createMapCore } from "./map-core.js?v=58";
+} from "./shared.js?v=59";
+import { createMapCore } from "./map-core.js?v=59";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
+
+/* Границы зума — в одном месте, а не литералами по путям. Нижнюю скоро
+ * сменит fitZoom ядра («дальше некуда» = «Весь вид», канон PLAN-KIOSK), и
+ * менять её надо там, где её читают ВСЕ пути сразу. */
+const MIN_ZOOM = 0.2;
+const MAX_ZOOM = 40;
 
 /* Пресеты стартового вида из описи настроек. */
 const VIEW_PRESETS = {
@@ -350,18 +356,37 @@ export const mapScene = {
     };
   },
 
-  /* Зум в точку касания, а не к центру вьюпорта: иначе, чтобы рассмотреть
-   * Прибалтику, её сперва надо подтащить в центр. */
-  _zoomAt(next, cx, cy) {
-    const z = Math.max(0.2, Math.min(40, next));
-    if (z === this._map.zoom) return false;
-    const p = this._clientToWorld(cx, cy);
+  _clampZoom(z) {
+    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+  },
+
+  /* Поставить мировую точку p под экранную (cx, cy) при зуме next.
+   *
+   * Это НЕ то же, что «зум в точку касания». Там мировая точка берётся из-под
+   * пальца в момент вызова, поэтому перенос пальцев не двигает карту: что было
+   * под серединой, то под ней и остаётся. Здесь точка приходит извне —
+   * запомненная в начале щипка, — и потому едет вместе с пальцами. Отсюда
+   * двупальцевый pan: расстояние даёт зум, середина даёт сдвиг, за один кадр
+   * и то и другое. */
+  _placeAt(next, p, cx, cy) {
     const h = this._host;
+    /* Предусловия — здесь, а не гардом у каждого вызывающего: гард лечит один
+     * путь, условие в функции лечит все (урок «Масштаба», GRABLI). */
+    if (!h || !p) return false;
+    const z = this._clampZoom(next);
     this._map.zoom = z;
     this._map.camX = p.x - h.width * 0.5 - (cx - h.width * 0.5) / z;
     this._map.camY = p.y - h.height * 0.5 - (cy - h.height * 0.5) / z;
     this._clampCamera();
     return true;
+  },
+
+  /* Зум в точку касания, а не к центру вьюпорта: иначе, чтобы рассмотреть
+   * Прибалтику, её сперва надо подтащить в центр. */
+  _zoomAt(next, cx, cy) {
+    const z = this._clampZoom(next);
+    if (z === this._map.zoom) return false;
+    return this._placeAt(z, this._clientToWorld(cx, cy), cx, cy);
   },
 
   _clampCamera() {
@@ -386,7 +411,11 @@ export const mapScene = {
     if (!h || !h.width || !this._map.worldW) return false;
     const target = this._project(p.lat, p.lng);
     const set = () => {
-      this._map.zoom = p.zoom;
+      /* Через тот же ограничитель, что и жест. Пока пол — литерал 0.2, все три
+       * пресета выше него и разницы нет; но пол вот-вот станет живым (fitZoom
+       * от размера стола), и единственный путь к зуму МИМО ограничителя стал
+       * бы единственным путём выехать за него. */
+      this._map.zoom = this._clampZoom(p.zoom);
       this._map.camX = target.x - h.width * 0.5;
       this._map.camY = target.y - h.height * 0.5;
       this._clampCamera();
@@ -427,7 +456,7 @@ export const mapScene = {
   _bindPointer() {
     const c = this._host.canvas;
     const st = { down: false, drag: false, x0: 0, y0: 0, lx: 0, ly: 0,
-      pointers: new Map(), pinchDist: 0, pinchZoom: 1 };
+      pointers: new Map(), pinchDist: 0, pinchZoom: 1, pinchWorld: null };
     this._pst = st;
 
     this._onDown = (e) => {
@@ -437,6 +466,10 @@ export const mapScene = {
         const [a, b] = [...st.pointers.values()];
         st.pinchDist = Math.hypot(b.x - a.x, b.y - a.y);
         st.pinchZoom = this._map.zoom;
+        /* Якорь щипка запоминаем ОДИН раз, в начале. Живая точка из-под
+         * середины пальцев не годится: её каждый кадр берут из текущей камеры,
+         * и перенос обеих рук сам себя гасит — карта стоит. */
+        st.pinchWorld = this._clientToWorld((a.x + b.x) / 2, (a.y + b.y) / 2);
         st.down = false;
         return;
       }
@@ -455,9 +488,13 @@ export const mapScene = {
       if (st.pointers.size === 2 && st.pinchDist > 0) {
         const [a, b] = [...st.pointers.values()];
         const d = Math.hypot(b.x - a.x, b.y - a.y);
-        /* Якорь — живая середина между пальцами: щипок увеличивает то место,
-         * которое держат, а не центр экрана. */
-        this._zoomAt(st.pinchZoom * (d / st.pinchDist), (a.x + b.x) / 2, (a.y + b.y) / 2);
+        /* Запомненный якорь держим под ТЕКУЩЕЙ серединой пальцев: место,
+         * которое взяли, остаётся в руках — и когда его приближают, и когда
+         * его переносят. Через _placeAt, а не _zoomAt: последний выходит
+         * досрочно при неизменном расстоянии, и чистый перенос двумя пальцами
+         * не доезжал бы вовсе. */
+        this._placeAt(st.pinchZoom * (d / st.pinchDist), st.pinchWorld,
+          (a.x + b.x) / 2, (a.y + b.y) / 2);
         st.drag = true;
         return;
       }
@@ -476,8 +513,28 @@ export const mapScene = {
 
     this._onUp = (e) => {
       st.pointers.delete(e.pointerId);
-      if (st.pointers.size < 2) st.pinchDist = 0;
       try { c.releasePointerCapture(e.pointerId); } catch (err) { /* не критично */ }
+      if (st.pointers.size >= 2) return;         // щипок продолжается
+
+      if (st.pinchDist > 0) {
+        /* Из щипка вышел один палец. Оставшийся ПРОДОЛЖАЕТ вести карту:
+         * раньше он не вёл ничего, потому что st.down погас на втором касании
+         * и обратно не зажигался, — карта замирала до тех пор, пока посетитель
+         * не отпустит и вторую руку. Тапа тут нет по определению: жест был
+         * щипком, а не касанием. */
+        st.pinchDist = 0;
+        const rest = st.pointers.values().next().value;
+        if (rest) {
+          const r = c.getBoundingClientRect();
+          st.down = true; st.drag = true;
+          st.lx = st.x0 = rest.x + r.left;
+          st.ly = st.y0 = rest.y + r.top;
+        } else {
+          st.down = false;
+        }
+        return;
+      }
+
       if (st.down && !st.drag) {
         const r = c.getBoundingClientRect();
         this._tap(e.clientX - r.left, e.clientY - r.top);
