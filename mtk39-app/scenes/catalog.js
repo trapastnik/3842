@@ -8,9 +8,10 @@
  * записей: видно и состав рубрики, и её географию, без карты. */
 
 import {
-  DATA, STATUS_CLASS, nf, esc, plural, statusLabel,
+  DATA, STATUS, STATUS_CLASS, nf, esc, plural, statusLabel,
   objectCardHtml, corpusPicture,
-} from "./shared.js?v=6";
+  FINDER_SEARCH, normQuery, matchesQuery,
+} from "./shared.js?v=10";
 
 // единственное в своём роде — по названию, а не по категории
 const ONE_OFF = /геоглиф|мавзолей|ленинланд|leninland|послание|сверхтяжёл|пик ленина|ледокол|астероид|владилена|ульянов \(|комсомол|пионер/i;
@@ -50,11 +51,31 @@ export const catalogScene = {
       type: "toggle", default: true },
   ],
 
+  /* Рубрикатор остаётся на сцене: это навигация по стене карточек, а не
+     отбор. В финдер ушли судьба имени, поиск и сортировка — последней у
+     свода не было вовсе, а 1203 записи её просят. */
+  finder: {
+    search: FINDER_SEARCH,
+    filters: [
+      { key: "status", label: { ru: "Судьба имени", en: "Fate of the name", zh: "名称的命运" },
+        options: (c) => STATUS.map((s) => [s.key, c.app.t(s.t)]) },
+    ],
+    sorts: [
+      { key: "az", label: { ru: "По алфавиту", en: "A→Z", zh: "按字母" } },
+      { key: "country", label: { ru: "По странам", en: "By country", zh: "按国家" } },
+      { key: "named", label: { ru: "По году присвоения", en: "By year named", zh: "按命名年份" } },
+    ],
+  },
+
   opt: Object.assign({}, DEFAULTS),
 
   applySettings(values) {
     this.opt = Object.assign({}, DEFAULTS, values || {});
     if (this.api) this.api.rerender();
+  },
+
+  applyFinder(state) {
+    return this.api ? this.api.applyFind(state) : undefined;
   },
 
   mount(el, ctx) {
@@ -98,6 +119,14 @@ export const catalogScene = {
 
     let active = RUBRICS[0].key;
     let sheetOpen = false;
+    /* Зеркало последнего applyFinder — своей копии состояния у сцены нет. */
+    let query = "";
+    let status = null;
+    let sort = null;
+
+    // канон порядка: отбор → поиск (сортировка ниже, в сборке стены)
+    const passes = (rec) => (!status || rec.status === status)
+      && matchesQuery(rec, query);
 
     function closeSheet() {
       if (!sheetOpen) return;
@@ -113,6 +142,20 @@ export const catalogScene = {
       sheetOpen = true;
     }
 
+    const byName = (a, b) => String(a.name).localeCompare(String(b.name), "ru");
+    /* Записи без года — в конец, а не в начало: выбравший «по году» ищет
+       годы, а не пустоты (канон сопроводиловки финдера). Через число это не
+       выразить — Infinity − Infinity даёт NaN и рассыпает сортировку. */
+    const byYear = (a, b) => {
+      if (a.year_named && b.year_named) return a.year_named - b.year_named || byName(a, b);
+      if (a.year_named) return -1;
+      if (b.year_named) return 1;
+      return byName(a, b);
+    };
+    // по умолчанию внутри страны первыми те, у кого есть рассказ
+    const weight = (r) => (r.desc ? r.desc.length : 0) + (r.year_named ? 200 : 0);
+    const byWeight = (a, b) => weight(b) - weight(a);
+
     function byCountry(items) {
       const map = new Map();
       for (const it of items) {
@@ -120,11 +163,15 @@ export const catalogScene = {
         if (!map.has(key)) map.set(key, []);
         map.get(key).push(it);
       }
-      // страны — по числу записей; внутри страны первыми те, у кого есть рассказ
-      const weight = (r) => (r.desc ? r.desc.length : 0) + (r.year_named ? 200 : 0);
+      const inner = sort === "az" ? byName : sort === "named" ? byYear : byWeight;
+      // «по странам» переставляет сами страны — по алфавиту вместо величины;
+      // остальные сортировки меняют порядок карточек внутри страны
+      const outer = sort === "country"
+        ? (a, b) => a[0].localeCompare(b[0], "ru")
+        : (a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ru");
       return [...map.entries()]
-        .map(([country, list]) => [country, list.sort((a, b) => weight(b) - weight(a))])
-        .sort((a, b) => b[1].length - a[1].length || a[0].localeCompare(b[0], "ru"));
+        .map(([country, list]) => [country, list.sort(inner)])
+        .sort(outer);
     }
 
     function cardEl(rec) {
@@ -170,7 +217,7 @@ export const catalogScene = {
 
     function renderRubric(key) {
       active = key;
-      const items = buckets.get(key) || [];
+      const items = (buckets.get(key) || []).filter(passes);
       wallTitle.textContent = app.t("rubric." + key);
       wallNote.textContent = app.t("rubric." + key + ".note") + " · " +
         nf.format(items.length) + " " + plural(items.length, "запись", "записи", "записей");
@@ -180,6 +227,17 @@ export const catalogScene = {
       }
 
       cardsHost.style.setProperty("--card-w", (scene.opt.cardW || DEFAULTS.cardW) + "px");
+      /* Рубрика, в которой отбор ничего не оставил, — законный ответ, а не
+         пустой экран без объяснения: рубрикатор рядом показывает, в каких
+         рубриках совпадения есть. */
+      if (!items.length) {
+        const empty = document.createElement("p");
+        empty.className = "m39-empty";
+        empty.textContent = app.t("catalog.empty");
+        cardsHost.replaceChildren(empty);
+        cardsHost.scrollTop = 0;
+        return;
+      }
       const frag = document.createDocumentFragment();
       for (const [country, list] of byCountry(items)) {
         const group = document.createElement("section");
@@ -200,11 +258,14 @@ export const catalogScene = {
       cardsHost.scrollTop = 0;
     }
 
+    /* Числа в рубрикаторе — по отбору: они и есть ответ на вопрос «где мои
+       совпадения», когда открытая рубрика пуста. Сами рубрики при этом не
+       исчезают — иначе рубрикатор прыгал бы на каждой букве запроса. */
     function buildRail() {
       rubricsHost.replaceChildren();
       for (const rubric of RUBRICS) {
-        const n = (buckets.get(rubric.key) || []).length;
-        if (!n) continue;
+        if (!(buckets.get(rubric.key) || []).length) continue;
+        const n = (buckets.get(rubric.key) || []).filter(passes).length;
         const b = document.createElement("button");
         b.type = "button";
         b.className = "m39-rubric kiosk-target";
@@ -236,17 +297,43 @@ export const catalogScene = {
     this.api = {
       retext,
       rerender: () => renderRubric(active),
+      applyFind({ query: q, filters, sort: s }) {
+        query = normQuery(q);
+        status = (filters && filters.status) || null;
+        sort = s || null;
+        closeSheet();
+        buildRail();
+        renderRubric(active);
+        return { shown: records.filter(passes).length, total: records.length };
+      },
+      /* Ядро гасит финдер ДО reset() и зовёт applyFinder заново — в штатном
+         пути это дубль; но reset() дёргают и в обход финдера (оператор,
+         стенд), и стена, оставшаяся с чужим отбором при пустой панели, —
+         та самая загадка без объяснения из возврата 1.17.4. */
       reset() {
         closeSheet();
+        query = "";
+        status = null;
+        sort = null;
+        buildRail();
         renderRubric(RUBRICS[0].key);
       },
+      /* Считаем, что сцена ГОТОВА показать, а не что лежит в открытой
+         рубрике: с приходом финдера пустая рубрика — законный ответ на
+         запрос, и прежняя проверка красила бы исправную сцену. Пустой
+         рубрикатор или пустая стена БЕЗ отбора — по-прежнему авария. */
       health() {
         const rubrics = rubricsHost.querySelectorAll("[data-rubric]").length;
         const cards = cardsHost.querySelectorAll(".m39-card2").length;
+        const picked = records.filter(passes).length;
         if (!records.length) return { ok: false, detail: "корпус пуст" };
         if (!rubrics) return { ok: false, detail: "рубрикатор не собран" };
-        if (!cards) return { ok: false, detail: "в открытой рубрике ни одной карточки" };
-        return { ok: true, detail: "рубрик " + rubrics + ", карточек в рубрике " + cards };
+        if (!query && !status && !cards) {
+          return { ok: false, detail: "без отбора в открытой рубрике ни одной карточки" };
+        }
+        return { ok: true, detail: "рубрик " + rubrics + ", по отбору " + picked +
+          " из " + records.length + ", карточек в открытой рубрике " + cards +
+          (sort ? ", сортировка " + sort : "") };
       },
       destroy() {
         closeSheet();

@@ -124,30 +124,6 @@
   color: var(--paper);
 }
 
-.m39-chip--toggle[aria-pressed="true"] {
-  border-color: var(--red-mark);
-  background: rgba(201, 84, 90, 0.18);
-}
-
-.m39-chips {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: flex-end;
-  gap: var(--touch-gap);
-}
-
-.m39-filters {
-  position: absolute;
-  right: var(--kiosk-safe-right);
-  bottom: var(--kiosk-safe-bottom);
-  z-index: 3;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: var(--touch-gap);
-  max-width: 46%;
-}
-
 .m39-modes {
   position: absolute;
   top: var(--kiosk-safe-top);
@@ -948,6 +924,15 @@
   padding-right: calc(var(--scrollbar-w) / 2);
 }
 
+/* Отбор не оставил в рубрике ничего. Не «ошибка», а ответ — тон спокойный. */
+.m39-empty {
+  max-width: 44ch;
+  margin: calc(var(--m39-u) * 2) 0 0;
+  font-size: max(var(--type-min-label), calc(var(--m39-u) * 0.95));
+  line-height: 1.5;
+  color: rgba(157, 163, 168, 0.9);
+}
+
 .m39-group__head {
   display: flex;
   align-items: baseline;
@@ -1165,14 +1150,26 @@
    слабовидящих при боковых стрелках рабочая ширина уже, пилюля шире, и на
    36vw блок доставал до неё. 30vw оставляет зазор во всех четырёх сочетаниях
    «режим × раскладка». */
-.m39-chips--wrap { justify-content: flex-end; max-width: 30vw; }
+
+/* Колонка «заголовок + список не на карте»: тянется от верхней кромки до
+   нижней, список забирает остаток и прокручивается. Наезд списка на
+   подзаголовок при этом невозможен по построению, а не по подобранному
+   отступу. */
+.m39-head--col {
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100% - var(--kiosk-safe-top) - var(--chrome-bottom));
+  min-height: 0;
+}
 
 .m39-offlist {
-  position: absolute;
-  left: var(--kiosk-safe-left);
-  bottom: var(--kiosk-safe-bottom);
-  z-index: 3;
+  flex: 0 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  margin-top: calc(var(--m39-u) * 1.2);
   max-width: calc(var(--m39-u) * 13);
+  /* заголовок сцены сквозной для касаний, а список — рабочий контрол */
+  pointer-events: auto;
 }
 
 .m39-offlist[hidden] { display: none; }
@@ -1212,7 +1209,6 @@
    а фон — картинка, а не рабочая панель. */
 .kiosk-app.is-standby .m39-head,
 .kiosk-app.is-standby .m39-modes,
-.kiosk-app.is-standby .m39-filters,
 .kiosk-app.is-standby .m39-legend,
 .kiosk-app.is-standby .m39-zoom,
 .kiosk-app.is-standby .m39-chip--off,

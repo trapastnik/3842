@@ -64,6 +64,7 @@
   "catalog.title": "卡片目录",
   "catalog.sub": "没有地图的完整名录：列宁之名曾属于各种量级的事物——从一个门牌到一颗小行星。这里按它们本来是什么来排列。",
   "catalog.total": "名录 {records} 条，{countries} 个国家。卡片左侧色条表示名称的命运：黄铜色——今日仍用，红色——已更名，灰色——已消失。",
+  "catalog.empty": "本类别中没有匹配项。左侧栏中的数字显示匹配所在的类别。",
 
   "rubric.oneOff": "独一无二者",
   "rubric.oneOff.note": "天体、船舶、运河、山峰、泰加林中的地画、立陶宛森林里的公园博物馆——只此一件的事物。",
@@ -144,8 +145,7 @@
   "stats.screenN": "第 {n} 屏",
 
   "globe.title": "精选地球仪",
-  "globe.sub": "五十七个带照片与卡片的对象：大学、工厂、运河、小行星。",
+  "globe.sub": "{n} 个带照片与卡片的对象：大学、工厂、运河、小行星。",
   "globe.hint": "转动地球仪 · 触摸光点",
-  "globe.offmap": "不在地图上 · {n}",
-  "globe.filter.all": "全部类别"
+  "globe.offmap": "不在地图上 · {n}"
 }

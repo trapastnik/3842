@@ -1,6 +1,8 @@
 /* МТК 39 · сцена «Глобус избранного».
- * Пятьдесят семь объектов с фотографиями и карточками — тот самый первый
- * прототип МТК 39, переехавший на киоск-платформу. Настройки художника
+ * Отобранные объекты с фотографиями и карточками — тот самый первый
+ * прототип МТК 39, переехавший на киоск-платформу. Число объектов нигде не
+ * прописано словами: подзаголовок берёт его из набора (в словаре стояло
+ * «пятьдесят семь» при 64 записях). Настройки художника
  * (вращение, атмосфера, освещение, звёзды, пульсация, прилёт точек, подписи,
  * дуги) больше не живут в собственной панели и в localStorage прототипа:
  * они объявлены схемой и крутятся из сервис-панели ядра.
@@ -8,9 +10,10 @@
  * d3 подключён локально классическим <script> — офлайн-киоск. */
 
 import {
-  DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
+  DATA, esc, plural, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel, isOffMap,
-} from "./shared.js?v=6";
+  FINDER_SEARCH, normQuery, matchesQuery,
+} from "./shared.js?v=10";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -84,11 +87,35 @@ export const globeScene = {
       type: "toggle", default: true },
   ],
 
+  /* Категории отдаём ВСЕ двадцать, а не восемь крупнейших, как было чипами:
+     панель вертикальная и прокручивается, ограничения «четверть экрана»
+     здесь нет — ровно тот случай, ради которого options разрешено задавать
+     функцией. Порядок — по числу объектов: он же был у чипов. */
+  finder: {
+    search: FINDER_SEARCH,
+    filters: [
+      { key: "category", label: { ru: "Категория", en: "Category", zh: "类别" },
+        options: (c) => {
+          const counts = new Map();
+          for (const it of c.data.picked.items) {
+            counts.set(it.category, (counts.get(it.category) || 0) + 1);
+          }
+          return [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0]), "ru"))
+            .map(([cat, n]) => [cat, (CATEGORY_LABELS[cat] || cat) + " · " + n]);
+        } },
+    ],
+  },
+
   opt: Object.assign({}, DEFAULTS),
 
   applySettings(values) {
     this.opt = Object.assign({}, DEFAULTS, values || {});
     if (this.api) this.api.invalidate();
+  },
+
+  applyFinder(state) {
+    return this.api ? this.api.applyFind(state) : undefined;
   },
 
   mount(el, ctx) {
@@ -103,20 +130,25 @@ export const globeScene = {
     el.classList.add("m39-scene", "m39-globe");
     el.innerHTML =
       '<canvas class="m39-canvas"></canvas>' +
-      '<header class="m39-head m39-head--over">' +
-        '<h1 class="m39-title"></h1><p class="m39-sub"></p></header>' +
-      '<nav class="m39-filters" aria-label="Категория"><div class="m39-chips m39-chips--wrap"></div></nav>' +
+      /* Список «не на карте» живёт В ТОЙ ЖЕ колонке, что заголовок, а не
+         отдельным слоем от нижней кромки: он растёт снизу вверх, и на семи
+         объектах наезжал на подзаголовок. Коэффициентом это не лечится —
+         высота списка зависит от числа записей, языка и режима слабовидящих,
+         поэтому порядок задаёт поток, а не отступ. */
+      '<header class="m39-head m39-head--over m39-head--col">' +
+        '<h1 class="m39-title"></h1><p class="m39-sub"></p>' +
+        '<aside class="m39-offlist kiosk-scroll" hidden>' +
+          '<h2 class="m39-offlist__h"></h2><ul></ul></aside>' +
+      "</header>" +
       '<nav class="m39-zoom">' +
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="in">+</button>' +
         '<button class="m39-zoom__b kiosk-target" type="button" data-z="out">−</button>' +
-      "</nav>" +
-      '<aside class="m39-offlist" hidden><h2 class="m39-offlist__h"></h2><ul></ul></aside>';
+      "</nav>";
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
     const title = el.querySelector(".m39-title");
     const sub = el.querySelector(".m39-sub");
-    const chips = el.querySelector(".m39-chips");
     const zoomNav = el.querySelector(".m39-zoom");
     const offlist = el.querySelector(".m39-offlist");
     const offlistH = el.querySelector(".m39-offlist__h");
@@ -127,7 +159,8 @@ export const globeScene = {
     let rotation = DEFAULT_ROTATE.slice();
     let scaleFactor = DEFAULT_SCALE;
     let selected = null;
-    let filter = "all";
+    let filter = null;          // зеркало последнего applyFinder
+    let query = "";
     let stars = [];
     let lastFrame = 0;
     let lastInteraction = performance.now();
@@ -179,7 +212,9 @@ export const globeScene = {
       return d3.geoDistance([lon, lat], [-rl, -rp]) < Math.PI / 2;
     };
 
-    const filterPasses = (item) => filter === "all" || item.category === filter;
+    /* Канон порядка: отбор → поиск. Отбор держит финдер ядра. */
+    const filterPasses = (item) => (!filter || item.category === filter)
+      && matchesQuery(item, query);
 
     /* ---- слои картинки ---- */
     function renderStars(now) {
@@ -512,8 +547,11 @@ export const globeScene = {
       });
     }
 
+    /* Список «не на карте» слушается отбора наравне с шаром: иначе при поиске
+       «Астероид» шар пуст, а сбоку висит полный список — и посетителю нечем
+       связать одно с другим. */
     function buildOfflist() {
-      const off = items.filter(isOffMap);
+      const off = items.filter((it) => isOffMap(it) && filterPasses(it));
       offlist.hidden = off.length === 0;
       offlistH.textContent = app.t("globe.offmap", { n: off.length });
       offlistUl.replaceChildren();
@@ -525,34 +563,6 @@ export const globeScene = {
         li.addEventListener("click", () => showCard(item));
         offlistUl.appendChild(li);
       }
-    }
-
-    /* ---- фильтр категорий ---- */
-    function buildFilter() {
-      const counts = new Map();
-      for (const it of items) counts.set(it.category, (counts.get(it.category) || 0) + 1);
-      // Двадцать категорий чипами съедали бы четверть экрана и читались бы как
-      // список, а не как фильтр. Берём восемь самых крупных: остальные всё равно
-      // видны на шаре под «Все категории», фильтр здесь — удобство, а не доступ.
-      const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-
-      chips.replaceChildren();
-      const mk = (key, label, n) => {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "m39-chip kiosk-target";
-        b.textContent = label + " · " + nf.format(n);
-        b.setAttribute("aria-pressed", String(key === filter));
-        b.addEventListener("click", () => {
-          filter = key;
-          [...chips.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
-          showCard(null);
-          lastInteraction = performance.now();
-        });
-        chips.appendChild(b);
-      };
-      mk("all", app.t("globe.filter.all"), items.length);
-      for (const [cat, n] of sorted) mk(cat, CATEGORY_LABELS[cat] || cat, n);
     }
 
     /* ---- ввод ---- */
@@ -645,9 +655,14 @@ export const globeScene = {
 
     function retext() {
       title.textContent = app.t("globe.title");
-      sub.textContent = app.t("globe.sub");
+      // число — из данных: прописью в словаре оно разошлось с набором
+      // (говорило «пятьдесят семь» при 64 записях). {word} — падеж, а не
+      // строка перевода: в словарь русские числительные не унести.
+      sub.textContent = app.t("globe.sub", {
+        n: items.length,
+        word: plural(items.length, "объект", "объекта", "объектов"),
+      });
       if (hint) hint.setLabel(app.t("globe.hint"));
-      buildFilter();
       buildOfflist();
       syncOfflist();
       if (selected) card.open(cardHtml(selected));
@@ -675,10 +690,25 @@ export const globeScene = {
       retext,
       invalidate() { /* картинка перерисовывается каждый кадр */ },
       remeasure: () => watch.measure(true),
-      reset() {
-        filter = "all";
+      applyFind({ query: q, filters }) {
+        query = normQuery(q);
+        filter = (filters && filters.category) || null;
         showCard(null);
-        buildFilter();
+        buildOfflist();
+        lastInteraction = performance.now();
+        /* Шар перерисовывается каждый кадр — звать нечего; счёт отдаём сразу,
+           иначе строка «N из 64» отстала бы от картинки на кадр. */
+        return { shown: items.filter(filterPasses).length, total: items.length };
+      },
+      /* Ядро гасит финдер ДО reset() и зовёт applyFinder заново — в штатном
+         пути обнуление здесь дубль. Но reset() дёргают и в обход финдера
+         (оператор, стенд), и сцена с чужим отбором при пустой панели — та
+         самая загадка без объяснения из возврата 1.17.4. */
+      reset() {
+        filter = null;
+        query = "";
+        showCard(null);
+        buildOfflist();
         if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         startIntro();
       },
@@ -695,9 +725,10 @@ export const globeScene = {
             догонят никогда, и ни одна точка не нарисуется. */
       standby(app_) {
         anim.stop();
-        filter = "all";
+        filter = null;
+        query = "";
         showCard(null);
-        buildFilter();
+        buildOfflist();
         modeTween = null;
         introT0 = 0;                       // точки уже «прилетели»
         rotation = DEFAULT_ROTATE.slice();
@@ -722,13 +753,16 @@ export const globeScene = {
          честно пуст. Не «сколько точек на шаре»: повёрнутый к Тихому океану
          шар — это норма, а у категории «Астероиды» обе записи вообще без
          координат и живут в списке «не на карте» — это показанный контент,
-         а не пустота. */
+         а не пустота.
+
+         Ноль по отбору тоже не авария: с приходом финдера у посетителя есть
+         поиск, и «ничего не нашлось» — законный ответ экрана, а не поломка
+         сцены (канон кита: легально пустые состояния зелёные). */
       health() {
         const total = items.length;
         if (!total) return { ok: false, detail: "список избранного пуст" };
         if (!width || !height) return { ok: false, detail: "холст без размера" };
         const passing = items.filter(filterPasses);
-        if (!passing.length) return { ok: false, detail: "фильтр не оставил ни одного объекта" };
         const onGlobe = passing.filter((it) => !isOffMap(it)).length;
         return { ok: true, detail: "к показу " + passing.length + " из " + total +
           " (на шаре " + onGlobe + ", списком «не на карте» " + (passing.length - onGlobe) +

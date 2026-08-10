@@ -13,7 +13,8 @@
 import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=6";
+  FINDER_SEARCH, normQuery, matchesQuery,
+} from "./shared.js?v=10";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -52,11 +53,29 @@ export const worldScene = {
       type: "range", min: 2, max: 8, step: 0.2, unit: " px", default: 4.6 },
   ],
 
+  /* Отбор ушёл в финдер ядра; чипы «глобус / карта» остались на сцене —
+     это переключение вида, а не отбор: в панели оно оказалось бы за два
+     касания вместо одного и перестало быть видимым. */
+  finder: {
+    search: FINDER_SEARCH,
+    filters: [
+      { key: "status", label: { ru: "Судьба имени", en: "Fate of the name", zh: "名称的命运" },
+        options: (c) => STATUS.map((s) => [s.key, c.app.t(s.t)]) },
+      // свод на 93 % — бывший СССР и Европа: без ядра видно всё прочее
+      { key: "ussr", label: { ru: "Бывший СССР", en: "Former USSR", zh: "前苏联" },
+        options: (c) => [["hide", c.app.t("world.noUssr")]] },
+    ],
+  },
+
   opt: Object.assign({}, DEFAULTS),
 
   applySettings(values) {
     this.opt = Object.assign({}, DEFAULTS, values || {});
     if (this.api) this.api.applyOptions();
+  },
+
+  applyFinder(state) {
+    return this.api ? this.api.applyFind(state) : undefined;
   },
 
   mount(el, ctx) {
@@ -79,8 +98,7 @@ export const worldScene = {
         '<button class="m39-chip kiosk-target" type="button" data-mode="map"></button>' +
       "</nav>" +
       '<aside class="m39-legend"></aside>' +
-      '<div class="m39-offhost"></div>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
+      '<div class="m39-offhost"></div>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -93,8 +111,11 @@ export const worldScene = {
     let tilt = DEFAULT_ROTATE[1];
     let panY = 0;
     let scaleFactor = DEFAULT_SCALE;
-    let filter = "all";
+    /* Отбор держит ядро (финдер), сцена хранит только зеркало последнего
+       applyFinder — своей копии состояния у неё нет. */
+    let status = null;
     let hideUssr = false;
+    let query = "";
     let mode = "globe";
     let morph = null;
     let selected = null;
@@ -156,8 +177,12 @@ export const worldScene = {
       return d3.geoDistance([lng, lat], [-rl, -rp]) < (clipAngle() * Math.PI) / 180;
     };
 
-    const passes = (p) => (filter === "all" || p.status === filter)
-      && !(hideUssr && p.continent === "Бывший СССР");
+    /* Канон порядка: отбор → поиск. Сортировки у карты нет — на плоскости
+       точек её нечем показать, а чип, ничего не меняющий на экране, считался
+       бы критерием на счётчике финдера. */
+    const passes = (p) => (!status || p.status === status)
+      && !(hideUssr && p.continent === "Бывший СССР")
+      && matchesQuery(p, query);
 
     /* ---- отрисовка ---- */
     function render() {
@@ -283,8 +308,6 @@ export const worldScene = {
     /* ---- панели ---- */
     const sub = el.querySelector(".m39-sub");
     const legend = el.querySelector(".m39-legend");
-    const chips = el.querySelector(".m39-chips");
-    const filters = el.querySelector(".m39-filters");
     const modes = el.querySelector(".m39-modes");
     const offhost = el.querySelector(".m39-offhost");
 
@@ -299,8 +322,6 @@ export const worldScene = {
 
     const offmap = createOffmap(offhost, app, corpus.records, { onPick: showCard });
 
-    let ussrToggle = null;
-
     function buildLegend() {
       legend.replaceChildren();
       for (const s of STATUS) {
@@ -311,42 +332,6 @@ export const worldScene = {
           esc(app.t(s.t)) + ' <span class="m39-legend__num">' + nf.format(n) + "</span>";
         legend.appendChild(row);
       }
-    }
-
-    function buildFilters() {
-      chips.replaceChildren();
-      const opts = [["all", app.t("status.all")], ...STATUS.map((s) => [s.key, app.t(s.t)])];
-      for (const [key, label] of opts) {
-        const b = document.createElement("button");
-        b.type = "button";
-        b.className = "m39-chip kiosk-target";
-        b.textContent = label;
-        b.setAttribute("aria-pressed", String(key === filter));
-        b.addEventListener("click", () => {
-          filter = key;
-          showCard(null);
-          [...chips.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
-          buildLegend();
-          touched();
-        });
-        chips.appendChild(b);
-      }
-
-      // свод на 93 % состоит из бывшего СССР и Европы: без ядра видно всё прочее
-      if (ussrToggle) ussrToggle.remove();
-      ussrToggle = document.createElement("button");
-      ussrToggle.type = "button";
-      ussrToggle.className = "m39-chip m39-chip--toggle kiosk-target";
-      ussrToggle.textContent = app.t("world.noUssr");
-      ussrToggle.setAttribute("aria-pressed", String(hideUssr));
-      ussrToggle.addEventListener("click", () => {
-        hideUssr = !hideUssr;
-        ussrToggle.setAttribute("aria-pressed", String(hideUssr));
-        showCard(null);
-        buildLegend();
-        touched();
-      });
-      filters.appendChild(ussrToggle);
     }
 
     function syncModeUI() {
@@ -387,7 +372,6 @@ export const worldScene = {
       });
       if (hint) hint.setLabel(app.t("world.hint"));
       syncModeUI();
-      buildFilters();
       buildLegend();
       offmap.setLang();
       if (selected) card.open(objectCardHtml(app, ctx, selected));
@@ -470,9 +454,34 @@ export const worldScene = {
         if (want !== mode) setMode(want, true);
         invalidate();
       },
+      /* Один вход на любое изменение отбора — и точки, и картотека «не на
+         карте», и легенда пересчитываются одним и тем же предикатом passes.
+         Разведи их — и чип «не на карте · 109» начнёт спорить со строкой
+         «3 из 1203» в панели. */
+      applyFind({ query: q, filters }) {
+        query = normQuery(q);
+        status = (filters && filters.status) || null;
+        hideUssr = !!(filters && filters.ussr === "hide");
+        showCard(null);
+        offmap.setFilter(passes);
+        buildLegend();
+        invalidate();
+        /* «N из M» считаем по всему своду, а не по точкам на карте: часть
+           записей живёт в картотеке «не на карте», и посетитель, у которого
+           все совпадения там, иначе прочёл бы «0» при полной картотеке. */
+        return { shown: corpus.records.filter(passes).length,
+          total: corpus.records.length };
+      },
+      /* Зеркало отбора чистим и здесь. Ядро гасит финдер ДО reset() и зовёт
+         applyFinder заново, так что в штатном пути это дубль; но reset()
+         дёргают и в обход финдера (оператор, стенд), и сцена, оставшаяся с
+         чужим отбором при пустой панели, — ровно та загадка без объяснения,
+         на которой кит поймал возврат 1.17.4. */
       reset() {
-        filter = "all";
+        status = null;
         hideUssr = false;
+        query = "";
+        offmap.setFilter(null);
         scaleFactor = DEFAULT_SCALE;
         tilt = DEFAULT_ROTATE[1];
         panY = 0;
@@ -480,7 +489,6 @@ export const worldScene = {
         showCard(null);
         offmap.close();
         setMode(scene.opt.mode === "map" ? "map" : "globe", true);
-        buildFilters();
         buildLegend();
         if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         applyProjection();
@@ -507,8 +515,12 @@ export const worldScene = {
         const total = points.length;
         if (!total) return { ok: false, detail: "корпус пуст: ни одной точки" };
         if (!width || !height) return { ok: false, detail: "холст без размера" };
+        /* Ноль при отборе — законное состояние, а не авария: «утрачено» без
+           бывшего СССР честно пусто, и на экране остаются карта, легенда и
+           картотека «не на карте». */
         return { ok: true, detail: "точек в своде " + total +
-          ", при текущем фильтре " + points.filter(passes).length +
+          ", при текущем отборе " + points.filter(passes).length +
+          " (плюс не на карте " + offmap.count() + ")" +
           ", в последнем кадре " + lastDrawn };
       },
       destroy() {

@@ -63,6 +63,48 @@ export const isOffMap = (rec) => rec.geolocated === false
   || rec.lat === null || rec.lat === undefined
   || rec.lng === null || rec.lng === undefined;
 
+/* ─── финдер: поиск ─────────────────────────────────────────────────────
+ * Одна нормализация на все сцены — иначе «Ёлкино» нашлось бы в картотеке и
+ * не нашлось на шаре. Свод писан по-русски, посетитель набирает на киоскной
+ * клавиатуре: ё/е и регистр расходятся постоянно, и это не его ошибка.
+ *
+ * desc в поиск НЕ берём: там свободный текст музейных материалов с опечатками
+ * источника («Отыркт 29 ноября…»), совпадения по нему объяснить посетителю
+ * нечем (решение кита, сопроводиловка финдера). */
+export const normQuery = (s) => String(s == null ? "" : s)
+  .toLowerCase().replace(/ё/g, "е").replace(/\s+/g, " ").trim();
+
+/* Поля объявляем один раз: три сцены свода ищут одинаково, и разъехавшиеся
+   декларации дали бы разный ответ на один и тот же запрос.
+
+   name_orig ищется вместе с name и объявлен подписью «Название»: это второе
+   имя того же объекта, и карточка показывает оба. Без него латиница не
+   ищется вовсе — «Rue Lenine» не нашлось бы ни по одному полю, а именно на
+   латинские написания опирается китайский режим (пиньинь-IME не делаем).
+
+   name_short — по той же причине: на шаре избранного подписана именно эта
+   форма («ЛЭТИ»), и посетитель наберёт то, что видит глазами. Полей, которых
+   в наборе нет, поиск просто не касается. */
+export const SEARCH_FIELDS = ["name", "name_orig", "name_short", "city", "country"];
+
+export const FINDER_SEARCH = {
+  fields: [
+    { key: "name", label: { ru: "Название", en: "Name", zh: "名称" } },
+    { key: "city", label: { ru: "Город", en: "City", zh: "城市" } },
+    { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" } },
+  ],
+};
+
+/* Пустой запрос пропускает всё: «ничего не введено» — это не «ничего не
+   найдено», и подменять одно другим значит показать пустой экран на входе. */
+export function matchesQuery(rec, q) {
+  if (!q) return true;
+  for (const f of SEARCH_FIELDS) {
+    if (rec[f] && normQuery(rec[f]).includes(q)) return true;
+  }
+  return false;
+}
+
 export const nf = new Intl.NumberFormat("ru-RU");
 
 export function esc(s) {
@@ -270,7 +312,12 @@ export function createCardPanel(host, app, onClose) {
  * нет вовсе. Они не пропадают молча — открываются полноценной картотекой с
  * теми же карточками и перегруппировкой по типу, судьбе имени и стране. */
 export function createOffmap(host, app, records, opts) {
-  const off = records.filter(isOffMap);
+  const all = records.filter(isOffMap);
+  /* Отбор финдера действует и здесь. Иначе чип «не на карте · 109» спорил бы
+     со строкой «3 из 1203» в панели, и посетителю пришлось бы гадать, какое
+     из двух чисел про его запрос. */
+  let pass = () => true;
+  let off = all;
   const countryKey = (opts && opts.countryKey) || "offmap.byCountry";
 
   const toggle = document.createElement("button");
@@ -393,6 +440,16 @@ export function createOffmap(host, app, records, opts) {
     renderWall();
   }
 
+  /* Отбор сменился — пересобрать список и числа. Пустой отбор прячет чип
+     целиком: чип с нулём обещает картотеку, которой нет. */
+  function setFilter(fn) {
+    pass = typeof fn === "function" ? fn : () => true;
+    off = all.filter(pass);
+    toggle.hidden = !off.length;
+    if (!off.length) setOpen(false);
+    retext();
+  }
+
   const onToggle = () => setOpen(panel.hidden);
   const onClose = () => setOpen(false);
   const onBackdrop = (e) => { if (e.target === panel) setOpen(false); };
@@ -404,8 +461,10 @@ export function createOffmap(host, app, records, opts) {
   retext();
 
   return {
-    count: off.length,
+    count: () => off.length,
+    total: all.length,
     close: () => setOpen(false),
+    setFilter,
     setLang: retext,
     destroy() {
       setOpen(false);
