@@ -15,8 +15,8 @@
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
   createHint,
-} from "./shared.js?v=37";
-import { createMapCore } from "./map-core.js?v=37";
+} from "./shared.js?v=40";
+import { createMapCore } from "./map-core.js?v=40";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;

@@ -24,11 +24,11 @@ import {
   createCard, cssColor, preloadThumbs, statusColor,
   createHint,
   fillTextIfFits,
-} from "./shared.js?v=37";
+} from "./shared.js?v=40";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
-const STRIP_H = 74;
+export const STRIP_H = 74;
 const STRIP_PAD = 28;
 const FRICTION = 0.93;
 const MIN_VELOCITY = 0.4;
