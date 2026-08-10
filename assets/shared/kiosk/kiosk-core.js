@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.15.0";
+  var VERSION = "1.15.6";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -154,7 +154,10 @@
       "finder.filters": "Отбор",
       "finder.sorts": "Сортировка",
       "finder.search": "Поиск",
-      "finder.of": "из"
+      "finder.of": "из",
+      "finder.clear": "Стереть",
+      "finder.space": "Пробел",
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
     },
     en: {
       "standby.call": "Touch the screen",
@@ -168,7 +171,10 @@
       "finder.filters": "Filter",
       "finder.sorts": "Sort",
       "finder.search": "Search",
-      "finder.of": "of"
+      "finder.of": "of",
+      "finder.clear": "Clear",
+      "finder.space": "Space",
+      "finder.zh": "Search runs over Russian and Latin names"
     },
     zh: {
       "standby.call": "请触摸屏幕",
@@ -182,7 +188,10 @@
       "finder.filters": "Отбор",
       "finder.sorts": "Сортировка",
       "finder.search": "Поиск",
-      "finder.of": "из"
+      "finder.of": "из",
+      "finder.clear": "Стереть",
+      "finder.space": "Пробел",
+      "finder.zh": "Поиск ведётся по названиям на русском и латиницей"
     }
   };
 
@@ -2538,12 +2547,81 @@
     return this;
   };
 
+  /* ------------------------------------------------ экранная клавиатура
+   * Своя, без библиотеки: «вендорена» так выполняется тривиально, а тач-
+   * стандарт и брендовые шрифты пришлось бы навязывать чужому компоненту
+   * всё равно. Раскладки RU/EN; пиньинь-IME по решению координатора не
+   * делаем — в ZH-интерфейсе ищут теми же полями, о чём панель говорит
+   * прямо (канон данных — ru/латиница).
+   *
+   * Поле ввода — НЕ <input>: на тач-панели он поднял бы системную
+   * клавиатуру поверх нашей. Показываем текст сами. */
+  var KB = {
+    ru: ["йцукенгшщзхъ", "фывапролджэ", "ячсмитьбю"],
+    en: ["qwertyuiop", "asdfghjkl", "zxcvbnm"]
+  };
+
+  KioskApp.prototype._buildKeyboard = function (host) {
+    var self = this, doc = document;
+    var wrap = doc.createElement("div");
+    /* kiosk-scroll — по собственному правилу кита: у контейнера с
+     * overflow полоса обязана быть видимой. Прокрутка тут вырожденный
+     * случай (экран уже клавиатуры), но правило одно для всех. */
+    wrap.className = "kiosk-kbd kiosk-scroll";
+    wrap.setAttribute("data-layout", /[а-яё]/i.test(this.lang) || this.lang === "ru" ? "ru" : "ru");
+
+    function render() {
+      var lay = wrap.getAttribute("data-layout");
+      var rows = KB[lay] || KB.ru;
+      var html = rows.map(function (r) {
+        return '<div class="kiosk-kbd__row">' + r.split("").map(function (ch) {
+          return '<button type="button" class="kiosk-kbd__key kiosk-touch" data-ch="' +
+            esc(ch) + '">' + esc(ch) + "</button>";
+        }).join("") + "</div>";
+      }).join("");
+      html += '<div class="kiosk-kbd__row">' +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="lay">' +
+        (lay === "ru" ? "ENG" : "РУС") + "</button>" +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--space kiosk-touch" data-act="space">' +
+        esc(self.t("finder.space")) + "</button>" +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="back">⌫</button>' +
+        '<button type="button" class="kiosk-kbd__key kiosk-kbd__key--wide kiosk-touch" data-act="clear">' +
+        esc(self.t("finder.clear")) + "</button></div>";
+      wrap.innerHTML = html;
+    }
+    render();
+
+    wrap.addEventListener("click", function (e) {
+      var b = e.target.closest("[data-ch],[data-act]");
+      if (!b) return;
+      var q = self.finderState().query || "";
+      var act = b.getAttribute("data-act");
+      if (act === "lay") {
+        wrap.setAttribute("data-layout", wrap.getAttribute("data-layout") === "ru" ? "en" : "ru");
+        render();
+        return;
+      }
+      if (act === "space") q += " ";
+      else if (act === "back") q = q.slice(0, -1);
+      else if (act === "clear") q = "";
+      else q += b.getAttribute("data-ch");
+      self.setFinder({ query: q });
+      self._renderFinder();
+    });
+
+    host.appendChild(wrap);
+    return wrap;
+  };
+
   KioskApp.prototype._buildFinderPanel = function () {
     var self = this, doc = document;
     var el = doc.createElement("aside");
     el.className = "kiosk-finder";
     el.hidden = true;
     el.innerHTML =
+      '<div class="kiosk-finder__q"><span class="kiosk-finder__q-text"></span>' +
+      '<span class="kiosk-finder__caret" aria-hidden="true"></span></div>' +
+      '<div class="kiosk-finder__note"></div>' +
       '<div class="kiosk-finder__body kiosk-scroll"></div>' +
       '<footer class="kiosk-finder__foot">' +
       '<button type="button" class="kiosk-finder__reset kiosk-touch">' +
@@ -2558,6 +2636,8 @@
       if (el.contains(e.target) || (self._els.finder && self._els.finder.contains(e.target))) return;
       self.openFinder(false);
     }, { passive: true });
+    /* Клавиатура строится один раз вместе с панелью: сцены ей не владеют. */
+    if (this.finderSpec() && this.finderSpec().search) this._buildKeyboard(el);
     this._els.root.appendChild(el);
     this._els.finderPanel = el;
   };
@@ -2609,6 +2689,16 @@
       }
       self._renderFinder();
     };
+
+    var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
+    if (qEl) qEl.textContent = st.query || "";
+    var note = this._els.finderPanel.querySelector(".kiosk-finder__note");
+    if (note) {
+      /* Пояснение показываем ТОЛЬКО в китайском интерфейсе: там оно
+       * отвечает на живой вопрос «почему клавиатура не моя». */
+      note.textContent = this.lang === "zh" ? this.t("finder.zh") : "";
+      note.hidden = this.lang !== "zh";
+    }
 
     var count = this._els.finderPanel.querySelector(".kiosk-finder__count");
     var r = this._finderResult;

@@ -122,18 +122,28 @@ export const cardsScene = {
       `data-kind="${k}">${t("cards.filter." + k)}</button>`
     ).join("");
 
-    const list = this._filter === "all"
-      ? this._items
-      : this._items.filter((it) => it.kind === this._filter);
+    const q = ((this._find || {}).query || "").trim().toLowerCase();
+    const list = this._items.filter((it) => {
+      if (this._filter !== "all" && it.kind !== this._filter) return false;
+      if (q && String(it.title).toLowerCase().indexOf(q) < 0) return false;
+      return true;
+    });
 
-    this._shown = list.length;   /* сцена сама сообщает, сколько осталось */
+    const sort = (this._find || {}).sort;
+    const rows = sort === "az"
+      ? list.slice().sort((a, b) => String(a.title).localeCompare(String(b.title)))
+      : sort === "rev"
+        ? list.slice().reverse()
+        : list;
+
+    this._shown = rows.length;   /* сцена сама сообщает, сколько осталось */
 
     this._stateEl.textContent = t("cards.state", {
       filter: t("cards.filter." + this._filter),
-      shown: list.length,
+      shown: rows.length,
       total: this._items.length,
     });
-    this._gridEl.innerHTML = list.map((it) =>
+    this._gridEl.innerHTML = rows.map((it) =>
       '<article class="demo-card">' +
       `<div class="demo-card__kind">${it.kind}</div>` +
       `<h3 class="demo-card__title">${it.title}</h3>` +
