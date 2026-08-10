@@ -24,7 +24,9 @@ import {
   createCard, cssColor, preloadThumbs, statusColor,
   createHint,
   fillTextIfFits,
-} from "./shared.js?v=40";
+  FINDER_FIELDS, countryOptions, decadeOptions,
+  APP, finderApply, finderSort, setCorpus, statusOptions,
+} from "./shared.js?v=44";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
@@ -38,7 +40,19 @@ const YEAR_MIN_SLOT = 16;
 const TAP_MIN_SLOT = 26;
 const DOUBLE_TAP_MS = 320;
 const TAP_THRESHOLD = 8;
-const MODES = ["scrubber", "zoom", "decades"];
+/* Режимов два, а было три. «Десятилетия» СНЯТ вместе с переездом отбора по
+ * декаде в финдер (утверждено координатором 2026-08-10, вариант 1).
+ *
+ * Почему снят, а не оставлен рядом: чипы декад делали `_all.filter(...)`,
+ * то есть это был ОТБОР, а не вид, и по канону отбор переезжает в панель.
+ * После переезда фильтр действует во ВСЕХ режимах — посетителю лучше, — и у
+ * режима не осталось ничего своего: он превратился бы в «Скраббер» с
+ * наложенным фильтром. Группировка по декадам при этом никуда не делась,
+ * она читается на самой оси лет.
+ *
+ * В протокол приёмки внесена строка «где режим „Десятилетия“» — это точка
+ * возврата решения, если на живом экране оно не понравится. */
+const MODES = ["scrubber", "zoom"];
 
 export const scaleScene = {
   id: "scale",
@@ -55,12 +69,32 @@ export const scaleScene = {
     custom: preloadThumbs,
   },
 
+  /* Финдер. Декада здесь — полноценный фильтр, переехавший из чипов режима.
+   * Сортировка «по высоте» объявлена потому, что ось высот — главный герой
+   * сцены: рейтинг вместо хронологии это второй честный взгляд на те же
+   * данные, и эффект максимально видимый. */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+      { key: "decade", label: { ru: "Десятилетие", en: "Decade" },
+        options: function () { return decadeOptions(); } },
+    ],
+    sorts: [
+      { key: "year", label: { ru: "По годам", en: "By year" } },
+      { key: "height", label: { ru: "По высоте", en: "By height" } },
+    ],
+  },
+
   settings: [
     { key: "mode", label: { ru: "Способ промотки", en: "Scrolling" },
       type: "choice", default: "scrubber",
       options: [{ value: "scrubber", label: { ru: "Скраббер", en: "Scrubber" } },
                 { value: "zoom", label: { ru: "Зум", en: "Zoom" } },
-                { value: "decades", label: { ru: "Десятилетия", en: "Decades" } }] },
+                ] },
     { key: "slotW", label: { ru: "Ширина слота", en: "Slot width" },
       type: "range", min: 48, max: 160, step: 4, unit: " px", default: MIN_SLOT_W },
     { key: "showStrip", label: { ru: "Полоса-скраббер", en: "Scrubber strip" },
@@ -103,11 +137,13 @@ export const scaleScene = {
     this._hint = createHint(this._stage, "swipe", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._layout(); });
 
-    this._items = ctx.data.monuments.items || [];
+    this._src = ctx.data.monuments.items || [];
+    this._items = this._src;
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._heights = ctx.data.heights || {};
-    this._all = byYear(this._items);
+    this._applyFind();
     this._selected = -1;
-    this._view = { offset: 0, velocity: 0, slotZoom: 0, fitSlot: 0, decade: null };
+    this._view = { offset: 0, velocity: 0, slotZoom: 0, fitSlot: 0 };
     this._placed = [];
 
     this._bindPointer();
@@ -155,7 +191,6 @@ export const scaleScene = {
     this._view.offset = 0;
     this._view.velocity = 0;
     this._view.slotZoom = 0;
-    this._view.decade = null;
     this._buildControls();
     this._layout();
   },
@@ -185,6 +220,34 @@ export const scaleScene = {
     return { ok: true, detail: `фигур ${this._placed.length}, с габаритами ${measured}, буфер ${buf.detail}` };
   },
 
+  /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск →
+   * сортировка. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    const sort = (this._find || {}).sort;
+    this._all = sort === "height"
+      ? finderSort(this._items, "height", this._heights)
+          .map((m, k) => ({ m, i: (this._src || []).indexOf(m), year: m.year || 0, k }))
+      : byYear(this._items).map((it) => ({ ...it, i: (this._src || []).indexOf(it.m) }));
+    /* _applyFind зовётся и из mount(), ДО того как создан _view: порядок в
+     * mount менять рискованнее, чем проверить здесь. Промотку сбрасываем —
+     * при смене набора старое смещение указывает в никуда. */
+    if (this._view) { this._view.offset = 0; this._view.velocity = 0; }
+    /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
+     * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
+     * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
+     * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
+     * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
+    if (this._host && !this._host.width) this._host.measure();
+    if (this._host && this._host.width) this._layout();
+  },
+
   applySettings(values) {
     this._cfg = Object.assign(
       { mode: "scrubber", slotW: MIN_SLOT_W, showStrip: true, showGuides: true, showHuman: true },
@@ -210,9 +273,9 @@ export const scaleScene = {
       this._maxTotal = Math.max(this._maxTotal, hh.statue + hh.pedestal);
     }
 
-    const items = (this._mode === "decades" && this._view.decade !== null)
-      ? this._all.filter((it) => Math.floor(it.year / 10) * 10 === this._view.decade)
-      : this._all;
+    /* Набор задаёт финдер, а не режим: декада переехала в панель и теперь
+     * действует в обоих режимах. */
+    const items = this._all;
     if (!items.length) return;
 
     const strip = this._hasStrip();
@@ -229,8 +292,6 @@ export const scaleScene = {
       if (!this._view.slotZoom) this._view.slotZoom = this._view.fitSlot;
       this._view.slotZoom = Math.min(SLOT_MAX, Math.max(this._view.fitSlot, this._view.slotZoom));
       slot = this._view.slotZoom;
-    } else if (this._mode === "decades") {
-      slot = Math.max(30, Math.min(this._cfg.slotW * 1.6, this._view.fitSlot));
     } else {
       slot = Math.max(this._cfg.slotW, this._view.fitSlot);
     }
@@ -307,18 +368,6 @@ export const scaleScene = {
       this._subEl2.innerHTML =
         btn(app.t("mode.whole"), "zoom", "fit", atFit) +
         btn(app.t("mode.close"), "zoom", "in", !atFit);
-    } else if (this._mode === "decades") {
-      const counts = new Map();
-      for (const it of this._all) {
-        const d = Math.floor(it.year / 10) * 10;
-        counts.set(d, (counts.get(d) || 0) + 1);
-      }
-      let html = btn(app.t("mode.all"), "decade", "all",
-        this._view.decade === null, this._all.length);
-      for (const d of [...counts.keys()].sort((a, b) => a - b)) {
-        html += btn(d + "-е", "decade", String(d), this._view.decade === d, counts.get(d));
-      }
-      this._subEl2.innerHTML = html;
     } else {
       this._subEl2.innerHTML = "";
     }
@@ -331,14 +380,9 @@ export const scaleScene = {
       this._view.offset = 0;
       this._view.velocity = 0;
       this._view.slotZoom = 0;
-      this._view.decade = null;
       if (this._card) this._card.close();
     } else if (act === "zoom") {
       this._setSlot(val === "fit" ? this._view.fitSlot : SLOT_MAX * 0.7, this._host.width / 2);
-    } else if (act === "decade") {
-      this._view.decade = val === "all" ? null : Number(val);
-      this._view.offset = 0;
-      if (this._card) this._card.close();
     }
     this._buildControls();
     this._layout();

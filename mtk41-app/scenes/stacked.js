@@ -13,9 +13,10 @@
 import {
   DATA, FALLBACK_HEIGHT, PALETTE, byYear, createCanvasHost, createCard,
   cssColor, plural, preloadThumbs, statusColor,
-  createHint,
+  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
+  APP, finderApply, finderSort, setCorpus, statusOptions,
   fillTextIfFits,
-} from "./shared.js?v=40";
+} from "./shared.js?v=44";
 
 const BANDS = [
   { id: "small", maxM: 8 },
@@ -40,6 +41,18 @@ export const stackedScene = {
       heights: DATA.heights,
     },
     custom: preloadThumbs,
+  },
+
+  /* Финдер: отбор и поиск. Сортировка объявляется только там, где у
+   * порядка есть видимый эффект (см. декларацию, утверждённую 2026-08-10). */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
   },
 
   settings: [
@@ -79,7 +92,9 @@ export const stackedScene = {
     this._hint = createHint(this._stage, "swipe", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._layout(); });
 
-    this._items = ctx.data.monuments.items || [];
+    this._src = ctx.data.monuments.items || [];
+    this._items = this._src;
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._heights = ctx.data.heights || {};
     this._selected = -1;
     this._placed = [];
@@ -139,6 +154,24 @@ export const stackedScene = {
     const per = BANDS.map((b) =>
       b.id + ": " + this._placed.filter((p) => p.band === b.id).length);
     return { ok: true, detail: `фигур ${this._placed.length} (${per.join(", ")}), буфер ${buf.detail}` };
+  },
+
+  /* Отбор целиком, при любом изменении. {shown,total} возвращаем: без него
+   * панель не объяснит, почему на сцене поредело. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
+     * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
+     * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
+     * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
+     * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
+    if (this._host && !this._host.width) this._host.measure();
+    this._layout();
   },
 
   applySettings(values) {

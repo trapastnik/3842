@@ -14,9 +14,10 @@
  * Здесь — жизненный цикл сцены, камера, ввод и отрисовка. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
-  createHint,
-} from "./shared.js?v=40";
-import { createMapCore } from "./map-core.js?v=40";
+  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
+  APP, finderApply, finderSort, setCorpus, statusOptions,
+} from "./shared.js?v=44";
+import { createMapCore } from "./map-core.js?v=44";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -46,6 +47,18 @@ export const mapScene = {
 
   /* Двенадцать позиций класса А из SETTINGS-INVENTORY → «МТК 41». Порядок
    * и дефолты сохранены как в описи, чтобы сверка на приёмке была прямой. */
+  /* Финдер: отбор и поиск. Сортировка объявляется только там, где у
+   * порядка есть видимый эффект (см. декларацию, утверждённую 2026-08-10). */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
+  },
+
   settings: [
     { key: "view", label: { ru: "Стартовый вид", en: "Start view" },
       type: "choice", default: "eurasia",
@@ -109,8 +122,12 @@ export const mapScene = {
     this._hint = createHint(this._stage, "drag", "hint." + this.id, ctx.app);
     this._host.observe(() => { this._resized(); });
 
-    this._items = (ctx.data.monuments.items || [])
+    /* На карте живут только объекты с координатами — это не отбор
+     * посетителя, а условие самой сцены, поэтому фильтруется ДО финдера. */
+    this._src = (ctx.data.monuments.items || [])
       .filter((m) => typeof m.lat === "number" && typeof m.lng === "number");
+    this._items = this._src;
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._geo = ctx.data.countries || null;
     this._selected = -1;
     this._map = { zoom: 0.8, camX: 0, camY: 0, worldW: 0, worldH: 0 };
@@ -215,6 +232,27 @@ export const mapScene = {
     if (!this._clusters.length) return { ok: false, detail: "на карте не построено ни одного кружка" };
     const shown = this._clusters.reduce((a, c) => a + c.count, 0);
     return { ok: true, detail: `точек ${this._items.length}, в кружках ${shown}, буфер ${buf.detail}` };
+  },
+
+  /* Отбор целиком, при любом изменении. {shown,total} возвращаем: без него
+   * панель не объяснит, почему на сцене поредело. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
+     * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
+     * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
+     * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
+     * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
+    if (this._host && !this._host.width) this._host.measure();
+    if (this._core && this._host && this._host.width) {
+      this._built = false;              // дерево кластеров строится заново
+      this._rebuild();
+    }
   },
 
   applySettings(values) {

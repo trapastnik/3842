@@ -11,8 +11,9 @@
  * экрана — иначе при разных отступах последние десятилетия вываливались. */
 import {
   DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
-  createHint,
-} from "./shared.js?v=40";
+  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
+  APP, finderApply, finderSort, setCorpus, statusOptions,
+} from "./shared.js?v=44";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
@@ -45,6 +46,18 @@ export const timelineScene = {
       heights: DATA.heights,
     },
     custom: preloadThumbs,
+  },
+
+  /* Финдер: отбор и поиск. Сортировка объявляется только там, где у
+   * порядка есть видимый эффект (см. декларацию, утверждённую 2026-08-10). */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
   },
 
   settings: [
@@ -95,7 +108,9 @@ export const timelineScene = {
 
     /* Только датированные: у трёх записей года нет вовсе, и на оси времени
      * им не место — они видны в других сценах. */
-    this._items = (ctx.data.monuments.items || []).filter((m) => typeof m.year === "number");
+    this._src = (ctx.data.monuments.items || []).filter((m) => typeof m.year === "number");
+    this._items = this._src;
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._selected = -1;
     this._view = { zoom: 1, yearCenter: (YEAR_MIN + YEAR_MAX) / 2 };
     this._pads = { left: 80, right: 40 };
@@ -154,6 +169,24 @@ export const timelineScene = {
     if (!this._items.length) return { ok: false, detail: "ни одного датированного памятника" };
     if (!this._clusters.length) return { ok: false, detail: "на оси не построено ни одного кружка" };
     return { ok: true, detail: `датированных ${this._items.length}, кружков ${this._clusters.length}, буфер ${buf.detail}` };
+  },
+
+  /* Отбор целиком, при любом изменении. {shown,total} возвращаем: без него
+   * панель не объяснит, почему на сцене поредело. */
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
+     * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
+     * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
+     * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
+     * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
+    if (this._host && !this._host.width) this._host.measure();
+    this._rebuild();
   },
 
   applySettings(values) {

@@ -9,8 +9,9 @@
  * Томский. Здесь на это опираемся и повторно не чистим. */
 import {
   DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
-  createHint,
-} from "./shared.js?v=40";
+  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
+  APP, finderApply, finderSort, setCorpus, statusOptions,
+} from "./shared.js?v=44";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
@@ -42,6 +43,22 @@ export const authorsScene = {
       heights: DATA.heights,
     },
     custom: preloadThumbs,
+  },
+
+  /* Финдер. Объявляем только то, у чего есть ВИДИМЫЙ эффект: отбор виден
+   * всегда, сортировка — не везде (см. отказы в декларации). */
+  finder: {
+    search: { fields: FINDER_FIELDS },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate" },
+        options: function () { return statusOptions(APP()); } },
+      { key: "country", label: { ru: "Страна", en: "Country" },
+        options: function () { return countryOptions(); } },
+    ],
+    sorts: [
+      { key: "count", label: { ru: "По числу работ", en: "By works" } },
+      { key: "az", label: { ru: "По алфавиту", en: "A→Z" } },
+    ],
   },
 
   settings: [
@@ -86,8 +103,9 @@ export const authorsScene = {
     };
     this._cols.addEventListener("click", this._onTap);
 
-    this._items = ctx.data.monuments.items || [];
-    this._buckets = buildBuckets(this._items);
+    this._src = ctx.data.monuments.items || [];
+    setCorpus(ctx.data.monuments.items || [], ctx.app);
+    this._applyFind();
     this.applySettings(this._cfg || {});
   },
 
@@ -108,6 +126,29 @@ export const authorsScene = {
   },
 
   setLang() { this._render(); if (this._hint) this._hint.relabel(); },
+
+  applyFinder(find) {
+    this._find = find;
+    this._applyFind();
+    if (this._cols) this._render();
+    return { shown: this._items.length, total: (this._src || []).length };
+  },
+
+  _applyFind() {
+    this._items = finderApply(this._src || [], this._find);
+    this._buckets = buildBuckets(this._items);
+    /* buildBuckets отдаёт ОБЪЕКТ {named, anon}, а не массив: сортировать
+     * надо колонки внутри named. Первая редакция звала slice() на объекте и
+     * тихо превратила бы колонки в пустоту. Порядок по умолчанию — по числу
+     * работ, его строит сам buildBuckets. */
+    if ((this._find || {}).sort === "az") {
+      this._buckets = {
+        named: this._buckets.named.slice()
+          .sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""), "ru")),
+        anon: this._buckets.anon,
+      };
+    }
+  },
 
   healthcheck() {
     if (!this._cols) return { ok: true, detail: "не смонтирована" };
