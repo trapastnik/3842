@@ -30,7 +30,7 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=58";
+} from "./shared.js?v=59";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
@@ -158,8 +158,10 @@ export const timelineScene = {
   reset() {
     if (this._card) this._card.close();
     this._selected = -1;
-    /* Уровень иерархии — в стартовый: посетитель мог провалиться до года. */
-    this._view.zoom = 1;
+    /* Уровень иерархии — в стартовый: посетитель мог провалиться до года.
+     * Через кламп, как и жест: единственный путь к зуму мимо ограничителя
+     * стал бы единственным путём выехать за него (правило семьи, см. карту). */
+    this._view.zoom = this._clampZoom(1);
     this._view.yearCenter = (YEAR_MIN + YEAR_MAX) / 2;
   },
 
@@ -295,14 +297,31 @@ export const timelineScene = {
     else this._view.yearCenter = Math.min(hi, Math.max(lo, this._view.yearCenter));
   },
 
+  _clampZoom(z) {
+    return Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, z));
+  },
+
+  /* Поставить ГОД year под экранную координату x при зуме next.
+   *
+   * Не то же, что «зум в точку касания»: там год берётся из-под пальца в
+   * момент вызова, поэтому перенос двух пальцев сам себя гасит — что было под
+   * серединой, то под ней и остаётся. Здесь год приходит извне, запомненный в
+   * начале щипка, и потому едет вместе с руками: расстояние даёт зум,
+   * середина — сдвиг оси. Тот же приём, что на карте, только измерение одно. */
+  _placeAt(next, year, x) {
+    if (typeof year !== "number" || !isFinite(year)) return false;
+    this._view.zoom = this._clampZoom(next);
+    /* _pxPerYear читает уже НОВЫЙ зум — порядок строк тут значащий. */
+    this._view.yearCenter = year - (x - this._centerX()) / this._pxPerYear();
+    this._clampCamera();
+    return true;
+  },
+
   /* Зум в точку касания: год под пальцем остаётся на месте. */
   _zoomAt(next, x) {
-    const z = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, next));
+    const z = this._clampZoom(next);
     if (z === this._view.zoom) return;
-    const before = this._xToYear(x);
-    this._view.zoom = z;
-    this._view.yearCenter = before - (x - this._centerX()) / this._pxPerYear();
-    this._clampCamera();
+    this._placeAt(z, this._xToYear(x), x);
   },
 
   _level() {
@@ -369,7 +388,7 @@ export const timelineScene = {
   _bindPointer() {
     const c = this._host.canvas;
     const st = { down: false, drag: false, x0: 0, y0: 0, lx: 0,
-      pointers: new Map(), pinchDist: 0, pinchZoom: 1 };
+      pointers: new Map(), pinchDist: 0, pinchZoom: 1, pinchYear: null };
     this._pst = st;
 
     this._onDown = (e) => {
@@ -379,6 +398,8 @@ export const timelineScene = {
         const [a, b] = [...st.pointers.values()];
         st.pinchDist = Math.abs(a - b);
         st.pinchZoom = this._view.zoom;
+        /* Год-якорь запоминаем ОДИН раз, в начале щипка (см. _placeAt). */
+        st.pinchYear = this._xToYear((a + b) / 2);
         st.down = false;
         return;
       }
@@ -392,7 +413,10 @@ export const timelineScene = {
       if (st.pointers.has(e.pointerId)) st.pointers.set(e.pointerId, e.clientX - r.left);
       if (st.pointers.size === 2 && st.pinchDist > 0) {
         const [a, b] = [...st.pointers.values()];
-        this._zoomAt(st.pinchZoom * (Math.abs(a - b) / st.pinchDist), (a + b) / 2);
+        /* Через _placeAt, а не _zoomAt: последний выходит досрочно при
+         * неизменном расстоянии, и чистый перенос двумя пальцами не доезжал. */
+        this._placeAt(st.pinchZoom * (Math.abs(a - b) / st.pinchDist),
+          st.pinchYear, (a + b) / 2);
         st.drag = true;
         return;
       }
@@ -409,8 +433,27 @@ export const timelineScene = {
 
     this._onUp = (e) => {
       st.pointers.delete(e.pointerId);
-      if (st.pointers.size < 2) st.pinchDist = 0;
       try { c.releasePointerCapture(e.pointerId); } catch (err) { /* не критично */ }
+      if (st.pointers.size >= 2) return;          // щипок продолжается
+
+      if (st.pinchDist > 0) {
+        /* Из щипка вышел один палец — оставшийся продолжает вести ось.
+         * Раньше st.down гас на втором касании и не зажигался обратно, и ось
+         * стояла, пока не отпустят вторую руку. Тапа тут нет: жест был
+         * щипком, а не касанием. */
+        st.pinchDist = 0;
+        const rest = st.pointers.values().next().value;
+        if (typeof rest === "number") {
+          const r = c.getBoundingClientRect();
+          st.down = true; st.drag = true;
+          st.lx = st.x0 = rest + r.left;
+          st.y0 = e.clientY;
+        } else {
+          st.down = false;
+        }
+        return;
+      }
+
       if (st.down && !st.drag) {
         const r = c.getBoundingClientRect();
         this._tap(e.clientX - r.left, e.clientY - r.top);

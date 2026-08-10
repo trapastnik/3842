@@ -447,13 +447,22 @@
 /* ─── Шкала ───────────────────────────────────────────────────────────── */
 
 .m41-scale__stage { flex: 1 1 auto; min-height: 0; position: relative; }
+/* ТАЧ-ПОВЕДЕНИЕ КАНВ ЗДЕСЬ НЕ ЗАДАЁТСЯ. С ядра 1.22.1 его держит кит —
+   `html.kiosk-runtime .kiosk-stage canvas { touch-action: none }`, селектор
+   потомковый, все наши канвы лежат в `.kiosk-layer` внутри `.kiosk-stage` и
+   под него попадают. Свои копии стояли у четырёх канв; значение совпадало,
+   так что вреда не было, но два места для одного правила — это два места,
+   где оно может разойтись. Правило одно, и оно в ките.
+
+   Если сцене когда-нибудь понадобится ДРУГОЕ поведение (например `pan-y`),
+   простым `.m41-…__canvas { touch-action: … }` его не перебить: у правила
+   кита специфичность (0,2,2) против (0,1,0). Нужен либо селектор такой же
+   силы, либо переменная-опт-аут, которую кит заводит отдельной волной. */
 .m41-scale__canvas {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  /* Тач-экран: система не должна перехватывать драг и пинч у сцены. */
-  touch-action: none;
 }
 
 /* Органы сцены: размеры от --ui-scale и --touch-*, а не от --content-scale —
@@ -499,15 +508,15 @@
 
 /* ─── Карта ───────────────────────────────────────────────────────────── */
 .m41-map__stage { flex: 1 1 auto; min-height: 0; position: relative; }
-.m41-map__canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.m41-map__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* ─── Хронология ──────────────────────────────────────────────────────── */
 .m41-timeline__stage { flex: 1 1 auto; min-height: 0; position: relative; }
-.m41-timeline__canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.m41-timeline__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* ─── Три шкалы ───────────────────────────────────────────────────────── */
 .m41-stacked__stage { flex: 1 1 auto; min-height: 0; position: relative; }
-.m41-stacked__canvas { position: absolute; inset: 0; width: 100%; height: 100%; touch-action: none; }
+.m41-stacked__canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* ─── Призыв к жесту: развязка со своими контролами ────────────────────
    Кит ставит подсказку по центру снизу, отсчитывая от --chrome-bottom, то
