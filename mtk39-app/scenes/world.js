@@ -14,7 +14,7 @@ import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=13";
+} from "./shared.js?v=14";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;

@@ -7,7 +7,7 @@
 
 import {
   DATA, nf, esc, fitCanvas, drawScale, loop, sizeWatch, isOffMap,
-} from "./shared.js?v=13";
+} from "./shared.js?v=14";
 
 const FROM = 1900;
 const TO = 2025;
