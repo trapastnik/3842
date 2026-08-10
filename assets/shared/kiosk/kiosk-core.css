@@ -289,7 +289,6 @@ html.kiosk-runtime body {
   pointer-events: none;              /* касание идёт сцене, выход ловит window */
 }
 .kiosk-standby.is-on { opacity: 1; }
-.kiosk-standby[hidden] { display: none; }
 
 .kiosk-standby.is-bare { background: rgba(var(--amber-black-rgb, 0, 0, 0), 0.28); }
 .kiosk-standby.is-bare .kiosk-standby__canvas { display: none; }
@@ -533,7 +532,6 @@ html.kiosk-runtime body {
   font-family: "21 Cent", Georgia, serif;
 }
 .kiosk-service.is-open { transform: none; }
-.kiosk-service[hidden] { display: none; }
 
 .kiosk-service__head,
 .kiosk-service__foot {
@@ -853,4 +851,279 @@ html.kiosk-runtime body {
   .kiosk-nav__arrow,
   .kiosk-nav__dot i { transition-duration: 1ms !important; }
   .kiosk-standby__icon svg { animation: none; }
+}
+
+/* ---------------------------------------------------------------- финдер
+   Лупа стоит в ряду инструментов и потому уже учтена в замере зон хрома.
+   Точка — число активных критериев: «почему так мало объектов» не должно
+   быть загадкой для посетителя, который отбор уже забыл. */
+/* Полный вид кнопки, как у .kiosk-a11y. Классов kiosk-touch мало: они
+   задают минимумы таргета, а не облик — без этого блока лупа выходила
+   белым прямоугольником UA-кнопки с чёрным svg и раздувала --chrome-top
+   на 62 px, воруя их у сцены (возврат №1, блокер 1). */
+.kiosk-find {
+  position: relative;
+  width: var(--touch-primary, 96px);
+  height: var(--touch-primary, 96px);
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border-radius: 50%;
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.62);
+  color: rgba(var(--paper-rgb, 247, 249, 239), 0.7);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.kiosk-find.is-active { color: var(--brass, #D2B773); }
+.kiosk-find:active { background: rgba(var(--brass-rgb, 210, 183, 115), 0.22); }
+:root.a11y .kiosk-find {
+  background: var(--a11y-bg, #000);
+  border-color: var(--a11y-accent, #FFD24A);
+  color: var(--a11y-accent, #FFD24A);
+}
+.kiosk-find svg { width: 54%; height: 54%; }
+.kiosk-find__dot {
+  position: absolute;
+  top: 4%; right: 4%;
+  min-width: calc(30px * var(--ui-scale, 1));
+  height: calc(30px * var(--ui-scale, 1));
+  padding: 0 calc(7px * var(--ui-scale, 1));
+  border-radius: 999px;
+  display: none;
+  place-items: center;
+  background: var(--brass, #D2B773);
+  color: var(--amber-black, #000);
+  font: 600 calc(17px * var(--ui-scale, 1)) / calc(30px * var(--ui-scale, 1))
+        "20 Kopeek", "Courier New", monospace;
+}
+.kiosk-find.is-active .kiosk-find__dot { display: grid; }
+.kiosk-find.is-active .kiosk-find__dot::after { content: attr(data-n); }
+
+/* ЛЮБОЙ ЭЛЕМЕНТ КИТА С [hidden] ОБЯЗАН ИСЧЕЗАТЬ — правило на КЛАСС, а не
+   на экземпляр.
+   [hidden] — всего лишь атрибут, и собственный display его перебивает.
+   Это правило — СТРАХОВКА ПОВЕРХ ДЕВЯТИ ИСХОДНЫХ точечных: они лежат выше,
+   верны, живут с первых коммитов ядра и никуда не уходят. Закрывает оно
+   ровно то, чего они по природе не могут, — элементы, которых ещё нет, и
+   два финдеровских, для которых я точечное правило просто ЗАБЫЛ добавить
+   (отсюда три инстанса подряд: панель-кликоблокер, лупа на сцене без
+   финдера, строка поиска на сцене без поиска).
+   Смысл в том, чтобы не приходилось ПОМНИТЬ. Префикс класса вместо
+   перечисления; чужую разметку сцен не трогаем. */
+[class*="kiosk-"][hidden] { display: none !important; }
+
+.kiosk-finder {
+  position: absolute;
+  z-index: 46;
+  /* От верхней КРОМКИ, а не от зоны хрома: панель — оверлей поверх сцены,
+     и накрыть ряд языков ей можно, а вот навигацию внизу нельзя. При
+     ui 1.25–1.5 зоны хрома съедали столько, что панель оставалась 384 и
+     284 px высотой — клавиатуре нужно 398 и 477, и она уходила за низ
+     вместе со «стереть» и переключателем раскладки. */
+  top: var(--edge-safe, 64px);
+  right: var(--edge-safe, 64px);
+  /* ШИРИНА СЧИТАЕТСЯ ОТ КЛАВИАТУРЫ, а не выбрана на глаз: в самом длинном
+     ряду 12 клавиш, каждая по тач-стандарту не мельче 64 px, плюс зазоры и
+     поля — это 894 px при масштабе 1. С прежними 760 клавиши не помещались
+     и ВЫЛЕЗАЛИ ЗА ПАНЕЛЬ на 47 px (поймано стендом приёмки: две клавиши
+     оказывались ближе 64 px к кромке экрана).
+     max() нужен из-за того же тач-пола: при масштабе 0.75 клавиши остаются
+     64, а пропорциональная ширина ужалась бы до 705 — и они снова вылезли
+     бы. Пол по ширине идёт следом за полом по клавише. */
+  width: min(max(940px, calc(940px * var(--ui-scale, 1))),
+             calc(100% - 2 * var(--edge-safe, 64px)));
+  max-height: calc(100% - var(--edge-safe, 64px) - var(--chrome-bottom, 272px));
+  display: flex;
+  flex-direction: column;
+  border-radius: calc(28px * var(--ui-scale, 1));
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.94);
+  color: var(--paper, #F7F9EF);
+  opacity: 0;
+  transform: translateY(calc(-12px * var(--ui-scale, 1)));
+  transition: opacity .22s ease, transform .22s ease;
+}
+.kiosk-finder.is-open { opacity: 1; transform: none; }
+/* Гасит 300-мс окно между снятием is-open и hidden на ВСЕХ путях закрытия:
+   пробуждающий тап успевал доставить click в чип уже закрывающейся панели —
+   и отбор ложился на сцену ПОСЛЕ idle-сброса. */
+.kiosk-finder:not(.is-open) { pointer-events: none; }
+/* Клавиатура и служебные строки НЕ СЖИМАЮТСЯ, скроллится только тело с
+   чипами. Без этого flex ужимал клавиатуру до 155 px при нужных 318 —
+   рисовалось 2 ряда из 4, а «стереть», «⌫» и переключатель раскладки
+   оказывались за низом панели (возврат №1, блокер 2). */
+.kiosk-finder__q,
+.kiosk-finder__fields,
+.kiosk-finder__note,
+.kiosk-finder__foot { flex: none; }
+/* Клавиатура ужимается ПОСЛЕДНЕЙ и, если места всё равно нет, прокручивается
+   сама — но служебный ряд при этом липнет к низу и остаётся под пальцем.
+   Без этого при нехватке высоты недоступными оказывались ровно те клавиши,
+   без которых из поля не выйти: ⌫, «стереть», переключатель раскладки. */
+/* Клавиатура ужимается ПОСЛЕДНЕЙ: вес сжатия у тела чипов на два порядка
+   больше, поэтому высоту отдаёт сначала оно. */
+.kiosk-kbd { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+/* Аффорданс прокрутки: нижние 40 px гаснут — «ниже есть ещё». Маска
+   учитывает липкий ряд: он рисуется поверх и обрезки под собой не
+   показывает, поэтому затухание кончается ДО него. */
+.kiosk-kbd[data-scrollable="1"] {
+  -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 96px * var(--ui-scale, 1)),
+                                      rgba(0,0,0,.25) calc(100% - 72px * var(--ui-scale, 1)), #000 calc(100% - 68px * var(--ui-scale, 1)));
+          mask-image: linear-gradient(to bottom, #000 calc(100% - 96px * var(--ui-scale, 1)),
+                                      rgba(0,0,0,.25) calc(100% - 72px * var(--ui-scale, 1)), #000 calc(100% - 68px * var(--ui-scale, 1)));
+}
+.kiosk-kbd__row:last-child {
+  position: sticky;
+  bottom: calc(-1 * var(--ui-scale, 1) * 2px);
+  margin-bottom: 0;
+  background: rgba(var(--kiosk-ink-rgb, 12, 16, 18), 0.94);
+}
+.kiosk-finder__body {
+  /* basis AUTO, а не 0: в колонке автоматической высоты нулевой базис не
+     растёт — свободного места, которое можно раздать, там просто нет, и
+     тело оставалось щелью в 48 px (свой паддинг) при 304 px чипов. ВСЕ
+     чипы жили в прокрутке на любом масштабе, а центр первого по хит-тесту
+     попадал в футер. Регресс моего же фикса возврата №1.
+     Вес сжатия 100 — чтобы при нехватке высоты уступало тело, а не
+     клавиатура: без букв поиск невозможен, без видимых чипов — только
+     неудобен. */
+  flex: 1 100 auto;
+  min-height: 0;
+  padding: calc(24px * var(--ui-scale, 1));
+  overflow: auto;
+}
+.kiosk-finder__group { margin-bottom: calc(20px * var(--ui-scale, 1)); }
+.kiosk-finder__group h4 {
+  margin: 0 0 calc(12px * var(--ui-scale, 1));
+  font: 400 calc(20px * var(--ui-scale, 1)) / 1.2 "20 Kopeek", "Courier New", monospace;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--brass, #D2B773);
+}
+.kiosk-finder__chip {
+  /* И по ШИРИНЕ тоже: чип «—» с коротким текстом при уменьшенном масштабе
+     выходил уже 64 px — таргет мельче канона, хотя высота была в норме. */
+  min-width: max(64px, var(--touch-min, 64px));
+  min-height: max(64px, var(--touch-min, 64px));
+  padding: 0 calc(20px * var(--ui-scale, 1));
+  margin: 0 calc(8px * var(--ui-scale, 1)) calc(8px * var(--ui-scale, 1)) 0;
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: transparent;
+  color: var(--paper, #F7F9EF);
+  font-size: max(var(--type-min-ui, 22px), calc(22px * var(--ui-scale, 1)));
+}
+.kiosk-finder__chip.is-on {
+  background: var(--brass, #D2B773);
+  color: var(--amber-black, #000);
+}
+.kiosk-finder__foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--touch-gap, 16px);
+  padding: calc(16px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1));
+  border-top: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.22);
+}
+.kiosk-finder__reset {
+  min-height: max(64px, var(--touch-min, 64px));
+  padding: 0 calc(24px * var(--ui-scale, 1));
+  border-radius: 999px;
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  background: transparent;
+  color: var(--paper, #F7F9EF);
+  font-size: max(var(--type-min-ui, 22px), calc(22px * var(--ui-scale, 1)));
+}
+.kiosk-finder__count {
+  font: 400 calc(20px * var(--ui-scale, 1)) / 1.2 "20 Kopeek", "Courier New", monospace;
+  color: var(--brass, #D2B773);
+}
+
+/* строка запроса и экранная клавиатура финдера */
+.kiosk-finder__q {
+  display: flex;
+  align-items: center;
+  gap: calc(6px * var(--ui-scale, 1));
+  min-height: max(64px, var(--touch-min, 64px));
+  margin: calc(20px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)) 0;
+  padding: 0 calc(18px * var(--ui-scale, 1));
+  border-radius: calc(16px * var(--ui-scale, 1));
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.35);
+  font: 400 max(var(--type-min-ui, 22px), calc(26px * var(--ui-scale, 1))) / 1.2
+        "20 Kopeek", "Courier New", monospace;
+  color: var(--paper, #F7F9EF);
+}
+.kiosk-finder__q { width: auto; text-align: left; cursor: pointer; }
+/* Пока идёт ввод, чипы не претендуют на высоту вовсе: посетитель набирает
+   текст, а не выбирает фильтр. Без этого при масштабе 1.5 клавиатуре
+   доставался один липкий ряд — букв под пальцем не оставалось ни одной. */
+.kiosk-finder.is-typing .kiosk-finder__body { flex: 0 1 0; }
+/* Каретка мигает только когда клавиатура открыта — иначе поле обещает ввод,
+   которого сейчас нет. */
+.kiosk-finder__caret { visibility: hidden; }
+.kiosk-finder.is-typing .kiosk-finder__caret { visibility: visible; }
+.kiosk-finder.is-typing .kiosk-finder__q {
+  border-color: var(--brass, #D2B773);
+}
+.kiosk-finder__caret {
+  width: 2px;
+  height: calc(28px * var(--ui-scale, 1));
+  background: var(--brass, #D2B773);
+  animation: kioskCaret 1.1s steps(2) infinite;
+}
+@keyframes kioskCaret { 50% { opacity: 0; } }
+.kiosk-finder__note {
+  margin: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)) 0;
+  font-size: max(var(--type-min-label, 20px), calc(20px * var(--ui-scale, 1)));
+  color: var(--brass, #D2B773);
+  opacity: .85;
+}
+.kiosk-kbd {
+  /* Вырожденный случай — экран, куда клавиатура не влезает даже при
+     минимальных клавишах: пусть лучше прокручивается, чем торчит наружу. */
+  overflow-x: auto;
+  /* Нижний запас — ЧАСТЬ ЭТОГО ШОРТХЕНДА, а не отдельное правило выше.
+     Отдельным правилом он и был, и молча умирал: шортхенд padding с той же
+     специфичностью, но ниже в каскаде, сбрасывал padding-bottom обратно в
+     18px×scale. Заявленный отказ поиска из-за этого не наступал на той
+     самой конфигурации, ради которой заводился. Липкий ряд рисуется ПОВЕРХ
+     прокрутки — без запаса он накрывает последние видимые буквы. */
+  padding: calc(12px * var(--ui-scale, 1)) calc(18px * var(--ui-scale, 1))
+           calc(84px * var(--ui-scale, 1));
+  scroll-padding-bottom: calc(84px * var(--ui-scale, 1));
+  border-top: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.22);
+}
+.kiosk-kbd__row {
+  display: flex;
+  justify-content: center;
+  gap: calc(8px * var(--ui-scale, 1));
+  margin-bottom: calc(8px * var(--ui-scale, 1));
+}
+.kiosk-kbd__key {
+  /* Тач-стандарт — АБСОЛЮТНЫЙ ПОЛ, а не производная от масштаба.
+     --touch-min сам растёт и УБЫВАЕТ вместе с --ui-scale: при 0.75 он даёт
+     48 px, и клавиатура уходила ниже канона (поймано стендом; в этом же
+     комментарии раньше стояло обратное утверждение без замера). max()
+     держит 64 снизу и не мешает расти в режиме слабовидящих. */
+  min-width: max(64px, var(--touch-min, 64px));
+  min-height: max(64px, var(--touch-min, 64px));
+  flex: 1 1 0;
+  border-radius: calc(12px * var(--ui-scale, 1));
+  border: 1px solid rgba(var(--brass-rgb, 210, 183, 115), 0.28);
+  background: rgba(var(--brass-rgb, 210, 183, 115), 0.08);
+  color: var(--paper, #F7F9EF);
+  font: 400 max(var(--type-min-ui, 22px), calc(26px * var(--ui-scale, 1))) / 1
+        "20 Kopeek", "Courier New", monospace;
+  text-transform: uppercase;
+}
+.kiosk-kbd__key:active { background: rgba(var(--brass-rgb, 210, 183, 115), 0.24); }
+.kiosk-kbd__key--wide { flex: 1.6 1 0; font-size: max(var(--type-min-label, 20px), calc(20px * var(--ui-scale, 1))); }
+.kiosk-kbd__key--space { flex: 4 1 0; }
+:root.a11y .kiosk-kbd__key { border-color: var(--a11y-accent, #FFD24A); color: var(--a11y-accent, #FFD24A); }
+.kiosk-finder__fields {
+  margin: calc(10px * var(--ui-scale, 1)) calc(24px * var(--ui-scale, 1)) 0;
+  font-size: max(var(--type-min-label, 20px), calc(20px * var(--ui-scale, 1)));
+  color: var(--paper, #F7F9EF);
+  opacity: .7;
 }
