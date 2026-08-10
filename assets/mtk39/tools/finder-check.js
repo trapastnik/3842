@@ -245,6 +245,69 @@
     return "канва";
   }
 
+  /* ---- порог поиска: ОДНА ступень лестницы ----------------------------
+   * Ступень снимается с чистого reload и с ЯВНО поставленной конфигурации,
+   * а хранилище чистится ДО, а не после: «поставил конфиг» и «нет чужого
+   * конфига» — разные гарантии (GRABLI 76). Поэтому функция меряет ровно
+   * одну ступень и печатает конфигурацию рядом с числами; лестница
+   * собирается из пяти запусков, между ними — перезагрузка.
+   *
+   *     localStorage.clear(); location.reload();
+   *     await mtk39SearchStep({ ui: 1.2, a11y: true })
+   */
+  window.mtk39SearchStep = async function (step) {
+    var app = window.mtk39App;
+    if (!app) throw new Error("нет window.mtk39App");
+    step = step || {};
+
+    var leftovers = Object.keys(localStorage)
+      .filter(function (k) { return /kiosk|mtk39/i.test(k) && !/-log$/.test(k); });
+
+    /* Закрытая панель не имеет измеримой раскладки: с 1.20.11 кит честно
+       отвечает fits:null — «спросили не вовремя», а не «не помещается».
+       Раньше на этом месте приходило правдоподобное число от несуществующей
+       раскладки, и ступень получалась ложной. */
+    var closed = app.finderSearchFits();
+
+    if (step.ui != null) app.setSetting("scale.ui", step.ui);
+    if (step.a11y != null) app.setA11y(!!step.a11y);
+    await app.showScene(step.scene || "catalog");
+    app.openFinder(true);
+
+    var open1 = app.finderSearchFits();
+    var open2 = app.finderSearchFits();          // идемпотентность обязательна
+    var panel = document.querySelector(".kiosk-finder");
+    var q = panel && panel.querySelector(".kiosk-finder__q");
+
+    /* Отказ кит пишет МИКРОЗАДАЧЕЙ (1.20.11). Синхронное чтение журнала
+       успевает раньше записи и печатает «отказа нет» на ступени, где отказ
+       есть, — правдоподобно и неверно. Даём очереди провернуться. */
+    await new Promise(function (res) { setTimeout(res, 0); });
+
+    var row = {
+      "чужой стейт до замера": leftovers.length
+        ? "ЕСТЬ, ступень не протокольная: " + leftovers.join(", ") : "нет (чисто)",
+      "scale.ui": app.getSetting("scale.ui"),
+      "режим слабовидящих": app.a11y,
+      "действующий ui": app.scales().ui,
+      вьюпорт: innerWidth + "×" + innerHeight,
+      "на закрытой панели": closed && closed.fits === null
+        ? "fits:null — не мерил (штатно)" : JSON.stringify(closed),
+      вмещаемость: JSON.stringify(open1),
+      идемпотентно: JSON.stringify(open1) === JSON.stringify(open2),
+      "строка поиска": q && !q.hidden ? "построена" : "НЕ построена",
+      "чипов в панели": panel ? panel.querySelectorAll(".kiosk-finder__chip").length : 0,
+      отказ: (app.getSessionLog() || [])
+        .filter(function (e) { return /поиск недоступен/.test(e.msg || ""); })
+        .map(function (e) { return e.msg; })[0] || "—",
+    };
+    console.table(row);
+    if (!row.идемпотентно) {
+      console.warn("[mtk39] finderSearchFits() дал два разных числа — ступень недействительна");
+    }
+    return row;
+  };
+
   /* Геометрия панели — отдельным прогоном, БЕЗ переключения сцен: смена
      сцены закрывает панель по канону «панель принадлежит сцене», и пункт
      стенда с открытой панелью стал бы тихо пустым.

@@ -4,15 +4,15 @@
  *
  * Настройки сцен объявлены схемой в самих сценах (settings[] + applySettings):
  * ядро исполняет её само, моста больше не нужно. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.6";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.11";
 
-import { worldScene } from "./scenes/world.js?v=11";
-import { unionScene } from "./scenes/union.js?v=11";
-import { waveScene } from "./scenes/wave.js?v=11";
-import { streetsScene } from "./scenes/streets.js?v=11";
-import { catalogScene } from "./scenes/catalog.js?v=11";
-import { statsScene } from "./scenes/stats.js?v=11";
-import { globeScene } from "./scenes/globe.js?v=11";
+import { worldScene } from "./scenes/world.js?v=12";
+import { unionScene } from "./scenes/union.js?v=12";
+import { waveScene } from "./scenes/wave.js?v=12";
+import { streetsScene } from "./scenes/streets.js?v=12";
+import { catalogScene } from "./scenes/catalog.js?v=12";
+import { statsScene } from "./scenes/stats.js?v=12";
+import { globeScene } from "./scenes/globe.js?v=12";
 
 const app = createApp({
   appId: "mtk39",
@@ -22,7 +22,7 @@ const app = createApp({
   // Метка кеша словарей — своя нумерация приложения. У файлов кита метка
   // другая и канонная: ровно версия ядра (COORDINATION → «Версионирование
   // кита»), ядро само сверяет её со своей и ругается на залипший кеш.
-  i18nVersion: "11",
+  i18nVersion: "12",
 });
 
 /* Порядок регистрации = порядок стрелок навигации: от общего к частному —
