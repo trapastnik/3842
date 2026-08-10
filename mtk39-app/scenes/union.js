@@ -13,7 +13,7 @@ import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=12";
+} from "./shared.js?v=13";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -97,9 +97,16 @@ export const unionScene = {
         '<header class="m39-rail__head"><h1 class="m39-rail__title"></h1>' +
         '<p class="m39-sub"></p></header>' +
         '<nav class="m39-republics kiosk-scroll" aria-label="Республики"></nav>' +
-        '<div class="m39-offhost"></div>' +
+        // чип — в рейле, рядом с рубрикатором: он рядовой контрол
+        '<div class="m39-offtoggle"></div>' +
       "</aside>" +
-      '<aside class="m39-legend"></aside>';
+      '<aside class="m39-legend"></aside>' +
+      /* А картотека — на СЛОЕ СЦЕНЫ, не в рейле. Она оверлей inset:0, и
+         внутри position:absolute рейла схлопывалась в столбик его ширины:
+         заголовок ломался, табы вываливались за низ. Тот же разъезд хостов,
+         что в «Мире», — грабля семейная, лечить надо ВСЕ её экземпляры в
+         зоне, а не тот, на котором заметил. */
+      '<div class="m39-offhost"></div>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -382,6 +389,8 @@ export const unionScene = {
     const offmap = createOffmap(offhost, app, union, {
       onPick: showCard,
       countryKey: "union.byRepublic",
+      // чип — в рейл, оверлей остаётся на слое сцены (см. разметку выше)
+      toggleHost: el.querySelector(".m39-offtoggle"),
     });
 
     /* ---- панели ---- */
@@ -633,6 +642,10 @@ export const unionScene = {
           " (плюс не на карте " + offmap.count() + ")" +
           ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
       },
+      closeOverlays() {
+        offmap.close();
+        showCard(null);
+      },
       destroy() {
         anim.stop();
         canvas.removeEventListener("pointerdown", onDown);
@@ -668,7 +681,14 @@ export const unionScene = {
     this.api.anim.start();
   },
 
-  pause() { if (this.api) this.api.anim.stop(); },
+  /* Уход со сцены закрывает оверлей — как ядро закрывает панель финдера.
+     Иначе картотека доживает до idle-сброса: посетитель вернулся на «Союз»
+     через три экрана и получил чужую открытую картотеку поверх карты. */
+  pause() {
+    if (!this.api) return;
+    this.api.anim.stop();
+    this.api.closeOverlays();
+  },
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
 

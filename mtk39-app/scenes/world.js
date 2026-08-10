@@ -14,7 +14,7 @@ import {
   DATA, STATUS, STATUS_COLOR, USSR_ISO, nf, esc, fitCanvas, drawScale, loop,
   sizeWatch, preloadPictures, objectCardHtml, createCardPanel, createOffmap, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=12";
+} from "./shared.js?v=13";
 
 const DEFAULT_ROTATE = [-40, -30, 0];
 const DEFAULT_SCALE = 1.16;
@@ -554,6 +554,10 @@ export const worldScene = {
           " (плюс не на карте " + offmap.count() + ")" +
           ", в последнем кадре " + lastDrawn };
       },
+      closeOverlays() {
+        offmap.close();
+        showCard(null);
+      },
       destroy() {
         anim.stop();
         d3.select(canvas).on(".drag", null);
@@ -587,8 +591,13 @@ export const worldScene = {
     this.api.anim.start();
   },
 
+  /* Уход со сцены закрывает оверлеи — как ядро закрывает панель финдера.
+     Иначе картотека «не на карте» доживает до idle-сброса и встречает
+     вернувшегося посетителя поверх карты. */
   pause() {
-    if (this.api) this.api.anim.stop();
+    if (!this.api) return;
+    this.api.anim.stop();
+    this.api.closeOverlays();
   },
 
   reset() {

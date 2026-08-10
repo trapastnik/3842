@@ -11,7 +11,7 @@ import {
   DATA, STATUS, STATUS_CLASS, nf, esc, plural, statusLabel,
   objectCardHtml, corpusPicture,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=12";
+} from "./shared.js?v=13";
 
 // единственное в своём роде — по названию, а не по категории
 const ONE_OFF = /геоглиф|мавзолей|ленинланд|leninland|послание|сверхтяжёл|пик ленина|ледокол|астероид|владилена|ульянов \(|комсомол|пионер/i;
@@ -335,6 +335,7 @@ export const catalogScene = {
           " из " + records.length + ", карточек в открытой рубрике " + cards +
           (sort ? ", сортировка " + sort : "") };
       },
+      closeOverlays() { closeSheet(); },
       destroy() {
         closeSheet();
         sheetClose.removeEventListener("click", onClose);
@@ -344,6 +345,11 @@ export const catalogScene = {
 
     retext();
   },
+
+  /* Та же семья, что у карт: раскрытая карточка — оверлей, и уход со сцены
+     обязан её закрыть. Правило вешаем на семью, а не на ту сцену, где
+     заметили. */
+  pause() { if (this.api) this.api.closeOverlays(); },
 
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },

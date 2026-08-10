@@ -377,7 +377,7 @@
   align-self: flex-start;
 }
 
-.m39-union .m39-offhost { flex: 0 0 auto; }
+.m39-union .m39-offtoggle { flex: 0 0 auto; }
 
 .m39-offmap {
   position: absolute;
