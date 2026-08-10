@@ -9,16 +9,16 @@
  * Проверено на себе: обёртка канвы жила в shared.js?v=1 и бралась из кеша,
  * хотя сцена и app уже были свежими.
  */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.3";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.21.3";
 
-import { installChromeZones } from "./scenes/chrome-zones.js?v=42";
-import { shelfScene } from "./scenes/shelf.js?v=42";
-import { mirrorScene } from "./scenes/mirror.js?v=42";
-import { timelineScene } from "./scenes/timeline.js?v=42";
-import { catalogScene } from "./scenes/catalog.js?v=42";
-import { volumeScene } from "./scenes/volume.js?v=42";
-import { constellationScene } from "./scenes/constellation.js?v=42";
-import { geographyScene } from "./scenes/geography.js?v=42";
+import { installChromeZones } from "./scenes/chrome-zones.js?v=44";
+import { shelfScene } from "./scenes/shelf.js?v=44";
+import { mirrorScene } from "./scenes/mirror.js?v=44";
+import { timelineScene } from "./scenes/timeline.js?v=44";
+import { catalogScene } from "./scenes/catalog.js?v=45";
+import { volumeScene } from "./scenes/volume.js?v=44";
+import { constellationScene } from "./scenes/constellation.js?v=44";
+import { geographyScene } from "./scenes/geography.js?v=44";
 
 const app = createApp({
   appId: "mtk40",
@@ -27,7 +27,7 @@ const app = createApp({
   i18nUrl: "./i18n/",
   /* Метка кеша словарей: у ?v= сцен своя цепочка, i18n ядро тянет само.
    * Поднимать при каждой правке i18n/*.json. */
-  i18nVersion: "4",
+  i18nVersion: "5",
 });
 
 /* Порядок регистрации = порядок стрелок навигации. */

@@ -253,7 +253,8 @@
   grid-area: side;
   align-self: stretch;
   min-height: 0;
-  overflow-y: auto;
+  /* Сама колонка не прокручивается — прокрутка живёт внутри, у групп. */
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   gap: calc(var(--touch-gap) * 1.5);
@@ -270,12 +271,25 @@
   text-transform: uppercase;
   color: rgba(247, 249, 239, 0.42);
 }
+/* Хвост колонки (счётчик и «сбросить») — отдельный этаж ВНЕ прокрутки, а не
+ * липкий слой поверх неё: на действующем масштабе 1.5 он уезжал ниже видимой
+ * части и палец в «сбросить» не попадал, а position:sticky накрыл собой три
+ * ярлыка порядка. Прокручивается только .m40-cat__groups. */
 .m40-cat__tail {
-  margin-top: auto;
+  flex: none;
   display: flex;
   flex-direction: column;
   align-items: stretch;
   gap: var(--touch-gap);
+}
+.m40-cat__groups {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--touch-gap) * 1.5);
 }
 .m40-cat__count {
   font-family: var(--font-mono, "20 Kopeek", monospace);
@@ -291,13 +305,30 @@
   gap: var(--touch-gap);
   padding: calc(var(--touch-gap) * 0.6) calc(var(--touch-gap) * 1.2);
   border: 1px solid rgba(247, 249, 239, 0.12);
-  border-radius: 999px;
+  /* Радиус вместо пилюли на 999px: при переносе на две строки стадион из
+   * ленты выглядел бы случайностью. На одной строке разница незаметна. */
+  border-radius: calc(var(--touch-min) * 0.9);
   background: rgba(12, 16, 18, 0.45);
-  overflow-x: auto;
 }
 .m40-cat__idx .m40-cat__legend { flex: none; }
-.m40-cat__alpha { flex-wrap: nowrap; }
-.m40-chip--alpha { letter-spacing: 0; padding: 0 calc(var(--touch-gap) * 0.9); }
+/* Лента переносится, а не прокручивается. Задумана она была одной строкой с
+ * overflow-x, и пока буквы были узкими (38 px), 27 штук помещались. С тач-полом
+ * ярлыка (64, а в режиме слабовидящих 80) содержимое стало 3036 px при полосе
+ * 2712 — и «L», «R», «T» уезжали за правый край экрана: замер показал их на
+ * x=3797…4077 при окне 3840. Горизонтальную прокрутку на киоске пальцем никто
+ * не ищет — буква просто пропадала. Перенос честнее: указатель занимает две
+ * строки только там, где иначе терял бы ярлыки. */
+.m40-cat__alpha { flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
+/* Буква — ярлык финдера, то есть полноценный контрол, а не украшение
+ * указателя: тач-пол обязателен по обеим сторонам. Высоту держал общий
+ * .m40-chip (min-height), а ширина оставалась от содержимого — одна буква
+ * давала 38 px при поле 64. Пока лента была сценическим указателем, это
+ * терпелось; ярлыку — нет. */
+.m40-chip--alpha {
+  letter-spacing: 0;
+  padding: 0 calc(var(--touch-gap) * 0.9);
+  min-width: var(--touch-min);
+}
 
 .m40-cat__grid {
   grid-area: grid;
