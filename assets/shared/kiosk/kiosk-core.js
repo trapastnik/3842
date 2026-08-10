@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.21.5";
+  var VERSION = "1.22.0";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1469,12 +1469,73 @@
 
   /* ------------------------------------------------------------------ DOM */
 
+  /* ПОДАВЛЕНИЕ БРАУЗЕРНОГО ЗУМА/СКРОЛЛА СТРАНИЦЫ (киоск-канон).
+   *
+   * meta viewport в Safari частично игнорируется, поэтому главные — JS-
+   * обработчики, а user-scalable=no/maximum-scale=1 и touch-action в CSS
+   * лишь усиление. Гасим МУЛЬТИтач-зум и жесты масштабирования, одиночное
+   * касание не трогаем — drag-to-rotate глобуса и pan-скролл панелей уже
+   * работают и должны жить дальше.
+   *
+   * Слушатели НЕ passive (нужен preventDefault) и на documentElement, чтобы
+   * поймать жест раньше сцен. Ссылки храним для снятия в destroy. */
+  KioskApp.prototype._lockZoom = function () {
+    if (this._zoomLocked) return;
+    this._zoomLocked = true;
+    var doc = document, de = doc.documentElement;
+
+    /* Safari pinch/поворот на трекпаде и тач — отдельные события. */
+    var onGesture = function (e) { e.preventDefault(); };
+    ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+      doc.addEventListener(ev, onGesture, { passive: false });
+    });
+
+    /* Ctrl+колесо = зум и на трекпаде (щипок), и на десктопе. Обычная
+     * прокрутка без Ctrl не трогается — панели скроллятся как прежде. */
+    var onWheel = function (e) { if (e.ctrlKey) e.preventDefault(); };
+    doc.addEventListener("wheel", onWheel, { passive: false });
+
+    /* Двойной тап/клик по фону зумит в Safari. По интерактивным целям не
+     * мешаем: там свои обработчики, и там двойного зума и так не будет. */
+    var onDbl = function (e) { e.preventDefault(); };
+    doc.addEventListener("dblclick", onDbl, { passive: false });
+
+    /* МУЛЬТИтач-старт — щипок двумя пальцами. Одиночное касание проходит:
+     * второй палец и дальше глушим, первый оставляем сцене. */
+    var onTouch = function (e) { if (e.touches && e.touches.length > 1) e.preventDefault(); };
+    doc.addEventListener("touchstart", onTouch, { passive: false });
+    doc.addEventListener("touchmove", onTouch, { passive: false });
+
+    /* Ctrl +/-/0 и ⌘ +/-/0 — клавиатурный зум, на случай подключённой
+     * клавиатуры у сервис-панели. */
+    var onKey = function (e) {
+      if ((e.ctrlKey || e.metaKey) && (e.key === "+" || e.key === "-" || e.key === "=" || e.key === "0")) {
+        e.preventDefault();
+      }
+    };
+    doc.addEventListener("keydown", onKey, { passive: false });
+
+    this._unlockZoom = function () {
+      ["gesturestart", "gesturechange", "gestureend"].forEach(function (ev) {
+        doc.removeEventListener(ev, onGesture);
+      });
+      doc.removeEventListener("wheel", onWheel);
+      doc.removeEventListener("dblclick", onDbl);
+      doc.removeEventListener("touchstart", onTouch);
+      doc.removeEventListener("touchmove", onTouch);
+      doc.removeEventListener("keydown", onKey);
+      de.removeAttribute("data-zoom-locked");
+    };
+    de.setAttribute("data-zoom-locked", "1");
+  };
+
   KioskApp.prototype._buildChrome = function () {
     var host = resolveEl(this._rootHost) || document.body;
     var doc = document;
 
     warnIfCssMissing();
     doc.documentElement.classList.add("kiosk-runtime");
+    this._lockZoom();
 
     var root = doc.createElement("div");
     root.className = "kiosk-app";
