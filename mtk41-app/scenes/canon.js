@@ -8,10 +8,26 @@
  * есть ~7.8 ГБ декодированными, и преролл ядра держал бы их живыми. Оригиналы
  * в приложении не показываются нигде — см. preloadThumbs() в shared.js. */
 import {
-  DATA, byYear, cardUrl, createCard, esc, plural, thumbUrl, preloadThumbs,
-  createHint, FINDER_FIELDS, countryOptions, decadeOptions, finderApply,
-  APP, finderSort, setCorpus, statusOptions,
-} from "./shared.js?v=44";
+  DATA,
+  byYear,
+  cardUrl,
+  createCard,
+  esc,
+  plural,
+  thumbUrl,
+  preloadThumbs,
+  createHint,
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  finderApply,
+  APP,
+  drawEmptyState,
+  emptyVerdict,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {
@@ -164,8 +180,13 @@ export const canonScene = {
      * смонтированных (ядро монтирует сцену при первом показе). «Пусто, потому
      * что не смонтирована» — не поломка, и путать эти два случая нельзя. */
     if (!this._grid) return { ok: true, detail: "не смонтирована" };
-    const tiles = this._grid.childElementCount;
-    if (!tiles) return { ok: false, detail: "ни одной плитки в иконостасе" };
+    /* Считаем ПЛИТКИ, а не детей: заглушка «ничего не найдено» — тоже
+     * ребёнок грида, и на childElementCount она выдавала «плиток 1»,
+     * из-за чего пустая сцена БЕЗ отбора переставала быть аварией.
+     * Заглушка, притворяющаяся содержимым, — тот же класс, что индикатор,
+     * притворяющийся данными. */
+    const tiles = this._grid.querySelectorAll(".m41-tile").length;
+    if (!tiles) return emptyVerdict(this._find, "ни одной плитки в иконостасе");
     const withPhoto = this._grid.querySelectorAll(".m41-tile:not(.is-empty)").length;
     return { ok: true, detail: `плиток ${tiles}, с фото ${withPhoto}` };
   },
@@ -316,7 +337,12 @@ export const canonScene = {
         esc(year) + "</span></span></button>"
       );
     }
-    this._grid.innerHTML = parts.join("");
+    /* Та же заглушка, что у «Авторов»: пустая сетка молчит, а посетителю
+     * нужно объяснение и путь назад. */
+    this._grid.innerHTML = parts.length ? parts.join("")
+      : '<div class="m41-empty"><p class="m41-empty__t">' +
+        esc(this._app.t("finder.empty")) + '</p><p class="m41-empty__h">' +
+        esc(this._app.t("finder.emptyHint")) + "</p></div>";
     this._renderHead();
   },
 };

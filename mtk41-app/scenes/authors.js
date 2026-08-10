@@ -8,10 +8,25 @@
  * Козлов разъезжался на «В. В.» и «В.В.» и первым по числу работ выглядел
  * Томский. Здесь на это опираемся и повторно не чистим. */
 import {
-  DATA, createCard, esc, label, plural, thumbUrl, preloadThumbs,
-  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
-  APP, finderApply, finderSort, setCorpus, statusOptions,
-} from "./shared.js?v=44";
+  DATA,
+  createCard,
+  esc,
+  label,
+  plural,
+  thumbUrl,
+  preloadThumbs,
+  createHint,
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  APP,
+  drawEmptyState,
+  emptyVerdict,
+  finderApply,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
 
 /* Краткий контекст — только общеизвестное. Это контент, он остаётся на
  * русском (решение пилота 42), в словари не выносится. */
@@ -152,8 +167,12 @@ export const authorsScene = {
 
   healthcheck() {
     if (!this._cols) return { ok: true, detail: "не смонтирована" };
-    const cols = this._cols.childElementCount;
-    if (!cols) return { ok: false, detail: "ни одной колонки авторов" };
+    /* Считаем КОЛОНКИ (.m41-author), а не детей: заглушка «ничего не найдено»
+     * — тоже ребёнок, и на childElementCount пустая сцена БЕЗ отбора
+     * перестала бы быть аварией. Класс списан с разметки, а не придуман:
+     * первая правка искала .m41-col, которого в этой сцене нет. */
+    const cols = this._cols.querySelectorAll(".m41-author").length;
+    if (!cols) return emptyVerdict(this._find, "ни одной колонки авторов");
     const works = this._cols.querySelectorAll(".m41-work").length;
     if (!works) return { ok: false, detail: "колонки есть, работ в них нет" };
     return { ok: true, detail: `колонок ${cols}, работ ${works}` };
@@ -191,7 +210,12 @@ export const authorsScene = {
       parts.push(this._colHtml(
         { name: app.t("authors.anon"), indices: this._buckets.anon, anon: true }, cfg));
     }
-    this._cols.innerHTML = parts.join("");
+    /* Заглушка вместо пустоты: панель пишет «0 из 283», но сцена без
+     * подписи — чистый экран без объяснения. */
+    this._cols.innerHTML = parts.length ? parts.join("")
+      : '<div class="m41-empty"><p class="m41-empty__t">' +
+        esc(app.t("finder.empty")) + '</p><p class="m41-empty__h">' +
+        esc(app.t("finder.emptyHint")) + "</p></div>";
   },
 
   _colHtml(b, cfg) {

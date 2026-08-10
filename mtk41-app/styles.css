@@ -527,3 +527,10 @@
 .m41-stacked__stage {
   --chrome-bottom: 0px;
 }
+
+/* Заглушка «ничего не найдено» — DOM-сцены. Канвовые рисуют её сами. */
+.m41-empty { padding: calc(40px * var(--content-scale, 1)); text-align: center; }
+.m41-empty__t { font-size: calc(26px * var(--content-scale, 1)); font-weight: 600;
+  color: var(--paper, #F7F9EF); margin: 0 0 8px; }
+.m41-empty__h { font-size: calc(15px * var(--content-scale, 1));
+  color: var(--dim, #9DA3A6); margin: 0; }

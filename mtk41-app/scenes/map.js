@@ -13,11 +13,27 @@
  *
  * Здесь — жизненный цикл сцены, камера, ввод и отрисовка. */
 import {
-  DATA, PALETTE, createCanvasHost, createCard, cssColor, preloadThumbs, statusColor,
-  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
-  APP, finderApply, finderSort, setCorpus, statusOptions,
-} from "./shared.js?v=44";
-import { createMapCore } from "./map-core.js?v=44";
+  DATA,
+  PALETTE,
+  createCanvasHost,
+  createCard,
+  cssColor,
+  preloadThumbs,
+  statusColor,
+  createHint,
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  APP,
+  drawEmptyState,
+  hintForEmpty,
+  emptyVerdict,
+  finderApply,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
+import { createMapCore } from "./map-core.js?v=58";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -228,8 +244,8 @@ export const mapScene = {
      * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
     const buf = this._host.bufferOk();
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
-    if (!this._items.length) return { ok: false, detail: "ни одной точки с координатами" };
-    if (!this._clusters.length) return { ok: false, detail: "на карте не построено ни одного кружка" };
+    if (!this._items.length) return emptyVerdict(this._find, "ни одной точки с координатами");
+    if (!this._clusters.length) return emptyVerdict(this._find, "на карте не построено ни одного кружка");
     const shown = this._clusters.reduce((a, c) => a + c.count, 0);
     return { ok: true, detail: `точек ${this._items.length}, в кружках ${shown}, буфер ${buf.detail}` };
   },
@@ -253,6 +269,12 @@ export const mapScene = {
       this._built = false;              // дерево кластеров строится заново
       this._rebuild();
     }
+    /* Второй замер — ПОСЛЕ перестройки DOM вокруг холста (шапка, чипы, режим
+     * слабовидящих). Первый ловит ещё старый бокс, и healthcheck колеблется.
+     * На киоске лечит наблюдатель размера, но в скрытой вкладке он НЕ
+     * ДОСТАВЛЯЕТСЯ ВООБЩЕ — а стенд приёмки работает именно в скрытой.
+     * Правило вешаем на СЕМЬЮ: строку получают все канвовые сцены. */
+    if (this._host) this._host.measure();
   },
 
   applySettings(values) {
@@ -296,7 +318,10 @@ export const mapScene = {
   },
 
   _rebuild() {
-    if (!this._core || !this._map.worldW) return;
+    /* Предусловия раскладки — в самой раскладке, а не у вызывающих: у
+     * «Масштаба» хрупкий порядок в mount() убил обе ленты на живом экране
+     * (см. scale.js). Правило вешаем на семью. */
+    if (!this._core || !this._map || !this._map.worldW || !this._cfg) return;
     this._core.buildTree();
     this._rebuildClusters();
   },
@@ -518,6 +543,15 @@ export const mapScene = {
      * кружки оказались за кадром. Проверка — один булев флаг. */
     if (!this._built) this._built = this._applyPreset(this._cfg.view, true);
     const ctx = h.ctx;
+    /* Отбор не дал совпадений — заглушка вместо пустого поля: панель пишет
+     * «0 из 283», но сцена без подписи это чистый экран без объяснения. */
+    if (this._items && !this._items.length) {
+      ctx.clearRect(0, 0, h.width, h.height);
+      drawEmptyState(ctx, h.width, h.height, this._app);
+      hintForEmpty(this, true);
+      return;
+    }
+    hintForEmpty(this, false);
     ctx.clearRect(0, 0, h.width, h.height);
 
     ctx.save();

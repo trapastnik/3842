@@ -10,10 +10,27 @@
  * По той же причине лента центрируется по середине РАБОЧЕЙ области, а не
  * экрана — иначе при разных отступах последние десятилетия вываливались. */
 import {
-  DATA, PALETTE, createCanvasHost, createCard, cssColor, plural, preloadThumbs, statusColor,
-  createHint, FINDER_FIELDS, countryOptions, decadeOptions,
-  APP, finderApply, finderSort, setCorpus, statusOptions,
-} from "./shared.js?v=44";
+  DATA,
+  PALETTE,
+  createCanvasHost,
+  createCard,
+  cssColor,
+  plural,
+  preloadThumbs,
+  statusColor,
+  createHint,
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  APP,
+  drawEmptyState,
+  hintForEmpty,
+  emptyVerdict,
+  finderApply,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
@@ -166,8 +183,8 @@ export const timelineScene = {
      * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
     const buf = this._host.bufferOk();
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
-    if (!this._items.length) return { ok: false, detail: "ни одного датированного памятника" };
-    if (!this._clusters.length) return { ok: false, detail: "на оси не построено ни одного кружка" };
+    if (!this._items.length) return emptyVerdict(this._find, "ни одного датированного памятника");
+    if (!this._clusters.length) return emptyVerdict(this._find, "на оси не построено ни одного кружка");
     return { ok: true, detail: `датированных ${this._items.length}, кружков ${this._clusters.length}, буфер ${buf.detail}` };
   },
 
@@ -187,6 +204,12 @@ export const timelineScene = {
      * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
     if (this._host && !this._host.width) this._host.measure();
     this._rebuild();
+    /* Второй замер — ПОСЛЕ перестройки DOM вокруг холста (шапка, чипы, режим
+     * слабовидящих). Первый ловит ещё старый бокс, и healthcheck колеблется.
+     * На киоске лечит наблюдатель размера, но в скрытой вкладке он НЕ
+     * ДОСТАВЛЯЕТСЯ ВООБЩЕ — а стенд приёмки работает именно в скрытой.
+     * Правило вешаем на СЕМЬЮ: строку получают все канвовые сцены. */
+    if (this._host) this._host.measure();
   },
 
   applySettings(values) {
@@ -433,6 +456,17 @@ export const timelineScene = {
     if (h.width && !this._pads.measured) { this._measurePads(); this._pads.measured = true; }
     if (!h.width) return;
     const ctx = h.ctx;
+
+    /* Отбор не дал совпадений — рисуем заглушку вместо пустого поля.
+     * Панель пишет «0 из 283», но сцена без подписи это чистый экран без
+     * объяснения: посетитель не поймёт ни что случилось, ни как вернуться. */
+    if (this._items && !this._items.length) {
+      ctx.clearRect(0, 0, h.width, h.height);
+      drawEmptyState(ctx, h.width, h.height, this._app);
+      hintForEmpty(this, true);
+      return;
+    }
+    hintForEmpty(this, false);
     ctx.clearRect(0, 0, h.width, h.height);
     this._drawAxis();
     if (this._cfg.showEvents) this._drawEvents();

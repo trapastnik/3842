@@ -2,12 +2,19 @@
  * Перенос из mtk41-scale/ на контракт сцены.
  *
  * Навигация. Лента при слоте 84 px — 23 772 px, на панели 3840 это 6,2 экрана
- * драга без ориентиров. Три способа двигаться по ней сведены переключателем:
+ * драга без ориентиров. Два способа двигаться по ней сведены переключателем:
  *   СКРАББЕР    полоса внизу со сжатой хронологией; тап — прыжок, драг —
  *               промотка. Штрих на памятник высотой ~ его росту, так что
  *               полоса читается и как спарклайн.
  *   ЗУМ         ширина слота переменная: от всего корпуса в экране до фигуры.
- *   ДЕСЯТИЛЕТИЯ промотки нет, страницы по десятилетиям.
+ *
+ * Был третий — ДЕСЯТИЛЕТИЯ, страницы по декадам. Снят вместе с переездом
+ * отбора по декаде в финдер (решение координатора 2026-08-10): его чипы
+ * делали `_all.filter(...)`, то есть были ОТБОРОМ, а не видом. После переезда
+ * фильтр действует в обоих оставшихся режимах, а группировка по декадам и так
+ * читается на оси лет. Ключи `mode.decades` и `mode.all` удалены из всех трёх
+ * словарей: правка состава должна быть полной, иначе через полгода мёртвый
+ * ключ прочтут как забытую функцию.
  *
  * Масштаб метра считается ОДИН РАЗ по всему корпусу и не зависит от того, что
  * на экране. Иначе на странице 1920-х четырёхметровый бюст занял бы столько
@@ -20,13 +27,31 @@
  *    гардится на ноль;
  *  - pause() останавливает rAF полностью. */
 import {
-  DATA, FALLBACK_HEIGHT, HUMAN_HEIGHT_M, PALETTE, byYear, cardUrl, createCanvasHost,
-  createCard, cssColor, preloadThumbs, statusColor,
+  DATA,
+  FALLBACK_HEIGHT,
+  HUMAN_HEIGHT_M,
+  PALETTE,
+  byYear,
+  cardUrl,
+  createCanvasHost,
+  createCard,
+  cssColor,
+  preloadThumbs,
+  statusColor,
   createHint,
   fillTextIfFits,
-  FINDER_FIELDS, countryOptions, decadeOptions,
-  APP, finderApply, finderSort, setCorpus, statusOptions,
-} from "./shared.js?v=44";
+  FINDER_FIELDS,
+  countryOptions,
+  decadeOptions,
+  APP,
+  drawEmptyState,
+  hintForEmpty,
+  emptyVerdict,
+  finderApply,
+  finderSort,
+  setCorpus,
+  statusOptions,
+} from "./shared.js?v=58";
 
 const MIN_SLOT_W = 84;
 const PAD_LEFT = 0.13;
@@ -141,10 +166,16 @@ export const scaleScene = {
     this._items = this._src;
     setCorpus(ctx.data.monuments.items || [], ctx.app);
     this._heights = ctx.data.heights || {};
-    this._applyFind();
     this._selected = -1;
     this._view = { offset: 0, velocity: 0, slotZoom: 0, fitSlot: 0 };
     this._placed = [];
+    /* В mount() строим только ПОРЯДОК, без раскладки: _layout читает
+     * this._cfg, а его ставит applySettings — она идёт в самом конце mount.
+     * Полный _applyFind() здесь падал на _cfg.slotW, и журнал это показал
+     * («mount() — Cannot read properties of undefined»), пока стенд молчал.
+     * Раскладку сделает applySettings, отбор — ядро сразу после mount. */
+    this._all = byYear(this._items);
+
 
     this._bindPointer();
     this._onNav = (e) => {
@@ -215,9 +246,11 @@ export const scaleScene = {
      * (карта 42 так рисовала в 4%). Формула одна с отрисовкой — bufferFor(). */
     const buf = this._host.bufferOk();
     if (!buf.ok) return { ok: false, detail: "буфер " + buf.detail };
-    if (!this._placed.length) return { ok: false, detail: "на шкале нет ни одной фигуры" };
-    const measured = this._placed.filter((p) => !p.estimated).length;
-    return { ok: true, detail: `фигур ${this._placed.length}, с габаритами ${measured}, буфер ${buf.detail}` };
+    /* _placed может ещё не существовать: _applyFind зовётся из mount() до
+     * его инициализации, а healthcheck стенд может позвать в любой момент. */
+    if (!(this._placed || []).length) return emptyVerdict(this._find, "на шкале нет ни одной фигуры");
+    const measured = (this._placed || []).filter((p) => !p.estimated).length;
+    return { ok: true, detail: `фигур ${(this._placed || []).length}, с габаритами ${measured}, буфер ${buf.detail}` };
   },
 
   /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск →
@@ -235,17 +268,44 @@ export const scaleScene = {
       ? finderSort(this._items, "height", this._heights)
           .map((m, k) => ({ m, i: (this._src || []).indexOf(m), year: m.year || 0, k }))
       : byYear(this._items).map((it) => ({ ...it, i: (this._src || []).indexOf(it.m) }));
-    /* _applyFind зовётся и из mount(), ДО того как создан _view: порядок в
-     * mount менять рискованнее, чем проверить здесь. Промотку сбрасываем —
-     * при смене набора старое смещение указывает в никуда. */
+    /* Промотку сбрасываем: при смене набора старое смещение указывает в
+     * никуда. Проверка на _view осталась как дешёвая страховка — настоящую
+     * защиту даёт условие в _layout, оно закрывает все пути сразу. */
     if (this._view) { this._view.offset = 0; this._view.velocity = 0; }
     /* Меряем ЖИВОЙ бокс перед пересборкой. Геометрия, от которой зависит
      * healthcheck, обязана считаться вне кадра (канон GRABLI): _host.width —
      * это кеш последнего measure(), а measure() живёт в rAF. Стенд приёмки
      * разворачивает каждый фильтр в состояние и зовёт healthcheck БЕЗ
      * отрисовки — на кеше он получил бы «ни одной фигуры» у исправной сцены. */
-    if (this._host && !this._host.width) this._host.measure();
-    if (this._host && this._host.width) this._layout();
+    /* Меряем ВСЕГДА, а не только при нулевом кеше: смена отбора меняет и
+     * раскладку вокруг (у сцены пропал ряд чипов — стол стал выше), а буфер
+     * остался бы от прежнего бокса, и healthcheck честно ругался бы на
+     * несоответствие. measure() дешёвый и сам возвращает false, если размер
+     * не менялся. */
+    if (this._host) this._host.measure();
+    /* Пустую выборку обнуляем ЗДЕСЬ: _layout выходит в самом начале, если
+     * список пуст, и до внутренней очистки дело не доходит — старые фигуры
+     * переживали отбор, а healthcheck рапортовал «фигур 283» при нуле
+     * показанных. Индикатор, переживший данные. */
+    if (!this._all.length) this._placed = [];
+    else if (this._host && this._host.width) this._layout();
+    /* Шапку зовём ОТСЮДА, а не изнутри _layout: у той несколько ранних
+     * выходов (нет размера, пустая выборка), и на каждом заголовок терялся —
+     * на пустом отборе экран оставался даже без названия сцены. Заголовок от
+     * выборки не зависит, значит и от её раскладки зависеть не должен. */
+    this._renderHead();
+
+    /* И ЕЩЁ РАЗ меряем — уже ПОСЛЕ того, как перестроились шапка и ряд чипов.
+     *
+     * Смена отбора меняет DOM вокруг холста, стол меняет высоту, и первый
+     * замер ловит ещё старый бокс: healthcheck начинал колебаться «844 вместо
+     * 894» и обратно. На киоске это лечится наблюдателем размера — но он в
+     * скрытой вкладке НЕ ДОСТАВЛЯЕТСЯ ВООБЩЕ, а стенд приёмки работает именно
+     * в скрытой. То есть ложный провал увидел бы каждый, кто прогонит стенд.
+     *
+     * Чтение getBoundingClientRect синхронно и отдаёт уже новую раскладку,
+     * поэтому второй замер здесь честен и не требует кадра. */
+    if (this._host && this._host.measure() && this._all.length) this._layout();
   },
 
   applySettings(values) {
@@ -264,7 +324,19 @@ export const scaleScene = {
 
   _layout() {
     const h = this._host;
-    if (!h || !h.width || !this._all || !this._all.length) return;
+    /* ПРЕДУСЛОВИЯ РАСКЛАДКИ, а не гард у каждого вызывающего.
+     *
+     * Раскладка пишет в this._view и читает this._cfg. Оба создаются в mount()
+     * — и порядок вызовов оказался хрупким: стоило позвать _applyFind() чуть
+     * выше, как _layout падал на `_view.fitSlot`, mount обрывался, _view так и
+     * не создавался, и КАЖДЫЙ последующий resume() падал снова. На живом
+     * экране это убивало обе ленты; в скрытой вкладке пряталось, потому что
+     * при боксе 0×0 до этих строк дело не доходило.
+     *
+     * Гард у одного вызывающего лечит один путь. Условие здесь лечит все:
+     * функция сама отказывается работать без того, что ей нужно. */
+    if (!h || !h.width || !this._view || !this._cfg) return;
+    if (!this._all || !this._all.length) return;
 
     /* Максимум по ВСЕМУ корпусу — см. шапку файла. */
     this._maxTotal = 0;
@@ -276,7 +348,17 @@ export const scaleScene = {
     /* Набор задаёт финдер, а не режим: декада переехала в панель и теперь
      * действует в обоих режимах. */
     const items = this._all;
-    if (!items.length) return;
+    /* Пустая выборка обязана обнулить раскладку. Иначе ранний выход оставляет
+     * СТАРЫЕ фигуры в _placed, и healthcheck рапортует «фигур 283» при нуле
+     * показанных — индикатор, переживший данные. */
+    if (!items.length) {
+      /* Шапку рисуем ДО выхода: заголовок сцены не зависит от выборки, а
+       * ранний выход её проглатывал — на пустом отборе экран оставался без
+       * названия, и было непонятно даже, где ты находишься. */
+      this._placed = [];
+      this._renderHead();
+      return;
+    }
 
     const strip = this._hasStrip();
     const left = h.width * PAD_LEFT;
@@ -546,6 +628,15 @@ export const scaleScene = {
       if (this._view.offset !== before) this._view.velocity = 0;
     }
     const ctx = h.ctx;
+    /* Отбор не дал совпадений — заглушка вместо пустого поля: панель пишет
+     * «0 из 283», но сцена без подписи это чистый экран без объяснения. */
+    if (this._items && !this._items.length) {
+      ctx.clearRect(0, 0, h.width, h.height);
+      drawEmptyState(ctx, h.width, h.height, this._app);
+      hintForEmpty(this, true);
+      return;
+    }
+    hintForEmpty(this, false);
     ctx.clearRect(0, 0, h.width, h.height);
     this._drawScene();
     this._drawFigures();

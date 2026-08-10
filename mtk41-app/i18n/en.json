@@ -27,8 +27,6 @@
   "nav.mode": "Scrolling",
   "mode.scrubber": "Scrubber",
   "mode.zoom": "Zoom",
-  "mode.decades": "Decades",
-  "mode.all": "All",
   "mode.whole": "Whole corpus",
   "mode.close": "Close-up",
   "lane.extant": "standing",
@@ -72,5 +70,7 @@
   "kind.plaque.short": "plq",
   "kind.steel": "steel silhouette",
   "kind.steel.short": "steel",
-  "silhouettes.ruler": "Ground trace — a different axis: length, not height"
+  "silhouettes.ruler": "Ground trace — a different axis: length, not height",
+  "finder.empty": "Nothing found",
+  "finder.emptyHint": "Clear the filters — search icon above"
 }

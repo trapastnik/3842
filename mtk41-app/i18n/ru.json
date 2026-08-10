@@ -26,8 +26,6 @@
   "nav.mode": "Промотка",
   "mode.scrubber": "Скраббер",
   "mode.zoom": "Зум",
-  "mode.decades": "Десятилетия",
-  "mode.all": "Все",
   "mode.whole": "Весь корпус",
   "mode.close": "Крупно",
   "lane.extant": "сохранились",
@@ -71,5 +69,7 @@
   "kind.plaque.short": "доска",
   "kind.steel": "стальной силуэт",
   "kind.steel.short": "сталь",
-  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота"
+  "silhouettes.ruler": "След на земле — другая ось: длина, а не высота",
+  "finder.empty": "Ничего не найдено",
+  "finder.emptyHint": "Снимите отбор в поиске — лупа наверху"
 }
