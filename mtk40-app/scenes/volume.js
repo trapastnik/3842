@@ -10,7 +10,7 @@
  * так, чтобы различались все 99. Оба режима подписаны, чтобы второй не
  * читался как настоящий масштаб.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=42";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, unit, chip } from "./shared.js?v=44";
 
 const GAP = 3;          // дизайн-px между плитками
 const GROUP_GAP = 10;

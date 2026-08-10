@@ -11,7 +11,8 @@
  * провал внутрь с доводкой камеры. Лестница своя: города → оси корпуса
  * внутри города → отдельные книги.
  */
-import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip } from "./shared.js?v=42";
+import { CORPUS_URL, M, DESIGN_W, createCanvas, corpusOf, createCard, createHint, unit, chip,
+         normQuery, matchQuery } from "./shared.js?v=44";
 
 const P = () => window.MTK40_PLACES;
 const WT = () => window.MtkProjection.WinkelTripel;
@@ -49,12 +50,46 @@ export const geographyScene = {
       label: { ru: "Контуры материков", en: "Continent outlines", zh: "大陆轮廓" } },
   ],
 
+  /* Финдер здесь объявлен потому, что поиск осмыслен: 99 книг в 16 городах,
+   * и «где вышел Капитал» — вопрос, на который карта отвечает лучше списка.
+   * Ось переехала в отбор; чипы остались на сцене ЯРЛЫКАМИ.
+   * Геттер, а не статика: подписи из словаря, панель перечитывает их сама. */
+  get finder() {
+    const t = (k) => (this.app ? this.app.t(k) : k);
+    return {
+      search: {
+        fields: [
+          { key: "title", label: t("find.title") },
+          { key: "author", label: t("find.author") },
+          { key: "place_first", label: t("find.place") },
+        ],
+      },
+      filters: [
+        { key: "bucket", label: t("catalog.axis"),
+          options: () => M.BUCKETS.map((b) => [b, t("bucket." + b)]) },
+      ],
+    };
+  },
+
+  /* Отбор целиком, при любом изменении. Кружки пересобираются на ближайшем
+   * кадре сами (buildClusters читает shownItems), поэтому здесь достаточно
+   * обновить ярлыки и открытую карточку города. */
+  applyFinder({ query, filters }) {
+    this.find = { query: query || "", filters: filters || {} };
+    this.paintTools();
+    if (this.activeCity) this.showCity(this.activeCity, this.activeLane);
+    const shown = this.cities.reduce((a, c) => a + this.shownItems(c).length, 0);
+    return { shown, total: this.corpus.items.length };
+  },
+
   mount(el, ctx) {
     this.app = ctx.app;
     this.corpus = corpusOf(ctx.data.corpus);
     this.values = { thrAxis: 2.3, thrBook: 5.5, dotScale: 1, showWorld: true };
 
-    this.buckets = new Set();
+    /* Отбор держит ядро; до первого applyFinder (ядро зовёт его сразу после
+     * mount) — пусто. Своего множества букетов у сцены больше нет. */
+    this.find = { query: "", filters: {} };
     this.activeCity = null;
     this.activeLane = null;
     this.selectedId = null;
@@ -138,8 +173,9 @@ export const geographyScene = {
   pause() { if (this.cv) this.cv.stop(); },
   resume() { if (this.cv) this.cv.start(); },
 
+  /* Отбор гасит ядро — до этого вызова. Здесь только своё: камера,
+   * открытый город, карточка. */
   reset() {
-    this.buckets.clear();
     this.activeCity = null;
     this.activeLane = null;
     this.selectedId = null;
@@ -183,13 +219,15 @@ export const geographyScene = {
     if (!this.lastClusters.length) {
       const probe = this.materialize(this.buildClusters(this.levelFor(this.zf())));
       if (probe.length) return { ok: true, detail: "кадра ещё не было; кружков " + probe.length };
-      /* Пустой кадр бывает ЗАКОННЫМ: фильтр осей мог обнулить все города в
-       * поле зрения, а камеру — увести на океан (кламп держит четверть
-       * габарита, но не гарантирует кружок в кадре). Авария — только если
-       * фильтры сняты и камера в позе «вся карта»: тогда пусто по-настоящему
-       * (GRABLI, «легально пустые состояния — не авария»). */
-      if (this.buckets.size) {
-        return { ok: true, detail: "в кадре пусто из-за фильтра осей — это законно" };
+      /* Пустой кадр бывает ЗАКОННЫМ: отбор мог обнулить все города в поле
+       * зрения, а камеру — увести на океан (кламп держит четверть габарита,
+       * но не гарантирует кружок в кадре). Авария — только если отбор снят
+       * и камера в позе «вся карта»: тогда пусто по-настоящему (GRABLI,
+       * «легально пустые состояния — не авария»). Критерии спрашиваем у
+       * ядра: своих у сцены нет, и запрос обнуляет карту не хуже оси. */
+      const f = this.find.filters || {};
+      if (f.bucket || this.find.query) {
+        return { ok: true, detail: "в кадре пусто из-за отбора — это законно" };
       }
       if (this.movedFromFit()) {
         return { ok: true, detail: "в кадре пусто: камера уведена от позы «вся карта»" };
@@ -250,22 +288,28 @@ export const geographyScene = {
   get W() { return this.cv ? this.cv.w : 0; },
   get H() { return this.cv ? this.cv.h : 0; },
 
+  /* Чипы оси — ЯРЛЫКИ финдера: тап шлёт патч в ядро, повторный по выбранному
+   * шлёт null. Своего состояния не держат, нажатое читается из ядра.
+   * Счёт фасетный — «сколько останется, если выбрать эту ось»: с учётом
+   * запроса, но без учёта самой оси. */
   paintTools() {
     if (!this.tools) return;
+    const cur = (this.find.filters || {}).bucket || null;
     this.tools.innerHTML = "";
     for (const b of M.BUCKETS) {
-      const meta = M.BUCKET_META[b];
       this.tools.appendChild(chip(this.app.t("bucket." + b), {
-        count: this.corpus.items.filter((i) => i.bucket === b).length,
-        accent: meta.accent,
-        pressed: this.buckets.has(b),
-        onClick: () => {
-          if (this.buckets.has(b)) this.buckets.delete(b); else this.buckets.add(b);
-          this.paintTools();
-          if (this.activeCity) this.showCity(this.activeCity, this.activeLane);
-        },
+        count: this.facet(b),
+        accent: M.BUCKET_META[b].accent,
+        pressed: cur === b,
+        onClick: () => this.app.setFinder({ filters: { bucket: cur === b ? null : b } }),
       }));
     }
+  },
+
+  facet(bucket) {
+    const nq = normQuery(this.find.query);
+    return this.corpus.items.filter((i) =>
+      i.bucket === bucket && matchQuery(i, ["title", "title_spine", "author", "place_first"], nq)).length;
   },
 
   fitToCities() {
@@ -326,7 +370,13 @@ export const geographyScene = {
       : zf < this.thr("thrBook", 5.5) ? "AXIS" : "BOOK";
   },
 
-  passes(item) { return !this.buckets.size || this.buckets.has(item.bucket); },
+  /* Отбор → поиск, порядок канонический. Оба критерия живут в ядре. */
+  passes(item) {
+    const f = this.find.filters || {};
+    if (f.bucket && item.bucket !== f.bucket) return false;
+    return matchQuery(item, ["title", "title_spine", "author", "place_first"],
+      normQuery(this.find.query));
+  },
   shownItems(city) {
     return city.items.filter((i) => this.passes(i)).sort((a, b) => a.year_first - b.year_first);
   },
