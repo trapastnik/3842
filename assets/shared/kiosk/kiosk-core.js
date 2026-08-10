@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.17.1";
+  var VERSION = "1.17.2";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -2641,8 +2641,9 @@
       if (el.contains(e.target) || (self._els.finder && self._els.finder.contains(e.target))) return;
       self.openFinder(false);
     }, { passive: true });
-    /* Клавиатура строится один раз вместе с панелью: сцены ей не владеют. */
-    if (this.finderSpec() && this.finderSpec().search) this._buildKeyboard(el);
+    /* Клавиатура одна на приложение, но показывается по декларации ТЕКУЩЕЙ
+     * сцены: у одной поиск есть, у другой только чипы. */
+    this._buildKeyboard(el);
     this._els.root.appendChild(el);
     this._els.finderPanel = el;
   };
@@ -2694,6 +2695,13 @@
       }
       self._renderFinder();
     };
+
+    /* Поле ввода и клавиатура — только если сцена объявила поиск. */
+    var hasSearch = !!(spec.search && (spec.search.fields || []).length);
+    var kb = this._els.finderPanel.querySelector(".kiosk-kbd");
+    var qBox = this._els.finderPanel.querySelector(".kiosk-finder__q");
+    if (kb) kb.hidden = !hasSearch;
+    if (qBox) qBox.hidden = !hasSearch;
 
     var qEl = this._els.finderPanel.querySelector(".kiosk-finder__q-text");
     if (qEl) qEl.textContent = st.query || "";
@@ -3377,6 +3385,15 @@
     btn.classList.toggle("is-active", n > 0);
     btn.setAttribute("aria-label", this.t("finder.button") +
       (n ? " (" + n + ")" : ""));
+
+    /* Панель принадлежит СЦЕНЕ, а не приложению. Ушли на сцену без
+     * финдера — панель обязана уйти с ней: иначе поверх новой сцены
+     * висят чипы старой, а закрыть их нечем, иконка-то спрятана.
+     * Ушли на другую сцену С финдером — перерисовать под её декларацию,
+     * иначе показывались бы чужие фильтры со своим отбором. */
+    if (!has) this.openFinder(false);
+    else if (this._finderOpen) this._renderFinder();
+
     this._applyInsets();
   };
 
