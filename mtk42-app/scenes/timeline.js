@@ -4,13 +4,63 @@
  * Полосы позиционируются в px внутри content-box, который начинается после
  * padding-left = --m42-label-col; ширину меряем по вычисленному padding
  * (переменная — clamp(), parseFloat по ней дал бы NaN). */
-import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=29";
+import { DATA, museumCardHtml, createOverlay, esc } from "./shared.js?v=31";
 
-const STATUSES = ["all", "active", "transformed", "private", "closed"];
+/* Без «all»: строку снятия («—») панель финдера подставляет сама. */
+const STATUSES = ["active", "transformed", "private", "closed"];
+
+/* Поля поиска. Ищем сами — ядро берёт отсюда только подписи. Описание музея в
+ * поиск НЕ берём: длинный текст, и на полосе его не видно — попадание нечем
+ * объяснить (расширение прецедента 39 «desc не в поиск»). */
+const SEARCH_IN = [
+  (it) => it.short,
+  (it) => it.full_name,
+  (it) => it.city,
+  (it) => it.country,
+];
+
+function norm(s) {
+  return String(s || "").toLowerCase().replace(/\u0451/g, "\u0435");
+}
 
 export const timelineScene = {
   id: "timeline",
   title: { ru: "Институции · Таймлайн", en: "Institutions · Timeline", zh: "机构 · 时间轴" },
+
+  /* Финдер. Статус уехал со сцены в панель; регион и страна — новые фасеты,
+   * чипами они не помещались. Сортировки объявлены, потому что ВИДИМО меняют
+   * порядок строк: без сортировки полосы сгруппированы по регионам и внутри
+   * идут по году открытия, с сортировкой группировка снимается и список
+   * становится сплошным — это и есть видимый эффект. */
+  finder: {
+    search: {
+      fields: [
+        /* Два поля под одной подписью: full_name уточняет город в скобках. */
+        { key: "short", label: { ru: "Название", en: "Name", zh: "名称" } },
+        { key: "full_name", label: { ru: "Название", en: "Name", zh: "名称" } },
+        { key: "city", label: { ru: "Город", en: "City", zh: "城市" } },
+        { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" } },
+      ],
+    },
+    filters: [
+      { key: "status", label: { ru: "Судьба", en: "Fate", zh: "命运" },
+        options: (ctx) => STATUSES.map((v) => [v, ctx.app.t("status.one." + v)]) },
+      { key: "region", label: { ru: "Регион", en: "Region", zh: "地区" },
+        options: (ctx) => ((ctx.data.museums && ctx.data.museums.regions) || [])
+          .slice().sort((a, b) => a.sort - b.sort)
+          .map((r) => [r.id, ctx.app.t("region." + r.id)]) },
+      { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" },
+        options: (ctx) => [...new Set(((ctx.data.museums && ctx.data.museums.items) || [])
+          .map((i) => i.country))].sort((a, b) => String(a).localeCompare(String(b), "ru"))
+          .map((c) => [c, c]) },
+    ],
+    sorts: [
+      { key: "opened", label: { ru: "По году открытия", en: "By year opened", zh: "按开馆年份" } },
+      { key: "closed", label: { ru: "По году закрытия", en: "By year closed", zh: "按闭馆年份" } },
+      { key: "az", label: { ru: "По алфавиту", en: "A\u2192Z", zh: "\u6309\u5b57\u6bcd" } },
+      { key: "life", label: { ru: "По длительности работы", en: "By lifespan", zh: "按存续时长" } },
+    ],
+  },
 
   /* Схема настроек v1.2. Вся типографика пяти блоков и высоты — из описи
    * SETTINGS-INVENTORY (в пилоте эти 17 позиций были потеряны в CSS). */
@@ -58,7 +108,7 @@ export const timelineScene = {
     this._data = ctx.data.museums;
     this._yearMin = this._data.year_min || 1923;
     this._yearMax = this._data.year_max || 2026;
-    this._status = "all";
+    this._find = this._find || { query: "", filters: {}, sort: null };
 
     const root = document.createElement("div");
     root.className = "m42-timeline";
@@ -76,21 +126,11 @@ export const timelineScene = {
     el.appendChild(root);
 
     this._root = root;
-    this._statusRow = root.querySelector('[data-row="status"]');
     this._counterEl = root.querySelector(".m42-timeline__counter");
     this._ticksEl = root.querySelector(".m42-timeline__ticks");
     this._scrollEl = root.querySelector(".m42-timeline__scroll");
     this._innerEl = root.querySelector(".m42-timeline__inner");
     this._overlay = createOverlay(el, this._app);
-
-    this._onFilter = (e) => {
-      const btn = e.target.closest("[data-value]");
-      if (!btn) return;
-      this._status = btn.getAttribute("data-value");
-      this._renderFilters();
-      this._renderRows();
-    };
-    this._statusRow.addEventListener("click", this._onFilter);
 
     this._onRow = (e) => {
       const hit = e.target.closest("[data-id]");
@@ -119,11 +159,10 @@ export const timelineScene = {
 
   unmount() {
     if (this._ro) { this._ro.disconnect(); this._ro = null; }
-    if (this._statusRow) this._statusRow.removeEventListener("click", this._onFilter);
     if (this._innerEl) this._innerEl.removeEventListener("click", this._onRow);
     if (this._overlay) this._overlay.destroy();
     if (this._root) this._root.remove();
-    this._root = this._statusRow = this._counterEl = null;
+    this._root = this._counterEl = null;
     this._ticksEl = this._scrollEl = this._innerEl = this._overlay = this._app = null;
     this._data = null;
   },
@@ -164,14 +203,60 @@ export const timelineScene = {
 
   _scale() { return Math.min(2, Math.max(1, window.innerWidth / 1920)); },
 
+  /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск →
+   * сортировка. {shown,total} — по фактически показанному. */
+  applyFinder({ query, filters, sort }) {
+    this._find = { query: query || "", filters: filters || {}, sort: sort || null };
+    this._renderAll();
+    return { shown: this._visible().length, total: this._data.items.length };
+  },
+
+  /* Отбор → поиск → сортировка. Музеи без года закрытия («работает») при
+   * сортировке по закрытию уходят в КОНЕЦ: выбравший «по году закрытия» ищет
+   * годы, а не пустоты — прецедент 39 с year_named. */
+  _visible() {
+    if (!this._data) return [];
+    const f = (this._find && this._find.filters) || {};
+    let list = this._data.items.filter((it) =>
+      (!f.status || it.status === f.status) &&
+      (!f.region || it.region === f.region) &&
+      (!f.country || it.country === f.country));
+
+    const q = norm(this._find && this._find.query);
+    if (q) list = list.filter((it) => SEARCH_IN.some((get) => norm(get(it)).includes(q)));
+
+    const sort = this._find && this._find.sort;
+    const конец = Number.POSITIVE_INFINITY;
+    if (sort === "opened") list = list.slice().sort((a, b) => a.opened - b.opened);
+    else if (sort === "closed") {
+      list = list.slice().sort((a, b) =>
+        (a.closed == null ? конец : a.closed) - (b.closed == null ? конец : b.closed));
+    } else if (sort === "az") {
+      list = list.slice().sort((a, b) => a.short.localeCompare(b.short, "ru"));
+    } else if (sort === "life") {
+      const срок = (it) => (it.closed == null ? this._yearMax : it.closed) - it.opened;
+      list = list.slice().sort((a, b) => срок(b) - срок(a));
+    }
+    return list;
+  },
+
   /* Полосы позиционируются по измеренной ширине: если контейнер оказался
    * нулевым, данные есть, а на экране пусто. */
   healthcheck() {
     if (!this._innerEl) return { ok: false, detail: "сцена не смонтирована" };
     const bars = this._innerEl.querySelectorAll(".m42-timeline__bar").length;
-    const want = this._data.items.filter((it) =>
-      this._status === "all" || it.status === this._status).length;
-    return bars === want && want > 0
+    const want = this._visible().length;
+    /* Пустой отбор ЛЕГАЛЕН: сочетаний судьба×регион×страна много, и пустых
+     * среди них хватает (перебор состояний нашёл 22). Признак здоровья в этом
+     * случае — заглушка: голый экран без объяснения и есть дефект, а не ноль
+     * сам по себе. Та же логика, что в картотеке. */
+    if (want === 0) {
+      const stub = !!this._innerEl.querySelector(".m42-timeline__empty");
+      return stub
+        ? { ok: true, detail: "отбор пуст легально, показана заглушка" }
+        : { ok: false, detail: "отбор пуст, но заглушки нет" };
+    }
+    return bars === want
       ? { ok: true, detail: "полос отрисовано " + bars }
       : { ok: false, detail: "полос отрисовано " + bars + " из " + want };
   },
@@ -179,8 +264,9 @@ export const timelineScene = {
   pause() {},   // статичный DOM — ни rAF, ни таймеров
   resume() {},
 
+  /* Отбор финдера гасит ядро, и до этого вызова — здесь только свой кеш. */
   reset() {
-    this._status = "all";
+    this._find = { query: "", filters: {}, sort: null };
     if (this._overlay) this._overlay.close();
     if (this._scrollEl) this._scrollEl.scrollTop = 0;
     this._renderAll();
@@ -200,17 +286,9 @@ export const timelineScene = {
     this._root.querySelector(".m42-head__title").textContent = t("museums.title");
     this._root.querySelector(".m42-head__sub").textContent = t("museums.timeline.subtitle");
     if (this._overlay) this._overlay.close();
-    this._renderFilters();
     this._renderRows();
   },
 
-  _renderFilters() {
-    const t = (k) => this._app.t(k);
-    this._statusRow.innerHTML = STATUSES.map((v) =>
-      '<button type="button" class="m42-filter kiosk-target' +
-      (v === this._status ? " is-active" : "") + '" data-value="' + v + '">' +
-      esc(t("status." + v)) + "</button>").join("");
-  },
 
   _barWidth() {
     const pad = parseFloat(getComputedStyle(this._innerEl).paddingLeft) || 240;
@@ -236,19 +314,29 @@ export const timelineScene = {
       this._ticksEl.appendChild(tick);
     }
 
-    const items = this._data.items.filter((it) =>
-      this._status === "all" || it.status === this._status);
+    const items = this._visible();
     const regions = this._data.regions.slice().sort((a, b) => a.sort - b.sort);
+    /* С выбранной сортировкой группировка по регионам снимается: иначе порядок
+     * менялся бы только внутри групп, и «по алфавиту» на экране читалось бы как
+     * «ничего не произошло». Сплошной список — и есть видимый эффект. */
+    const flat = !!(this._find && this._find.sort);
 
     let html =
       '<div class="m42-timeline__collapse" style="left:' + this._x(1991, barW) +
       "px;width:" + (this._x(1993, barW) - this._x(1991, barW)) + 'px"></div>';
 
-    for (const region of regions) {
-      const arr = items.filter((it) => it.region === region.id)
-        .sort((a, b) => a.opened - b.opened);
+    const группы = flat
+      ? [{ title: null, arr: items }]
+      : regions.map((region) => ({
+          title: t("region." + region.id),
+          arr: items.filter((it) => it.region === region.id)
+            .sort((a, b) => a.opened - b.opened),
+        }));
+
+    for (const группа of группы) {
+      const arr = группа.arr;
       if (!arr.length) continue;
-      html += '<h2 class="m42-timeline__region">' + esc(t("region." + region.id)) + "</h2>";
+      if (группа.title) html += '<h2 class="m42-timeline__region">' + esc(группа.title) + "</h2>";
       for (const it of arr) {
         const from = Math.max(this._yearMin, it.opened);
         const to = it.closed == null ? this._yearMax : Math.min(this._yearMax, it.closed);
@@ -268,7 +356,10 @@ export const timelineScene = {
           "</button></div>";
       }
     }
-    this._innerEl.innerHTML = html;
+    /* Ничего не нашлось — говорим об этом словами. Без заглушки посетитель
+       видит пустую сетку лет и не понимает, он сломал или так и надо. */
+    this._innerEl.innerHTML = items.length ? html
+      : '<p class="m42-timeline__empty">' + esc(t("museums.empty")) + "</p>";
     this._counterEl.textContent = t("museums.counter", {
       shown: items.length, total: this._data.items.length,
     });

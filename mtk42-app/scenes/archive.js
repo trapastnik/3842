@@ -6,18 +6,58 @@
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
   applyPhotoMode,
-} from "./shared.js?v=29";
+} from "./shared.js?v=31";
 
-const EPOCH_FILTERS = ["all", "1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
-const CAT_FILTERS = ["all", "leaders", "politician", "researcher", "writers"];
+/* Без «all»: строку снятия («—») панель финдера подставляет сама. */
+const EPOCHS = ["1920s", "soviet", "back-to-lenin", "delen", "renais", "now"];
+const CATS = ["leaders", "politician", "researcher", "writers"];
+
+/* Поля поиска. Ищем сами — ядро берёт отсюда только подписи для строки
+ * «ищем по…». Сознательно НЕ ищем по summary и key_work: пересказ и
+ * библиография не показаны на плитке, и объяснить посетителю, почему запись
+ * нашлась, было бы нечем (расширение прецедента 39 «desc не в поиск»). */
+const SEARCH_IN = [
+  (it) => it.name,
+  (it) => it.role,
+  (it) => (it.quote && it.quote.text) || "",
+];
+
+/* «Ё» и регистр: посетитель наберёт «еременко», а в данных «Ерёменко». */
+function norm(s) {
+  return String(s || "").toLowerCase().replace(/ё/g, "е");
+}
 
 export const archiveScene = {
   id: "archive",
   title: { ru: "Картотека", en: "Card index", zh: "卡片目录" },
 
+  /* Финдер (канон PLAN-KIOSK, тираж после пилота 39). Эпоха и категория
+   * уехали со сцены в панель — это отбор картотечного типа, ему там место;
+   * своих чипов у сцены больше нет. Сортировки объявлены все три, потому что
+   * каждая ВИДИМО меняет порядок плиток. */
+  finder: {
+    search: {
+      fields: [
+        { key: "name", label: { ru: "Имя", en: "Name", zh: "姓名" } },
+        { key: "role", label: { ru: "Кто это", en: "Who", zh: "身份" } },
+        { key: "quote", label: { ru: "Цитата", en: "Quote", zh: "引文" } },
+      ],
+    },
+    filters: [
+      { key: "epoch", label: { ru: "Эпоха", en: "Period", zh: "时期" },
+        options: (ctx) => EPOCHS.map((v) => [v, ctx.app.t("epoch." + v)]) },
+      { key: "category", label: { ru: "Категория", en: "Category", zh: "类别" },
+        options: (ctx) => CATS.map((v) => [v, ctx.app.t("cat." + v)]) },
+    ],
+    sorts: [
+      { key: "az", label: { ru: "По алфавиту", en: "A→Z", zh: "按字母" } },
+      { key: "year", label: { ru: "По году высказывания", en: "By year", zh: "按年份" } },
+      { key: "tone", label: { ru: "От критики к почитанию", en: "Critique → reverence", zh: "由批评到崇敬" } },
+    ],
+  },
+
   /* Схема настроек v1.2. «Дизайн карточки героя» возвращён из прототипа
-   * (опись SETTINGS-INVENTORY, класс А). Фильтры «Эпоха»/«Категория» —
-   * класс Б, живут на сцене и сбрасываются по idle. */
+   * (опись SETTINGS-INVENTORY, класс А). */
   settings: [
     { key: "cardDesign", label: { ru: "Дизайн карточки героя" }, type: "select",
       default: "classic",
@@ -45,8 +85,9 @@ export const archiveScene = {
   mount(el, ctx) {
     this._app = ctx.app;
     this._items = buildPeople(ctx.data.people, ctx.data.portraits || {});
-    this._epoch = "all";
-    this._cat = "all";
+    /* Отбор держит ядро; сцена хранит только последний присланный срез, и то
+     * ради healthcheck и счётчика. Копии состояния на сцене канон запрещает. */
+    this._find = this._find || { query: "", filters: {}, sort: null };
 
     const root = document.createElement("div");
     root.className = "m42-archive";
@@ -55,10 +96,6 @@ export const archiveScene = {
       '<h1 class="m42-head__title"></h1>' +
       '<p class="m42-head__sub"></p>' +
       "</header>" +
-      '<div class="m42-filters">' +
-      '<div class="m42-filters__row" data-row="epoch"></div>' +
-      '<div class="m42-filters__row" data-row="cat"></div>' +
-      "</div>" +
       '<div class="m42-archive__grid kiosk-scroll"></div>' +
       '<div class="m42-archive__counter"></div>';
     el.appendChild(root);
@@ -66,21 +103,7 @@ export const archiveScene = {
     this._root = root;
     this._gridEl = root.querySelector(".m42-archive__grid");
     this._counterEl = root.querySelector(".m42-archive__counter");
-    this._epochRow = root.querySelector('[data-row="epoch"]');
-    this._catRow = root.querySelector('[data-row="cat"]');
     this._overlay = createOverlay(el, this._app);
-
-    this._onFilter = (e) => {
-      const btn = e.target.closest("[data-value]");
-      if (!btn) return;
-      const row = btn.closest("[data-row]").getAttribute("data-row");
-      if (row === "epoch") this._epoch = btn.getAttribute("data-value");
-      else this._cat = btn.getAttribute("data-value");
-      this._renderFilters();
-      this._renderGrid();
-    };
-    this._epochRow.addEventListener("click", this._onFilter);
-    this._catRow.addEventListener("click", this._onFilter);
 
     this._onCard = (e) => {
       const card = e.target.closest("[data-id]");
@@ -96,13 +119,11 @@ export const archiveScene = {
   },
 
   unmount() {
-    if (this._epochRow) this._epochRow.removeEventListener("click", this._onFilter);
-    if (this._catRow) this._catRow.removeEventListener("click", this._onFilter);
     if (this._gridEl) this._gridEl.removeEventListener("click", this._onCard);
     if (this._overlay) this._overlay.destroy();
     if (this._root) this._root.remove();
     this._root = this._gridEl = this._counterEl = null;
-    this._epochRow = this._catRow = this._overlay = this._app = null;
+    this._overlay = this._app = null;
     this._items = null;
   },
 
@@ -126,17 +147,24 @@ export const archiveScene = {
     return d;
   },
 
+  /* Отбор целиком, при любом изменении. Порядок канона: отбор → поиск →
+   * сортировка. Возврат {shown,total} — по ФАКТИЧЕСКИ показанному: строка
+   * в подвале панели обязана объяснять экран, а не состояние панели. */
+  applyFinder({ query, filters, sort }) {
+    this._find = { query: query || "", filters: filters || {}, sort: sort || null };
+    this._renderGrid();
+    return { shown: this._visible().length, total: this._items.length };
+  },
+
   /* Пустая сетка при непустом отборе — авария. А вот пустой отбор бывает
    * ЛЕГАЛЬНО: в данных шесть комбинаций эпоха×категория без единой записи
-   * (напр. «Назад к Ленину» × «Вожди»). Фильтры класса Б живут до idle-reset,
-   * так что оператор может запустить стенд ровно в это окно — и получить
-   * красный на здоровом киоске. Признак здоровья в таком случае — заглушка. */
+   * (напр. «Назад к Ленину» × «Вожди»), да и поиск легко не находит ничего.
+   * Отбор финдера живёт до idle-сброса, так что стенд может застать ровно это
+   * окно — и получить красный на здоровом киоске. Признак здоровья — заглушка. */
   healthcheck() {
     if (!this._gridEl) return { ok: false, detail: "сцена не смонтирована" };
     const tiles = this._gridEl.querySelectorAll(".m42-tile").length;
-    const want = this._items.filter((it) =>
-      (this._epoch === "all" || it.epoch === this._epoch) &&
-      (this._cat === "all" || it.category === this._cat)).length;
+    const want = this._visible().length;
     if (want === 0) {
       const stub = !!this._gridEl.querySelector(".m42-archive__empty");
       return stub
@@ -151,9 +179,10 @@ export const archiveScene = {
   pause() {},   // нет rAF и таймеров — останавливать нечего
   resume() {},
 
+  /* Отбор финдера ядро гасит САМО и до этого вызова — здесь только свой кеш,
+   * чтобы сцена не отрисовала срез, которого в ядре уже нет. */
   reset() {
-    this._epoch = "all";
-    this._cat = "all";
+    this._find = { query: "", filters: {}, sort: null };
     if (this._overlay) this._overlay.close();
     if (this._gridEl) this._gridEl.scrollTop = 0;
     this._renderAll();
@@ -174,26 +203,30 @@ export const archiveScene = {
     this._root.querySelector(".m42-head__title").textContent = t("archive.title");
     this._root.querySelector(".m42-head__sub").textContent = t("archive.subtitle");
     if (this._overlay) this._overlay.close();
-    this._renderFilters();
     this._renderGrid();
   },
 
-  _renderFilters() {
-    const t = (k) => this._app.t(k);
-    const row = (list, cur, prefix) => list.map((v) =>
-      '<button type="button" class="m42-filter kiosk-target' +
-      (v === cur ? " is-active" : "") + '" data-value="' + v + '">' +
-      esc(t(prefix + v)) + "</button>").join("");
-    this._epochRow.innerHTML = row(EPOCH_FILTERS, this._epoch, "epoch.");
-    this._catRow.innerHTML = row(CAT_FILTERS, this._cat, "cat.");
+  /* Отбор → поиск → сортировка, ровно в этом порядке. */
+  _visible() {
+    const f = (this._find && this._find.filters) || {};
+    let list = (this._items || []).filter((it) =>
+      (!f.epoch || it.epoch === f.epoch) &&
+      (!f.category || it.category === f.category));
+
+    const q = norm(this._find && this._find.query);
+    if (q) list = list.filter((it) => SEARCH_IN.some((get) => norm(get(it)).includes(q)));
+
+    const sort = this._find && this._find.sort;
+    if (sort === "az") list = list.slice().sort((a, b) => a.name.localeCompare(b.name, "ru"));
+    else if (sort === "year") list = list.slice().sort((a, b) => a.year - b.year);
+    else if (sort === "tone") list = list.slice().sort((a, b) => a.tone - b.tone);
+    return list;
   },
 
   _renderGrid() {
     if (!this._gridEl) return;
     const t = (k, v) => this._app.t(k, v);
-    const list = this._items.filter((it) =>
-      (this._epoch === "all" || it.epoch === this._epoch) &&
-      (this._cat === "all" || it.category === this._cat));
+    const list = this._visible();
 
     this._gridEl.innerHTML = list.length
       ? list.map((it) => this._cardHtml(it, t)).join("")

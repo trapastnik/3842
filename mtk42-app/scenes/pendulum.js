@@ -15,7 +15,7 @@
 import {
   DATA, buildPeople, portraitList, personCardHtml, createOverlay, esc,
   applyPhotoMode,
-} from "./shared.js?v=29";
+} from "./shared.js?v=31";
 
 const YEAR_MIN = 1920, YEAR_MAX = 2026;
 const TOP_PAD = 36, BOTTOM_PAD = 36;

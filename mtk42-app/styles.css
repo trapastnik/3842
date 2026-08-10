@@ -189,6 +189,12 @@
   text-transform: uppercase;
   color: rgba(247, 249, 239, 0.55);
 }
+.m42-timeline__empty {
+  position: absolute;
+  left: 0; top: 40%;
+  font-size: calc(var(--m42-body) * var(--a11y-scale));
+  color: rgba(247, 249, 239, 0.6);
+}
 .m42-archive__empty {
   grid-column: 1 / -1;
   font-size: calc(var(--m42-body) * var(--a11y-scale));

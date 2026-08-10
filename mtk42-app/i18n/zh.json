@@ -67,5 +67,6 @@
   "region.east-eu": "东欧",
   "region.world": "世界其他地区",
   "hint.pinch": "双指缩放地图",
-  "hint.drag": "拖动以滚动"
+  "hint.drag": "拖动以滚动",
+  "museums.empty": "未找到结果 — 请清除筛选"
 }
