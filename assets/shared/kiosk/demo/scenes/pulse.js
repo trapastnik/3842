@@ -1,5 +1,5 @@
 /* Демо-сцена 1 «Пульс» — концентрические круги, тянут кадр анимацией. */
-import { createCanvasScene } from "./canvas-scene.js?v=1.17.2";
+import { createCanvasScene } from "./canvas-scene.js?v=1.17.4";
 
 export const pulseScene = createCanvasScene({
   id: "pulse",
