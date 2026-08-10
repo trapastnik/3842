@@ -12,7 +12,8 @@
 import {
   DATA, STATUS, STATUS_COLOR, nf, esc, fitCanvas, drawScale, loop, sizeWatch,
   objectCardHtml, createCardPanel, createOffmap, isOffMap,
-} from "./shared.js?v=6";
+  FINDER_SEARCH, normQuery, matchesQuery,
+} from "./shared.js?v=13";
 
 const REPUBLIC_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
@@ -58,11 +59,25 @@ export const unionScene = {
       type: "range", min: 1, max: 20, step: 1, unit: " зап.", default: 3 },
   ],
 
+  /* Рубрикатор республик остаётся на сцене: он ведёт камеру (перелёт к
+     контуру), а не отбирает записи, и в панели потерял бы и то и другое. */
+  finder: {
+    search: FINDER_SEARCH,
+    filters: [
+      { key: "status", label: { ru: "Судьба имени", en: "Fate of the name", zh: "名称的命运" },
+        options: (c) => STATUS.map((s) => [s.key, c.app.t(s.t)]) },
+    ],
+  },
+
   opt: Object.assign({}, DEFAULTS),
 
   applySettings(values) {
     this.opt = Object.assign({}, DEFAULTS, values || {});
     if (this.api) this.api.applyOptions();
+  },
+
+  applyFinder(state) {
+    return this.api ? this.api.applyFind(state) : undefined;
   },
 
   mount(el, ctx) {
@@ -82,10 +97,16 @@ export const unionScene = {
         '<header class="m39-rail__head"><h1 class="m39-rail__title"></h1>' +
         '<p class="m39-sub"></p></header>' +
         '<nav class="m39-republics kiosk-scroll" aria-label="Республики"></nav>' +
-        '<div class="m39-offhost"></div>' +
+        // чип — в рейле, рядом с рубрикатором: он рядовой контрол
+        '<div class="m39-offtoggle"></div>' +
       "</aside>" +
       '<aside class="m39-legend"></aside>' +
-      '<nav class="m39-filters" aria-label="Что показывать"><div class="m39-chips"></div></nav>';
+      /* А картотека — на СЛОЕ СЦЕНЫ, не в рейле. Она оверлей inset:0, и
+         внутри position:absolute рейла схлопывалась в столбик его ширины:
+         заголовок ломался, табы вываливались за низ. Тот же разъезд хостов,
+         что в «Мире», — грабля семейная, лечить надо ВСЕ её экземпляры в
+         зоне, а не тот, на котором заметил. */
+      '<div class="m39-offhost"></div>';
 
     const canvas = el.querySelector(".m39-canvas");
     const g = canvas.getContext("2d");
@@ -94,7 +115,6 @@ export const unionScene = {
     const sub = el.querySelector(".m39-sub");
     const republics = el.querySelector(".m39-republics");
     const legend = el.querySelector(".m39-legend");
-    const chips = el.querySelector(".m39-chips");
     const offhost = el.querySelector(".m39-offhost");
 
     /* ---- состояние ---- */
@@ -109,7 +129,8 @@ export const unionScene = {
     let bboxes = new Map();
     let visible = [];
     let selected = null;
-    let statusFilter = "all";
+    let statusFilter = null;    // зеркало последнего applyFinder, не своя копия
+    let query = "";
     let republic = null;        // null — весь Союз
     let activeBox = null;
     let fitZoom = 1;
@@ -243,8 +264,12 @@ export const unionScene = {
     prepareLand(ctx.data.countries);
 
     const bboxOf = (country) => bboxes.get(NE_ALIAS[country] || country) || null;
-    const shown = (p) => (statusFilter === "all" || p.status === statusFilter)
-      && (!republic || p.country === republic);
+    /* Республика — не отбор, а навигация: рубрикатор ведёт камеру и остаётся
+       на сцене. Судьба имени и поиск ушли в финдер ядра; порядок канона —
+       отбор → поиск. */
+    const shown = (p) => (!statusFilter || p.status === statusFilter)
+      && (!republic || p.country === republic)
+      && matchesQuery(p, query);
 
     /* ---- отрисовка ---- */
     /* Выбранная республика горит, соседи приглушены: без этого при приближении
@@ -364,43 +389,54 @@ export const unionScene = {
     const offmap = createOffmap(offhost, app, union, {
       onPick: showCard,
       countryKey: "union.byRepublic",
+      // чип — в рейл, оверлей остаётся на слое сцены (см. разметку выше)
+      toggleHost: el.querySelector(".m39-offtoggle"),
     });
 
     /* ---- панели ---- */
+    /* Легенда — ЯРЛЫК В ФИНДЕР (канон PLAN-KIOSK), как в «Мире»: выглядит
+       отбором — значит им и является. Своего состояния не держит, зовёт то
+       же, что чип панели; счёт — по всем критериям, кроме самой судьбы
+       имени, иначе у невыбранных строк стоял бы ноль. */
+    const shownButStatus = (p) => (!republic || p.country === republic)
+      && matchesQuery(p, query);
+
     function buildLegend() {
       legend.replaceChildren();
       for (const s of STATUS) {
-        const n = points.filter((p) => p.status === s.key && shown(p)).length;
-        const row = document.createElement("div");
-        row.className = "m39-legend__row";
-        row.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
-          esc(app.t(s.t)) + ' <span class="m39-legend__num">' + nf.format(n) + "</span>";
-        legend.appendChild(row);
-      }
-    }
-
-    function buildFilters() {
-      chips.replaceChildren();
-      const opts = [["all", app.t("status.all")], ...STATUS.map((s) => [s.key, app.t(s.t)])];
-      for (const [key, label] of opts) {
+        const n = points.filter((p) => p.status === s.key && shownButStatus(p)).length;
         const b = document.createElement("button");
         b.type = "button";
-        b.className = "m39-chip kiosk-target";
-        b.textContent = label;
-        b.setAttribute("aria-pressed", String(key === statusFilter));
+        b.className = "m39-legend__row kiosk-target";
+        b.dataset.status = s.key;
+        b.setAttribute("aria-pressed", String(statusFilter === s.key));
+        b.innerHTML = '<span class="m39-legend__dot" style="background:' + s.color + '"></span>' +
+          '<span class="m39-legend__label">' + esc(app.t(s.t)) + "</span>" +
+          '<span class="m39-legend__num">' + nf.format(n) + "</span>";
+        // повторный тап снимает фильтр — ровно как повторный тап по чипу
         b.addEventListener("click", () => {
-          statusFilter = key;
-          [...chips.children].forEach((c) => c.setAttribute("aria-pressed", String(c === b)));
-          showCard(null);
-          buildLegend();
-          invalidate();
+          app.setFinder({ filters: { status: statusFilter === s.key ? null : s.key } });
         });
-        chips.appendChild(b);
+        legend.appendChild(b);
       }
     }
 
     let allBtn = null;
     const railButtons = new Map();       // название республики → кнопка
+
+    /* Подпись отдельно от камеры: отбор меняет числа на каждом нажатии
+       клавиши, а перелёт при этом трогать нельзя — иначе поиск сбрасывал бы
+       приближение, которое посетитель только что выставил пальцами. */
+    function syncSub() {
+      const inCorpus = union.filter(shown).length;
+      const onMap = points.filter(shown).length;
+      // в рубрикаторе — все записи республики, на карте — только привязанные
+      // к точке; разницу проговариваем, чтобы числа не спорили
+      sub.textContent = republic
+        ? app.t("union.subRepublic",
+          { name: republic, total: nf.format(inCorpus), onMap: nf.format(onMap) })
+        : app.t("union.sub", { total: nf.format(inCorpus) });
+    }
 
     function setRepublic(name, btn, instant) {
       republic = name;
@@ -413,13 +449,7 @@ export const unionScene = {
       const view = viewFor(activeBox);
       fitZoom = view.zoom;
       flyTo(view, !!instant);
-      const inCorpus = union.filter((r) => !name || r.country === name).length;
-      const onMap = points.filter(shown).length;
-      // в рубрикаторе — все записи республики, на карте — только привязанные
-      // к точке; разницу проговариваем, чтобы числа не спорили
-      sub.textContent = name
-        ? app.t("union.subRepublic", { name, total: nf.format(inCorpus), onMap: nf.format(onMap) })
-        : app.t("union.sub", { total: nf.format(inCorpus) });
+      syncSub();
       invalidate();
     }
 
@@ -458,7 +488,6 @@ export const unionScene = {
     function retext() {
       railTitle.textContent = app.t("union.title");
       if (hint) hint.setLabel(app.t("union.hint"));
-      buildFilters();
       buildRepublics();
       offmap.setLang();
       setRepublic(republic, null, true);
@@ -574,11 +603,28 @@ export const unionScene = {
         clampView();
         invalidate();
       },
+      /* Один вход на любое изменение отбора: точки, легенда и картотека
+         «не на карте» считаются одним предикатом shown. */
+      applyFind({ query: q, filters }) {
+        query = normQuery(q);
+        statusFilter = (filters && filters.status) || null;
+        showCard(null);
+        offmap.setFilter(shown);
+        buildLegend();
+        syncSub();
+        invalidate();
+        return { shown: union.filter(shown).length, total: union.length };
+      },
+      /* Ядро гасит финдер ДО reset() и зовёт applyFinder заново — в штатном
+         пути это дубль. Но reset() дёргают и в обход финдера (оператор,
+         стенд), и сцена с чужим отбором при пустой панели — та самая загадка
+         без объяснения из возврата 1.17.4. */
       reset() {
-        statusFilter = "all";
+        statusFilter = null;
+        query = "";
+        offmap.setFilter(null);
         showCard(null);
         offmap.close();
-        buildFilters();
         setRepublic(null, allBtn, true);
         if (hint) hint.show();   // экран вернулся в исходный вид — зовём жест сразу
         invalidate();
@@ -592,8 +638,13 @@ export const unionScene = {
         if (!points.length) return { ok: false, detail: "в Союзе нет геолоцированных объектов" };
         if (!width || !height) return { ok: false, detail: "холст без размера" };
         return { ok: true, detail: "точек в Союзе " + points.length +
-          ", при текущем фильтре " + points.filter(shown).length +
+          ", при текущем отборе " + points.filter(shown).length +
+          " (плюс не на карте " + offmap.count() + ")" +
           ", контуров " + land.length + ", в последнем кадре " + lastDrawn };
+      },
+      closeOverlays() {
+        offmap.close();
+        showCard(null);
       },
       destroy() {
         anim.stop();
@@ -618,7 +669,6 @@ export const unionScene = {
       : null;
 
     railTitle.textContent = app.t("union.title");
-    buildFilters();
     buildRepublics();
     watch.measure(true);
     setRepublic(null, allBtn, true);
@@ -631,7 +681,14 @@ export const unionScene = {
     this.api.anim.start();
   },
 
-  pause() { if (this.api) this.api.anim.stop(); },
+  /* Уход со сцены закрывает оверлей — как ядро закрывает панель финдера.
+     Иначе картотека доживает до idle-сброса: посетитель вернулся на «Союз»
+     через три экрана и получил чужую открытую картотеку поверх карты. */
+  pause() {
+    if (!this.api) return;
+    this.api.anim.stop();
+    this.api.closeOverlays();
+  },
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
 

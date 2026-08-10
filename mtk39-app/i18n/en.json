@@ -64,6 +64,7 @@
   "catalog.title": "Card index",
   "catalog.sub": "The whole corpus without a map: Lenin's name was carried by things of very different orders — from an address to an asteroid. Here they are sorted by what they were.",
   "catalog.total": "{records} records, {countries} countries. The stripe on the left of a card marks the fate of the name: brass — still borne, red — renamed, grey — lost.",
+  "catalog.empty": "Nothing in this rubric matches. The numbers in the rail on the left show where the matches are.",
 
   "rubric.oneOff": "One of a kind",
   "rubric.oneOff.note": "Celestial bodies, ships, canals, peaks, a geoglyph in the taiga and a park-museum in a Lithuanian forest — things that exist in a single copy.",
@@ -144,8 +145,7 @@
   "stats.screenN": "Screen {n}",
 
   "globe.title": "Globe of highlights",
-  "globe.sub": "Fifty-seven objects with photographs and cards: universities, plants, canals, asteroids.",
+  "globe.sub": "{n} objects with photographs and cards: universities, plants, canals, asteroids.",
   "globe.hint": "turn the globe · tap a dot",
-  "globe.offmap": "Not on the map · {n}",
-  "globe.filter.all": "All categories"
+  "globe.offmap": "Not on the map · {n}"
 }
