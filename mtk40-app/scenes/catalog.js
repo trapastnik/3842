@@ -8,26 +8,31 @@
  * отпала. Отбор целиком переехал в финдер: состояние держит ЯДРО, сцена
  * применяет его одним applyFinder.
  *
- * Боковая колонка и алфавитная лента ОСТАЛИСЬ на экране, но стали ЯРЛЫКАМИ
- * (канон «Ярлык в финдер», 2026-08-10): тап шлёт тот же патч, что выбор в
- * панели, повторный тап шлёт null. Копии состояния в сцене нет — иначе
- * колонка и панель разошлись бы, а это ровно семья «индикатор против
- * состояния».
+ * ОТБОР И ПОИСК — ЦЕЛИКОМ В ПАНЕЛИ ФИНДЕРА (лупа). Боковая колонка-ярлыки и
+ * алфавитный указатель УБРАНЫ (решение пользователя с прода, 2026-08-11): у
+ * СПИСКА они буквально повторяли панель — те же ось/тип/язык/буква/
+ * сортировка один-в-один, — и дубль оказался дороже экономии касания. Канон
+ * «колонка-ярлыки» (2026-08-10) этим не отменён, а СУЖЕН: держится для
+ * ПРОСТРАНСТВЕННЫХ сцен (карта, глобус), где ярлык оси лежит на содержимом и
+ * панель его не повторяет; откатывается для СПИСКОВ-дублей. Критерий границы
+ * — координатор (PLAN/COORDINATION): колонка буквально повторяет панель →
+ * убрать; ярлык не-дубль → остаётся. На экране осталась только сетка карточек
+ * во всю ширину; ось/тип/язык/буква/сортировка/поиск/«N из M»/«Сбросить» —
+ * всё в панели.
  *
- * ОСЬ, ТИП И ЯЗЫК СТАЛИ ОДНОЗНАЧНЫМИ. До переезда это были множества:
- * посетитель мог держать «им» + «о нём» разом. Панель кита однозначна (одно
- * значение на ключ, «—» снимает), и решением координатора единый контракт
- * важнее множественности на трёх коротких осях. Потеря названа вслух — в
- * отчёте сдачи и в протоколе приёмки; вернуть её можно только флагом в ките.
+ * ОСЬ, ТИП И ЯЗЫК ОДНОЗНАЧНЫ. Панель кита держит одно значение на ключ («—»
+ * снимает); до финдера это были множества (посетитель мог держать «им» + «о
+ * нём» разом). Решением координатора единый контракт важнее множественности;
+ * потеря названа в протоколе приёмки, вернуть можно только флагом в ките.
  *
  * Канвы здесь нет вовсе — всё DOM, поэтому размеры идут прямо от переменных
  * кита, без дизайн-единицы s.
  */
-import { CORPUS_URL, M, corpusOf, createCard, chip, normQuery, matchQuery } from "./shared.js?v=44";
+import { CORPUS_URL, M, corpusOf, createCard, normQuery, matchQuery } from "./shared.js?v=44";
 
 /* Типов в данных 19, половина встречается 1–2 раза. В фильтр идут только
- * заметные, остальное сворачивается в «прочее» — иначе строка чипов длиннее,
- * чем польза от неё. */
+ * заметные, остальное сворачивается в «прочее» — иначе список значений в
+ * панели длиннее, чем польза от него. */
 const OTHER = "__other__";
 
 /* Поля поиска. title_spine — короткая форма названия (17 записей из 99), она
@@ -52,10 +57,8 @@ export const catalogScene = {
 
   preload: {
     data: { corpus: CORPUS_URL },
-    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а на канве
-     * половина подписей — 600. Канва загрузку шрифта не запускает вовсе
-     * (ctx.font молча берёт то, что уже загружено), поэтому жирное
-     * начертание надо просить прероллом. */
+    /* Вес указан явно: "1em '20 Kopeek'" грузит только 400, а половине
+     * подписей нужен 600; document.fonts.load без веса тянет только 400. */
     fonts: ["1em 'Nolde'", "400 1em '20 Kopeek'", "600 1em '20 Kopeek'"],
   },
 
@@ -106,7 +109,9 @@ export const catalogScene = {
 
   /* Единственная точка применения: ядро зовёт её целиком при любом
    * изменении — и заново после mount(), поэтому помнить отбор сцене не
-   * нужно даже при keepAlive. */
+   * нужно даже при keepAlive. Возврат {shown,total} даёт строку «N из M» в
+   * подвале панели — единственный теперь индикатор размера выборки (счётчик
+   * из колонки ушёл вместе с колонкой). */
   applyFinder({ query, filters, sort }) {
     this.find = { query: query || "", filters: filters || {}, sort: sort || null };
     this.refresh();
@@ -128,44 +133,15 @@ export const catalogScene = {
     el.classList.add("m40-scene");
     this.root = el;
 
+    /* Только сетка карточек, во всю ширину: колонка и указатель убраны, весь
+     * отбор — в панели финдера (лупа). */
     const box = document.createElement("div");
     box.className = "m40-catalog";
-    box.innerHTML =
-      /* Прокручивается ТОЛЬКО список групп; счётчик и «сбросить» стоят
-       * отдельным этажом и не уезжают. Раньше прокручивалась вся колонка, и
-       * на действующем масштабе 1.5 хвост оказывался ниже видимой части —
-       * палец в «сбросить» не попадал. Прижать хвост липким слоем поверх
-       * прокрутки я попробовал первым: он тут же накрыл собой три ярлыка
-       * порядка. Слой поверх контролов — не решение, а обмен одного промаха
-       * на три. */
-      '<aside class="m40-cat__side">' +
-        '<div class="m40-cat__groups kiosk-scroll">' +
-          '<div class="m40-cat__g" data-g="bucket"></div>' +
-          '<div class="m40-cat__g" data-g="type"></div>' +
-          '<div class="m40-cat__g" data-g="lang"></div>' +
-          '<div class="m40-cat__g" data-g="sort"></div>' +
-        "</div>" +
-        '<div class="m40-cat__tail"><span class="m40-cat__count"></span>' +
-          '<button type="button" class="m40-chip m40-cat__reset"></button></div>' +
-      "</aside>" +
-      /* kiosk-scroll с ленты снят: она больше не прокручивается, а
-       * переносится — прокручиваемый контейнер без прокрутки стенд считает
-       * скрытой полосой. */
-      '<div class="m40-cat__idx"><span class="m40-cat__legend"></span>' +
-        '<div class="m40-chips m40-cat__alpha"></div></div>' +
-      '<div class="m40-cat__grid kiosk-scroll"></div>';
+    box.innerHTML = '<div class="m40-cat__grid kiosk-scroll"></div>';
     el.appendChild(box);
     this.box = box;
-    this.sideEl = box.querySelector(".m40-cat__side");
     this.gridEl = box.querySelector(".m40-cat__grid");
-    this.countEl = box.querySelector(".m40-cat__count");
-    this.resetBtn = box.querySelector(".m40-cat__reset");
-    this.alphaEl = box.querySelector(".m40-cat__alpha");
-    this.idxLegendEl = box.querySelector(".m40-cat__legend");
-
-    /* Сброс зовёт ЯДРО, а не чистит своё: своего у сцены больше нет, и
-     * второй сброс рядом с китовым разошёлся бы с ним при первой правке. */
-    this.resetBtn.addEventListener("click", () => this.app.resetFinder());
+    this.gridEl.style.setProperty("--m40-cat-min", this.values.minCard + "px");
 
     this.card = createCard(el, this.corpus, this.app);
     this.card.onClose = () => { this.state.activeId = null; this.paintPressed(); };
@@ -212,7 +188,7 @@ export const catalogScene = {
   /* Порог «тип в фильтре от N книг» — операторская ручка, и она способна
    * увести ВЫБРАННЫЙ тип в «прочее». Тогда в ядре остаётся значение, под
    * которое больше не подходит ни одна книга: экран пуст, точка на лупе
-   * горит, а чипа с этим значением на экране уже нет — снять нечем.
+   * горит, а строки с этим значением в панели уже нет — снять нечем.
    * Снимаем сами и ГОВОРИМ ВСЛУХ: тихо отброшенный критерий хуже
    * отвергнутого (GRABLI, «молчание бывает ложью»). */
   dropUnreachableType() {
@@ -288,38 +264,9 @@ export const catalogScene = {
     return this.select(this.find.filters || {}).sort(sort.cmp);
   },
 
-  /* Счёт на ярлыке — ФАСЕТНЫЙ: «сколько будет, если выбрать эту строку».
-   * Полный счёт по корпусу врал бы при любом отборе, а счёт со всеми
-   * критериями сразу показывал бы нули на соседях выбранного значения —
-   * ровно тогда, когда они нужны. */
-  facet(axis, value) {
-    const f = Object.assign({}, this.find.filters, { [axis]: value });
-    return this.select(f).length;
-  },
-
-  /* Ярлык = переключатель: тап шлёт значение, повторный тап по выбранному
-   * шлёт null. У панельных чипов семантика иная (выбор из ряда, снятие
-   * чипом «—»), и расхождение осознанное — канон 2026-08-10. */
-  markFilter(axis, value) {
-    const cur = (this.find.filters || {})[axis];
-    this.app.setFinder({ filters: { [axis]: cur === value ? null : value } });
-  },
-
-  // ---------- отрисовка ----------
-  group(name, legend, nodes) {
-    const g = this.box.querySelector(`[data-g="${name}"]`);
-    g.innerHTML = "";
-    const l = document.createElement("span");
-    l.className = "m40-cat__legend";
-    l.textContent = legend;
-    const chips = document.createElement("div");
-    chips.className = "m40-chips";
-    nodes.forEach((n) => chips.appendChild(n));
-    g.append(l, chips);
-  },
-
-  /* Значения осей для панели: те же списки, что на ярлыках, — панель и
-   * колонка обязаны предлагать одно и то же. */
+  /* Значения осей ДЛЯ ПАНЕЛИ финдера: ядро зовёт эти функции через
+   * finder.filters[].options. Раньше те же списки питали и ярлыки колонки —
+   * колонки нет, но панель осталась их единственным потребителем. */
   typeOptions() {
     if (!this.corpus) return [];
     const t = (k) => (this.app ? this.app.t(k) : k);
@@ -343,73 +290,7 @@ export const catalogScene = {
     return [...all].sort((a, b) => a.localeCompare(b, "ru")).map((l) => [l, l]);
   },
 
-  buildFilters() {
-    const t = (k, p) => this.app.t(k, p);
-    const f = this.find.filters || {};
-
-    this.group("bucket", t("catalog.axis"), M.BUCKETS.map((b) => chip(t("bucket." + b), {
-      count: this.facet("bucket", b),
-      accent: M.BUCKET_META[b].accent,
-      pressed: f.bucket === b,
-      onClick: () => this.markFilter("bucket", b),
-    })));
-
-    this.group("type", t("catalog.type"), this.typeOptions().map(([v, label]) => chip(label, {
-      count: this.facet("type", v),
-      pressed: f.type === v,
-      onClick: () => this.markFilter("type", v),
-    })));
-
-    this.group("lang", t("catalog.lang"), this.langOptions().map(([v, label]) => chip(label, {
-      count: this.facet("lang", v),
-      pressed: f.lang === v,
-      onClick: () => this.markFilter("lang", v),
-    })));
-
-    /* Порядок — не переключатель, а выбор: «никакого порядка» не бывает, и
-     * нажатым показан ДЕЙСТВУЮЩИЙ, даже когда в ядре пусто. Иначе колонка
-     * говорила бы «порядок не выбран» над списком, отсортированным по году,
-     * — обещание наоборот, вторая половина той же оси. Повторный тап по
-     * действующему ничего не шлёт: состояние и так это. */
-    const eff = this.find.sort || SORTS[0].id;
-    this.group("sort", t("catalog.order"), SORTS.map((x) => chip(t("sort." + x.id), {
-      pressed: eff === x.id,
-      onClick: () => { if (eff !== x.id) this.app.setFinder({ sort: x.id }); },
-    })));
-
-    this.resetBtn.textContent = t("catalog.reset");
-  },
-
-  buildAlpha() {
-    const cur = (this.find.filters || {}).letter || null;
-    this.idxLegendEl.textContent = this.app.t("catalog.index");
-    this.alphaEl.innerHTML = "";
-    this.alphaEl.appendChild(chip(this.app.t("catalog.all"), {
-      pressed: cur === null,
-      onClick: () => { if (cur !== null) this.app.setFinder({ filters: { letter: null } }); },
-    }));
-    for (const [l] of this.letterOptions()) {
-      const n = this.facet("letter", l);
-      /* Буква, за которой при нынешнем отборе нет ни одной книги, с ленты
-       * уходит: оставить её нажимаемой значит обещать экран, который будет
-       * пуст, а погасить pointer-events — завести ложный аффорданс (ловушка
-       * пилота 39). Выбранную букву держим всегда, иначе её нечем снять. */
-      if (!n && l !== cur) continue;
-      /* Числа на буквах НЕТ намеренно. Фасетный счёт я сюда навесил и тут же
-       * снял: значок расширил каждую букву примерно на двадцать пикселей, и
-       * лента из 27 ярлыков перестала помещаться в строку — последняя буква
-       * ушла за горизонтальную прокрутку (замер: «Т» на x=3788 при ленте до
-       * 3776). Канон требует, чтобы ПОКАЗАННЫЙ счёт был фасетным, а не чтобы
-       * счёт был показан везде; пустые буквы с ленты и так уходят. */
-      const b = chip(l, {
-        pressed: cur === l,
-        onClick: () => this.markFilter("letter", l),
-      });
-      b.classList.add("m40-chip--alpha");
-      this.alphaEl.appendChild(b);
-    }
-  },
-
+  // ---------- отрисовка списка ----------
   entryNode(item) {
     const el = document.createElement("button");
     el.type = "button";
@@ -474,14 +355,8 @@ export const catalogScene = {
 
   refresh() {
     if (!this.box) return;
-    /* Чипы перерисовываем целиком: состояние живёт в state, а не в DOM. */
-    this.buildFilters();
-    this.buildAlpha();
-
     const list = this.visible();
     this.shown = list.length;
-    this.countEl.textContent = this.app.t("catalog.count",
-      { shown: list.length, total: this.corpus.items.length });
     this.gridEl.innerHTML = "";
     if (!list.length) {
       const p = document.createElement("div");
@@ -490,6 +365,9 @@ export const catalogScene = {
       this.gridEl.appendChild(p);
       return;
     }
+    /* При сортировке по алфавиту — заголовки-буквы между группами. Это НЕ
+     * дубль убранного указателя: там был отбор по букве, здесь — разделитель
+     * внутри уже отсортированного списка, помощь глазу при длинной прокрутке. */
     let lastLetter = null;
     for (const item of list) {
       if (this.find.sort === "alpha") {
