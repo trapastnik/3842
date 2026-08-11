@@ -350,12 +350,25 @@ export const geographyScene = {
    * глубину — смена режима не граница визита. Поэтому запоминаем zf=k/k0 ДО
    * пересчёта и восстанавливаем k=k0·zf ПОСЛЕ. Пол zf≥1 иммунен: хранится
    * отношение, не абсолют. На первом показе (fitted=false) кратности ещё
-   * нет — только считаем k0, к позе приводит fitToCities. */
+   * нет — только считаем k0, к позе приводит fitToCities.
+   *
+   * ЦЕНТР КАДРА ДЕРЖИМ ЯВНО (доводка по скептику зума). Сохранить кратность
+   * мало: при смене k с фиксированными ox/oy точка под СЕРЕДИНОЙ ВЬЮПОРТА
+   * уезжает на (k_new−k_old)·мировая_доля — на a11y стол ужимается 3-5%, и
+   * композиция дёргается вбок (замер: дрейф 96 px на zf1, 332 на zf3). Это
+   * ДРУГАЯ метрика, чем мировой центр bbox (тот константа и не плывёт —
+   * ловушки reflow тут нет; плывёт именно точка под центром кадра). Поэтому
+   * запоминаем мировую точку под центром ДО смены k и применяем новый k
+   * ВОКРУГ НЕЁ — _placeAt-от-центра, как в onWheel вокруг курсора (канон 41,
+   * дрейф 0). */
   recomputeFit() {
     if (!this.cv || !this.cv.w || !this.cities.length) return;
     const b = this.bbox();
     const bw = Math.max(1, b.x1 - b.x0), bh = Math.max(1, b.y1 - b.y0);
     const zf = this.fitted ? this.k / this.k0 : 1;
+    /* точка мира под центром кадра — ДО смены k (иначе делим на новый) */
+    const wcx = this.fitted ? (this.W / 2 - this.ox) / this.k : 0;
+    const wcy = this.fitted ? (this.H / 2 - this.oy) / this.k : 0;
     this.k0 = window.KioskCore.fitZoom(bw, bh, this.W, this.H, {
       mode: "contain",
       padding: {
@@ -365,6 +378,8 @@ export const geographyScene = {
     });
     if (this.fitted) {
       this.k = Math.min(MAX_K, this.k0 * zf);
+      this.ox = this.W / 2 - wcx * this.k;
+      this.oy = this.H / 2 - wcy * this.k;
       this.clampCamera();
     }
   },
