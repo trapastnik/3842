@@ -18,7 +18,7 @@ import { timelineScene } from "./scenes/timeline.js?v=44";
 import { catalogScene } from "./scenes/catalog.js?v=46";
 import { volumeScene } from "./scenes/volume.js?v=44";
 import { constellationScene } from "./scenes/constellation.js?v=44";
-import { geographyScene } from "./scenes/geography.js?v=45";
+import { geographyScene } from "./scenes/geography.js?v=46";
 
 const app = createApp({
   appId: "mtk40",
