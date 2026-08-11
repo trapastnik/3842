@@ -69,6 +69,12 @@
         return (!st.category || r.category === st.category) && hit(r, st.q);
       },
     },
+    streets: {
+      set: "streets",
+      pick: function (r, st) {
+        return (!st.country || r.country === st.country) && hit(r, st.q);
+      },
+    },
   };
 
   function panelCount() {
@@ -121,10 +127,12 @@
 
     var corpus = await loadJson("../data/mtk39-corpus.json");
     var picked = await loadJson("../data/mtk39.json");
+    var streets = await loadJson("../data/mtk39-streets.json");
     var sets = {
       corpus: corpus.records,
       union: corpus.records.filter(function (r) { return r.continent === "Бывший СССР"; }),
       picked: picked.items,
+      streets: streets.items,
     };
 
     var rows = [];
@@ -241,6 +249,7 @@
      сцены: канвовые сцены рисуют точки, у них считаем через healthcheck. */
   function domCount(id) {
     if (id === "catalog") return document.querySelectorAll(".m39-card2").length;
+    if (id === "streets") return document.querySelectorAll(".m39-leaf").length + " (листов на стене)";
     if (id === "globe") return document.querySelectorAll(".m39-offlist__item").length + " (список не на карте)";
     return "канва";
   }

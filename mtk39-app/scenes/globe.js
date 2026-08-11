@@ -13,7 +13,7 @@ import {
   DATA, esc, plural, fitCanvas, drawScale, loop, sizeWatch,
   preloadPictures, filePicture, createCardPanel, isOffMap,
   FINDER_SEARCH, normQuery, matchesQuery,
-} from "./shared.js?v=14";
+} from "./shared.js?v=15";
 
 const USSR_ISO = new Set([
   "RUS", "UKR", "BLR", "MDA", "LVA", "LTU", "EST",
