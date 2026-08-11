@@ -65,6 +65,10 @@ const YEAR_MIN_SLOT = 16;
 const TAP_MIN_SLOT = 26;
 const DOUBLE_TAP_MS = 320;
 const TAP_THRESHOLD = 8;
+/* Какую долю слота разрешено занять фигуре по ширине. Остаток — воздух между
+ * соседями: при 1.0 силуэты соприкасались бы кромками и читались как один
+ * сплошной частокол. */
+const WIDTH_HEADROOM = 0.86;
 /* Режимов два, а было три. «Десятилетия» СНЯТ вместе с переездом отбора по
  * декаде в финдер (утверждено координатором 2026-08-10, вариант 1).
  *
@@ -122,6 +126,13 @@ export const scaleScene = {
                 ] },
     { key: "slotW", label: { ru: "Ширина слота", en: "Slot width" },
       type: "range", min: 48, max: 160, step: 4, unit: " px", default: MIN_SLOT_W },
+    { key: "fitMode", label: { ru: "Масштаб высоты по", en: "Height scale from" },
+      type: "choice", default: "view",
+      options: [{ value: "view", label: { ru: "Видимым", en: "Visible" } },
+                { value: "corpus", label: { ru: "Всему корпусу", en: "Whole corpus" } },
+                ] },
+    { key: "fitShare", label: { ru: "Доля экрана под самый высокий", en: "Tallest fills" },
+      type: "range", min: 40, max: 90, step: 5, unit: " %", default: 66 },
     { key: "showStrip", label: { ru: "Полоса-скраббер", en: "Scrubber strip" },
       type: "toggle", default: true },
     { key: "showGuides", label: { ru: "Линии высот", en: "Height guides" },
@@ -366,7 +377,21 @@ export const scaleScene = {
     const viewportW = right - left;
     const baseY = strip ? (h.height - STRIP_H) * 0.84 : h.height * 0.9;
     const skyTop = h.height * 0.06;
-    const mPx = ((baseY - skyTop) * 0.9) / this._maxTotal;
+    const sky = baseY - skyTop;
+    /* Прежний масштаб — от самого высокого во ВСЁМ корпусе. Остаётся как
+     * вариант настройки и как запасной ответ, когда считать по видимым не от
+     * чего (пустой кадр). */
+    const mPxCorpus = (sky * 0.9) / this._maxTotal;
+
+    /* Масштаб ПО ВЫБОРКЕ — им меряем слот. Слот обязан быть статичен на
+     * промотке (иначе лента поедет под пальцем), поэтому ширину считаем от
+     * выборки, а не от того, что сейчас в кадре. */
+    let maxSel = 0;
+    for (const it of items) {
+      const hh = this._heights[it.m.id] || FALLBACK_HEIGHT;
+      maxSel = Math.max(maxSel, hh.statue + hh.pedestal);
+    }
+    const mPxSel = maxSel > 0 ? (sky * this._fitShare()) / maxSel : mPxCorpus;
 
     this._view.fitSlot = viewportW / items.length;
     let slot;
@@ -378,6 +403,19 @@ export const scaleScene = {
       slot = Math.max(this._cfg.slotW, this._view.fitSlot);
     }
 
+    /* ШИРИНА СЛОТА ИДЁТ ЗА МАСШТАБОМ. У силуэтов ширина фигуры считается от
+     * высоты (пропорции снимка), поэтому подъём масштаба раздвигает фигуры —
+     * и без этого пола они налезли бы друг на друга. Считаем по самой широкой
+     * в выборке при масштабе выборки: слот статичен, а расстояние между
+     * памятниками растёт вместе с их размером. */
+    let needSlot = 0;
+    for (const it of items) {
+      const hh = this._heights[it.m.id] || FALLBACK_HEIGHT;
+      const ar = this._figureAspect(it.m);
+      if (ar > 0) needSlot = Math.max(needSlot, (hh.statue + hh.pedestal) * mPxSel * ar);
+    }
+    if (needSlot > 0) slot = Math.max(slot, needSlot / WIDTH_HEADROOM);
+
     const figureW = Math.min(slot * 0.55, 80);
     this._placed = items.map((it, k) => {
       const hh = this._heights[it.m.id] || FALLBACK_HEIGHT;
@@ -385,9 +423,9 @@ export const scaleScene = {
         i: it.i, year: it.year, m: it.m,
         worldX: left + slot * (k + 0.5),
         baseY, w: figureW,
-        statueH: hh.statue * mPx,
-        pedestalH: hh.pedestal * mPx,
-        totalH: (hh.statue + hh.pedestal) * mPx,
+        statueH: hh.statue * mPxCorpus,
+        pedestalH: hh.pedestal * mPxCorpus,
+        totalH: (hh.statue + hh.pedestal) * mPxCorpus,
         hs: hh.statue, hp: hh.pedestal,
         /* Габаритов нет у 52 из 283 — рисуем пунктиром и подписываем «нет
          * данных», а не выдаём подставную высоту за измеренную. */
@@ -395,10 +433,83 @@ export const scaleScene = {
       };
     });
 
-    this._geom = { left, right, baseY, mPx, slot, viewportW,
+    this._geom = { left, right, baseY, sky, mPx: mPxCorpus, mPxCorpus, slot, viewportW,
       contentW: slot * items.length };
     this._clamp();
+    /* Мгновенно, без плавности: при входе в сцену и на ресайзе разгон масштаба
+     * с корпусного до кадрового читался бы как самопроизвольное движение. */
+    this._updateScale(true);
     this._renderHead();
+  },
+
+  _fitShare() {
+    const v = this._cfg && this._cfg.fitShare;
+    return Math.max(0.4, Math.min(0.9, (typeof v === "number" ? v : 66) / 100));
+  },
+
+  /* Отношение ширины фигуры к её высоте — или 0, если ширина от высоты НЕ
+   * зависит. У «Масштаба» фигура процедурная: её ширина задана слотом, и рост
+   * масштаба её не раздувает. У «Силуэтов» ширина идёт от пропорций снимка —
+   * там переопределено. */
+  _figureAspect() { return 0; },
+
+  /* Целевой масштаб метра.
+   *
+   * «Корпус» — прежнее поведение: масштаб от самого высокого из 283, один на
+   * всю ленту. Честно для сравнения, но на ранних десятилетиях, где всё по
+   * 3–7 м против колосса 57 м, отдаёт под содержимое десятую часть экрана.
+   *
+   * «Видимым» — от самого высокого В КАДРЕ: экран занят всегда. Цена названа
+   * прямо: два памятника, не попавшие в кадр одновременно, больше не
+   * сравнимы «на глаз» по размеру. Поэтому линии высот и фигура человека
+   * пересчитываются вместе с масштабом — абсолютная величина остаётся
+   * читаемой в любой момент, и «в одном масштабе» продолжает выполняться
+   * там, где сравнение и происходит: внутри одного экрана. */
+  _scaleTarget() {
+    const g = this._geom, h = this._host;
+    if (!g || !h) return 0;
+    if (!this._cfg || this._cfg.fitMode === "corpus") return g.mPxCorpus;
+
+    let maxM = 0, capPx = Infinity;
+    for (const pm of this._placed) {
+      const x = this._screenX(pm.worldX);
+      if (x < -g.slot || x > h.width + g.slot) continue;
+      const total = pm.hs + pm.hp;
+      if (total > maxM) maxM = total;
+      /* Потолок по ширине: расти можно, пока соседи не соприкоснулись. */
+      const ar = this._figureAspect(pm.m);
+      if (ar > 0 && total > 0) capPx = Math.min(capPx, (g.slot * WIDTH_HEADROOM) / (total * ar));
+    }
+    if (!(maxM > 0)) return g.mPxCorpus;          // в кадре нет ничего с высотой
+    /* ЧЕЛОВЕК ОБЯЗАН ОСТАТЬСЯ В КАДРЕ. Иначе кадр с одними бюстами по 0.6 м
+     * растянул бы их на две трети экрана, а отметка 1.75 м уехала бы за
+     * верхнюю кромку — и пропал бы единственный ориентир, по которому видно,
+     * что фигуры мелкие. Тогда «в одном масштабе» превратилось бы в «каждый
+     * во весь экран». */
+    const humanCap = (g.sky * 0.9) / HUMAN_HEIGHT_M;
+    return Math.min((g.sky * this._fitShare()) / maxM, capPx, humanCap);
+  },
+
+  /* Пересчёт масштаба под текущий кадр. Зовётся каждый кадр — набор видимых
+   * меняется на промотке, а не только на раскладке. */
+  _updateScale(instant) {
+    const g = this._geom;
+    if (!g || !this._placed || !this._placed.length) return;
+    const target = this._scaleTarget();
+    if (!(target > 0) || !isFinite(target)) return;
+    const cur = g.mPx;
+    /* Плавно: масштаб меняется прямо во время промотки, и рывок читался бы
+     * как подмена данных, а не как приближение. Порог — чтобы не гонять
+     * пересчёт 283 фигур на исчезающе малой разнице. */
+    const next = (instant || Math.abs(target - cur) < cur * 0.004)
+      ? target : cur + (target - cur) * 0.16;
+    if (next === cur) return;
+    g.mPx = next;
+    for (const pm of this._placed) {
+      pm.statueH = pm.hs * next;
+      pm.pedestalH = pm.hp * next;
+      pm.totalH = (pm.hs + pm.hp) * next;
+    }
   },
 
   _hasStrip() { return this._mode === "scrubber" && this._cfg.showStrip; },
@@ -638,6 +749,9 @@ export const scaleScene = {
     }
     hintForEmpty(this, false);
     ctx.clearRect(0, 0, h.width, h.height);
+    /* ДО отрисовки: набор видимых меняется на промотке, и линии высот с
+     * фигурой человека обязаны быть в том же масштабе, что и фигуры. */
+    this._updateScale();
     this._drawScene();
     this._drawFigures();
     this._drawStrip();
@@ -653,7 +767,7 @@ export const scaleScene = {
     ctx.stroke();
 
     if (this._cfg.showGuides) {
-      const guides = [HUMAN_HEIGHT_M, 5, 10, 25, 50];
+      const guides = this._guideValues();
       ctx.save();
       ctx.font = `400 ${Math.max(11, h.height * 0.013)}px "20 Kopeek", monospace`;
       ctx.textAlign = "right";
@@ -678,6 +792,41 @@ export const scaleScene = {
     }
 
     if (this._cfg.showHuman) this._drawHuman(h.width * 0.045, g.baseY, HUMAN_HEIGHT_M * g.mPx);
+  },
+
+  /* Отметки высоты под ТЕКУЩИЙ масштаб.
+   *
+   * Раньше стоял неподвижный список [1.75, 5, 10, 25, 50]. При масштабе от
+   * всего корпуса он и был верен, а при масштабе по кадру половина отметок
+   * уходит за верхнюю кромку: на экране с шестиметровыми фигурами ось
+   * показывала «25 м» и «50 м» в пустоте, и шкала выглядела сломанной. Шаг
+   * берём «круглый» (1-2-5 × 10ⁿ), чтобы отметок было 3–5 при любом масштабе.
+   * Человек 1.75 м остаётся всегда: это единственный якорь, по которому
+   * посетитель понимает величину без чтения цифр. */
+  _guideValues() {
+    const g = this._geom, h = this._host;
+    if (!g || !g.mPx) return [HUMAN_HEIGHT_M];
+    const topM = (g.baseY - h.height * 0.02) / g.mPx;
+    if (!(topM > 0) || !isFinite(topM)) return [HUMAN_HEIGHT_M];
+    /* Шаг — наименьший круглый, при котором отметок не больше шести. Через
+     * лестницу, а не через log-округление: у последнего на границе (n чуть
+     * больше 2) шаг перескакивал с 20 на 50, и вместо пяти отметок
+     * оставалась одна. */
+    let step = 0;
+    for (let p = -1; p <= 3 && !step; p++) {
+      for (const b of [1, 2, 5]) {
+        const cand = b * Math.pow(10, p);
+        if (topM / cand <= 5) { step = cand; break; }
+      }
+    }
+    if (!step) step = 1000;
+    const out = [HUMAN_HEIGHT_M];
+    for (let v = step; v <= topM; v += step) {
+      /* Отметку вплотную к человеку не ставим: две подписи в одной строке
+       * наезжают друг на друга. */
+      if (Math.abs(v - HUMAN_HEIGHT_M) > step * 0.35) out.push(+v.toFixed(2));
+    }
+    return out;
   },
 
   _drawHuman(cx, baseY, px) {
