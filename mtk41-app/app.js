@@ -5,7 +5,7 @@
  * Версия у импортов сцен обязательна и поднимается вместе с ?v= у app.js:
  * `<script src="./app.js?v=67">` обновит только сам app.js, а его
  * `import "./scenes/canon.js"` без версии браузер отдаст из кеша (README ядра). */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.23.1";
 
 import { canonScene } from "./scenes/canon.js?v=67";
 import { authorsScene } from "./scenes/authors.js?v=67";
