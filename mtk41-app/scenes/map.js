@@ -32,8 +32,8 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=65";
-import { createMapCore } from "./map-core.js?v=65";
+} from "./shared.js?v=66";
+import { createMapCore } from "./map-core.js?v=66";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -441,7 +441,12 @@ export const mapScene = {
   _fitZoom() {
     const h = this._host, m = this._map;
     const fit = window.KioskCore && window.KioskCore.fitZoom;
-    if (!fit || !h || !h.width || !m || !m.worldW) return FLOOR_FALLBACK;
+    /* Высота в гарде наравне с шириной. Ядро при нулевом вьюпорте возвращает
+     * 1 (проверено: fitZoom(w, h, X, 0) === 1), то есть схлопнуть карту такой
+     * пол не может — он бы её ПРИБЛИЗИЛ. Но пол, посчитанный против
+     * неразложенного бокса, всё равно не значит ничего, и честнее сказать
+     * «не мерил», чем вернуть правдоподобное число. */
+    if (!fit || !h || !h.width || !h.height || !m || !m.worldW) return FLOOR_FALLBACK;
     return fit(m.worldW, m.worldH, h.width, h.height);
   },
 
