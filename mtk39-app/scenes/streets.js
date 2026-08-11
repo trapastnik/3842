@@ -7,7 +7,9 @@
  * листе стоит масштабная линейка: форма сравнивается глазом, размер читается
  * по линейке. */
 
-import { DATA, nf, esc } from "./shared.js?v=14";
+import {
+  DATA, nf, esc, FINDER_SEARCH, normQuery, matchesQuery,
+} from "./shared.js?v=15";
 
 const NS = "http://www.w3.org/2000/svg";
 const DEFAULTS = { leafW: 380, stroke: 2.6 };
@@ -105,11 +107,37 @@ export const streetsScene = {
       type: "range", min: 1, max: 6, step: 0.2, unit: " px", default: 2.6 },
   ],
 
+  /* 210 листов из 19 стран, разложенных по длине, без иного способа найти
+     конкретную улицу или страну — на этом объёме финдер осмыслен (в первой
+     сопроводиловке сцену сочли списком без поиска; пользователь на проде
+     решил иначе, и по числам он прав). Поиск — по названию и городу; фильтр —
+     по стране. Сортировку НЕ отдаём в финдер: гербарий разложен по длине, и
+     это его смысл, а не одна из осей. */
+  finder: {
+    search: FINDER_SEARCH,
+    filters: [
+      { key: "country", label: { ru: "Страна", en: "Country", zh: "国家" },
+        options: (c) => {
+          const counts = new Map();
+          for (const it of c.data.streets.items) {
+            counts.set(it.country, (counts.get(it.country) || 0) + 1);
+          }
+          return [...counts.entries()]
+            .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], "ru"))
+            .map(([country, n]) => [country, country + " · " + n]);
+        } },
+    ],
+  },
+
   opt: Object.assign({}, DEFAULTS),
 
   applySettings(values) {
     this.opt = Object.assign({}, DEFAULTS, values || {});
     if (this.api) this.api.rebuild();
+  },
+
+  applyFinder(state) {
+    return this.api ? this.api.applyFind(state) : undefined;
   },
 
   mount(el, ctx) {
@@ -150,6 +178,14 @@ export const streetsScene = {
 
     let activeLeaf = null;
     let sheetOpen = false;
+    /* Зеркало последнего applyFinder — своей копии состояния сцена не держит. */
+    let query = "";
+    let country = null;
+
+    // items уже отсортированы по длине; фильтр сохраняет этот порядок
+    const passes = (it) => (!country || it.country === country)
+      && matchesQuery(it, query);
+    const visible = () => items.filter(passes);
 
     function closeSheet() {
       if (!sheetOpen) return;
@@ -193,8 +229,20 @@ export const streetsScene = {
     function buildWall() {
       const w = scene.opt.leafW || DEFAULTS.leafW;
       const h = Math.round(w * 0.75);
+      const shown = visible();
+
+      // Отбор ничего не оставил — не пустая стена молча, а объяснение.
+      if (!shown.length) {
+        const empty = document.createElement("p");
+        empty.className = "m39-empty";
+        empty.textContent = app.t("streets.empty");
+        wall.replaceChildren(empty);
+        wall.scrollLeft = 0;
+        return;
+      }
+
       const frag = document.createDocumentFragment();
-      for (const item of items) {
+      for (const item of shown) {
         const leaf = document.createElement("article");
         leaf.className = "m39-leaf kiosk-target";
         leaf.tabIndex = 0;
@@ -235,12 +283,15 @@ export const streetsScene = {
       sub.textContent = app.t("streets.sub");
       footSrc.textContent = app.t("streets.source");
 
-      const totalKm = data.total_length_m / 1000;
-      const countries = new Set(items.map((i) => i.country)).size;
+      // Числа и подпись — по ОТОБРАННОМУ: иначе «19 стран» и «самый длинный»
+      // спорили бы со стеной, где после фильтра осталась одна страна.
+      const shown = visible();
+      const totalM = shown.reduce((a, i) => a + i.length_m, 0);
+      const countries = new Set(shown.map((i) => i.country)).size;
       totals.replaceChildren();
       for (const [num, key] of [
-        [nf.format(items.length), "streets.leaves"],
-        [`${totalKm.toFixed(1)} км`, "streets.length"],
+        [nf.format(shown.length), "streets.leaves"],
+        [`${(totalM / 1000).toFixed(1)} км`, "streets.length"],
         [countries, "streets.countries"],
       ]) {
         const box = document.createElement("div");
@@ -250,15 +301,20 @@ export const streetsScene = {
         totals.appendChild(box);
       }
 
-      const longest = items[0];
-      const shortest = items.at(-1);
-      footLegend.textContent = app.t("streets.foot", {
-        name: longest.name,
-        city: longest.city.split(",")[0],
-        max: fmtLen(longest.length_m),
-        min: fmtLen(shortest.length_m),
-        minCity: shortest.city.split(",")[0],
-      });
+      // items уже по длине; shown сохраняет порядок — первый и последний
+      if (shown.length) {
+        const longest = shown[0];
+        const shortest = shown.at(-1);
+        footLegend.textContent = app.t("streets.foot", {
+          name: longest.name,
+          city: longest.city.split(",")[0],
+          max: fmtLen(longest.length_m),
+          min: fmtLen(shortest.length_m),
+          minCity: shortest.city.split(",")[0],
+        });
+      } else {
+        footLegend.textContent = "";
+      }
       sheetClose.setAttribute("aria-label", app.t("card.close"));
     }
 
@@ -270,16 +326,41 @@ export const streetsScene = {
     this.api = {
       rebuild: buildWall,
       retext() { retext(); buildWall(); },
-      reset() {
+      applyFind({ query: q, filters }) {
+        query = normQuery(q);
+        country = (filters && filters.country) || null;
         closeSheet();
+        retext();
+        buildWall();
+        return { shown: visible().length, total: items.length };
+      },
+      /* Ядро гасит финдер ДО reset() и зовёт applyFinder заново — в штатном
+         пути обнуление здесь дубль; но reset() дёргают и в обход финдера
+         (оператор, стенд), и стена с чужим отбором при пустой панели — та
+         самая загадка без объяснения из возврата 1.17.4. */
+      reset() {
+        query = "";
+        country = null;
+        closeSheet();
+        retext();
+        buildWall();
         wall.scrollTo({ left: 0, behavior: "auto" });
       },
+      // уход со сцены закрывает лист — как ядро закрывает панель финдера
+      closeOverlays() { closeSheet(); },
+      /* Считаем «что готов показать»: пустой отбор (поиск без совпадений) —
+         законный ответ, а не авария. Пустая стена БЕЗ отбора — по-прежнему
+         красное. */
       health() {
         const leaves = wall.querySelectorAll(".m39-leaf").length;
         const paths = wall.querySelectorAll(".m39-leaf__plot svg path").length;
-        if (!leaves) return { ok: false, detail: "ни одного листа в стене" };
-        if (!paths) return { ok: false, detail: "листы есть, но геометрия не отрисована" };
-        return { ok: true, detail: "листов " + leaves + ", линий " + paths };
+        const picked = visible().length;
+        if (!query && !country && !leaves) {
+          return { ok: false, detail: "без отбора ни одного листа в стене" };
+        }
+        if (leaves && !paths) return { ok: false, detail: "листы есть, но геометрия не отрисована" };
+        return { ok: true, detail: "по отбору " + picked + " из " + items.length +
+          ", листов на стене " + leaves + ", линий " + paths };
       },
       destroy() {
         closeSheet();
@@ -292,6 +373,7 @@ export const streetsScene = {
     buildWall();
   },
 
+  pause() { if (this.api) this.api.closeOverlays(); },
   reset() { if (this.api) this.api.reset(); },
   setLang() { if (this.api) this.api.retext(); },
   setA11y() { if (this.api) this.api.rebuild(); },

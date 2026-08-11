@@ -60,6 +60,7 @@
   "streets.rankValue": "{n} of {total} by length",
   "streets.foot": "The longest sheet is “{name}”, {city}, {max}. The shortest is {min}, {minCity}. Sheets are sorted by length.",
   "streets.source": "© OpenStreetMap contributors · ODbL",
+  "streets.empty": "No streets match. Clear the country filter or change the search.",
 
   "catalog.title": "Card index",
   "catalog.sub": "The whole corpus without a map: Lenin's name was carried by things of very different orders — from an address to an asteroid. Here they are sorted by what they were.",

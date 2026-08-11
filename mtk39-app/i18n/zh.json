@@ -60,6 +60,7 @@
   "streets.rankValue": "按长度列第 {n} 位，共 {total} 项",
   "streets.foot": "最长的一页是「{name}」，{city}，{max}。最短的是 {min}，{minCity}。标本按长度排序。",
   "streets.source": "© OpenStreetMap contributors · ODbL",
+  "streets.empty": "没有匹配的街道。请清除国家筛选或修改搜索。",
 
   "catalog.title": "卡片目录",
   "catalog.sub": "没有地图的完整名录：列宁之名曾属于各种量级的事物——从一个门牌到一颗小行星。这里按它们本来是什么来排列。",

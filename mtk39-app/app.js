@@ -6,13 +6,13 @@
  * ядро исполняет её само, моста больше не нужно. */
 import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.11";
 
-import { worldScene } from "./scenes/world.js?v=14";
-import { unionScene } from "./scenes/union.js?v=14";
-import { waveScene } from "./scenes/wave.js?v=14";
-import { streetsScene } from "./scenes/streets.js?v=14";
-import { catalogScene } from "./scenes/catalog.js?v=14";
-import { statsScene } from "./scenes/stats.js?v=14";
-import { globeScene } from "./scenes/globe.js?v=14";
+import { worldScene } from "./scenes/world.js?v=15";
+import { unionScene } from "./scenes/union.js?v=15";
+import { waveScene } from "./scenes/wave.js?v=15";
+import { streetsScene } from "./scenes/streets.js?v=15";
+import { catalogScene } from "./scenes/catalog.js?v=15";
+import { statsScene } from "./scenes/stats.js?v=15";
+import { globeScene } from "./scenes/globe.js?v=15";
 
 const app = createApp({
   appId: "mtk39",
@@ -22,7 +22,7 @@ const app = createApp({
   // Метка кеша словарей — своя нумерация приложения. У файлов кита метка
   // другая и канонная: ровно версия ядра (COORDINATION → «Версионирование
   // кита»), ядро само сверяет её со своей и ругается на залипший кеш.
-  i18nVersion: "14",
+  i18nVersion: "15",
 });
 
 /* Порядок регистрации = порядок стрелок навигации: от общего к частному —
