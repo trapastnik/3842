@@ -4,7 +4,7 @@
  *
  * Настройки сцен объявлены схемой в самих сценах (settings[] + applySettings):
  * ядро исполняет её само, моста больше не нужно. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.20.11";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
 
 import { worldScene } from "./scenes/world.js?v=15";
 import { unionScene } from "./scenes/union.js?v=15";
