@@ -5,7 +5,7 @@
  * ядру (kiosk-core.js?v=…). Без версии Chrome отдаёт обе из кеша и
  * обновление ядра молча не доезжает до киоска. Поднимать при переходе
  * на каждый новый релиз ядра. */
-import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.22.2";
+import { createApp } from "../assets/shared/kiosk/kiosk-core.esm.js?v=1.23.1";
 
 import { pendulumScene } from "./scenes/pendulum.js?v=35";
 import { archiveScene } from "./scenes/archive.js?v=35";
