@@ -34,7 +34,7 @@ import {
   setCorpus,
   statusOptions,
   fillTextIfFits,
-} from "./shared.js?v=60";
+} from "./shared.js?v=65";
 
 const BANDS = [
   { id: "small", maxM: 8 },

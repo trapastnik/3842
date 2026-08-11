@@ -32,8 +32,8 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=60";
-import { createMapCore } from "./map-core.js?v=60";
+} from "./shared.js?v=65";
+import { createMapCore } from "./map-core.js?v=65";
 
 const PIXEL_BUDGET = 3840 * 2160;
 const TAP_THRESHOLD = 8;
@@ -353,17 +353,68 @@ export const mapScene = {
   /* Кружки считаются и вне кадра. Иначе healthcheck зависел бы от того,
    * успела ли пройти отрисовка: в скрытой вкладке rAF не вызывается, и стенд
    * приёмки видел бы пустую сцену там, где на киоске всё нарисовано. */
-  _rebuildClusters() {
-    if (!this._core || !this._map.worldW || !this._host || !this._host.width) return "MACRO";
-    const level = this._levelFor(this._map.zoom);
-    const world = this._core.buildLevelClusters(level);
-    this._clusters = this._core.materializeToScreen(world, this._cfg.sizeMode);
-    this._core.relaxNonOverlap(this._clusters, this._cfg.gap, 60);
-    return level;
+  /* Сколько кружков стол вмещает, не превращаясь в рой. Не подобранное число:
+   * считаем по площади — сколько кружков радиуса r с зазором ляжет на стол,
+   * если отдать им шестую часть его площади. Отсюда порог сам едет за
+   * размером стола: на панели 4K он больше, на низком столе меньше. */
+  _clusterBudget() {
+    const h = this._host;
+    const r = Math.max(9, Math.min(h.width, h.height) * 0.006) + this._cfg.gap;
+    return Math.max(24, Math.floor((h.width * h.height) / (Math.PI * r * r * 6)));
   },
 
+  /* Уровень выбирается по зуму, НО не глубже, чем стол способен показать.
+   *
+   * Один зум — не мера: тот же зум 3.2 на широком столе показывает пол-Европы,
+   * а на низком — полосу. Порог thrLeaf сработал буквально, и все 218
+   * памятников Европейской части высыпались в кадр одиночными кружками. На
+   * проде это выглядело роем, и правильно: показать 218 отдельных точек в
+   * полосе 1792×428 нельзя, их там физически некуда положить.
+   *
+   * Поэтому после выбора уровня по зуму спускаемся обратно, пока кружки не
+   * укладываются в бюджет стола. Посетитель при этом ничего не теряет: он
+   * видит те же объекты сгруппированными с числами — и, приблизившись ещё,
+   * получает их поимённо, когда для этого появится место. */
+  _levelWithin(zoomLevel) {
+    const order = ["MACRO", "COUNTRY", "REGION", "CITY", "LEAF"];
+    const budget = this._clusterBudget();
+    let idx = order.indexOf(zoomLevel);
+    if (idx < 0) return { level: "MACRO", world: this._core.buildLevelClusters("MACRO") };
+    let world = this._core.buildLevelClusters(order[idx]);
+    while (idx > 0 && this._core.materializeToScreen(world, this._cfg.sizeMode).length > budget) {
+      idx -= 1;
+      world = this._core.buildLevelClusters(order[idx]);
+    }
+    return { level: order[idx], world };
+  },
+
+  _rebuildClusters() {
+    if (!this._core || !this._map.worldW || !this._host || !this._host.width) return "MACRO";
+    const picked = this._levelWithin(this._levelFor(this._map.zoom));
+    this._clusters = this._core.materializeToScreen(picked.world, this._cfg.sizeMode);
+    this._core.relaxNonOverlap(this._clusters, this._cfg.gap, 60);
+    return picked.level;
+  },
+
+  /* Мировая точка → ЭКРАННАЯ, с зумом.
+   *
+   * Здесь был перевод без зума: `wx - camX`. Страны при этом рисуются внутри
+   * ctx.scale(zoom), а кружки — снаружи, поэтому одно и то же место на карте
+   * получало две разные координаты, и расхождение росло вместе с
+   * приближением: 57 px при зуме 0.75, 122 при 2 и 756 при 6. На экране это
+   * выглядело так, будто кружки «скучиваются в центре» — они там и
+   * оставались, в предзумных координатах, пока карта под ними разъезжалась.
+   * Поймано пользователем на проде.
+   *
+   * Формула — ровно обратная к _clientToWorld, и это не совпадение: две
+   * стороны одного перевода обязаны быть взаимно обратными, иначе тап
+   * попадает не туда, куда смотрит глаз. */
   _pointToScreen(wx, wy) {
-    return { x: wx - this._map.camX, y: wy - this._map.camY };
+    const h = this._host, m = this._map;
+    return {
+      x: (wx - m.camX - h.width * 0.5) * m.zoom + h.width * 0.5,
+      y: (wy - m.camY - h.height * 0.5) * m.zoom + h.height * 0.5,
+    };
   },
 
   _clientToWorld(cx, cy) {
@@ -612,10 +663,18 @@ export const mapScene = {
   _tap(x, y) {
     const hit = this._findAt(x, y);
     if (!hit) { this._card.close(); return; }
-    /* Одиночный памятник — карточка; кластер — провал на уровень глубже. */
-    if (hit.count === 1 && hit.indices && hit.indices.length === 1) {
-      this._selected = hit.indices[0];
-      this._card.open(this._items[hit.indices[0]]);
+    /* Одиночный памятник — карточка; кластер — провал на уровень глубже.
+     *
+     * Поле называется memberIndices. Здесь читалось hit.indices — поля с таким
+     * именем в кружке нет и не было, условие никогда не выполнялось, и тап по
+     * ОДИНОЧНОМУ памятнику вместо карточки просто приближал карту ещё на
+     * ступень. Подпись сцены при этом обещает «Тап на кружок — распадается»,
+     * то есть обещание не выполнялось ровно на последнем шаге, ради которого
+     * вся иерархия и строится. Молчало потому, что undefined в условии —
+     * законное «нет», а не ошибка. */
+    if (hit.count === 1 && hit.memberIndices && hit.memberIndices.length === 1) {
+      this._selected = hit.memberIndices[0];
+      this._card.open(this._items[hit.memberIndices[0]]);
       this._app.poke();
       return;
     }
@@ -733,8 +792,11 @@ export const mapScene = {
       }
 
       const single = cl.count === 1;
-      const status = single && cl.indices ? this._items[cl.indices[0]].status : null;
-      const sel = single && cl.indices && cl.indices[0] === this._selected;
+      /* memberIndices, не indices — см. _tap. Из-за того же несуществующего
+       * поля одиночные памятники красились statusColor(null), то есть все
+       * одинаково серым: цвет судьбы на карте не работал вовсе. */
+      const status = single && cl.memberIndices ? this._items[cl.memberIndices[0]].status : null;
+      const sel = single && cl.memberIndices && cl.memberIndices[0] === this._selected;
       ctx.save();
       ctx.beginPath();
       ctx.arc(cl.sx, cl.sy, cl.rVpx, 0, Math.PI * 2);

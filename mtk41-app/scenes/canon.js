@@ -27,7 +27,7 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=60";
+} from "./shared.js?v=65";
 
 /* Иконичные памятники крупнее — композиция, а не равномерная сетка. */
 const WEIGHTS = {

@@ -30,7 +30,7 @@ import {
   finderSort,
   setCorpus,
   statusOptions,
-} from "./shared.js?v=60";
+} from "./shared.js?v=65";
 
 const YEAR_MIN = 1918;
 const YEAR_MAX = 2026;
