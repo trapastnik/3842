@@ -19,7 +19,10 @@ const WT = () => window.MtkProjection.WinkelTripel;
 
 const WORLD_W = 2000;
 const FIT_PAD = 0.14;
-const MIN_K = 0.4, MAX_K = 14;
+/* Нижний предел зума больше НЕ константа: это k0 = «вся карта вписана»,
+ * считается китом (fitZoom) и плавает при resize/a11y. Осталась только
+ * верхняя граница приближения. */
+const MAX_K = 14;
 const FADE_HALF = 0.18;
 
 export const geographyScene = {
@@ -109,7 +112,9 @@ export const geographyScene = {
     this.buildWorldPaths(ctx.data.world);
 
     this.cv = createCanvas(el, {
-      onSize: () => { this.fitted = false; this.fitToCities(); },
+      /* refit, а не полный сброс: при resize кратность зума сохраняется
+       * (первый показ внутри refit сам делает полный fit). */
+      onSize: () => this.refit(),
       onFrame: () => this.frame(),
     });
     this.card = createCard(el, this.corpus, this.app);
@@ -196,7 +201,12 @@ export const geographyScene = {
     if (this.activeCity) this.showCity(this.activeCity, this.activeLane);
   },
 
-  setA11y() { this.fitted = false; this.fitToCities(); },
+  /* Смена режима слабовидящих — НЕ граница визита: позицию терять нельзя.
+   * refit пересчитывает пол (нав вырос → стол ужался → k0 поднялся) и
+   * сохраняет кратность зума. Раньше здесь был fitToCities = полный сброс к
+   * общему плану: посетитель, приближённый к городу, терял его при
+   * переключении. */
+  setA11y() { this.refit(); },
 
   applySettings(v) { this.values = v; },
 
@@ -312,25 +322,88 @@ export const geographyScene = {
       i.bucket === bucket && matchQuery(i, ["title", "title_spine", "author", "place_first"], nq)).length;
   },
 
+  /* Центр габарита городов в мире — для позы «вся карта». Города и проекция
+   * фиксированы, поэтому bbox() кэшируется и переживает resize. */
+  fitCenter() {
+    const b = this.bbox();
+    return { cx: (b.x0 + b.x1) / 2, cy: (b.y0 + b.y1) / 2 };
+  },
+
+  /* Поза «вся карта» для данного масштаба: центр кадра, чуть смещён вниз —
+   * место под HUD. fitZoom даёт только масштаб, позу держим сами. */
+  posAtFit(k) {
+    const c = this.fitCenter();
+    return { ox: this.W / 2 - c.cx * k, oy: (this.H / 2 + 20 * this.s) - c.cy * k };
+  },
+
+  /* Пересчёт нижнего предела k0 = «вся карта вписана». Масштаб считает
+   * КИТ-HELPER: у него зажаты края (÷0 при нулевом контенте, схлопнутый
+   * вьюпорт, padding больше кадра) — общие всем картам, поэтому в ядре, а не
+   * в каждой сцене. Свою формулу min(availW/bw, availH/bh) сняли в его
+   * пользу. HUD снизу — асимметричный padding {bottom}; для масштаба helper
+   * берёт СУММУ полей по оси, так что {bottom:60·s} = прежний вычет 60·s.
+   *
+   * ПОЛ НЕ КОНСТАНТА, И КРАТНОСТЬ ПЕРЕЖИВАЕТ ПЕРЕСЧЁТ (канон 41). Стол
+   * ужимается при a11y/resize (нав растёт) → k0 поднимается. Но держать
+   * абсолютный k нельзя: посетитель, приближённый на 3×, после a11y должен
+   * остаться на 3× (та же композиция под меньший стол), а не потерять
+   * глубину — смена режима не граница визита. Поэтому запоминаем zf=k/k0 ДО
+   * пересчёта и восстанавливаем k=k0·zf ПОСЛЕ. Пол zf≥1 иммунен: хранится
+   * отношение, не абсолют. На первом показе (fitted=false) кратности ещё
+   * нет — только считаем k0, к позе приводит fitToCities.
+   *
+   * ЦЕНТР КАДРА ДЕРЖИМ ЯВНО (доводка по скептику зума). Сохранить кратность
+   * мало: при смене k с фиксированными ox/oy точка под СЕРЕДИНОЙ ВЬЮПОРТА
+   * уезжает на (k_new−k_old)·мировая_доля — на a11y стол ужимается 3-5%, и
+   * композиция дёргается вбок (замер: дрейф 96 px на zf1, 332 на zf3). Это
+   * ДРУГАЯ метрика, чем мировой центр bbox (тот константа и не плывёт —
+   * ловушки reflow тут нет; плывёт именно точка под центром кадра). Поэтому
+   * запоминаем мировую точку под центром ДО смены k и применяем новый k
+   * ВОКРУГ НЕЁ — _placeAt-от-центра, как в onWheel вокруг курсора (канон 41,
+   * дрейф 0). */
+  recomputeFit() {
+    if (!this.cv || !this.cv.w || !this.cities.length) return;
+    const b = this.bbox();
+    const bw = Math.max(1, b.x1 - b.x0), bh = Math.max(1, b.y1 - b.y0);
+    const zf = this.fitted ? this.k / this.k0 : 1;
+    /* точка мира под центром кадра — ДО смены k (иначе делим на новый) */
+    const wcx = this.fitted ? (this.W / 2 - this.ox) / this.k : 0;
+    const wcy = this.fitted ? (this.H / 2 - this.oy) / this.k : 0;
+    this.k0 = window.KioskCore.fitZoom(bw, bh, this.W, this.H, {
+      mode: "contain",
+      padding: {
+        left: FIT_PAD * this.W, right: FIT_PAD * this.W,
+        top: FIT_PAD * this.H, bottom: FIT_PAD * this.H + 60 * this.s,
+      },
+    });
+    if (this.fitted) {
+      this.k = Math.min(MAX_K, this.k0 * zf);
+      this.ox = this.W / 2 - wcx * this.k;
+      this.oy = this.H / 2 - wcy * this.k;
+      this.clampCamera();
+    }
+  },
+
+  /* Переход к позе «вся карта» — ПОЛНЫЙ сброс зума. Для reset (граница
+   * визита: ядро зовёт reset и на idle, и на standby), кнопки «домой» и
+   * первого показа. В отличие от recomputeFit ставит k=k0 и позу, кратности
+   * не сохраняет. */
   fitToCities() {
     if (!this.cv || !this.cv.w || !this.cities.length) return;
-    let x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    for (const c of this.cities) {
-      x0 = Math.min(x0, c.wx); x1 = Math.max(x1, c.wx);
-      y0 = Math.min(y0, c.wy); y1 = Math.max(y1, c.wy);
-    }
-    const bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
-    const availW = this.W * (1 - 2 * FIT_PAD);
-    const availH = this.H * (1 - 2 * FIT_PAD) - 60 * this.s;
-    this.k = Math.min(availW / bw, availH / bh);
-    this.k0 = this.k;
-    this.ox = this.W / 2 - ((x0 + x1) / 2) * this.k;
-    this.oy = (this.H / 2 + 20 * this.s) - ((y0 + y1) / 2) * this.k;
-    /* Поза «вся карта» — точка отсчёта для кнопки «домой»: уехать от неё
-     * можно и без масштабирования. */
-    this.fitOx = this.ox;
-    this.fitOy = this.oy;
+    this.recomputeFit();
+    this.k = this.k0;
+    const p = this.posAtFit(this.k);
+    this.ox = p.ox; this.oy = p.oy;
+    this.fitOx = this.ox; this.fitOy = this.oy;
     this.fitted = true;
+  },
+
+  /* resize и смена режима слабовидящих: пересчитать пол, СОХРАНИВ кратность
+   * (не сбрасывать — иначе теряется позиция посетителя). Первый показ, когда
+   * кратности ещё нет, — полный fit. */
+  refit() {
+    if (!this.fitted) this.fitToCities();
+    else this.recomputeFit();
   },
 
   toScreen(wx, wy) { return { x: wx * this.k + this.ox, y: wy * this.k + this.oy }; },
@@ -482,10 +555,17 @@ export const geographyScene = {
     if (this.pointers.has(ev.pointerId)) this.pointers.set(ev.pointerId, { x: ev.offsetX, y: ev.offsetY });
     if (this.pointers.size === 2 && this.pinch) {
       const [a, b] = [...this.pointers.values()];
+      /* Pan и zoom РАЗДЕЛЬНО (канон): расстояние между пальцами → зум,
+       * сдвиг их СЕРЕДИНЫ → пан. Схваченную мировую точку (pinch.wx/wy)
+       * держим под ТЕКУЩЕЙ серединой (cx,cy), а не под стартовой
+       * (pinch.cx/cy) — иначе двупальцевый перенос без изменения расстояния
+       * не двигал бы камеру вовсе: «даёт ноль», ровно тот дефект, о котором
+       * предупреждает канон. */
+      const cx = (a.x + b.x) / 2, cy = (a.y + b.y) / 2;
       const d = Math.hypot(b.x - a.x, b.y - a.y) || 1;
-      this.k = Math.max(MIN_K, Math.min(MAX_K, this.pinch.k * (d / this.pinch.dist)));
-      this.ox = this.pinch.cx - this.pinch.wx * this.k;
-      this.oy = this.pinch.cy - this.pinch.wy * this.k;
+      this.k = Math.max(this.k0, Math.min(MAX_K, this.pinch.k * (d / this.pinch.dist)));
+      this.ox = cx - this.pinch.wx * this.k;
+      this.oy = cy - this.pinch.wy * this.k;
       this.clampCamera();
       return;
     }
@@ -522,7 +602,7 @@ export const geographyScene = {
     ev.preventDefault();
     const px = ev.offsetX, py = ev.offsetY;
     const wx = (px - this.ox) / this.k, wy = (py - this.oy) / this.k;
-    const next = Math.max(MIN_K, Math.min(MAX_K, this.k * Math.exp(-ev.deltaY * 0.0015)));
+    const next = Math.max(this.k0, Math.min(MAX_K, this.k * Math.exp(-ev.deltaY * 0.0015)));
     if (next === this.k) return;
     this.k = next;
     this.ox = px - wx * this.k;
@@ -563,7 +643,7 @@ export const geographyScene = {
     if (lv === "CITY") targetZf = this.thr("thrAxis", 2.3) + 0.2;
     else if (lv === "AXIS") targetZf = this.thr("thrBook", 5.5) + 0.2;
     else return;
-    const k = Math.max(MIN_K, Math.min(MAX_K, this.k0 * targetZf));
+    const k = Math.max(this.k0, Math.min(MAX_K, this.k0 * targetZf));
     /* Держим точку города на месте: она и есть смысловой центр провала. */
     const wx = (cluster.ax - this.ox) / this.k;
     const wy = (cluster.ay - this.oy) / this.k;
