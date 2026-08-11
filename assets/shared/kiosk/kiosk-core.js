@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.23.0";
+  var VERSION = "1.23.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1246,15 +1246,19 @@
     var navBottom = navShown && nav.position !== "top";
     var sides = nav.layout === "sides";
 
-    /* В баре: ряд стрелок + ряд точек. По бокам: в баре остаются только
-     * титул и точки — полоса ниже, зато занят край по горизонтали. */
-    var navBand = 0;
-    if (sides) {
-      if (nav.showTitle !== false) navBand += 72 + gap;
-      if (nav.showDots !== false) navBand += 64 + gap;
-    } else {
-      navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
-    }
+    /* B (1.23.1): точки-табы теперь ВНУТРИ ряда стрелок (см. _buildNav),
+     * отдельной полосы под ними больше НЕТ. Полоса нава по высоте = ОДИН ряд
+     * (самый высокий показанный контрол) + зазор, а не два ряда. В баре ряд
+     * держат стрелки (size); в «sides» стрелки вынесены в корень приложения и
+     * в ряду остаются титул/точки (край при этом занят по горизонтали —
+     * sideBand ниже). Замер (_measureChrome) уточнит по факту; здесь важно НЕ
+     * ЗАВЫШАТЬ, иначе поле не получит вернувшиеся ~80px — из-за отдельной
+     * полосы точек расчёт раньше держал bottom на 272 даже при коротком нава. */
+    var rowH = 0;
+    if (!sides && nav.showArrows !== false) rowH = Math.max(rowH, size);
+    if (nav.showTitle !== false) rowH = Math.max(rowH, 72);
+    if (nav.showDots !== false) rowH = Math.max(rowH, 64);
+    var navBand = rowH ? rowH + gap : 0;
 
     var toolsPos = (this.config.tools || {}).position || "top-left";
     var toolsShown = this._els.tools && !this._els.tools.hidden;
@@ -1689,9 +1693,19 @@
 
     row.appendChild(prev);
     row.appendChild(titleBox);
+    /* B (1.23.1): точки-табы ВНУТРЬ ряда, а не отдельным рядом под ним.
+     * Отдельный ряд точек (64px) + зазор (16) забирал ~80px высоты у КАЖДОЙ
+     * сцены на каждом разрешении; на карте мира 41 при 1080 это была разница
+     * между лентой и читаемым кадром. Высоту ряда держат стрелки (96px), точки
+     * (64<96) вписываются без роста — нав 198→~118, --chrome-bottom −80 у всех
+     * пяти (зонно-свёрстанные сцены получают +80 сами, 40 меряет нав своим
+     * кодом и тоже трекает). Работает для обеих раскладок без развилки: в
+     * «sides» стрелки вынесены в корень и в баре остаётся [титул • • •], в
+     * «bar» — ◄ титул • • • ►. Точки остаются 64-кнопками role="tab", tablist
+     * цел; при showTitle:false ряд честно вырождается в ◄ • • • ►. */
+    row.appendChild(dots);
     row.appendChild(next);
     nav.appendChild(row);
-    nav.appendChild(dots);
 
     prev.addEventListener("click", function () { self.prevScene(); });
     next.addEventListener("click", function () { self.nextScene(); });
