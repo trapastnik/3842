@@ -19,7 +19,7 @@
 (function (global) {
   "use strict";
 
-  var VERSION = "1.22.2";
+  var VERSION = "1.23.1";
 
   /* Метка версии из адреса СОБСТВЕННОГО скрипта — только classic-путь.
    * ESM-путь сверяет обёртка: она всегда свежая, а ядро, которое залипло
@@ -1246,15 +1246,19 @@
     var navBottom = navShown && nav.position !== "top";
     var sides = nav.layout === "sides";
 
-    /* В баре: ряд стрелок + ряд точек. По бокам: в баре остаются только
-     * титул и точки — полоса ниже, зато занят край по горизонтали. */
-    var navBand = 0;
-    if (sides) {
-      if (nav.showTitle !== false) navBand += 72 + gap;
-      if (nav.showDots !== false) navBand += 64 + gap;
-    } else {
-      navBand = size + gap + (nav.showDots === false ? 0 : 64 + gap);
-    }
+    /* B (1.23.1): точки-табы теперь ВНУТРИ ряда стрелок (см. _buildNav),
+     * отдельной полосы под ними больше НЕТ. Полоса нава по высоте = ОДИН ряд
+     * (самый высокий показанный контрол) + зазор, а не два ряда. В баре ряд
+     * держат стрелки (size); в «sides» стрелки вынесены в корень приложения и
+     * в ряду остаются титул/точки (край при этом занят по горизонтали —
+     * sideBand ниже). Замер (_measureChrome) уточнит по факту; здесь важно НЕ
+     * ЗАВЫШАТЬ, иначе поле не получит вернувшиеся ~80px — из-за отдельной
+     * полосы точек расчёт раньше держал bottom на 272 даже при коротком нава. */
+    var rowH = 0;
+    if (!sides && nav.showArrows !== false) rowH = Math.max(rowH, size);
+    if (nav.showTitle !== false) rowH = Math.max(rowH, 72);
+    if (nav.showDots !== false) rowH = Math.max(rowH, 64);
+    var navBand = rowH ? rowH + gap : 0;
 
     var toolsPos = (this.config.tools || {}).position || "top-left";
     var toolsShown = this._els.tools && !this._els.tools.hidden;
@@ -1338,6 +1342,47 @@
           Math.round(vh) + " (" + c.ось + ": " + c.было + " → " + c.стало +
           ") — ужал, чтобы полю сцены осталось место. Причина в настройках: " +
           "размер кнопок навигации × масштаб интерфейса. Уменьшите nav.size или scale.ui.");
+      });
+    }
+
+    /* СИГНАЛ ТЕСНОГО ПОЛЯ (заявка A, канон «молчание — ложь»). Отдельно от
+     * клампа выше: там хром НЕ влезал и был ужат, и у него свой точный warn.
+     * Здесь поле положительное и НЕ ужато, но хром съедает больше половины
+     * оси — рамка крупнее картинки. Это не дефект сцены, а знак, что
+     * вьюпорт/масштаб ниже киоск-спеки (штатно 1080): на низком окне
+     * абсолютные тач-таргеты не оставляют сцене пропорции. Порог без магии —
+     * «поле меньше съевшего его хрома»; на 1080 поле 632 > хром 448 (молчим),
+     * на 720 поле 236 < хром 484 (сигналим). Молчим, если сработал кламп. */
+    var fieldH = vh - top - bottom, fieldW = vw - side - side;
+    var cramped = null;
+    if (!clamped) {
+      if (fieldH > 0 && fieldH < top + bottom)
+        cramped = { ось: "по высоте", поле: Math.round(fieldH), хром: Math.round(top + bottom) };
+      else if (fieldW > 0 && fieldW < side + side)
+        cramped = { ось: "по ширине", поле: Math.round(fieldW), хром: Math.round(side + side) };
+    }
+    this._fieldCramped = cramped;
+    /* Видимое состояние — атрибут на корне, идемпотентно (два прохода
+     * _applyInsets сойдутся к верному). Ядро само ничего не рисует; хост
+     * волен оформить [data-kiosk-field-cramped]. Снятие тесноты
+     * перевооружает warn — повторный вход в тесноту скажет снова. */
+    if (cramped) {
+      root.setAttribute("data-kiosk-field-cramped", "");
+    } else {
+      root.removeAttribute("data-kiosk-field-cramped");
+      this._warnedCramped = false;
+    }
+    if (cramped && !this._warnedCramped) {
+      this._warnedCramped = true;
+      var self3 = this;
+      Promise.resolve().then(function () {
+        var c = self3._fieldCramped;
+        if (!c) return;   /* доследующий проход тесноту снял — молчим */
+        console.warn("[kiosk] поле сцены тесное: " + c.ось + " " + c.поле + "px при хроме " +
+          c.хром + "px (" + Math.round(vw) + "×" + Math.round(vh) + ") — хром съедает больше " +
+          "половины оси. Обычно это вьюпорт ниже киоск-спеки (штатно 1080) или крупный масштаб " +
+          "интерфейса; сцена сожмётся — это не её дефект. Хост может оформить состояние по " +
+          "атрибуту [data-kiosk-field-cramped].");
       });
     }
 
@@ -1648,9 +1693,19 @@
 
     row.appendChild(prev);
     row.appendChild(titleBox);
+    /* B (1.23.1): точки-табы ВНУТРЬ ряда, а не отдельным рядом под ним.
+     * Отдельный ряд точек (64px) + зазор (16) забирал ~80px высоты у КАЖДОЙ
+     * сцены на каждом разрешении; на карте мира 41 при 1080 это была разница
+     * между лентой и читаемым кадром. Высоту ряда держат стрелки (96px), точки
+     * (64<96) вписываются без роста — нав 198→~118, --chrome-bottom −80 у всех
+     * пяти (зонно-свёрстанные сцены получают +80 сами, 40 меряет нав своим
+     * кодом и тоже трекает). Работает для обеих раскладок без развилки: в
+     * «sides» стрелки вынесены в корень и в баре остаётся [титул • • •], в
+     * «bar» — ◄ титул • • • ►. Точки остаются 64-кнопками role="tab", tablist
+     * цел; при showTitle:false ряд честно вырождается в ◄ • • • ►. */
+    row.appendChild(dots);
     row.appendChild(next);
     nav.appendChild(row);
-    nav.appendChild(dots);
 
     prev.addEventListener("click", function () { self.prevScene(); });
     next.addEventListener("click", function () { self.nextScene(); });
