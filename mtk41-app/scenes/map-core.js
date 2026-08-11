@@ -246,6 +246,24 @@ export function createMapCore(dep) {
 
   const LEAF_R_MULT = 0.006;   // доля короткой стороны экрана
 
+  /* ПОЛЫ РАДИУСА В АБСОЛЮТНЫХ ПИКСЕЛЯХ.
+   *
+   * Радиус считался ТОЛЬКО долей короткой стороны стола — и это разваливалось
+   * ровно там, где стол низкий. У карты 41 стол 428 px из 1080 (остальное —
+   * хром ядра сверху и снизу плюс своя шапка с навигацией), короткая сторона
+   * = высота, и одиночный памятник получал 428·0.006 = 2.6 px. Подпись же
+   * включается с 8 px, число в кружке — с 12. Итог на живом экране: на
+   * глубоком приближении, где каждый объект одиночный, карта превращалась в
+   * россыпь безымянных точек. Поймано пользователем на проде.
+   *
+   * Доля остаётся — она правит на больших панелях, где стол высокий. Полы
+   * лишь не дают ей упасть ниже читаемого: кружок обязан читаться КРУЖКОМ, а
+   * не пылью, при любой высоте стола. Числа не подобраны на глаз: 8 и 12 —
+   * это пороги подписи и числа в _drawClusters, полы взяты на ступень выше,
+   * чтобы подпись и число включались, а не стояли на самой границе. */
+  const LEAF_R_MIN = 9;        // px: одиночный памятник + его подпись (порог 8)
+  const CLUSTER_R_MIN = 13;    // px: кружок с числом внутри (порог 12)
+
   function sizeFor(count, mode) {
     const s = dep.shortSide();
     const base = s * 0.010;
@@ -254,7 +272,9 @@ export function createMapCore(dep) {
     if (mode === "linear") r = base + s * 0.0018 * count;
     else if (mode === "log") r = base + s * 0.012 * Math.log2(count + 1);
     else r = base + s * 0.006 * Math.sqrt(count);
-    return Math.min(cap, r);
+    /* Пол применяем ПОСЛЕ потолка: иначе на низком столе cap (428·0.055 = 24)
+     * срезал бы уже поднятый радиус обратно и пол ничего бы не дал. */
+    return Math.max(CLUSTER_R_MIN, Math.min(cap, r));
   }
 
   function buildLevelClusters(level) {
@@ -326,25 +346,18 @@ export function createMapCore(dep) {
 
   function materializeToScreen(clustersWorld, sizeMode) {
     const arr = [];
-    // Visible pre-zoom range accounts for the ctx.scale(zoom) transform:
-    // at zoom < 1 the viewport shows MORE than [0..width] in pre-zoom coords
-    // (it's centered on w/2 and spans dep.width/zoom). Without this correction
-    // world-preset (zoom 0.42) culled Америки, Океанию и т.д.
-    const zoom = Math.max(0.01, dep.map.zoom);
-    const halfViewW = dep.width / (2 * zoom);
-    const halfViewH = dep.height / (2 * zoom);
-    const viewMinX = dep.width * 0.5 - halfViewW;
-    const viewMaxX = dep.width * 0.5 + halfViewW;
-    const viewMinY = dep.height * 0.5 - halfViewH;
-    const viewMaxY = dep.height * 0.5 + halfViewH;
+    /* Отсев по ЭКРАННОМУ прямоугольнику. Раньше считался предзумный: перевод
+     * pointToScreen зума не применял, и окно приходилось разворачивать
+     * обратно делением на zoom. Теперь перевод честный (см. _pointToScreen),
+     * и окно — просто стол плюс поле на кружок с подписью. */
     for (const c of clustersWorld) {
       const s = dep.pointToScreen(c.worldX, c.worldY);
       const rVpx = c.count > 1
         ? sizeFor(c.count, sizeMode)
-        : dep.shortSide() * LEAF_R_MULT;
-      const margin = 100 + rVpx / zoom;
-      if (s.x < viewMinX - margin || s.x > viewMaxX + margin ||
-          s.y < viewMinY - margin || s.y > viewMaxY + margin) continue;
+        : Math.max(LEAF_R_MIN, dep.shortSide() * LEAF_R_MULT);
+      const margin = 100 + rVpx;
+      if (s.x < -margin || s.x > dep.width + margin ||
+          s.y < -margin || s.y > dep.height + margin) continue;
       arr.push({
         // anchor = original world → screen point (undisplaced)
         anchorX: s.x, anchorY: s.y,
@@ -360,6 +373,33 @@ export function createMapCore(dep) {
       });
     }
     return arr;
+  }
+
+  /* Насколько далеко расталкивание вправе увести кружок от его ИСТИННОГО
+   * места — в радиусах этого кружка.
+   *
+   * Ограничения не было вовсе, и на глубоком приближении это давало худший
+   * возможный отказ для карты музея: 218 одиночных памятников Европейской
+   * части расталкивались до полного отсутствия пересечений и складывались в
+   * ПРАВИЛЬНЫЕ СОТЫ — гексагональную решётку, к географии отношения не
+   * имеющую. Посетитель видел памятник там, где его нет. Поймано
+   * пользователем на проде («скучиваются и налезают в центре»).
+   *
+   * Пересечение — меньшее зло, чем ложь о месте: наложившиеся кружки
+   * читаются как «здесь их много», а уехавший кружок читается как
+   * «памятник стоял вот тут», и это неправда. Поэтому предел жёсткий:
+   * дальше него кружок остаётся на месте и пусть перекрывается. */
+  const RELAX_MAX_DRIFT = 1.6;
+
+  function clampDrift(c) {
+    if (c.anchorX == null) return;
+    const dx = c.sx - c.anchorX, dy = c.sy - c.anchorY;
+    const lim = c.rVpx * RELAX_MAX_DRIFT;
+    const d = Math.hypot(dx, dy);
+    if (d <= lim || d === 0) return;
+    const k = lim / d;
+    c.sx = c.anchorX + dx * k;
+    c.sy = c.anchorY + dy * k;
   }
 
   function relaxNonOverlap(arr, gapVpx, maxIters) {
@@ -379,6 +419,7 @@ export function createMapCore(dep) {
             const ny = dy / d;
             a.sx -= nx * push; a.sy -= ny * push;
             b.sx += nx * push; b.sy += ny * push;
+            clampDrift(a); clampDrift(b);
             moved += 1;
           }
         }

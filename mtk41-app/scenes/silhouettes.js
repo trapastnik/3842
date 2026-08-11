@@ -25,9 +25,9 @@
  *
  * У кого нет ни того ни другого — процедурный пунктир, как в «Масштабе». Это
  * видно в healthcheck и не выдаётся за реальный обвод. */
-import { scaleScene } from "./scale.js?v=60";
+import { scaleScene } from "./scale.js?v=67";
 import { DATA, HUMAN_HEIGHT_M, PALETTE, cssColor, emptyVerdict, fillTextIfFits,
-  preloadThumbs, statusColor } from "./shared.js?v=60";
+  preloadThumbs, statusColor } from "./shared.js?v=67";
 
 /* Хранилище силуэтов — на уровне МОДУЛЯ, а не в ctx.
  * ctx у ядра одноразовый: context() отдаёт новый объект и прероллу, и mount().
@@ -272,6 +272,22 @@ export const silhouettesScene = Object.assign({}, scaleScene, {
 
   /* Единственное содержательное отличие: где есть вырезанный силуэт — рисуем
    * его, где нет — процедурный пунктир, как в «Масштабе». */
+  /* У силуэта ширина ИДЁТ ОТ ВЫСОТЫ — и у цветной вырезки (пропорции снимка),
+   * и у вектора (путь нормирован по высоте, x идёт до ar). Поэтому рост
+   * масштаба раздувает фигуру в обе стороны, и раскладка обязана про это
+   * знать: слот считается по самой широкой, а масштаб упирается в потолок,
+   * когда соседи вот-вот соприкоснутся. У процедурной фигуры «Масштаба»
+   * такой связи нет — там базовый _figureAspect и возвращает 0. */
+  _figureAspect(m) {
+    if (!m) return 0;
+    const photo = this._cfg && this._cfg.silMode !== "outline" ? CUT[m.id] : null;
+    if (photo && photo.complete && photo.naturalWidth && photo.naturalHeight) {
+      return photo.naturalWidth / photo.naturalHeight;
+    }
+    const rec = SIL[m.id];
+    return rec && rec.ar > 0 ? rec.ar : 0;
+  },
+
   _drawFigures() {
     const h = this._host, ctx = h.ctx, g = this._geom;
     const sil = SIL;
