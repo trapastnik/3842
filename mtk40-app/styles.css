@@ -234,105 +234,21 @@
    высоты, и на карточки оставалось меньше, чем на меню к ним (правка по
    замечанию пользователя). Указатель по природе горизонтальный — 20+ букв в
    узкой колонке рвались бы на пять рядов. */
+/* Раскладка картотеки — только сетка карточек во всю площадь. Боковая колонка
+ * (ось/тип/язык/порядок) и алфавитный указатель убраны как буквальный дубль
+ * панели финдера (см. шапку catalog.js): весь отбор, поиск и сортировка — в
+ * лупе. Освободилась левая треть экрана и верхняя строка — сетке. */
 .m40-catalog {
   position: absolute;
   top: var(--m40-chrome-top, var(--kiosk-safe-top));
   right: var(--edge-safe);
   bottom: var(--m40-chrome-bottom, var(--kiosk-safe-bottom));
   left: var(--edge-safe);
-  display: grid;
-  grid-template-columns: minmax(0, calc(var(--touch-min) * 12)) 1fr;
-  grid-template-rows: auto 1fr;
-  grid-template-areas: "side idx" "side grid";
-  column-gap: calc(var(--touch-gap) * 2);
-  row-gap: var(--touch-gap);
   min-height: 0;
 }
-
-.m40-cat__side {
-  grid-area: side;
-  align-self: stretch;
-  min-height: 0;
-  /* Сама колонка не прокручивается — прокрутка живёт внутри, у групп. */
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--touch-gap) * 1.5);
-  padding: calc(var(--touch-gap) * 1.2);
-  border: 1px solid rgba(247, 249, 239, 0.14);
-  border-radius: calc(14px * var(--content-scale));
-  background: rgba(12, 16, 18, 0.55);
-}
-.m40-cat__g { display: flex; flex-direction: column; gap: calc(var(--touch-gap) * 0.6); }
-.m40-cat__legend {
-  font-family: var(--font-mono, "20 Kopeek", monospace);
-  font-size: var(--type-min-label);
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: rgba(247, 249, 239, 0.42);
-}
-/* Хвост колонки (счётчик и «сбросить») — отдельный этаж ВНЕ прокрутки, а не
- * липкий слой поверх неё: на действующем масштабе 1.5 он уезжал ниже видимой
- * части и палец в «сбросить» не попадал, а position:sticky накрыл собой три
- * ярлыка порядка. Прокручивается только .m40-cat__groups. */
-.m40-cat__tail {
-  flex: none;
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: var(--touch-gap);
-}
-.m40-cat__groups {
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  display: flex;
-  flex-direction: column;
-  gap: calc(var(--touch-gap) * 1.5);
-}
-.m40-cat__count {
-  font-family: var(--font-mono, "20 Kopeek", monospace);
-  font-size: var(--type-min-label);
-  letter-spacing: 0.14em;
-  color: var(--brass, #d2b773);
-}
-
-.m40-cat__idx {
-  grid-area: idx;
-  display: flex;
-  align-items: center;
-  gap: var(--touch-gap);
-  padding: calc(var(--touch-gap) * 0.6) calc(var(--touch-gap) * 1.2);
-  border: 1px solid rgba(247, 249, 239, 0.12);
-  /* Радиус вместо пилюли на 999px: при переносе на две строки стадион из
-   * ленты выглядел бы случайностью. На одной строке разница незаметна. */
-  border-radius: calc(var(--touch-min) * 0.9);
-  background: rgba(12, 16, 18, 0.45);
-}
-.m40-cat__idx .m40-cat__legend { flex: none; }
-/* Лента переносится, а не прокручивается. Задумана она была одной строкой с
- * overflow-x, и пока буквы были узкими (38 px), 27 штук помещались. С тач-полом
- * ярлыка (64, а в режиме слабовидящих 80) содержимое стало 3036 px при полосе
- * 2712 — и «L», «R», «T» уезжали за правый край экрана: замер показал их на
- * x=3797…4077 при окне 3840. Горизонтальную прокрутку на киоске пальцем никто
- * не ищет — буква просто пропадала. Перенос честнее: указатель занимает две
- * строки только там, где иначе терял бы ярлыки. */
-.m40-cat__alpha { flex-wrap: wrap; flex: 1 1 auto; min-width: 0; }
-/* Буква — ярлык финдера, то есть полноценный контрол, а не украшение
- * указателя: тач-пол обязателен по обеим сторонам. Высоту держал общий
- * .m40-chip (min-height), а ширина оставалась от содержимого — одна буква
- * давала 38 px при поле 64. Пока лента была сценическим указателем, это
- * терпелось; ярлыку — нет. */
-.m40-chip--alpha {
-  letter-spacing: 0;
-  padding: 0 calc(var(--touch-gap) * 0.9);
-  min-width: var(--touch-min);
-}
-
 .m40-cat__grid {
-  grid-area: grid;
-  min-height: 0;
+  position: absolute;
+  inset: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
   display: grid;
